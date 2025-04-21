@@ -37,7 +37,7 @@ class Application(Adw.Application):
 
     def __init__(self):
         super().__init__(
-            application_id="com.github.audio_converter",
+            application_id="br.com.biglinux.audio.converter",
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
         )
 
