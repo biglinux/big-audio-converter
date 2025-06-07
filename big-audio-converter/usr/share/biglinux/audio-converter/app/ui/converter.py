@@ -23,10 +23,26 @@ class AudioConverter:
         if not self.ffmpeg_path:
             logger.error("ffmpeg not found! Audio conversion will not work.")
 
+        # Determine ARNNDN model path relative to this script (app/ui/converter.py)
+        # Assumes 'arnndn-models' is two levels up from 'app/ui/' and then into 'arnndn-models'
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            # Go up two levels (from app/ui/ to the project root)
+            base_path = os.path.abspath(os.path.join(script_dir, "..", ".."))
+            self.arnndn_model_path = os.path.join(
+                base_path, "arnndn-models", "std.rnnn"
+            )
+            if not os.path.exists(self.arnndn_model_path):
+                logger.error(
+                    f"ARNNDN model not found at {self.arnndn_model_path} for UI converter. Noise reduction may not work as expected."
+                )
+                self.arnndn_model_path = None
+        except Exception as e:
+            logger.error(f"Error determining ARNNDN model path for UI converter: {e}")
+            self.arnndn_model_path = None
+
         self.current_file = None
         self.temp_dir = None
-        self.cut_start = None
-        self.cut_end = None
         self.cancel_requested = False
 
     def _find_ffmpeg(self):
@@ -197,8 +213,12 @@ class AudioConverter:
             audio_filters.append(f"volume={volume}")
 
         # Add noise reduction if enabled
-        if settings.get("noise_reduction", False):
-            audio_filters.append("arnndn")
+        if settings.get("noise_reduction", False) and self.arnndn_model_path:
+            audio_filters.append(f"arnndn=m='{self.arnndn_model_path}'")
+        elif settings.get("noise_reduction", False) and not self.arnndn_model_path:
+            logger.warning(
+                "UI Converter: Noise reduction enabled, but ARNNDN model not found. Skipping FFmpeg noise reduction."
+            )
 
         # Add normalization if enabled
         if settings.get("normalize", False):

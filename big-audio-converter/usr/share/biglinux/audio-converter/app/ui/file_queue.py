@@ -7,7 +7,7 @@ import os
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gio, Pango, Gdk, GLib
+from gi.repository import Gtk, Pango, Gdk, GLib
 import subprocess
 import logging
 
@@ -149,8 +149,9 @@ class FileQueue(Gtk.Box):
         # Assemble the layout
         self.append(scrolled)
 
-        # Enable drag and drop for files with improved visual feedback
-        drop_target = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
+        # Enable drag and drop for multiple files with improved visual feedback
+        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop_target.set_gtypes([Gdk.FileList])
         drop_target.connect("drop", self._on_drop)
         drop_target.connect("enter", self._on_drop_enter)
         drop_target.connect("leave", self._on_drop_leave)
@@ -896,12 +897,23 @@ class FileQueue(Gtk.Box):
         )
 
     def _on_drop(self, drop_target, value, x, y):
-        """Handle dropped files."""
-        if isinstance(value, Gio.File):
-            file_path = value.get_path()
-            if file_path:
-                self.add_file(file_path)
-                return True
+        """Handle dropped files (multiple file support).
+        Args:
+            drop_target: The drop target controller.
+            value: The dropped value (Gdk.FileList).
+            x: X coordinate.
+            y: Y coordinate.
+        Returns:
+            bool: True if files were added, False otherwise.
+        """
+        file_list = value
+        if file_list:
+            for file in file_list:
+                if hasattr(file, "get_path"):
+                    file_path = file.get_path()
+                    if file_path:
+                        self.add_file(file_path)
+            return True
         return False
 
     # Drop zone visual feedback

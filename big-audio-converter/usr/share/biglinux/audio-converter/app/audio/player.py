@@ -7,6 +7,10 @@ import subprocess
 import threading
 import time
 import logging
+import gettext
+
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +20,18 @@ class AudioPlayer:
     Audio player using ffplay for playback functionality.
     """
 
-    def __init__(self):
+    def __init__(self, arnndn_model_path=None):
         """Initialize the audio player."""
         self.ffplay_path = self._find_ffplay()
         if not self.ffplay_path:
             logger.error("ffplay not found! Audio playback will not work.")
+
+        self.arnndn_model_path = arnndn_model_path
+        if self.arnndn_model_path and not os.path.exists(self.arnndn_model_path):
+            logger.warning(
+                f"Provided ARNNDN model path for player does not exist: {self.arnndn_model_path}"
+            )
+            self.arnndn_model_path = None
 
         # Initialize playback properties
         self.current_file = None
@@ -183,14 +194,13 @@ class AudioPlayer:
                 audio_filters.append(f"asetrate=44100*{self.speed}")
 
         # Apply noise reduction if enabled
-        if self.noise_reduction:
-            # Add high-pass filter to reduce low-frequency noise
-            audio_filters.append("highpass=f=200")
-            # Add low-pass filter to reduce high-frequency hiss
-            audio_filters.append("lowpass=f=3000")
-            # Add dynamic noise suppression
-            audio_filters.append("afftdn=nf=-20")
-
+        if self.noise_reduction and self.arnndn_model_path:
+            # Use single quotes for the model path in ffplay filter
+            audio_filters.append(f"arnndn=m='{self.arnndn_model_path}'")
+        elif self.noise_reduction and not self.arnndn_model_path:
+            logger.warning(
+                "Player noise reduction enabled, but ARNNDN model not found. Skipping noise reduction for preview."
+            )
         # Add equalizer settings if any
         if self.equalizer_settings:
             eq_parts = []

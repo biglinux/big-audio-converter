@@ -2,7 +2,10 @@
 Main Window for the Audio Converter application.
 """
 
+import gettext
 import gi
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 import os
 import threading
 import logging
@@ -19,6 +22,32 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindow(Adw.ApplicationWindow):
+    def _window_buttons_on_left(self):
+        """Detect if window buttons (close/min/max) are on the left side."""
+        try:
+            settings = Gio.Settings.new("org.gnome.desktop.wm.preferences")
+            layout = settings.get_string("button-layout")
+            logger.info(f"Detected button-layout: {layout}")
+            if layout and ":" in layout:
+                left, right = layout.split(":", 1)
+                # Check for 'close' on the left side
+                if "close" in left:
+                    return True
+                # Check for 'close' on the right side
+                if "close" in right:
+                    return False
+            elif layout:
+                # If no colon, treat as right side (default GNOME)
+                if "close" in layout:
+                    return False
+            logger.warning(
+                f"Unusual button-layout format: {layout}, defaulting to right"
+            )
+        except Exception as e:
+            logger.warning(f"Could not detect window button layout: {e}")
+        # Default: right side
+        return False
+
     """Main application window."""
 
     def __init__(self, **kwargs):
@@ -53,7 +82,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Initialize with loaded or default size
         super().__init__(
-            title="Audio Converter",
+            title=_("Audio Converter"),
             default_width=default_width,
             default_height=default_height,
             **kwargs,
@@ -154,6 +183,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Create a split view that allows resizing with the mouse (for sidebar and content)
         self.split_view = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         self.split_view.set_position(self.sidebar_width)
+
         top_container.append(self.split_view)
 
         # Create CSS for sidebar styling
@@ -172,6 +202,23 @@ class MainWindow(Adw.ApplicationWindow):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
+        # Prepare queue controls, but only add to one headerbar (never both)
+        window_buttons_left = self._window_buttons_on_left()
+        self.clear_queue_button = Gtk.Button()
+        self.clear_queue_button.set_icon_name("trash-symbolic")
+        self.clear_queue_button.set_tooltip_text("Clear Queue")
+        self.clear_queue_button.add_css_class("circular")
+        self.clear_queue_button.connect("clicked", self.on_clear_queue)
+        self.clear_queue_button.add_css_class("destructive-action")
+        self.clear_queue_button.set_visible(False)  # Initially hidden
+        self.header_queue_size_label = Gtk.Label(label=_("0 files"))
+        self.header_queue_size_label.add_css_class("caption")
+        self.header_queue_size_label.add_css_class("dim-label")
+        self.header_queue_size_label.set_visible(False)
+        self.header_queue_size_label.set_margin_start(4)
+        self.header_queue_size_label.set_margin_end(8)
+        self.header_queue_size_label.set_valign(Gtk.Align.CENTER)
+
         # LEFT SIDE - Now contains conversion options (previously on right)
         left_box = Adw.ToolbarView()
         left_box.add_css_class("sidebar")
@@ -180,8 +227,39 @@ class MainWindow(Adw.ApplicationWindow):
         left_header = Adw.HeaderBar()
         left_header.add_css_class("sidebar")
         left_header.set_show_title(True)
-        left_header.set_decoration_layout("")
-        left_header.set_title_widget(Gtk.Label(label="Audio Converter"))
+        # Configure left header bar based on window button layout
+        left_header.set_decoration_layout(
+            "close,maximize,minimize:menu" if window_buttons_left else ""
+        )
+
+        # Create title box with label and (optionally) app icon
+        if not window_buttons_left:
+            # App icon on left if window buttons are on right, text truly centered
+            center_box = Gtk.CenterBox()
+            center_box.set_hexpand(True)
+            app_icon = Gtk.Image.new_from_icon_name("big-audio-converter")
+            app_icon.set_pixel_size(20)
+            app_icon.set_halign(Gtk.Align.START)
+            app_icon.set_valign(Gtk.Align.START)
+            # Do not expand icon
+            app_icon.set_hexpand(False)
+            center_box.set_start_widget(app_icon)
+            title_label = Gtk.Label(label="Audio Converter")
+            title_label.set_halign(Gtk.Align.CENTER)
+            title_label.set_valign(Gtk.Align.START)
+            title_label.set_hexpand(True)
+            center_box.set_center_widget(title_label)
+            # No end widget
+            left_header.set_title_widget(center_box)
+        else:
+            title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            title_label = Gtk.Label(label="Audio Converter")
+            title_box.append(title_label)
+            # Add an expanding box to push controls to the left
+            expander = Gtk.Box()
+            expander.set_hexpand(True)
+            title_box.append(expander)
+            left_header.set_title_widget(title_box)
         left_box.add_top_bar(left_header)
 
         # Create scrollable container for left content
@@ -213,12 +291,13 @@ class MainWindow(Adw.ApplicationWindow):
         # Create header bar for right side
         right_header = Adw.HeaderBar()
         right_header.set_show_title(True)
+        # Detect window button layout and set decoration layout accordingly
+        if not self._window_buttons_on_left():
+            right_header.set_decoration_layout("menu:minimize,maximize,close")
+        else:
+            right_header.set_decoration_layout("")
 
-        # Create a box for the queue button and label
-        queue_controls_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        queue_controls_box.set_margin_start(16)
-
-        # Create Clear Queue button
+        # Always create queue controls
         self.clear_queue_button = Gtk.Button()
         self.clear_queue_button.set_icon_name("trash-symbolic")
         self.clear_queue_button.set_tooltip_text("Clear Queue")
@@ -226,9 +305,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.clear_queue_button.connect("clicked", self.on_clear_queue)
         self.clear_queue_button.add_css_class("destructive-action")
         self.clear_queue_button.set_visible(False)  # Initially hidden
-        queue_controls_box.append(self.clear_queue_button)
-
-        # Add queue size label next to the clear button
         self.header_queue_size_label = Gtk.Label(label="0 files")
         self.header_queue_size_label.add_css_class("caption")
         self.header_queue_size_label.add_css_class("dim-label")
@@ -236,10 +312,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.header_queue_size_label.set_margin_start(4)
         self.header_queue_size_label.set_margin_end(8)
         self.header_queue_size_label.set_valign(Gtk.Align.CENTER)
-        queue_controls_box.append(self.header_queue_size_label)
-
-        # Add the controls box to the header
-        right_header.pack_start(queue_controls_box)
+        # Only add queue controls to right headerbar if window buttons are on the left
 
         # Create menu button and add to right side of header directly
         menu = Gio.Menu()
@@ -247,7 +320,20 @@ class MainWindow(Adw.ApplicationWindow):
         menu.append("About Audio Converter", "app.about")
         menu.append("Quit", "app.quit")
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu)
-        right_header.pack_end(menu_button)
+        # If window buttons are on the left, add app icon after menu button (rightmost)
+        if window_buttons_left:
+            icon_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            icon_box.set_halign(Gtk.Align.END)
+            icon_box.set_valign(Gtk.Align.CENTER)
+            icon_box.append(menu_button)
+            app_icon = Gtk.Image.new_from_icon_name("big-audio-converter")
+            app_icon.set_pixel_size(20)
+            app_icon.set_halign(Gtk.Align.END)
+            app_icon.set_valign(Gtk.Align.CENTER)
+            icon_box.append(app_icon)
+            right_header.pack_end(icon_box)
+        else:
+            right_header.pack_end(menu_button)
 
         # Create a center box layout for right header
         header_container = Gtk.CenterBox()
@@ -265,13 +351,13 @@ class MainWindow(Adw.ApplicationWindow):
         center_box.set_margin_end(46)
 
         # Add Files button
-        add_files_button = Gtk.Button(label="Add Files")
+        add_files_button = Gtk.Button(label=_("Add Files"))
         add_files_button.connect("clicked", self.on_add_files)
         add_files_button.add_css_class("suggested-action")
         center_box.append(add_files_button)
 
         # Convert button
-        self.convert_button = Gtk.Button(label="Convert")
+        self.convert_button = Gtk.Button(label=_("Convert"))
         self.convert_button.connect("clicked", self.on_convert)
         self.convert_button.add_css_class("suggested-action")
         self.convert_button.set_visible(False)  # Initially hidden
@@ -403,7 +489,7 @@ class MainWindow(Adw.ApplicationWindow):
         options_group = Adw.PreferencesGroup()
 
         # Format selection
-        format_row = Adw.ActionRow(title="Output Format")
+        format_row = Adw.ActionRow(title=_("Output Format"))
         self.format_combo = Gtk.ComboBoxText()
         self.format_combo.set_valign(Gtk.Align.CENTER)
         formats = ["mp3", "ogg", "flac", "wav", "aac", "opus"]
@@ -415,7 +501,7 @@ class MainWindow(Adw.ApplicationWindow):
         options_group.add(format_row)
 
         # Bitrate selection
-        bitrate_row = Adw.ActionRow(title="Bitrate")
+        bitrate_row = Adw.ActionRow(title=_("Bitrate"))
         self.bitrate_combo = Gtk.ComboBoxText()
         self.bitrate_combo.set_valign(Gtk.Align.CENTER)
         bitrates = ["64k", "128k", "192k", "256k", "320k"]
@@ -428,23 +514,23 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Volume adjustment - replace Scale with SpinRow
         self.volume_spin = Adw.SpinRow.new_with_range(0, 200, 5)
-        self.volume_spin.set_title("Volume")
-        self.volume_spin.set_subtitle("100 = original volume")
+        self.volume_spin.set_title(_("Volume"))
+        self.volume_spin.set_subtitle(_("100 = original volume"))
         self.volume_spin.set_value(100)  # Default to 100%
         self.volume_spin.connect("changed", self._on_volume_spin_changed)
         options_group.add(self.volume_spin)
 
         # Speed adjustment - replace Scale with SpinRow
         self.speed_spin = Adw.SpinRow.new_with_range(0.5, 2.0, 0.05)
-        self.speed_spin.set_title("Speed")
-        self.speed_spin.set_subtitle("1.0 = original speed")
+        self.speed_spin.set_title(_("Speed"))
+        self.speed_spin.set_subtitle(_("1.0 = original speed"))
         self.speed_spin.set_digits(2)  # Show 2 decimal places
         self.speed_spin.set_value(1.0)  # Default to normal speed
         self.speed_spin.connect("changed", self._on_speed_spin_changed)
         options_group.add(self.speed_spin)
 
         # Noise reduction
-        noise_row = Adw.ActionRow(title="Noise Reduction")
+        noise_row = Adw.ActionRow(title=_("Noise Reduction"))
         self.noise_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         # Connect noise reduction switch to player and settings
         self.noise_switch.connect("state-set", self._on_noise_switch_changed)
@@ -452,22 +538,22 @@ class MainWindow(Adw.ApplicationWindow):
         options_group.add(noise_row)
 
         # Equalizer - moved from effects group
-        eq_row = Adw.ActionRow(title="Equalizer")
-        eq_button = Gtk.Button(label="Configure...")
+        eq_row = Adw.ActionRow(title=_("Equalizer"))
+        eq_button = Gtk.Button(label=_("Configure..."))
         eq_button.set_valign(Gtk.Align.CENTER)
         eq_button.connect("clicked", self.on_configure_equalizer)
         eq_row.add_suffix(eq_button)
         options_group.add(eq_row)
 
         # Replace the cut audio switch with a combo box
-        cut_row = Adw.ActionRow(title="Cut")
+        cut_row = Adw.ActionRow(title=_("Cut"))
 
         # Add box to contain combo and help button side by side
         cut_suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
 
         # Add help button with question mark icon
         help_button = Gtk.Button.new_from_icon_name("help-about-symbolic")
-        help_button.set_tooltip_text("How to use waveform cutting")
+        help_button.set_tooltip_text(_("How to use waveform cutting"))
         help_button.add_css_class("circular")
         help_button.add_css_class("flat")
         help_button.connect("clicked", self._show_cut_help_dialog)
@@ -477,9 +563,9 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.cut_combo = Gtk.ComboBoxText()
         self.cut_combo.set_valign(Gtk.Align.CENTER)
-        self.cut_combo.append_text("Off")
-        self.cut_combo.append_text("Chronological")
-        self.cut_combo.append_text("Segment Number")
+        self.cut_combo.append_text(_("Off"))
+        self.cut_combo.append_text(_("Chronological"))
+        self.cut_combo.append_text(_("Segment Number"))
         self.cut_combo.set_active(0)  # Default to Off
         self.cut_combo.connect("changed", self._on_cut_combo_changed)
         cut_suffix_box.append(self.cut_combo)
@@ -1225,7 +1311,6 @@ class MainWindow(Adw.ApplicationWindow):
             data = []
             duration = 0
             valid_waveform = False
-            file_ext = os.path.splitext(file_path)[1].lower()
 
             # Skip direct reading for files with special characters
             has_special_chars = any(ord(c) > 127 for c in file_path)
@@ -1336,28 +1421,6 @@ class MainWindow(Adw.ApplicationWindow):
                     return False
 
                 GLib.idle_add(update_visualizer)
-            else:
-                # Try pydub as last resort
-                try:
-                    import pydub
-
-                    audio = pydub.AudioSegment.from_file(file_path)
-                    samples = np.array(audio.get_array_of_samples())
-
-                    if audio.channels > 1:
-                        samples = np.array(
-                            audio.split_to_mono()[0].get_array_of_samples()
-                        )
-
-                    duration = len(samples) / audio.frame_rate
-
-                    if len(samples) > 100000:
-                        step = len(samples) // 50000
-                        samples = samples[::step]
-
-                    GLib.idle_add(self.visualizer.set_waveform, samples, duration)
-                except Exception:
-                    GLib.idle_add(self.visualizer.set_waveform, None, 0)
 
         except Exception as e:
             logger.error(f"Error generating waveform: {str(e)}")

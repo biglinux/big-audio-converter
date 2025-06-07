@@ -5,7 +5,11 @@ Application configuration management.
 import os
 import json
 import logging
+import gettext
 from pathlib import Path
+
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +31,12 @@ class AppConfig:
 
         # Default settings
         self.defaults = {
-            "last_directory": str(Path.home()),
-            "default_output_directory": str(Path.home()),
-            "default_format": "mp3",
-            "default_preset": "MP3 Standard",
-            "auto_play_preview": True,
-            "confirm_overwrite": True,
+            _("last_directory"): str(Path.home()),
+            _("default_output_directory"): str(Path.home()),
+            _("default_format"): "mp3",
+            _("default_preset"): _("MP3 Standard"),
+            _("auto_play_preview"): True,
+            _("confirm_overwrite"): True,
         }
 
         # Load configuration

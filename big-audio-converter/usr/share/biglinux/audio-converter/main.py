@@ -4,10 +4,14 @@ Audio Converter - Main Application Entry Point
 This script should be run from the project root directory.
 """
 
+
 import os
 import sys
 import logging
+import gettext
 import gi
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -42,9 +46,19 @@ class Application(Adw.Application):
         )
 
         self.config = AppConfig()
-        self.player = AudioPlayer()
-        self.converter = AudioConverter()
+        # Determine ARNNDN model path relative to this script (main.py)
+        self.project_root = os.path.dirname(os.path.abspath(__file__))
+        self.arnndn_model_path = os.path.join(
+            self.project_root, "arnndn-models", "std.rnnn"
+        )
+        if not os.path.exists(self.arnndn_model_path):
+            logging.error(
+                _(f"ARNNDN model not found at {self.arnndn_model_path}. Noise reduction will use fallback or be skipped if it's the only option.")
+            )
+            self.arnndn_model_path = None  # Ensure it's None if not found
 
+        self.player = AudioPlayer(arnndn_model_path=self.arnndn_model_path)
+        self.converter = AudioConverter(arnndn_model_path=self.arnndn_model_path)
         self._create_actions()
 
     def _create_actions(self):
@@ -71,15 +85,15 @@ class Application(Adw.Application):
         self.quit()
 
     def on_about_action(self, *_):
-        """Show the about dialog."""
+        """Show the about dialog with the system 'big-audio-converter' icon."""
         about = Adw.AboutWindow(
             transient_for=self.props.active_window,
-            application_name="Audio Converter",
-            application_icon="audio-x-generic",
-            developer_name="Audio Converter Team",
+            application_name=_("Audio Converter"),
+            application_icon="big-audio-converter",  # Use system icon
+            developer_name=_("Audio Converter Team"),
             version="1.0.0",
-            developers=["Audio Converter Team"],
-            copyright="© 2023 Audio Converter Team",
+            developers=[_("Audio Converter Team")],
+            copyright=_("© 2023 Audio Converter Team"),
             website="https://github.com/audio-converter",
             license_type=Gtk.License.GPL_3_0,
         )

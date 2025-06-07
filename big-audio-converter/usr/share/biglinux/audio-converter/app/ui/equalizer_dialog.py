@@ -6,7 +6,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, GObject
+from gi.repository import Gtk
 
 
 class EqualizerDialog(Gtk.Dialog):
@@ -109,13 +109,12 @@ class EqualizerDialog(Gtk.Dialog):
 
         # Define presets - these are internal equalizer presets, not conversion presets
         presets = {
-            "Flat": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            "Classical": [0, 0, 0, 0, 0, 0, -4, -4, -4, -6],
-            "Club": [0, 0, 4, 2, 2, 2, 0, 0, 0, 0],
-            "Dance": [6, 4, 2, 0, 0, -4, -6, -6, 0, 0],
-            "Rock": [4, 2, -4, -6, -2, 2, 4, 6, 6, 6],
-            "Bass Boost": [6, 6, 6, 4, 0, 0, 0, 0, 0, 0],
-            "Treble Boost": [0, 0, 0, 0, 0, 2, 4, 6, 8, 8],
+            "Flat": [0, 0, 0, 0, 0, 0, 0],
+            "Bass Boost": [6, 6, 6, 4, 0, 0, 0],
+            "Treble Boost": [0, 0, 0, 0, 0, 2, 4],
+            "Vocal Boost": [0, 2, 4, 6, 6, 4, 2],
+            "Rock": [4, 2, -4, -6, -2, 2, 4],
+            "Dance": [6, 4, 2, 0, 0, -4, -6],
         }
 
         # Apply preset values

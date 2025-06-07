@@ -7,7 +7,11 @@ import re
 import subprocess
 import logging
 import tempfile
+import gettext
 from .segment_processor import SegmentProcessor  # Import the segment processor
+
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +21,22 @@ class AudioConverter:
     Audio converter using ffmpeg for conversion functionality.
     """
 
-    def __init__(self):
+    def __init__(self, arnndn_model_path=None):
         """Initialize the audio converter."""
         self.ffmpeg_path = self._find_ffmpeg()
         if not self.ffmpeg_path:
             logger.error("ffmpeg not found! Audio conversion will not work.")
 
+        self.arnndn_model_path = arnndn_model_path
+        if self.arnndn_model_path and not os.path.exists(self.arnndn_model_path):
+            logger.warning(
+                f"Provided ARNNDN model path does not exist: {self.arnndn_model_path}"
+            )
+            self.arnndn_model_path = None
+
         # Conversion properties
         self.cancel_flag = False
         self.current_process = None
-        self.cut_start = 0
-        self.cut_end = 0
 
     def _find_ffmpeg(self):
         """Find the ffmpeg executable in the PATH."""
@@ -253,10 +262,16 @@ class AudioConverter:
                     audio_filters.append(f"atempo={settings['speed']}")
 
                 # Noise reduction if enabled
-                if settings.get("noise_reduction", False):
-                    audio_filters.append("highpass=f=200")  # Reduce low-frequency noise
-                    audio_filters.append("lowpass=f=3000")  # Reduce high-frequency hiss
-                    audio_filters.append("afftdn=nf=-20")  # Dynamic noise suppression
+                if settings.get("noise_reduction", False) and self.arnndn_model_path:
+                    # Use single quotes for the model path in ffmpeg filter
+                    audio_filters.append(f"arnndn=m='{self.arnndn_model_path}'")
+                elif (
+                    settings.get("noise_reduction", False)
+                    and not self.arnndn_model_path
+                ):
+                    logger.warning(
+                        "Noise reduction enabled, but ARNNDN model not found. Skipping FFmpeg noise reduction."
+                    )
 
                 # Normalization
                 if settings.get("normalize", False):
@@ -267,7 +282,17 @@ class AudioConverter:
                     cmd.extend(["-af", ",".join(audio_filters)])
 
                 # Add output format options
-                cmd.extend(["-f", output_format])
+                if output_format == "aac":
+                    # Use ADTS muxer for raw AAC output
+                    cmd.extend(["-f", "adts"])
+                else:
+                    cmd.extend(["-f", output_format])
+
+                # Set audio codec for AAC explicitly
+                if output_format == "aac":
+                    cmd.extend(["-c:a", "aac"])
+                    # Optionally, add strict -2 for native encoder compatibility
+                    cmd.extend(["-strict", "-2"])
 
                 # Set bitrate if specified and applicable
                 if settings.get("bitrate") and output_format in [
@@ -469,13 +494,19 @@ class AudioConverter:
                             return False
 
                         if return_code != 0 and not self.cancel_flag:
-                            error_output = (
-                                process.stderr.read()
-                                if hasattr(process.stderr, "read") and process.stderr
-                                else ""
-                            )
+                            # Read all stderr output for diagnostics
+                            try:
+                                process.stderr.seek(0)
+                            except Exception:
+                                pass
+                            error_output = ""
+                            if process.stderr:
+                                try:
+                                    error_output = process.stderr.read()
+                                except Exception:
+                                    pass
                             logger.error(
-                                f"FFmpeg error (code {return_code}): {error_output}"
+                                f"FFmpeg error (code {return_code}):\n{error_output}"
                             )
                             return False
 
