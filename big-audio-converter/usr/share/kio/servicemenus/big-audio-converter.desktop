@@ -1,0 +1,40 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=audio/mpeg;audio/mp4;audio/x-wav;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/x-opus+ogg;audio/aac;audio/x-aac;audio/x-m4a;audio/x-ms-wma;audio/webm;audio/x-ape;audio/x-matroska;audio/ac3;audio/eac3;
+Actions=ConvertAudio;
+X-KDE-Priority=TopLevel
+X-KDE-StartupNotify=true
+Icon=big-audio-converter
+
+[Desktop Action ConvertAudio]
+Icon=big-audio-converter
+Name=Convert Audio
+Name[pt]=Converter Áudio
+Name[es]=Convertir Audio
+Name[bg]=Конвертирай Аудио
+Name[cs]=Převést Audio
+Name[da]=Konverter Lyd
+Name[de]=Audio Konvertieren
+Name[el]=Μετατροπή Ήχου
+Name[et]=Teisenda Heli
+Name[fi]=Muunna Ääni
+Name[fr]=Convertir Audio
+Name[he]=המר אודיו
+Name[hr]=Pretvori Audio
+Name[hu]=Hang Átalakítás
+Name[is]=Breyta Hljóði
+Name[it]=Converti Audio
+Name[ja]=オーディオを変換
+Name[ko]=오디오 변환
+Name[nl]=Audio Converteren
+Name[no]=Konverter Lyd
+Name[pl]=Konwertuj Audio
+Name[ro]=Convertește Audio
+Name[ru]=Конвертировать Аудио
+Name[sk]=Konvertovať Audio
+Name[sv]=Konvertera Ljud
+Name[tr]=Ses Dönüştür
+Name[uk]=Конвертувати Аудіо
+Name[zh]=转换音频
+Exec=big-audio-converter-gui %U

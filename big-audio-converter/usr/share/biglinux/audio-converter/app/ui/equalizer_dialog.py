@@ -2,11 +2,15 @@
 Equalizer dialog for audio preview configuration.
 """
 
+import gettext
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk
+
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 
 class EqualizerDialog(Gtk.Dialog):
@@ -14,7 +18,7 @@ class EqualizerDialog(Gtk.Dialog):
 
     def __init__(self, parent, player, **kwargs):
         super().__init__(
-            title="Equalizer",
+            title=_("Equalizer"),
             transient_for=parent,
             use_header_bar=1,
             modal=True,
@@ -24,7 +28,7 @@ class EqualizerDialog(Gtk.Dialog):
         self.player = player
 
         # Set up dialog - only Close button, no Apply
-        self.add_button("Close", Gtk.ResponseType.CLOSE)
+        self.add_button(_("Close"), Gtk.ResponseType.CLOSE)
         self.set_default_response(Gtk.ResponseType.CLOSE)
 
         # Create content area
@@ -37,16 +41,16 @@ class EqualizerDialog(Gtk.Dialog):
 
         # Create preset selector
         preset_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        preset_box.append(Gtk.Label(label="Preset:"))
+        preset_box.append(Gtk.Label(label=_("Preset:")))
 
         self.preset_combo = Gtk.ComboBoxText()
         for preset in [
-            "Flat",
-            "Bass Boost",
-            "Treble Boost",
-            "Vocal Boost",
-            "Rock",
-            "Dance",
+            _("Flat"),
+            _("Bass Boost"),
+            _("Treble Boost"),
+            _("Vocal Boost"),
+            _("Rock"),
+            _("Dance"),
         ]:
             self.preset_combo.append_text(preset)
         self.preset_combo.set_active(0)
@@ -93,7 +97,7 @@ class EqualizerDialog(Gtk.Dialog):
             content_area.append(row)
 
         # Add reset button
-        reset_button = Gtk.Button(label="Reset")
+        reset_button = Gtk.Button(label=_("Reset"))
         reset_button.connect("clicked", self._on_reset)
         reset_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         reset_box.set_halign(Gtk.Align.END)
@@ -107,14 +111,18 @@ class EqualizerDialog(Gtk.Dialog):
         """Apply selected equalizer preset."""
         preset_name = combo.get_active_text()
 
+        # Get translation function
+        translate = gettext.gettext
+
         # Define presets - these are internal equalizer presets, not conversion presets
+        # Values for bands: 60Hz, 150Hz, 400Hz, 1kHz, 2.4kHz, 6kHz, 16kHz
         presets = {
-            "Flat": [0, 0, 0, 0, 0, 0, 0],
-            "Bass Boost": [6, 6, 6, 4, 0, 0, 0],
-            "Treble Boost": [0, 0, 0, 0, 0, 2, 4],
-            "Vocal Boost": [0, 2, 4, 6, 6, 4, 2],
-            "Rock": [4, 2, -4, -6, -2, 2, 4],
-            "Dance": [6, 4, 2, 0, 0, -4, -6],
+            translate("Flat"): [0, 0, 0, 0, 0, 0, 0],
+            translate("Bass Boost"): [8, 6, 4, 2, 0, 0, 0],
+            translate("Treble Boost"): [0, 0, 0, 2, 4, 6, 8],
+            translate("Vocal Boost"): [-2, 0, 2, 6, 6, 4, 0],
+            translate("Rock"): [6, 4, -2, -4, -2, 3, 6],
+            translate("Dance"): [8, 6, 2, 0, 2, 4, 6],
         }
 
         # Apply preset values
@@ -125,7 +133,7 @@ class EqualizerDialog(Gtk.Dialog):
             for scale in self.band_scales.values():
                 scale.handler_block_by_func(self._on_scale_value_changed)
 
-            for i, (_, freq) in enumerate(self.bands):
+            for i, (band_name, freq) in enumerate(self.bands):
                 if i < len(values):
                     self.band_scales[freq].set_value(values[i])
 

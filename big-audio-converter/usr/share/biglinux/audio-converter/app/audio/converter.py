@@ -1,3 +1,5 @@
+# app/audio/converter.py
+
 """
 Audio converter module for handling audio conversion with ffmpeg.
 """
@@ -68,7 +70,14 @@ class AudioConverter:
     def convert_all_files(self, files, settings, progress_callback, finish_callback):
         """Convert a list of files with the given settings."""
         if not self.ffmpeg_path:
-            finish_callback(False, "ffmpeg not found. Please install FFmpeg.")
+            try:
+                from gi.repository import GLib
+
+                GLib.idle_add(
+                    finish_callback, False, "ffmpeg not found. Please install FFmpeg."
+                )
+            except ImportError:
+                finish_callback(False, "ffmpeg not found. Please install FFmpeg.")
             return
 
         try:
@@ -91,12 +100,29 @@ class AudioConverter:
             for i, file_path in enumerate(files):
                 if self.cancel_flag:
                     # If canceled, report partial success with successfully converted files
-                    if successful_files:
-                        finish_callback(
-                            True, "Conversion partially completed.", successful_files
-                        )
-                    else:
-                        finish_callback(False, "Conversion canceled.")
+                    try:
+                        from gi.repository import GLib
+
+                        if successful_files:
+                            GLib.idle_add(
+                                finish_callback,
+                                True,
+                                "Conversion partially completed.",
+                                successful_files,
+                            )
+                        else:
+                            GLib.idle_add(
+                                finish_callback, False, "Conversion canceled."
+                            )
+                    except ImportError:
+                        if successful_files:
+                            finish_callback(
+                                True,
+                                "Conversion partially completed.",
+                                successful_files,
+                            )
+                        else:
+                            finish_callback(False, "Conversion canceled.")
                     return
 
                 # Clone settings for each file to prevent interference
@@ -132,170 +158,147 @@ class AudioConverter:
                     )
 
             # All files processed, report success with list of converted files
-            if successful_files:
-                finish_callback(
-                    True,
-                    f"Successfully converted {len(successful_files)} of {total_files} files.",
-                    successful_files,
-                )
-            else:
-                finish_callback(False, "No files were successfully converted.")
+            try:
+                from gi.repository import GLib
+
+                if successful_files:
+                    GLib.idle_add(
+                        finish_callback,
+                        True,
+                        f"Successfully converted {len(successful_files)} of {total_files} files.",
+                        successful_files,
+                    )
+                else:
+                    GLib.idle_add(
+                        finish_callback, False, "No files were successfully converted."
+                    )
+            except ImportError:
+                if successful_files:
+                    finish_callback(
+                        True,
+                        f"Successfully converted {len(successful_files)} of {total_files} files.",
+                        successful_files,
+                    )
+                else:
+                    finish_callback(False, "No files were successfully converted.")
 
         except Exception as e:
             logger.exception(f"Error during conversion: {str(e)}")
-            finish_callback(False, f"Conversion error: {str(e)}")
+            try:
+                from gi.repository import GLib
+
+                GLib.idle_add(finish_callback, False, f"Conversion error: {str(e)}")
+            except ImportError:
+                finish_callback(False, f"Conversion error: {str(e)}")
 
     def convert_file(self, input_path, output_path, settings, progress_callback=None):
-        """Convert a single file with the given settings."""
+        """Convert a single file with the given settings.
+
+        Supports extracting specific audio tracks from video files using track metadata.
+        """
+        temp_dir = None
         try:
-            # Verify input file exists
-            if not os.path.exists(input_path):
-                logger.error(f"Input file does not exist: {input_path}")
+            # Check if this is a virtual track path (format: video_path::track1.ext)
+            track_metadata = None
+            actual_input_path = input_path
+
+            if "::" in input_path:
+                # This is a track extraction request
+                logger.info(f"Detected track extraction request: {input_path}")
+                if (
+                    "track_metadata" in settings
+                    and input_path in settings["track_metadata"]
+                ):
+                    track_metadata = settings["track_metadata"][input_path]
+                    actual_input_path = track_metadata["source_video"]
+                    logger.info(
+                        f"Extracting track {track_metadata['track_index']} from {actual_input_path}"
+                    )
+                else:
+                    logger.error(f"No track metadata found for {input_path}")
+                    return False
+
+            # Verify input file exists (use actual file, not virtual path)
+            if not os.path.exists(actual_input_path):
+                logger.error(f"Input file does not exist: {actual_input_path}")
                 return False
 
             # Handle file-specific cut segments from the file_markers dictionary
             file_has_segments = False
             if settings.get("cut_enabled") and "file_markers" in settings:
                 file_markers = settings.get("file_markers", {})
-
-                # Check if this specific file has markers
                 if input_path in file_markers and file_markers[input_path]:
-                    # Use this file's specific markers
-                    segment_count = len(file_markers[input_path])
-                    logger.info(
-                        f"File {input_path} has {segment_count} segments for cutting"
-                    )
                     settings["cut_segments"] = file_markers[input_path]
-                    file_has_segments = segment_count > 0
+                    file_has_segments = True
                 else:
-                    logger.info(f"No cut segments defined for {input_path}")
                     settings["cut_segments"] = []
                     file_has_segments = False
             else:
-                logger.info(f"Cutting is disabled for {input_path}")
                 file_has_segments = False
                 settings["cut_segments"] = []
 
-            # Continue with normal conversion using the file-specific settings
-            if not self.ffmpeg_path:
-                return False
+            # Log FFmpeg version for diagnostics
+            self._log_ffmpeg_version()
 
-            if not os.path.isfile(input_path):
-                logger.error(f"Input file not found: {input_path}")
-                return False
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
 
-            # Create a temporary directory for conversion
-            temp_dir = None
+            # Build ffmpeg command
+            cmd = [self.ffmpeg_path, "-y", "-i", actual_input_path]
 
-            try:
-                # Log FFmpeg version for diagnostics
-                self._log_ffmpeg_version()
+            if track_metadata:
+                track_index = track_metadata["track_index"]
+                cmd.extend(["-map", f"0:{track_index}"])
+                logger.info(f"Mapping audio stream 0:{track_index}")
 
-                # Always use strings for paths with FFmpeg to avoid issues with special chars
-                input_path_str = str(input_path)
+            # Handle copy mode
+            if settings["format"] == "copy":
+                cmd.extend(["-c:a", "copy"])
 
-                # Use the provided output path or generate a new one
-                if output_path is None:
-                    output_format = settings.get("format", "mp3")
-                    output_path = self._get_output_path(input_path, output_format)
+                # When copying from video files, force output format based on codec
+                # CRITICAL: -f must be added AFTER -c:a copy, but BEFORE output path
+                if track_metadata:
+                    _, output_ext = os.path.splitext(output_path)
+                    output_ext_lower = output_ext[1:].lower() if output_ext else ""
 
-                output_path_str = str(output_path)
-                output_format = settings.get(
-                    "format", os.path.splitext(output_path_str)[1][1:] or "mp3"
-                )
+                    format_map = {
+                        "eac3": "eac3",
+                        "ac3": "ac3",
+                        "dts": "dts",
+                        "flac": "flac",
+                        "aac": "adts",
+                        "mp3": "mp3",
+                        "opus": "opus",
+                        "ogg": "ogg",
+                        "m4a": "ipod",
+                        "wma": "asf",
+                    }
 
-                # Check input file size for diagnostics
-                try:
-                    input_size = os.path.getsize(input_path_str)
-                    logger.debug(f"Input file size: {input_size} bytes")
-                    if input_size == 0:
-                        logger.error("Input file is empty")
-                        return False
-                except Exception as e:
-                    logger.warning(f"Could not check input file size: {str(e)}")
+                    if output_ext_lower in format_map:
+                        cmd.extend(["-f", format_map[output_ext_lower]])
+                        logger.info(
+                            f"Forcing {format_map[output_ext_lower]} format for video track extraction"
+                        )
 
-                # Create a temporary directory with simple filenames to avoid special character issues
-                import shutil
-
-                temp_dir = tempfile.mkdtemp(prefix="audioconv_")
-                temp_input = os.path.join(
-                    temp_dir, f"input.{os.path.splitext(input_path)[1][1:] or 'mp3'}"
-                )
-                temp_output = os.path.join(temp_dir, f"output.{output_format}")
-
-                # Copy input file to temp directory
-                logger.debug(f"Copying input file to temporary location: {temp_input}")
-                try:
-                    shutil.copy2(input_path_str, temp_input)
-                    # Verify the copy was successful
-                    if not os.path.exists(temp_input):
-                        logger.error("Failed to copy input file to temp directory")
-                        return False
-                    temp_input_size = os.path.getsize(temp_input)
-                    logger.debug(f"Temp input file size: {temp_input_size} bytes")
-                except Exception as e:
-                    logger.error(
-                        f"Error copying input file to temp directory: {str(e)}"
-                    )
-                    return False
-
-                # Make sure the output directory exists
-                output_dir = os.path.dirname(output_path_str)
-                if output_dir and not os.path.exists(output_dir):
-                    os.makedirs(output_dir, exist_ok=True)
-
-                # Build ffmpeg command with simple temp paths
-                cmd = [self.ffmpeg_path, "-y"]  # Overwrite output file if exists
-
-                # Add input file (now the temp file with simple name)
-                cmd.extend(["-i", temp_input])
-
-                # Set up audio filters
                 audio_filters = []
-
-                # Volume adjustment
+            else:
+                audio_filters = []
                 if settings.get("volume", 1.0) != 1.0:
                     audio_filters.append(f"volume={settings['volume']}")
-
-                # Speed/tempo adjustment
                 if settings.get("speed", 1.0) != 1.0:
                     audio_filters.append(f"atempo={settings['speed']}")
-
-                # Noise reduction if enabled
                 if settings.get("noise_reduction", False) and self.arnndn_model_path:
-                    # Use single quotes for the model path in ffmpeg filter
                     audio_filters.append(f"arnndn=m='{self.arnndn_model_path}'")
-                elif (
-                    settings.get("noise_reduction", False)
-                    and not self.arnndn_model_path
-                ):
-                    logger.warning(
-                        "Noise reduction enabled, but ARNNDN model not found. Skipping FFmpeg noise reduction."
-                    )
-
-                # Normalization
                 if settings.get("normalize", False):
                     audio_filters.append("loudnorm=I=-16:LRA=11:TP=-1.5")
-
-                # Apply audio filters if any
                 if audio_filters:
                     cmd.extend(["-af", ",".join(audio_filters)])
-
-                # Add output format options
-                if output_format == "aac":
-                    # Use ADTS muxer for raw AAC output
-                    cmd.extend(["-f", "adts"])
+                if settings["format"] == "aac":
+                    cmd.extend(["-f", "adts", "-c:a", "aac", "-strict", "-2"])
                 else:
-                    cmd.extend(["-f", output_format])
-
-                # Set audio codec for AAC explicitly
-                if output_format == "aac":
-                    cmd.extend(["-c:a", "aac"])
-                    # Optionally, add strict -2 for native encoder compatibility
-                    cmd.extend(["-strict", "-2"])
-
-                # Set bitrate if specified and applicable
-                if settings.get("bitrate") and output_format in [
+                    cmd.extend(["-f", settings["format"]])
+                if settings.get("bitrate") and settings["format"] in [
                     "mp3",
                     "aac",
                     "ogg",
@@ -303,359 +306,180 @@ class AudioConverter:
                 ]:
                     cmd.extend(["-b:a", settings["bitrate"]])
 
-                self.cancel_requested = False
+            self.cancel_requested = False
 
-                # Handle cut functionality
-                if settings.get("cut_enabled") and file_has_segments:
-                    segments = settings["cut_segments"]
+            # Handle cut functionality
+            if file_has_segments:
+                segments = settings["cut_segments"]
+                if segments:
+                    temp_dir = tempfile.mkdtemp(prefix="audioconv_")
+                    segment_processor = SegmentProcessor(self.ffmpeg_path)
 
-                    segment_count = len(segments)
-                    logger.info(
-                        f"Processing {segment_count} cut segments for {os.path.basename(input_path)}"
+                    # Determine the actual output format for segment processing
+                    # In copy mode, use the OUTPUT file extension (not input)
+                    segment_output_format = settings["format"]
+                    segment_codec_params = None
+
+                    if segment_output_format == "copy":
+                        _, output_ext = os.path.splitext(output_path)
+                        segment_output_format = (
+                            output_ext[1:].lower() if output_ext else "mp3"
+                        )
+                    else:
+                        # Build codec parameters for encoding (not copy mode)
+                        segment_codec_params = []
+                        if settings["format"] == "aac":
+                            segment_codec_params.extend([
+                                "-f",
+                                "adts",
+                                "-c:a",
+                                "aac",
+                                "-strict",
+                                "-2",
+                            ])
+                        else:
+                            segment_codec_params.extend(["-f", settings["format"]])
+
+                        # Add bitrate if specified for supported formats
+                        if settings.get("bitrate") and settings["format"] in [
+                            "mp3",
+                            "aac",
+                            "ogg",
+                            "opus",
+                        ]:
+                            segment_codec_params.extend(["-b:a", settings["bitrate"]])
+
+                    processed_output = segment_processor.process_segments(
+                        actual_input_path,
+                        segments,
+                        segment_output_format,
+                        temp_dir,
+                        ",".join(audio_filters) if audio_filters else None,
+                        track_metadata.get("track_index") if track_metadata else None,
+                        output_path,  # Pass final output path for optimization
+                        segment_codec_params,  # Pass codec parameters for encoding
                     )
-
-                    # Ensure we only use valid segments
-                    valid_segments = [
-                        seg
-                        for seg in segments
-                        if "start" in seg
-                        and "stop" in seg
-                        and seg["start"] is not None
-                        and seg["stop"] is not None
-                    ]
-
-                    if valid_segments:
-                        logger.info(
-                            f"Found {len(valid_segments)} valid segments to process"
-                        )
-                        for i, segment in enumerate(valid_segments):
-                            if "start_str" in segment and "stop_str" in segment:
-                                logger.debug(
-                                    f"Segment {i + 1}: {segment['start_str']} to {segment['stop_str']}"
-                                )
-
-                        # Use the segment processor to handle all segments
-                        segment_processor = SegmentProcessor(self.ffmpeg_path)
-
-                        # Prepare audio filters string
-                        audio_filter_string = None
-                        if audio_filters:
-                            audio_filter_string = ",".join(audio_filters)
-
-                        # Process all segments and get resulting file
-                        processed_output = segment_processor.process_segments(
-                            temp_input,
-                            valid_segments,
-                            output_format,
-                            temp_dir,
-                            audio_filter_string,
-                        )
-
-                        # If processing was successful, update temp_output path
-                        if processed_output and os.path.exists(processed_output):
-                            logger.info(
-                                f"Successfully processed {len(valid_segments)} segments"
-                            )
-                            temp_output = processed_output
-
-                            # We've already done all the processing, no need for further FFmpeg commands
-                            # Skip to copying the file to the final destination
-                            if os.path.exists(temp_output) and not self.cancel_flag:
-                                # Copy the processed output to the final destination
-                                try:
-                                    shutil.copy2(temp_output, output_path_str)
-                                    logger.info(
-                                        f"Conversion with segments successful: {input_path_str} -> {output_path_str}"
-                                    )
-                                    return True
-                                except Exception as e:
-                                    logger.error(
-                                        f"Error copying segmented output file: {e}"
-                                    )
-                                    return False
-                        else:
-                            logger.error(
-                                "Segment processing failed, no output file produced"
-                            )
-                            return False
-                    else:
-                        logger.warning(
-                            "No valid segments found, proceeding with normal conversion"
-                        )
-                        # Continue with normal processing (code below)
-                        pass
-
-                # Normal conversion (either no cut enabled or no valid segments)
-                cmd.append(temp_output)
-                logger.info(
-                    f"Running normal conversion (no segments) for {os.path.basename(input_path)}"
-                )
-                logger.debug(f"FFmpeg command: {' '.join(cmd)}")
-
-                # Start the ffmpeg process with timeout to avoid hanging
-                try:
-                    # If this is a simple processing (not multi-segment), run it here
-                    if not (
-                        settings.get("cut_enabled")
-                        and settings.get("cut_segments")
-                        and len(settings["cut_segments"]) > 1
-                    ):
-                        process = subprocess.Popen(
-                            cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            universal_newlines=True,
-                            text=True,
-                        )
-
-                        # Get duration of input file for progress calculation
-                        duration = self._get_duration(temp_input) or 0
-                        logger.debug(f"File duration: {duration} seconds")
-
-                        # Set a timeout for reading process output (5 minutes) to prevent hanging
-                        import time
-
-                        start_time = time.time()
-                        max_conversion_time = 300  # 5 minutes in seconds
-
-                        # Read stderr output line by line to parse progress
-                        if progress_callback and duration > 0:
-                            stderr_lines = []
-                            while process.poll() is None:
-                                # Check for timeout
-                                if time.time() - start_time > max_conversion_time:
-                                    logger.error(
-                                        f"FFmpeg conversion timed out after {max_conversion_time} seconds"
-                                    )
-                                    process.terminate()
-                                    return False
-
-                                # Check for cancellation
-                                if self.cancel_flag:
-                                    process.terminate()
-                                    return False
-
-                                # Try to read a line with timeout
-                                try:
-                                    line = process.stderr.readline()
-                                    if not line:
-                                        time.sleep(0.1)
-                                        continue
-
-                                    # Save for debugging
-                                    stderr_lines.append(line)
-
-                                    # Extract time position from ffmpeg output
-                                    time_match = re.search(
-                                        r"time=(\d+):(\d+):(\d+\.\d+)", line
-                                    )
-                                    if time_match:
-                                        hours, minutes, seconds = map(
-                                            float, time_match.groups()
-                                        )
-                                        current_time = (
-                                            hours * 3600 + minutes * 60 + seconds
-                                        )
-                                        progress = min(current_time / duration, 1.0)
-                                        progress_callback(progress)
-                                except Exception as e:
-                                    logger.warning(
-                                        f"Error reading FFmpeg output: {str(e)}"
-                                    )
-
-                            # Save full stderr for debugging if needed
-                            if stderr_lines:
-                                logger.debug(
-                                    f"FFmpeg stderr output: {len(stderr_lines)} lines"
-                                )
-                        else:
-                            # If we can't report progress, just wait for completion with timeout
-                            try:
-                                process.wait(timeout=max_conversion_time)
-                            except subprocess.TimeoutExpired:
-                                logger.error(
-                                    f"FFmpeg conversion timed out after {max_conversion_time} seconds"
-                                )
-                                process.terminate()
-                                return False
-
-                        # Get the return code
-                        return_code = process.poll()
-                        if return_code is None:
-                            # Process is still running, try to terminate
-                            logger.warning(
-                                "FFmpeg process not properly terminated, forcing termination"
-                            )
-                            process.terminate()
-                            try:
-                                process.wait(timeout=5)
-                            except:
-                                process.kill()
-                            return False
-
-                        if return_code != 0 and not self.cancel_flag:
-                            # Read all stderr output for diagnostics
-                            try:
-                                process.stderr.seek(0)
-                            except Exception:
-                                pass
-                            error_output = ""
-                            if process.stderr:
-                                try:
-                                    error_output = process.stderr.read()
-                                except Exception:
-                                    pass
-                            logger.error(
-                                f"FFmpeg error (code {return_code}):\n{error_output}"
-                            )
-                            return False
-
-                        # Check if output file was created
-                        if not os.path.exists(temp_output):
-                            logger.error("FFmpeg did not create output file")
-                            return False
-
-                        # Check output file size
-                        try:
-                            output_size = os.path.getsize(temp_output)
-                            logger.debug(
-                                f"Temporary output file size: {output_size} bytes"
-                            )
-                            if output_size == 0:
-                                logger.error("FFmpeg created empty output file")
-                                return False
-                        except Exception as e:
-                            logger.warning(
-                                f"Could not check output file size: {str(e)}"
-                            )
-
-                        # If conversion was successful, copy the output file to the final destination
-                        if os.path.exists(temp_output) and not self.cancel_flag:
-                            # Check again if the output path exists (could have been created by another process)
-                            # and generate a new unique path if needed
-                            if os.path.exists(output_path_str):
-                                logger.debug(
-                                    "Output path already exists, finding alternative name"
-                                )
-                                output_path_str = self._get_safe_output_path(
-                                    output_path_str
-                                )
-
-                            logger.debug(
-                                f"Copying output file to final destination: {output_path_str}"
-                            )
-                            try:
-                                shutil.copy2(temp_output, output_path_str)
-                                # Verify the copy was successful
-                                if not os.path.exists(output_path_str):
-                                    logger.error(
-                                        "Failed to copy output file to destination"
-                                    )
-                                    return False
-
-                                # Verify file size after copy
-                                try:
-                                    final_size = os.path.getsize(output_path_str)
-                                    temp_size = os.path.getsize(temp_output)
-                                    if (
-                                        final_size == 0 or final_size < temp_size * 0.9
-                                    ):  # Allow for some metadata loss
-                                        logger.warning(
-                                            f"Output file size mismatch: temp={temp_size}, final={final_size}"
-                                        )
-                                except Exception as e:
-                                    logger.warning(
-                                        f"Could not verify output file size: {str(e)}"
-                                    )
-
-                            except Exception as e:
-                                logger.error(
-                                    f"Error copying output file to destination: {str(e)}"
-                                )
-                                return False
-
-                            logger.info(
-                                f"Conversion successful: {input_path_str} -> {output_path_str}"
-                            )
-                            return True
-
-                        return not self.cancel_flag
-
-                    else:
-                        # For multi-segment processing, we've already done everything
-                        # Copy the concatenated output to the destination
-                        if os.path.exists(temp_output) and not self.cancel_flag:
-                            # Check again if the output path exists
-                            if os.path.exists(output_path_str):
-                                logger.debug(
-                                    "Output path already exists, finding alternative name"
-                                )
-                                output_path_str = self._get_safe_output_path(
-                                    output_path_str
-                                )
-
-                            logger.debug(
-                                f"Copying output file to final destination: {output_path_str}"
-                            )
-                            try:
-                                shutil.copy2(temp_output, output_path_str)
-                                # Verify the copy was successful
-                                if not os.path.exists(output_path_str):
-                                    logger.error(
-                                        "Failed to copy output file to destination"
-                                    )
-                                    return False
-
-                                # Log success
-                                logger.info(
-                                    f"Conversion successful: {input_path_str} -> {output_path_str}"
-                                )
-                                return True
-
-                            except Exception as e:
-                                logger.error(
-                                    f"Error copying output file to destination: {str(e)}"
-                                )
-                                return False
-
-                        # If we don't have an output file, something went wrong
-                        if not os.path.exists(temp_output):
-                            logger.error(
-                                "Multi-segment processing failed to produce output file"
-                            )
-                            return False
-
-                        return not self.cancel_flag
-
-                except Exception as ffmpeg_error:
-                    logger.exception(f"FFmpeg process error: {str(ffmpeg_error)}")
-                    return False
-
-            except Exception as e:
-                logger.exception(f"Error during conversion: {str(e)}")
-                return False
-            finally:
-                # Clean up temporary directory
-                if temp_dir and os.path.exists(temp_dir):
-                    try:
+                    if processed_output and os.path.exists(processed_output):
                         import shutil
 
-                        shutil.rmtree(temp_dir)
-                        logger.debug("Temporary directory cleaned up")
-                    except Exception as e:
-                        logger.error(f"Failed to clean up temp directory: {e}")
+                        # Check if output is already at final destination (optimization path)
+                        if os.path.abspath(processed_output) == os.path.abspath(
+                            output_path
+                        ):
+                            logger.info(
+                                f"Conversion with segments successful (direct): {input_path} -> {output_path}"
+                            )
+                            # Still clean up temp directory if it exists
+                            if temp_dir and os.path.exists(temp_dir):
+                                try:
+                                    shutil.rmtree(temp_dir)
+                                    temp_dir = None
+                                    logger.debug("Temporary directory cleaned up")
+                                except Exception as cleanup_err:
+                                    logger.warning(
+                                        f"Failed to clean up temp directory: {cleanup_err}"
+                                    )
+                            return True
 
-                # Clear current process reference
-                self.current_process = None
+                        # Otherwise copy from temp to final destination
+                        try:
+                            shutil.copy2(processed_output, output_path)
+                            logger.info(
+                                f"Conversion with segments successful: {input_path} -> {output_path}"
+                            )
+                        finally:
+                            # Clean up temp directory immediately after copying
+                            if temp_dir and os.path.exists(temp_dir):
+                                try:
+                                    shutil.rmtree(temp_dir)
+                                    temp_dir = None  # Mark as cleaned
+                                    logger.debug(
+                                        "Temporary directory cleaned up after segment processing"
+                                    )
+                                except Exception as cleanup_err:
+                                    logger.warning(
+                                        f"Failed to clean up temp directory: {cleanup_err}"
+                                    )
+                        return True
+                    else:
+                        logger.error("Segment processing failed.")
+                        # Clean up temp directory on failure too
+                        if temp_dir and os.path.exists(temp_dir):
+                            try:
+                                import shutil
+
+                                shutil.rmtree(temp_dir)
+                                temp_dir = None
+                            except Exception as cleanup_err:
+                                logger.warning(
+                                    f"Failed to clean up temp directory: {cleanup_err}"
+                                )
+                        return False
+                else:
+                    # Fall through to normal conversion if no valid segments
+                    pass
+
+            # Normal conversion (no segments)
+            cmd.append(output_path)
+            print("\n=== FFMPEG COMMAND ===")
+            print(f"{' '.join(cmd)}")
+            print("======================\n")
+            logger.info("=== FFMPEG COMMAND ===")
+            logger.info(f"{' '.join(cmd)}")
+            logger.info("======================")
+            logger.debug(f"FFmpeg command: {' '.join(cmd)}")
+
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                text=True,
+            )
+            self.current_process = process
+
+            duration = self._get_duration(actual_input_path) or 0
+            if progress_callback and duration > 0:
+                for line in process.stderr:
+                    if self.cancel_flag:
+                        process.terminate()
+                        return False
+                    time_match = re.search(r"time=(\d+):(\d+):(\d+\.\d+)", line)
+                    if time_match:
+                        hours, minutes, seconds = map(float, time_match.groups())
+                        current_time = hours * 3600 + minutes * 60 + seconds
+                        progress = min(current_time / duration, 1.0)
+                        progress_callback(progress)
+
+            process.wait()
+            self.current_process = None
+
+            if process.returncode != 0 and not self.cancel_flag:
+                logger.error(
+                    f"FFmpeg error (code {process.returncode}):\n{process.stderr.read()}"
+                )
+                return False
+
+            if not os.path.exists(output_path):
+                logger.error("FFmpeg did not create output file")
+                return False
+
+            logger.info(f"Conversion successful: {input_path} -> {output_path}")
+            return not self.cancel_flag
 
         except Exception as e:
-            logger.error(f"Error during conversion: {str(e)}")
+            logger.exception(f"Error during conversion: {str(e)}")
             return False
         finally:
-            # Cleanup any temporary resources
-            pass
+            self.current_process = None
+            if temp_dir and os.path.exists(temp_dir):
+                import shutil
 
-        return True  # Return success if we reach here
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.debug("Temporary directory cleaned up")
+                except Exception as e:
+                    logger.error(f"Failed to clean up temp directory: {e}")
 
     def _log_ffmpeg_version(self):
         """Log FFmpeg version for diagnostics."""
@@ -708,27 +532,55 @@ class AudioConverter:
 
     def _get_output_path(self, input_path, output_format):
         """Generate the output path based on input path and format."""
-        # Use os.path for reliable path manipulation with special characters
-        input_dir = os.path.dirname(input_path)
-        input_filename = os.path.basename(input_path)
+        # Handle virtual track paths (format: video_path::trackN.ext)
+        if "::" in input_path:
+            # Extract the video path and track filename
+            video_path, track_filename = input_path.split("::", 1)
+            # Use the video directory as the output directory
+            input_dir = os.path.dirname(video_path)
+            # Get video filename without extension
+            video_basename = os.path.splitext(os.path.basename(video_path))[0]
+            # Get track number/name from track filename
+            track_base, track_ext = os.path.splitext(track_filename)
+            # Combine video name with track name
+            filename_base = f"{video_basename}-{track_base}"
+            input_extension = track_ext[1:].lower() if track_ext else ""
+        else:
+            # Use os.path for reliable path manipulation with special characters
+            input_dir = os.path.dirname(input_path)
+            input_filename = os.path.basename(input_path)
 
-        # Get filename parts safely
-        filename_base, ext = os.path.splitext(input_filename)
-        input_extension = ext[1:].lower() if ext else ""
+            # Get filename parts safely
+            filename_base, ext = os.path.splitext(input_filename)
+            input_extension = ext[1:].lower() if ext else ""
 
         # Create output filename with new extension
-        output_filename = f"{filename_base}.{output_format}"
+        if output_format == "copy":
+            output_filename = f"{filename_base}.{input_extension}"
+        else:
+            output_filename = f"{filename_base}.{output_format}"
 
         # If the input and output formats are the same, add '-converted' suffix
-        if output_format.lower() == input_extension:
+        if output_format.lower() == input_extension and output_format != "copy":
             output_filename = f"{filename_base}-converted.{output_format}"
 
         output_path = os.path.join(input_dir, output_filename)
 
+        # CRITICAL: Prevent overwriting input file - if output == input, always add suffix
+        if "::" not in input_path and output_path == input_path:
+            if output_format == "copy":
+                output_filename = f"{filename_base}-copy.{input_extension}"
+            else:
+                output_filename = f"{filename_base}-converted.{output_format}"
+            output_path = os.path.join(input_dir, output_filename)
+
         # If the file already exists, append a sequence number
         counter = 1
-        while os.path.exists(output_path) and output_path != input_path:
-            output_filename = f"{filename_base}-{counter}.{output_format}"
+        while os.path.exists(output_path):
+            if output_format == "copy":
+                output_filename = f"{filename_base}-copy-{counter}.{input_extension}"
+            else:
+                output_filename = f"{filename_base}-converted-{counter}.{output_format}"
             output_path = os.path.join(input_dir, output_filename)
             counter += 1
 
@@ -738,39 +590,6 @@ class AudioConverter:
 
         return output_path
 
-    def _get_safe_output_path(self, path):
-        """Generate a unique filename by adding a number to avoid overwriting."""
-        if not os.path.exists(path):
-            return path
-
-        directory = os.path.dirname(path)
-        filename = os.path.basename(path)
-        name, ext = os.path.splitext(filename)
-
-        # Check if name already ends with -N pattern
-        match = re.search(r"-(\d+)$", name)
-        if match:
-            base = name[: match.start()]
-            num = int(match.group(1)) + 1
-        else:
-            base = name
-            num = 1
-
-        # Try new filenames with incrementing numbers
-        while True:
-            new_name = f"{base}-{num}{ext}"
-            new_path = os.path.join(directory, new_name)
-            if not os.path.exists(new_path):
-                return new_path
-            num += 1
-            # Safety check
-            if num > 999:
-                # Just use timestamp as last resort
-                import time
-
-                new_name = f"{base}-{int(time.time())}{ext}"
-                return os.path.join(directory, new_name)
-
     def cancel_conversion(self):
         """Cancel the current conversion process."""
         self.cancel_flag = True
@@ -779,6 +598,88 @@ class AudioConverter:
                 self.current_process.terminate()
             except Exception as e:
                 logger.error(f"Error terminating process: {str(e)}")
+
+    def get_file_metadata(self, file_path):
+        """Extract file metadata like size, duration, format."""
+        info = {}
+
+        # Get file size
+        try:
+            size_bytes = os.path.getsize(file_path)
+            if size_bytes < 1024 * 1024:  # Less than 1MB
+                info["size"] = f"{size_bytes / 1024:.1f} KB"
+            else:
+                info["size"] = f"{size_bytes / (1024 * 1024):.1f} MB"
+        except Exception as e:
+            logger.warning(f"Could not get file size: {e}")
+
+        # Get file format/extension
+        try:
+            ext = os.path.splitext(file_path)[1]
+            if ext.startswith("."):
+                ext = ext[1:]
+            info["format"] = ext.upper()
+        except Exception as e:
+            logger.warning(f"Could not get file extension: {e}")
+
+        # Get audio duration and bitrate using ffprobe if available
+        try:
+            if self.ffmpeg_path:
+                ffprobe_path = self.ffmpeg_path.replace("ffmpeg", "ffprobe")
+
+                if not os.path.exists(ffprobe_path):
+                    ffprobe_path = "ffprobe"  # Try using command directly
+
+                # Get duration
+                cmd_duration = [
+                    ffprobe_path,
+                    "-v",
+                    "error",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    file_path,
+                ]
+
+                result = subprocess.run(
+                    cmd_duration, capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    duration_secs = float(result.stdout.strip())
+                    # Format duration as MM:SS
+                    minutes = int(duration_secs // 60)
+                    seconds = int(duration_secs % 60)
+                    info["duration"] = f"{minutes}:{seconds:02d}"
+
+                # Get bitrate
+                cmd_bitrate = [
+                    ffprobe_path,
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "a:0",
+                    "-show_entries",
+                    "stream=bit_rate",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    file_path,
+                ]
+
+                result = subprocess.run(
+                    cmd_bitrate, capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    try:
+                        # Convert bits/s to kbps
+                        bitrate = int(result.stdout.strip()) // 1000
+                        info["bitrate"] = f"{bitrate} kbps"
+                    except ValueError:
+                        pass
+        except Exception as e:
+            logger.warning(f"Could not get file audio metadata: {e}")
+
+        return info
 
     def cleanup(self):
         """Clean up any resources."""

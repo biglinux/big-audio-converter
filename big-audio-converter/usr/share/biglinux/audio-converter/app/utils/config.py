@@ -31,16 +31,20 @@ class AppConfig:
 
         # Default settings
         self.defaults = {
-            _("last_directory"): str(Path.home()),
-            _("default_output_directory"): str(Path.home()),
-            _("default_format"): "mp3",
-            _("default_preset"): _("MP3 Standard"),
-            _("auto_play_preview"): True,
-            _("confirm_overwrite"): True,
+            "last_directory": str(Path.home()),
+            "default_output_directory": str(Path.home()),
+            "default_format": "mp3",
+            "default_preset": _("MP3 Standard"),
+            "auto_play_preview": True,
+            "confirm_overwrite": True,
+            "show_welcome_dialog": True,
         }
 
         # Load configuration
         self.config = self.load_config()
+
+        # Track which keys have been modified in this instance
+        self.modified_keys = set()
 
     def load_config(self):
         """Load configuration from file or create defaults if not found."""
@@ -67,6 +71,18 @@ class AppConfig:
     def save_config(self, config=None):
         """Save configuration to file."""
         if config is None:
+            # Reload the file first to get latest values from other instances
+            try:
+                if os.path.exists(self.config_file):
+                    with open(self.config_file, "r") as f:
+                        file_config = json.load(f)
+                    # Update our config with file values, but preserve our modified keys
+                    for key, value in file_config.items():
+                        if key not in self.modified_keys:
+                            self.config[key] = value
+            except Exception as e:
+                logger.warning(f"Could not reload config before save: {str(e)}")
+
             config = self.config
 
         try:
@@ -85,4 +101,5 @@ class AppConfig:
     def set(self, key, value):
         """Set a configuration value and save it."""
         self.config[key] = value
-        self.save_config()
+        self.modified_keys.add(key)  # Track that this key was modified
+        return self.save_config()

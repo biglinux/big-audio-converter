@@ -19,6 +19,7 @@ from gi.repository import Gtk, Adw, Gio
 
 # Application imports
 from app.ui.main_window import MainWindow
+from app.ui.welcome_dialog import WelcomeDialog
 from app.utils.config import AppConfig
 from app.audio.player import AudioPlayer
 from app.audio.converter import AudioConverter
@@ -52,8 +53,10 @@ class Application(Adw.Application):
             self.project_root, "arnndn-models", "std.rnnn"
         )
         if not os.path.exists(self.arnndn_model_path):
-            logging.error(
-                _(f"ARNNDN model not found at {self.arnndn_model_path}. Noise reduction will use fallback or be skipped if it's the only option.")
+            # Model is optional - noise reduction just won't be available
+            logging.debug(
+                f"ARNNDN model not found at {self.arnndn_model_path}. "
+                "Noise reduction will not be available."
             )
             self.arnndn_model_path = None  # Ensure it's None if not found
 
@@ -66,7 +69,7 @@ class Application(Adw.Application):
         actions = [
             ("quit", self.on_quit_action),
             ("about", self.on_about_action),
-            ("preferences", self.on_preferences_action),
+            ("show-welcome", self.on_show_welcome_action),
         ]
         for name, callback in actions:
             action = Gio.SimpleAction.new(name, None)
@@ -78,31 +81,39 @@ class Application(Adw.Application):
         win = self.props.active_window
         if not win:
             win = MainWindow(application=self)
+            # Show welcome dialog on first run
+            if WelcomeDialog.should_show_welcome():
+                self.show_welcome_dialog(win)
         win.present()
 
-    def on_quit_action(self, *_):
+    def show_welcome_dialog(self, parent_window=None):
+        """Show the welcome dialog"""
+        if parent_window is None:
+            parent_window = self.props.active_window
+        welcome = WelcomeDialog(parent_window)
+        welcome.present()
+
+    def on_quit_action(self, *args):
         """Handle the app.quit action."""
         self.quit()
 
-    def on_about_action(self, *_):
+    def on_about_action(self, *args):
         """Show the about dialog with the system 'big-audio-converter' icon."""
         about = Adw.AboutWindow(
             transient_for=self.props.active_window,
             application_name=_("Audio Converter"),
             application_icon="big-audio-converter",  # Use system icon
-            developer_name=_("Audio Converter Team"),
-            version="1.0.0",
-            developers=[_("Audio Converter Team")],
-            copyright=_("© 2023 Audio Converter Team"),
-            website="https://github.com/audio-converter",
+            developer_name=_("BigLinux Team"),
+            version="3.0.0",
+            developers=[_("BigLinux Team")],
+            website="https://github.com/biglinux/big-audio-converter",
             license_type=Gtk.License.GPL_3_0,
         )
         about.present()
 
-    def on_preferences_action(self, *_):
-        """Show the preferences dialog."""
-        # TODO: Implement preferences dialog
-        pass
+    def on_show_welcome_action(self, *args):
+        """Show the welcome dialog."""
+        self.show_welcome_dialog()
 
 
 def main():
