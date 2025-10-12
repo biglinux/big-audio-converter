@@ -100,10 +100,10 @@ class FileQueueRow(Adw.ActionRow):
         menu_model.append(_("Delete File"), "row.delete")
 
         # Open containing folder action
-        menu_model.append("Open Containing Folder", "row.open_folder")
+        menu_model.append(_("Open Containing Folder"), "row.open_folder")
 
         # More information action
-        menu_model.append("More Information...", "row.info")
+        menu_model.append(_("More Information..."), "row.info")
 
         menu.set_menu_model(menu_model)
         menu.set_parent(self)
@@ -188,7 +188,7 @@ class FileQueueRow(Adw.ActionRow):
         # Copy button
         copy_button = Gtk.Button()
         copy_button.set_icon_name("edit-copy-symbolic")
-        copy_button.set_tooltip_text("Copy information to clipboard")
+        copy_button.set_tooltip_text(_("Copy information to clipboard"))
         copy_button.add_css_class("flat")
         header.pack_end(copy_button)
 
@@ -476,12 +476,12 @@ class FileQueueRow(Adw.ActionRow):
 
                 # Add basic group with file path info
                 basic_items = [("Path", actual_path)]
-                basic_group = self._create_info_group("File Details", basic_items)
+                basic_group = self._create_info_group(_("File Details"), basic_items)
                 main_box.append(basic_group)
 
                 if audio_props:
                     audio_group = self._create_info_group(
-                        "Audio Properties", audio_props
+                        _("Audio Properties"), audio_props
                     )
                     main_box.append(audio_group)
 
@@ -522,7 +522,7 @@ class FileQueueRow(Adw.ActionRow):
 
                     if metadata_items:
                         metadata_group = self._create_info_group(
-                            "Metadata Tags", metadata_items
+                            _("Metadata Tags"), metadata_items
                         )
                         main_box.append(metadata_group)
 
@@ -599,7 +599,7 @@ class FileQueueRow(Adw.ActionRow):
             # Copy button for this row
             copy_btn = Gtk.Button()
             copy_btn.set_icon_name("edit-copy-symbolic")
-            copy_btn.set_tooltip_text("Copy value")
+            copy_btn.set_tooltip_text(_("Copy value"))
             copy_btn.add_css_class("flat")
             copy_btn.add_css_class("circular")
             copy_btn.set_valign(Gtk.Align.CENTER)
@@ -1340,8 +1340,8 @@ class FileQueue(Gtk.Box):
                 "Are you sure you want to delete '{0}'? This action cannot be undone and the file will be permanently deleted from your disk."
             ).format(filename),
         )
-        dialog.add_response("cancel", "Cancel")
-        dialog.add_response("delete", "Delete")
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("delete", _("Delete"))
         dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response("cancel")
         dialog.set_close_response("cancel")
@@ -1372,7 +1372,7 @@ class FileQueue(Gtk.Box):
                     heading=_("Error Deleting File"),
                     body=f"Could not delete the file: {str(e)}",
                 )
-                error_dialog.add_response("ok", "OK")
+                error_dialog.add_response("ok", _("OK"))
                 error_dialog.present()
 
     def remove_file(self, index):
