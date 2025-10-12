@@ -1966,7 +1966,7 @@ class AudioVisualizer(Gtk.DrawingArea):
 
             # Draw confirmation message with more visible background
             cr.set_source_rgba(0, 0, 0, 0.7)  # Black background for text
-            msg = "Confirm selection?"
+            msg = _("Confirm selection?")
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
             cr.set_font_size(14)
             text_extents = cr.text_extents(msg)
@@ -2027,7 +2027,7 @@ class AudioVisualizer(Gtk.DrawingArea):
 
             # Draw delete message with background - MOVED LOWER
             cr.set_source_rgba(0, 0, 0, 0.7)  # Black background
-            msg = f"Delete segment #{self.highlighted_pair + 1}?"
+            msg = _("Delete segment #{}?").format(self.highlighted_pair + 1)
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
             cr.set_font_size(14)
             text_extents = cr.text_extents(msg)
@@ -2079,7 +2079,7 @@ class AudioVisualizer(Gtk.DrawingArea):
                 button_width,
                 button_height,
                 (0.2, 0.4, 0.8),  # Blue
-                "Cancel",
+                _("Cancel"),
                 corner_radius,
             )
 
@@ -2091,7 +2091,7 @@ class AudioVisualizer(Gtk.DrawingArea):
                 button_width,
                 button_height,
                 (0.8, 0.2, 0.2),  # Red
-                "Delete",
+                _("Delete"),
                 corner_radius,
             )
 
@@ -2104,7 +2104,7 @@ class AudioVisualizer(Gtk.DrawingArea):
                     button_width,
                     button_height,
                     (0.6, 0.1, 0.1),  # Dark red
-                    "Delete All",
+                    _("Delete All"),
                     corner_radius,
                 )
 
@@ -2117,7 +2117,7 @@ class AudioVisualizer(Gtk.DrawingArea):
 
             # Draw confirmation message with background - MOVED LOWER
             cr.set_source_rgba(0, 0, 0, 0.7)  # Black background
-            msg = "Delete ALL segments? This cannot be undone."
+            msg = _("Delete ALL segments? This cannot be undone.")
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
             cr.set_font_size(14)
             text_extents = cr.text_extents(msg)
@@ -2159,7 +2159,7 @@ class AudioVisualizer(Gtk.DrawingArea):
                 button_width,
                 button_height,
                 (0.2, 0.4, 0.8),  # Blue
-                "Cancel",
+                _("Cancel"),
                 corner_radius,
             )
 
@@ -2171,7 +2171,7 @@ class AudioVisualizer(Gtk.DrawingArea):
                 button_width,
                 button_height,
                 (0.6, 0.1, 0.1),  # Dark red
-                "Confirm",
+                _("Confirm"),
                 corner_radius,
             )
 
@@ -2797,7 +2797,7 @@ class AudioVisualizer(Gtk.DrawingArea):
             cr.set_source_rgba(0.7, 0.8, 1.0, 0.9)  # Brighter blue-white
             cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
             cr.set_font_size(10)
-            label = "SEGMENT EDITING ZONE"
+            label = _("SEGMENT EDITING ZONE")
             text_extents = cr.text_extents(label)
 
             # Draw text shadow for better readability

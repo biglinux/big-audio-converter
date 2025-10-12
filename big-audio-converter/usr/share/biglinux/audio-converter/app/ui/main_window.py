@@ -266,7 +266,7 @@ class MainWindow(Adw.ApplicationWindow):
             # Do not expand icon
             app_icon.set_hexpand(False)
             center_box.set_start_widget(app_icon)
-            title_label = Gtk.Label(label="Audio Converter")
+            title_label = Gtk.Label(label=_("Audio Converter"))
             title_label.set_halign(Gtk.Align.CENTER)
             title_label.set_valign(Gtk.Align.START)
             title_label.set_hexpand(True)
@@ -275,7 +275,7 @@ class MainWindow(Adw.ApplicationWindow):
             left_header.set_title_widget(center_box)
         else:
             title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            title_label = Gtk.Label(label="Audio Converter")
+            title_label = Gtk.Label(label=_("Audio Converter"))
             title_box.append(title_label)
             # Add an expanding box to push controls to the left
             expander = Gtk.Box()
@@ -332,7 +332,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.clear_queue_button.connect("clicked", self.on_clear_queue)
         self.clear_queue_button.add_css_class("destructive-action")
         self.clear_queue_button.set_visible(False)  # Initially hidden
-        self.header_queue_size_label = Gtk.Label(label="0 files")
+        self.header_queue_size_label = Gtk.Label(label=_("0 files"))
         self.header_queue_size_label.add_css_class("caption")
         self.header_queue_size_label.add_css_class("dim-label")
         self.header_queue_size_label.set_visible(False)
@@ -343,8 +343,8 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Create menu button and add to right side of header directly
         menu = Gio.Menu()
-        menu.append("Show Welcome Screen", "app.show-welcome")
-        menu.append("About", "app.about")
+        menu.append(_("Show Welcome Screen"), "app.show-welcome")
+        menu.append(_("About"), "app.about")
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu)
         # If window buttons are on the left, add app icon after menu button (rightmost)
         if window_buttons_left:
@@ -911,7 +911,7 @@ class MainWindow(Adw.ApplicationWindow):
         """Start conversion process."""
         if not self.file_queue.has_files():
             self._show_error_dialog(
-                "No files to convert", "Please add at least one file to convert."
+                _("No files to convert"), _("Please add at least one file to convert.")
             )
             return
 
@@ -999,15 +999,15 @@ class MainWindow(Adw.ApplicationWindow):
         # Create the dialog with our custom content
         self.progress_dialog = Adw.MessageDialog(
             transient_for=self,
-            title="Converting Files",
-            body=f"Converting file 1 of {total_files}",
+            title=_("Converting Files"),
+            body=_("Converting file 1 of {0}").format(total_files),
         )
 
         # Set the extra child (content area)
         self.progress_dialog.set_extra_child(content_box)
 
         # Add a cancel button
-        self.progress_dialog.add_response("cancel", "Cancel")
+        self.progress_dialog.add_response("cancel", _("Cancel"))
         self.progress_dialog.connect("response", self._on_conversion_cancel)
 
         # Show the dialog
@@ -1059,8 +1059,9 @@ class MainWindow(Adw.ApplicationWindow):
 
                         # Update dialog message with percentage
                         self.progress_dialog.set_body(
-                            f"Converting file {file_index + 1} of {total_files} ({percent}%)\n"
-                            f"Current file: {filename}"
+                            _(
+                                "Converting file {0} of {1} ({2}%)\nCurrent file: {3}"
+                            ).format(file_index + 1, total_files, percent, filename)
                         )
             except Exception as e:
                 logger.error(f"Error updating progress UI: {e}")
@@ -1088,8 +1089,8 @@ class MainWindow(Adw.ApplicationWindow):
         else:
             GLib.idle_add(
                 self._show_error_dialog,
-                "Conversion Error",
-                error_message or "An error occurred during conversion.",
+                _("Conversion Error"),
+                error_message or _("An error occurred during conversion."),
             )
 
     def _remove_converted_files(self, converted_files):
@@ -1192,13 +1193,13 @@ class MainWindow(Adw.ApplicationWindow):
     def _show_error_dialog(self, title, message):
         """Show an error dialog."""
         dialog = Adw.MessageDialog(transient_for=self, title=title, body=message)
-        dialog.add_response("ok", "OK")
+        dialog.add_response("ok", _("OK"))
         dialog.present()
 
     def _show_info_dialog(self, title, message):
         """Show an information dialog."""
         dialog = Adw.MessageDialog(transient_for=self, title=title, body=message)
-        dialog.add_response("ok", "OK")
+        dialog.add_response("ok", _("OK"))
         dialog.present()
 
     def _show_copy_mode_info(self):
@@ -1376,11 +1377,11 @@ class MainWindow(Adw.ApplicationWindow):
         """Show confirmation dialog before clearing the queue."""
         dialog = Adw.MessageDialog(
             transient_for=self,
-            title="Clear Queue",
-            body="Are you sure you want to clear the queue?",
+            title=_("Clear Queue"),
+            body=_("Are you sure you want to clear the queue?"),
         )
-        dialog.add_response("cancel", "Cancel")
-        dialog.add_response("clear", "Clear")
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("clear", _("Clear"))
         dialog.set_response_appearance("clear", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.connect("response", self._on_clear_queue_response)
         dialog.present()
@@ -1505,11 +1506,11 @@ class MainWindow(Adw.ApplicationWindow):
         """Handle adding files through dialog."""
         # Create the file dialog with native dialog support
         dialog = Gtk.FileDialog()
-        dialog.set_title("Select Audio or Video Files")
+        dialog.set_title(_("Select Audio or Video Files"))
 
         # Create file filters
         media_filter = Gtk.FileFilter()
-        media_filter.set_name("Audio and Video files")
+        media_filter.set_name(_("Audio and Video files"))
 
         # Add common audio file extensions - make them lowercase to ensure matching
         audio_extensions = [
@@ -1559,7 +1560,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Add all files filter
         all_filter = Gtk.FileFilter()
-        all_filter.set_name("All files")
+        all_filter.set_name(_("All files"))
         all_filter.add_pattern("*")
 
         # Add filters to the dialog
@@ -2597,8 +2598,8 @@ class MainWindow(Adw.ApplicationWindow):
         """Show help dialog with waveform cutting instructions."""
         dialog = Adw.MessageDialog(
             transient_for=self,
-            title="Waveform Cutting Help",
-            body="Learn how to use the waveform cutting feature:",
+            title=_("Waveform Cutting Help"),
+            body=_("Learn how to use the waveform cutting feature:"),
         )
 
         # Create content box for dialog
@@ -2617,8 +2618,10 @@ class MainWindow(Adw.ApplicationWindow):
         markers_box.append(markers_icon)
 
         markers_text = Gtk.Label(
-            label="Click on the waveform to set markers.\n"
-            + "First click sets start, second click sets end."
+            label=_(
+                "Click on the waveform to set markers.\n"
+                + "First click sets start, second click sets end."
+            )
         )
         markers_text.set_halign(Gtk.Align.START)
         markers_text.set_wrap(True)
@@ -2633,8 +2636,10 @@ class MainWindow(Adw.ApplicationWindow):
         segments_box.append(segments_icon)
 
         segments_text = Gtk.Label(
-            label="After confirming a segment, you can add more\n"
-            + "segments by clicking again on the waveform."
+            label=_(
+                "After confirming a segment, you can add more\n"
+                + "segments by clicking again on the waveform."
+            )
         )
         segments_text.set_halign(Gtk.Align.START)
         segments_text.set_wrap(True)
@@ -2649,8 +2654,10 @@ class MainWindow(Adw.ApplicationWindow):
         remove_box.append(remove_icon)
 
         remove_text = Gtk.Label(
-            label="To remove a segment, click on it in the waveform\n"
-            + "and confirm deletion when prompted."
+            label=_(
+                "To remove a segment, click on it in the waveform\n"
+                + "and confirm deletion when prompted."
+            )
         )
         remove_text.set_halign(Gtk.Align.START)
         remove_text.set_wrap(True)
@@ -2661,7 +2668,7 @@ class MainWindow(Adw.ApplicationWindow):
         dialog.set_extra_child(content)
 
         # Add close button
-        dialog.add_response("close", "Close")
+        dialog.add_response("close", _("Close"))
 
         # Show the dialog
         dialog.present()

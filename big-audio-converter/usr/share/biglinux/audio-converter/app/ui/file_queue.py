@@ -2,8 +2,12 @@
 File queue UI component for managing files to be converted.
 """
 
+import gettext
 import gi
 import os
+
+gettext.textdomain("big-audio-converter")
+_ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -93,7 +97,7 @@ class FileQueueRow(Adw.ActionRow):
         menu_model = Gio.Menu()
 
         # Delete file from filesystem action
-        menu_model.append("Delete File", "row.delete")
+        menu_model.append(_("Delete File"), "row.delete")
 
         # Open containing folder action
         menu_model.append("Open Containing Folder", "row.open_folder")
@@ -172,7 +176,7 @@ class FileQueueRow(Adw.ActionRow):
         dialog = Gtk.Window(
             transient_for=widget,
             modal=True,
-            title="File Information",
+            title=_("File Information"),
             default_width=800,
             default_height=600,
         )
@@ -523,20 +527,20 @@ class FileQueueRow(Adw.ActionRow):
                         main_box.append(metadata_group)
 
         except subprocess.TimeoutExpired:
-            error_label = Gtk.Label(label="Timeout getting metadata")
+            error_label = Gtk.Label(label=_("Timeout getting metadata"))
             error_label.add_css_class("dim-label")
             error_label.set_margin_top(12)
             error_label.set_margin_bottom(12)
             main_box.append(error_label)
         except json.JSONDecodeError:
-            error_label = Gtk.Label(label="Failed to parse metadata")
+            error_label = Gtk.Label(label=_("Failed to parse metadata"))
             error_label.add_css_class("dim-label")
             error_label.set_margin_top(12)
             error_label.set_margin_bottom(12)
             main_box.append(error_label)
         except Exception as e:
             logger.error(f"Error getting metadata: {e}")
-            error_label = Gtk.Label(label=f"Error: {str(e)}")
+            error_label = Gtk.Label(label=_("Error: {0}").format(str(e)))
             error_label.add_css_class("dim-label")
             error_label.set_margin_top(12)
             error_label.set_margin_bottom(12)
@@ -664,7 +668,7 @@ class FileQueue(Gtk.Box):
         header_box.set_margin_end(10)
 
         # Add queue size label to header (now hidden as it's shown in the headerbar)
-        self.queue_size_label = Gtk.Label(label="0 files")
+        self.queue_size_label = Gtk.Label(label=_("0 files"))
         self.queue_size_label.set_halign(Gtk.Align.START)
         self.queue_size_label.set_hexpand(True)
         self.queue_size_label.set_visible(
@@ -696,8 +700,10 @@ class FileQueue(Gtk.Box):
         # Create a simple placeholder
         self.placeholder = Adw.StatusPage()
         self.placeholder.set_icon_name("folder-music-symbolic")
-        self.placeholder.set_title("No Audio Files")
-        self.placeholder.set_description("Drag files here or use the Add Files button")
+        self.placeholder.set_title(_("No Audio Files"))
+        self.placeholder.set_description(
+            _("Drag files here or use the Add Files Button")
+        )
         self.file_list.set_placeholder(self.placeholder)
 
         # Assemble the layout
@@ -1329,8 +1335,10 @@ class FileQueue(Gtk.Box):
         filename = os.path.basename(file_path)
         dialog = Adw.MessageDialog(
             transient_for=parent,
-            heading="Delete File Permanently?",
-            body=f"Are you sure you want to delete '{filename}'? This action cannot be undone and the file will be permanently deleted from your disk.",
+            heading=_("Delete File Permanently?"),
+            body=_(
+                "Are you sure you want to delete '{0}'? This action cannot be undone and the file will be permanently deleted from your disk."
+            ).format(filename),
         )
         dialog.add_response("cancel", "Cancel")
         dialog.add_response("delete", "Delete")
@@ -1361,7 +1369,7 @@ class FileQueue(Gtk.Box):
                 # Show error dialog
                 error_dialog = Adw.MessageDialog(
                     transient_for=self._parent_window,
-                    heading="Error Deleting File",
+                    heading=_("Error Deleting File"),
                     body=f"Could not delete the file: {str(e)}",
                 )
                 error_dialog.add_response("ok", "OK")
