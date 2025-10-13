@@ -15,7 +15,7 @@ _ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, Gio
+from gi.repository import Gtk, Adw, Gio, GLib
 
 # Application imports
 from app.ui.main_window import MainWindow
@@ -43,7 +43,8 @@ class Application(Adw.Application):
     def __init__(self):
         super().__init__(
             application_id="br.com.biglinux.audio.converter",
-            flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
+            flags=Gio.ApplicationFlags.DEFAULT_FLAGS
+            | Gio.ApplicationFlags.HANDLES_OPEN,
         )
 
         self.config = AppConfig()
@@ -62,7 +63,48 @@ class Application(Adw.Application):
 
         self.player = AudioPlayer(arnndn_model_path=self.arnndn_model_path)
         self.converter = AudioConverter(arnndn_model_path=self.arnndn_model_path)
+        self.logger = logging.getLogger(__name__)
         self._create_actions()
+
+    def _present_window_and_request_focus(self, window: Gtk.Window):
+        """Present the window and use a modal dialog hack to request focus if needed."""
+        window.present()
+
+        def check_and_apply_hack():
+            if not window.is_active():
+                self.logger.info(
+                    "Window not active after present(), applying modal window hack."
+                )
+                hack_window = Gtk.Window(transient_for=window, modal=True)
+
+                hack_window.set_default_size(1, 1)
+                hack_window.set_decorated(False)
+
+                hack_window.present()
+                GLib.idle_add(hack_window.destroy)
+
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(check_and_apply_hack)
+
+    def do_open(self, files, n_files, hint):
+        """Handle files opened from command line or file manager."""
+        # Get the active window (MainWindow)
+        win = self.props.active_window
+        if not win:
+            # If no window exists yet, create one
+            win = MainWindow(application=self)
+
+        # Always present and request focus for the window
+        self._present_window_and_request_focus(win)
+
+        # Add each file to the queue
+        for i in range(n_files):
+            file = files[i]
+            if isinstance(file, Gio.File):
+                path = file.get_path()
+                if path:
+                    win.file_queue.add_file(path)
 
     def _create_actions(self):
         """Create application actions."""
@@ -84,7 +126,7 @@ class Application(Adw.Application):
             # Show welcome dialog on first run
             if WelcomeDialog.should_show_welcome():
                 self.show_welcome_dialog(win)
-        win.present()
+        self._present_window_and_request_focus(win)
 
     def show_welcome_dialog(self, parent_window=None):
         """Show the welcome dialog"""
