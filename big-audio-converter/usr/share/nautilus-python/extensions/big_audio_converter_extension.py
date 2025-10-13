@@ -46,44 +46,98 @@ class BigAudioConverterExtension(GObject.GObject, Nautilus.MenuProvider):
 
         # Using a set provides O(1) lookup time, which is more efficient than a list.
         self.supported_mimetypes = {
-            'audio/mpeg', 'audio/mp4', 'audio/x-wav', 'audio/x-flac',
-            'audio/ogg', 'audio/x-vorbis+ogg', 'audio/x-opus+ogg',
-            'audio/aac', 'audio/x-aac', 'audio/x-m4a', 'audio/x-ms-wma',
-            'audio/webm', 'audio/x-ape', 'audio/x-matroska',
-            'audio/ac3', 'audio/eac3', 'audio/x-aiff', 'audio/x-mpeg'
+            "audio/mpeg",
+            "audio/mp4",
+            "audio/x-wav",
+            "audio/x-flac",
+            "audio/ogg",
+            "audio/x-vorbis+ogg",
+            "audio/x-opus+ogg",
+            "audio/aac",
+            "audio/x-aac",
+            "audio/x-m4a",
+            "audio/x-ms-wma",
+            "audio/webm",
+            "audio/x-ape",
+            "audio/x-matroska",
+            "audio/ac3",
+            "audio/eac3",
+            "audio/x-aiff",
+            "audio/x-mpeg",
+            "video/mp4",
+            "video/x-matroska",
+            "video/webm",
+            "video/x-msvideo",
+            "video/quicktime",
+            "video/x-flv",
+            "video/mpeg",
+            "video/x-ms-asf",
+            "video/x-avi",
+            "video/ogg",
+            "video/x-theora+ogg",
         }
 
     def get_file_items(self, files: list[Nautilus.FileInfo]) -> list[Nautilus.MenuItem]:
         """
         Returns menu items for the selected files.
-        The menu is only shown if one or more supported audio files are selected.
+        The menu is only shown if one or more supported audio/video files are selected.
         """
-        audio_files = [f for f in files if self._is_audio_file(f)]
-        if not audio_files:
+        supported_files = [f for f in files if self._is_supported_file(f)]
+        if not supported_files:
             return []
 
-        num_audios = len(audio_files)
-
-        # Define the label based on the number of selected files.
-        if num_audios == 1:
-            label = _('Convert Audio')
-            name = 'BigAudioConverter::Convert'
+        # Determine the type: 'audio', 'video', or 'mixed'
+        file_types = [self._get_file_type(f) for f in supported_files]
+        if all(t == "audio" for t in file_types):
+            action_type = "audio"
+        elif all(t == "video" for t in file_types):
+            action_type = "video"
         else:
-            label = _('Convert {0} Audio Files').format(num_audios)
-            name = 'BigAudioConverter::ConvertMultiple'
+            action_type = "mixed"
+
+        num_files = len(supported_files)
+
+        # Define the label based on the type and number of selected files.
+        if action_type == "audio":
+            if num_files == 1:
+                label = _("Convert or Edit Audio")
+            else:
+                label = _("Convert or Edit {0} Audio Files").format(num_files)
+            name = 'BigAudioConverter::Convert'
+        elif action_type == "video":
+            if num_files == 1:
+                label = _("Extract Audio")
+            else:
+                label = _("Extract Audio from {0} Video Files").format(num_files)
+            name = "BigAudioConverter::Extract"
+        else:  # mixed
+            label = _("Process {0} Audio/Video Files").format(num_files)
+            name = "BigAudioConverter::Process"
 
         menu_item = Nautilus.MenuItem(name=name, label=label)
-        menu_item.connect('activate', self._launch_application, audio_files)
+        menu_item.connect("activate", self._launch_application, supported_files)
         return [menu_item]
 
-    def _is_audio_file(self, file_info: Nautilus.FileInfo) -> bool:
+    def _is_supported_file(self, file_info: Nautilus.FileInfo) -> bool:
         """
-        Checks if a file is a supported audio by its mimetype.
+        Checks if a file is a supported audio or video by its mimetype.
         """
         if not file_info or file_info.is_directory():
             return False
 
         return file_info.get_mime_type() in self.supported_mimetypes
+
+    def _get_file_type(self, file_info: Nautilus.FileInfo) -> str:
+        """
+        Returns 'audio' or 'video' based on the mimetype.
+        """
+        mime = file_info.get_mime_type()
+        if mime.startswith("audio/"):
+            return "audio"
+        elif mime.startswith("video/"):
+            return "video"
+        else:
+            return "unknown"
 
     def _get_file_path(self, file_info: Nautilus.FileInfo) -> str | None:
         """

@@ -1,0 +1,40 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=video/mp4;video/x-matroska;video/webm;video/x-msvideo;video/quicktime;video/x-flv;video/mpeg;video/x-ms-asf;video/ogg;video/x-theora+ogg;video/3gpp;
+Actions=ExtractAudio;
+X-KDE-Priority=TopLevel
+X-KDE-StartupNotify=true
+Icon=big-audio-converter
+
+[Desktop Action ExtractAudio]
+Icon=big-audio-converter
+Name=Extract Audio
+Name[pt]=Extrair Áudio
+Name[es]=Extraer Audio
+Name[bg]=Извлечи Аудио
+Name[cs]=Extrahovat Audio
+Name[da]=Udtræk Lyd
+Name[de]=Audio Extrahieren
+Name[el]=Εξαγωγή Ήχου
+Name[et]=Ekstraheer Heli
+Name[fi]=Pura Ääni
+Name[fr]=Extraire Audio
+Name[he]=חלץ אודיו
+Name[hr]=Izdvoji Audio
+Name[hu]=Hang Kivonás
+Name[is]=Sækja Hljóð
+Name[it]=Estrai Audio
+Name[ja]=オーディオを抽出
+Name[ko]=오디오 추출
+Name[nl]=Audio Extraheren
+Name[no]=Trekk Ut Lyd
+Name[pl]=Wyciągnij Audio
+Name[ro]=Extrage Audio
+Name[ru]=Извлечь Аудио
+Name[sk]=Extrahovať Audio
+Name[sv]=Extrahera Ljud
+Name[tr]=Ses Çıkar
+Name[uk]=Витягти Аудіо
+Name[zh]=提取音频
+Exec=big-audio-converter-gui %U
