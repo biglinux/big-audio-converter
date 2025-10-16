@@ -245,7 +245,7 @@ class AudioConverter:
                 os.makedirs(output_dir, exist_ok=True)
 
             # Build ffmpeg command
-            cmd = [self.ffmpeg_path, "-y", "-i", actual_input_path]
+            cmd = [self.ffmpeg_path, "-vn", "-sn", "-y", "-i", actual_input_path]
 
             if track_metadata:
                 track_index = track_metadata["track_index"]

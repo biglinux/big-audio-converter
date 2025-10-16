@@ -247,6 +247,8 @@ class SegmentProcessor:
             # Build command to extract segment
             cmd = [
                 self.ffmpeg_path,
+                "-vn",
+                "-sn",
                 "-y",  # Overwrite output
                 "-v",
                 "warning",  # Set verbosity level
@@ -358,6 +360,8 @@ class SegmentProcessor:
             # Build command to concatenate segments
             cmd = [
                 self.ffmpeg_path,
+                "-vn",
+                "-sn",
                 "-y",  # Overwrite output
                 "-v",
                 "warning",

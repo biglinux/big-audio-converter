@@ -33,8 +33,7 @@ class WelcomeDialog:
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
-        scrolled.set_min_content_height(520)
-        scrolled.set_min_content_width(800)
+        # Removed fixed min sizes to allow adaptation to screen size
 
         # Content container
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
@@ -68,7 +67,7 @@ class WelcomeDialog:
 
         # Left column - Features
         left_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        left_column.set_size_request(380, -1)
+        left_column.set_hexpand(True)
 
         features = [
             (
@@ -105,7 +104,7 @@ class WelcomeDialog:
 
         # Right column - More features
         right_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        right_column.set_size_request(380, -1)
+        right_column.set_hexpand(True)
 
         more_features = [
             (
@@ -174,10 +173,11 @@ class WelcomeDialog:
         # Add content box to scrolled window
         scrolled.set_child(content_box)
 
-        # Create Adwaita Dialog
+        # Create Adwaita Dialog with responsive sizing
         self.dialog = Adw.Dialog()
-        self.dialog.set_content_width(800)
-        self.dialog.set_content_height(600)
+        # Use larger defaults but allow dialog to adapt to screen size
+        self.dialog.set_content_width(900)
+        self.dialog.set_content_height(650)
 
         # Set the scrolled window as the child
         self.dialog.set_child(scrolled)

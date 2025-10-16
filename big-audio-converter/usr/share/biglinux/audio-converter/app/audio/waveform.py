@@ -149,6 +149,8 @@ def generate(
         # Extract audio at the dynamically calculated rate
         cmd = [
             ffmpeg_path,
+            "-vn",
+            "-sn",
             "-v",
             "error",
             "-i",
@@ -330,7 +332,6 @@ def activate_without_waveform(
             probe_cmd = [
                 ffprobe_path,
                 "-v",
-                "-sn",
                 "error",
                 "-show_entries",
                 "format=duration",

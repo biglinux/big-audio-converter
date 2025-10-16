@@ -22,6 +22,7 @@ from app.ui.visualizer import AudioVisualizer
 from app.ui.equalizer_dialog import EqualizerDialog
 from app.audio import waveform
 from app.utils.time_formatter import format_time_short
+from app.utils.tooltip_helper import TooltipHelper
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,12 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.app = kwargs.get("application")
 
+        # Initialize tooltip helper
+        if hasattr(self.app, "config") and self.app.config:
+            self.tooltip_helper = TooltipHelper(self.app.config)
+        else:
+            self.tooltip_helper = None
+
         # Initialize components
         self.player = self.app.player
         self.converter = self.app.converter
@@ -131,7 +138,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_width = 380
 
         # Default visualizer height - will be overridden by saved value
-        self.visualizer_height = 150
+        self.visualizer_height = 132
 
         # Try to load saved sidebar width
         if hasattr(self.app, "config") and self.app.config:
@@ -162,6 +169,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.setup_ui()
         self.setup_drop_target()
         self.connect("close-request", self.on_close_request)
+
+        # Setup visualizer tooltip after UI is fully created
+        if self.tooltip_helper and hasattr(self, 'visualizer'):
+            GLib.idle_add(self._setup_visualizer_tooltip)
 
         # Connect to map event for visualizer height restoration
         self.connect("map", self.on_window_mapped)
@@ -214,6 +225,11 @@ class MainWindow(Adw.ApplicationWindow):
             b"""
         .sidebar {
             background-color: @sidebar_bg_color;
+        }
+        preferencesgroup box list row {
+            padding: 0px;
+            margin-top: -1px;
+            margin-bottom: -1px;
         }
         """,
             -1,
@@ -669,9 +685,7 @@ class MainWindow(Adw.ApplicationWindow):
         options_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         options_container.set_valign(Gtk.Align.CENTER)
         options_container.set_hexpand(True)
-        options_container.set_margin_top(8)  # Add top margin
         options_container.set_margin_bottom(8)  # Add bottom margin
-        options_container.set_spacing(6)  # Add spacing between children
 
         # Create a single preference group for all options
         options_group = Adw.PreferencesGroup()
@@ -692,7 +706,7 @@ class MainWindow(Adw.ApplicationWindow):
         bitrate_row = Adw.ActionRow(title=_("Bitrate"))
         self.bitrate_combo = Gtk.ComboBoxText()
         self.bitrate_combo.set_valign(Gtk.Align.CENTER)
-        bitrates = ["64k", "128k", "192k", "256k", "320k"]
+        bitrates = ["32k", "64k", "128k", "192k", "256k", "320k"]
         for br in bitrates:
             self.bitrate_combo.append_text(br)
         # Connect bitrate change to save settings
@@ -704,7 +718,6 @@ class MainWindow(Adw.ApplicationWindow):
         # Volume adjustment - replace Scale with SpinRow
         self.volume_spin = Adw.SpinRow.new_with_range(0, 500, 5)
         self.volume_spin.set_title(_("Volume"))
-        self.volume_spin.set_subtitle(_("100 = original volume"))
         self.volume_spin.set_value(100)  # Default to 100%
         self.volume_spin.connect("changed", self._on_volume_spin_changed)
         options_group.add(self.volume_spin)
@@ -712,7 +725,6 @@ class MainWindow(Adw.ApplicationWindow):
         # Speed adjustment - replace Scale with SpinRow
         self.speed_spin = Adw.SpinRow.new_with_range(0.5, 5.0, 0.05)
         self.speed_spin.set_title(_("Speed"))
-        self.speed_spin.set_subtitle(_("1.0 = original speed"))
         self.speed_spin.set_digits(2)  # Show 2 decimal places
         self.speed_spin.set_value(1.0)  # Default to normal speed
         self.speed_spin.connect("changed", self._on_speed_spin_changed)
@@ -720,8 +732,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Noise reduction
         noise_row = Adw.ActionRow(
-            title=_("Noise Reduction"),
-            subtitle=_("Applied during conversion only (not in live preview)"),
+            title=_("Noise Reduction")
         )
         self.noise_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         # Connect noise reduction switch to player and settings
@@ -732,13 +743,26 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Waveform generation toggle
         waveform_row = Adw.ActionRow(title=_("Generate Waveforms"))
-        waveform_row.set_subtitle(_("Disable for faster loading of large video files"))
         self.waveform_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         self.waveform_switch.set_active(True)  # Default to enabled
         # Connect waveform switch to save settings
         self.waveform_switch.connect("state-set", self._on_waveform_switch_changed)
         waveform_row.add_suffix(self.waveform_switch)
         options_group.add(waveform_row)
+
+        # Mouseover tips toggle
+        tips_row = Adw.ActionRow(title=_("Show help on hover"))
+        self.tips_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        # Load saved state (default to True)
+        if hasattr(self.app, "config") and self.app.config:
+            tips_enabled = self.app.config.get("show_mouseover_tips", "true").lower() == "true"
+            self.tips_switch.set_active(tips_enabled)
+        else:
+            self.tips_switch.set_active(True)
+        # Connect tips switch to save settings and refresh tooltips
+        self.tips_switch.connect("state-set", self._on_tips_switch_changed)
+        tips_row.add_suffix(self.tips_switch)
+        options_group.add(tips_row)
 
         # Equalizer - moved from effects group
         self.eq_row = Adw.ActionRow(title=_("Equalizer"))
@@ -754,13 +778,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Add box to contain combo and help button side by side
         cut_suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
 
-        # Add help button with question mark icon
-        help_button = Gtk.Button.new_from_icon_name("help-about-symbolic")
-        help_button.set_tooltip_text(_("How to use waveform cutting"))
-        help_button.add_css_class("circular")
-        help_button.add_css_class("flat")
-        help_button.connect("clicked", self._show_cut_help_dialog)
-        cut_suffix_box.append(help_button)
+
 
         cut_row.add_suffix(cut_suffix_box)
 
@@ -791,8 +809,210 @@ class MainWindow(Adw.ApplicationWindow):
         # Add container to parent
         parent_box.append(options_container)
 
+        # Apply tooltips to UI elements
+        self._apply_tooltips()
+
         # Restore saved settings after UI is created
         self._restore_conversion_settings()
+
+    def _apply_tooltips(self):
+        """Apply tooltips to UI elements."""
+        if not self.tooltip_helper:
+            return
+        
+        # Add tooltips to format combo parent row
+        if hasattr(self, 'format_combo'):
+            parent = self.format_combo.get_parent()
+            while parent and not isinstance(parent, Adw.ActionRow):
+                parent = parent.get_parent()
+            if parent:
+                self.tooltip_helper.add_tooltip(parent, "format")
+        
+        # Add tooltip to bitrate row
+        if hasattr(self, 'bitrate_row'):
+            self.tooltip_helper.add_tooltip(self.bitrate_row, "bitrate")
+        
+        # Add tooltip to volume spin
+        if hasattr(self, 'volume_spin'):
+            self.tooltip_helper.add_tooltip(self.volume_spin, "volume")
+        
+        # Add tooltip to speed spin
+        if hasattr(self, 'speed_spin'):
+            self.tooltip_helper.add_tooltip(self.speed_spin, "speed")
+        
+        # Add tooltip to noise row
+        if hasattr(self, 'noise_row'):
+            self.tooltip_helper.add_tooltip(self.noise_row, "noise_reduction")
+        
+        # Add tooltip to waveform row
+        if hasattr(self, 'waveform_switch'):
+            parent = self.waveform_switch.get_parent()
+            while parent and not isinstance(parent, Adw.ActionRow):
+                parent = parent.get_parent()
+            if parent:
+                self.tooltip_helper.add_tooltip(parent, "waveform")
+        
+        # Add tooltip to equalizer row
+        if hasattr(self, 'eq_row'):
+            self.tooltip_helper.add_tooltip(self.eq_row, "equalizer")
+        
+        # Add tooltip to cut combo parent row
+        if hasattr(self, 'cut_combo'):
+            parent = self.cut_combo.get_parent()
+            while parent and not isinstance(parent, Adw.ActionRow):
+                parent = parent.get_parent()
+            if parent:
+                self.tooltip_helper.add_tooltip(parent, "cut")
+        
+        # Add tooltip to tips switch row
+        if hasattr(self, 'tips_switch'):
+            parent = self.tips_switch.get_parent()
+            while parent and not isinstance(parent, Adw.ActionRow):
+                parent = parent.get_parent()
+            if parent:
+                self.tooltip_helper.add_tooltip(parent, "mouseover_tips")
+
+    def _on_tips_switch_changed(self, switch, state):
+        """Handle mouseover tips toggle and save setting."""
+        if hasattr(self.app, "config") and self.app.config:
+            self.app.config.set("show_mouseover_tips", "true" if state else "false")
+        
+        if state:
+            # When enabling tooltips, re-apply all of them
+            self._apply_tooltips()
+            # Also setup visualizer tooltip
+            if hasattr(self, 'visualizer'):
+                GLib.idle_add(self._setup_visualizer_tooltip)
+        else:
+            # When disabling tooltips, refresh to hide them
+            if self.tooltip_helper:
+                self.tooltip_helper.refresh_all()
+            # Hide visualizer tooltip
+            if hasattr(self, 'visualizer'):
+                self._hide_visualizer_tooltip()
+        
+        return False
+
+    def _setup_visualizer_tooltip(self):
+        """Setup tooltip for the waveform visualizer (special handling for DrawingArea)."""
+        from app.utils.tooltip_helper import TOOLTIPS
+        
+        if not self.tooltip_helper or not self.tooltip_helper.is_enabled():
+            return False
+        
+        tooltip_text = TOOLTIPS.get("waveform_visualizer")
+        if not tooltip_text or not hasattr(self, 'visualizer'):
+            return False
+        
+        # Create a container box that will hold both visualizer and tooltip
+        # Get the visualizer's current parent
+        visualizer_parent = self.visualizer.get_parent()
+        if not visualizer_parent:
+            return False
+        
+        # Create popover for visualizer with proper positioning
+        self.visualizer_tooltip_popover = Gtk.Popover()
+        self.visualizer_tooltip_popover.set_autohide(False)
+        self.visualizer_tooltip_popover.set_position(Gtk.PositionType.TOP)
+        # Set parent to the visualizer's parent container, not the visualizer itself
+        self.visualizer_tooltip_popover.set_parent(self.visualizer)
+        
+        # Create label with tooltip text
+        label = Gtk.Label()
+        label.set_text(tooltip_text)
+        label.set_wrap(True)
+        label.set_max_width_chars(60)
+        label.set_margin_start(12)
+        label.set_margin_end(12)
+        label.set_margin_top(8)
+        label.set_margin_bottom(8)
+        label.set_halign(Gtk.Align.START)
+        self.visualizer_tooltip_popover.set_child(label)
+        
+        # Initialize tooltip state
+        self.visualizer_tooltip_timer = None
+        self.visualizer_tooltip_active = False
+        
+        # Use the tooltip helper's approach: add a motion controller
+        # that won't interfere with visualizer's existing controllers
+        motion_controller = Gtk.EventControllerMotion.new()
+        motion_controller.connect(
+            "enter", lambda c, x, y: self._schedule_visualizer_tooltip()
+        )
+        motion_controller.connect(
+            "leave", lambda c: self._hide_visualizer_tooltip()
+        )
+        self.visualizer.add_controller(motion_controller)
+        
+        return False  # Don't repeat idle_add
+    
+    def _schedule_visualizer_tooltip(self):
+        """Schedule visualizer tooltip to appear after delay."""
+        if not self.tooltip_helper or not self.tooltip_helper.is_enabled():
+            return
+        
+        # Cancel any existing timer
+        if self.visualizer_tooltip_timer:
+            GLib.source_remove(self.visualizer_tooltip_timer)
+        
+        # Schedule tooltip after 200ms
+        self.visualizer_tooltip_timer = GLib.timeout_add(
+            200, self._show_visualizer_tooltip_animated
+        )
+    
+    def _show_visualizer_tooltip_animated(self):
+        """Show visualizer tooltip with fade-in animation."""
+        if not hasattr(self, 'visualizer_tooltip_popover'):
+            return False
+        
+        self.visualizer_tooltip_active = True
+        
+        # Set initial opacity
+        self.visualizer_tooltip_popover.set_opacity(0.0)
+        
+        # Show popover
+        self.visualizer_tooltip_popover.popup()
+        
+        # Animate opacity
+        self._animate_visualizer_opacity(0.0, 1.0, 200)
+        
+        return False
+    
+    def _animate_visualizer_opacity(self, start, end, duration_ms):
+        """Animate visualizer tooltip opacity."""
+        steps = 20
+        step_duration = duration_ms // steps
+        increment = (end - start) / steps
+        current_step = [0]
+        
+        def update():
+            if not hasattr(self, 'visualizer_tooltip_popover') or not self.visualizer_tooltip_active:
+                return False
+            
+            current_step[0] += 1
+            new_opacity = start + (increment * current_step[0])
+            
+            if current_step[0] >= steps:
+                self.visualizer_tooltip_popover.set_opacity(end)
+                return False
+            else:
+                self.visualizer_tooltip_popover.set_opacity(new_opacity)
+                return True
+        
+        GLib.timeout_add(step_duration, update)
+    
+    def _hide_visualizer_tooltip(self):
+        """Hide visualizer tooltip."""
+        self.visualizer_tooltip_active = False
+        
+        # Cancel pending timer
+        if self.visualizer_tooltip_timer:
+            GLib.source_remove(self.visualizer_tooltip_timer)
+            self.visualizer_tooltip_timer = None
+        
+        # Hide popover
+        if hasattr(self, 'visualizer_tooltip_popover'):
+            self.visualizer_tooltip_popover.popdown()
 
     def _on_format_changed(self, combo):
         """Handle format selection change and save setting."""
@@ -803,9 +1023,6 @@ class MainWindow(Adw.ApplicationWindow):
 
                 # Handle copy mode special case
                 if selected_format == "copy":
-                    # Show info dialog every time copy mode is selected (but not on startup)
-                    if not self._initializing:
-                        self._show_copy_mode_info()
                     # Disable quality/speed/volume/noise/equalizer controls
                     self._set_copy_mode_ui(True)
                 else:
@@ -1201,22 +1418,6 @@ class MainWindow(Adw.ApplicationWindow):
         dialog = Adw.MessageDialog(transient_for=self, title=title, body=message)
         dialog.add_response("ok", _("OK"))
         dialog.present()
-
-    def _show_copy_mode_info(self):
-        """Show information dialog explaining copy mode."""
-        title = _("Copy Mode - Fast Audio Cutting")
-        message = _(
-            "Copy mode allows you to cut audio segments without re-encoding.\n\n"
-            "Benefits:\n"
-            "• No quality loss - original audio data is preserved\n"
-            "• Much faster processing - no conversion needed\n"
-            "• Perfect for extracting sections from large files\n\n"
-            "Limitations:\n"
-            "• Quality, speed, volume, and noise reduction are disabled\n"
-            "• Output format will match the input format\n"
-            "• Only cutting operations are available"
-        )
-        self._show_info_dialog(title, message)
 
     def _set_copy_mode_ui(self, is_copy_mode):
         """Enable or disable UI controls based on copy mode state."""
@@ -1799,7 +2000,7 @@ class MainWindow(Adw.ApplicationWindow):
         saved_bitrate = self.app.config.get("conversion_bitrate")
         if saved_bitrate:
             # Directly check each bitrate in the combo box
-            bitrates = ["64k", "128k", "192k", "256k", "320k"]
+            bitrates = ["32k", "64k", "128k", "192k", "256k", "320k"]
             if saved_bitrate in bitrates:
                 self.bitrate_combo.set_active(bitrates.index(saved_bitrate))
             else:
@@ -2593,85 +2794,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.play_selection_switch.set_active(False)
 
         return False  # Don't repeat
-
-    def _show_cut_help_dialog(self, button):
-        """Show help dialog with waveform cutting instructions."""
-        dialog = Adw.MessageDialog(
-            transient_for=self,
-            title=_("Waveform Cutting Help"),
-            body=_("Learn how to use the waveform cutting feature:"),
-        )
-
-        # Create content box for dialog
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        content.set_margin_top(12)
-        content.set_margin_bottom(12)
-        content.set_margin_start(16)
-        content.set_margin_end(16)
-
-        # Add help sections with icons
-
-        # Setting markers section
-        markers_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        markers_icon = Gtk.Image.new_from_icon_name("cursor-mode-Click-symbolic")
-        markers_icon.set_pixel_size(24)
-        markers_box.append(markers_icon)
-
-        markers_text = Gtk.Label(
-            label=_(
-                "Click on the waveform to set markers.\n"
-                + "First click sets start, second click sets end."
-            )
-        )
-        markers_text.set_halign(Gtk.Align.START)
-        markers_text.set_wrap(True)
-        markers_box.append(markers_text)
-        markers_box.set_margin_bottom(6)
-        content.append(markers_box)
-
-        # Multiple segments section
-        segments_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        segments_icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
-        segments_icon.set_pixel_size(24)
-        segments_box.append(segments_icon)
-
-        segments_text = Gtk.Label(
-            label=_(
-                "After confirming a segment, you can add more\n"
-                + "segments by clicking again on the waveform."
-            )
-        )
-        segments_text.set_halign(Gtk.Align.START)
-        segments_text.set_wrap(True)
-        segments_box.append(segments_text)
-        segments_box.set_margin_bottom(6)
-        content.append(segments_box)
-
-        # Remove segments section
-        remove_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        remove_icon = Gtk.Image.new_from_icon_name("user-trash-symbolic")
-        remove_icon.set_pixel_size(24)
-        remove_box.append(remove_icon)
-
-        remove_text = Gtk.Label(
-            label=_(
-                "To remove a segment, click on it in the waveform\n"
-                + "and confirm deletion when prompted."
-            )
-        )
-        remove_text.set_halign(Gtk.Align.START)
-        remove_text.set_wrap(True)
-        remove_box.append(remove_text)
-        content.append(remove_box)
-
-        # Add the content to the dialog
-        dialog.set_extra_child(content)
-
-        # Add close button
-        dialog.add_response("close", _("Close"))
-
-        # Show the dialog
-        dialog.present()
 
     def _on_file_removed(self, file_id):
         """Handle when a file is removed from the queue."""
