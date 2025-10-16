@@ -59,7 +59,6 @@ class FileQueueRow(Adw.ActionRow):
         self.play_button = Gtk.Button.new_from_icon_name(
             "media-playback-start-symbolic"
         )
-        self.play_button.set_tooltip_text("Play this file")
         self.play_button.add_css_class("flat")
         self.play_button.set_valign(Gtk.Align.CENTER)
         self.play_button.connect(
@@ -69,7 +68,6 @@ class FileQueueRow(Adw.ActionRow):
 
         # Remove from queue button (left side, after play button)
         remove_button = Gtk.Button.new_from_icon_name("edit-delete-remove")
-        remove_button.set_tooltip_text("Remove from queue")
         remove_button.add_css_class("flat")
         remove_button.set_valign(Gtk.Align.CENTER)
         remove_button.connect(
@@ -87,6 +85,13 @@ class FileQueueRow(Adw.ActionRow):
 
         # Add right-click context menu
         self._setup_context_menu()
+
+        # Connect to realize signal to add tooltip to title widget after it's created
+        self.connect("realize", self._on_row_realized)
+
+        # Store references for tooltip helper (will be accessed later)
+        self._play_button = self.play_button
+        self._remove_button = remove_button
 
     def _setup_context_menu(self):
         """Setup right-click context menu for the file row."""
@@ -135,6 +140,47 @@ class FileQueueRow(Adw.ActionRow):
         right_click.set_button(3)  # Right mouse button
         right_click.connect("pressed", lambda g, n, x, y: menu.popup())
         self.add_controller(right_click)
+
+    def _on_row_realized(self, widget):
+        """Add tooltip to the title label after the row is realized."""
+
+        # The ActionRow creates internal widgets, we need to find the title label
+        # In Adwaita, the title is typically in a Box containing labels
+        def find_title_label(widget):
+            """Recursively find the title label widget."""
+            if isinstance(widget, Gtk.Label):
+                # Check if this label's text matches our title
+                if widget.get_label() == self.get_title():
+                    return widget
+
+            # If widget is a container, check its children
+            if hasattr(widget, "get_first_child"):
+                child = widget.get_first_child()
+                while child:
+                    result = find_title_label(child)
+                    if result:
+                        return result
+                    child = child.get_next_sibling()
+            return None
+
+        # Find and add tooltip to the title label
+        title_label = find_title_label(self)
+        # Tooltip will be added via tooltip_helper if available
+        self._title_label = title_label
+        
+        # Now apply tooltip to the title label if tooltip_helper exists
+        # Need to get tooltip_helper from file_queue parent
+        if title_label and hasattr(self, 'index'):
+            # Access file queue through callbacks to get tooltip_helper
+            parent = self.get_parent()
+            while parent and not isinstance(parent, Gtk.ListBox):
+                parent = parent.get_parent()
+            if parent:
+                file_queue = parent.get_parent()
+                while file_queue and not isinstance(file_queue, FileQueue):
+                    file_queue = file_queue.get_parent()
+                if file_queue and hasattr(file_queue, '_tooltip_helper') and file_queue._tooltip_helper:
+                    file_queue._tooltip_helper.add_tooltip(title_label, "right_click_options")
 
     def _on_open_folder(self, action, param):
         """Open the folder containing the file."""
@@ -651,6 +697,7 @@ class FileQueue(Gtk.Box):
         self._metadata_queue = []  # Files waiting for metadata processing
         self._metadata_thread = None  # Background thread for metadata
         self._parent_window = None  # Will be set by MainWindow for dialogs
+        self._tooltip_helper = None  # Will be set by MainWindow for tooltips
 
         # Track metadata storage for video files with multiple audio tracks
         # Key: file_path, Value: dict with 'source_video', 'track_index', 'codec', 'language', etc.
@@ -1071,6 +1118,9 @@ class FileQueue(Gtk.Box):
             self.file_rows.append(row)
             self.file_list.append(row)
 
+            # Apply custom tooltips to row if tooltip_helper is available
+            self._apply_row_tooltips(row)
+
             # Enable drag source for reordering
             drag_source = Gtk.DragSource()
             drag_source.set_actions(Gdk.DragAction.MOVE)
@@ -1176,6 +1226,9 @@ class FileQueue(Gtk.Box):
 
             # Add to ListBox
             self.file_list.append(row)
+
+            # Apply custom tooltips to row if tooltip_helper is available
+            self._apply_row_tooltips(row)
 
             # Enable drag source for this row to allow reordering
             drag_source = Gtk.DragSource()
@@ -1287,7 +1340,10 @@ class FileQueue(Gtk.Box):
     def update_queue_size_label(self):
         """Update the queue size label."""
         count = len(self.files)
-        text = f"{count} file{'s' if count != 1 else ''}"
+        if count == 1:
+            text = _("1 file")
+        else:
+            text = _("{} files").format(count)
         self.queue_size_label.set_text(text)
 
         # Notify listeners about the change
@@ -1299,7 +1355,10 @@ class FileQueue(Gtk.Box):
     def get_queue_size_text(self):
         """Get the current queue size as text."""
         count = len(self.files)
-        return f"{count} file{'s' if count != 1 else ''}"
+        if count == 1:
+            return _("1 file")
+        else:
+            return _("{} files").format(count)
 
     def get_queue_size(self):
         """Get the current queue size as a number."""
@@ -1703,3 +1762,20 @@ class FileQueue(Gtk.Box):
     def connect_file_removed_signal(self, callback):
         """Connect a callback to be notified when a file is removed."""
         self.file_removed_signal = callback
+
+    def _apply_row_tooltips(self, row):
+        """Apply custom tooltips to a file queue row."""
+        if not hasattr(self, '_tooltip_helper') or not self._tooltip_helper:
+            return
+        
+        # Apply tooltip to play button
+        if hasattr(row, '_play_button'):
+            self._tooltip_helper.add_tooltip(row._play_button, "play_this_file")
+        
+        # Apply tooltip to remove button
+        if hasattr(row, '_remove_button'):
+            self._tooltip_helper.add_tooltip(row._remove_button, "remove_from_queue")
+        
+        # Apply tooltip to filename label (will be applied when row is realized)
+        if hasattr(row, '_title_label') and row._title_label:
+            self._tooltip_helper.add_tooltip(row._title_label, "right_click_options")

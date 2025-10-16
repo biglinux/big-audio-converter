@@ -79,7 +79,36 @@ TOOLTIPS = {
         " • Mouse wheel: Zoom in or out for precise selection"
     ),
     "mouseover_tips": _(
-        "You’re seeing an example of help shown when hovering over an item."
+        "You're seeing an example of help shown when hovering over an item."
+    ),
+    # Headerbar controls
+    "clear_queue_button": _(
+        "Remove all files from the queue"
+    ),
+    "prev_audio_btn": _(
+        "Go to the previous audio file in the queue"
+    ),
+    "pause_play_btn": _(
+        "Play or pause the current audio"
+    ),
+    "next_audio_btn": _(
+        "Go to the next audio file in the queue"
+    ),
+    "play_selection_switch": _(
+        "When enabled, playback automatically plays only the marked segments, skipping unselected parts"
+    ),
+    "auto_advance_switch": _(
+        "When enabled, automatically plays the next track when current track finishes"
+    ),
+    # File queue controls
+    "play_this_file": _(
+        "Preview this audio file"
+    ),
+    "remove_from_queue": _(
+        "Remove this file from the queue"
+    ),
+    "right_click_options": _(
+        "Right-click for more options"
     ),
 }
 
@@ -140,6 +169,83 @@ class TooltipHelper:
         )
         motion_controller.connect("leave", lambda c: self._cancel_and_hide_tooltip(widget, popover))
         widget.add_controller(motion_controller)
+
+    def add_tooltip_to_container(self, container, tooltip_key):
+        """
+        Add a tooltip to a container widget (like Gtk.Box) that doesn't normally receive events.
+        
+        This works by monitoring all child widgets within the container and showing
+        the tooltip when hovering over any of them.
+        
+        Args:
+            container: The container widget (Box, etc.)
+            tooltip_key: The key in TOOLTIPS dictionary
+        """
+        if not self.is_enabled():
+            return
+
+        tooltip_text = TOOLTIPS.get(tooltip_key)
+        if not tooltip_text:
+            return
+
+        # Create popover for this container
+        popover = Gtk.Popover()
+        popover.set_autohide(False)
+        popover.set_position(Gtk.PositionType.TOP)
+        popover.set_parent(container)
+
+        # Create label with tooltip text
+        label = Gtk.Label()
+        label.set_text(tooltip_text)
+        label.set_wrap(True)
+        label.set_max_width_chars(50)
+        label.set_margin_start(12)
+        label.set_margin_end(12)
+        label.set_margin_top(8)
+        label.set_margin_bottom(8)
+        label.set_halign(Gtk.Align.START)
+        popover.set_child(label)
+
+        # Store popover reference
+        self.tooltip_popovers[container] = popover
+
+        # Add motion controller to the container itself
+        # For containers, we need to add it and handle events more carefully
+        motion_controller = Gtk.EventControllerMotion.new()
+        
+        # Track if we're inside the container area
+        inside_container = [False]
+        
+        def on_enter(controller, x, y):
+            inside_container[0] = True
+            if self.is_enabled():
+                self._schedule_show_tooltip(container, popover)
+        
+        def on_leave(controller):
+            inside_container[0] = False
+            self._cancel_and_hide_tooltip(container, popover)
+        
+        def on_motion(controller, x, y):
+            # Ensure tooltip shows as we move within the container
+            if inside_container[0] and self.is_enabled():
+                # Check if popover is not already showing, schedule it
+                if not popover.is_visible():
+                    self._schedule_show_tooltip(container, popover)
+        
+        motion_controller.connect("enter", on_enter)
+        motion_controller.connect("leave", on_leave)
+        motion_controller.connect("motion", on_motion)
+        container.add_controller(motion_controller)
+        
+        # Also add motion controllers to all children to ensure we catch all events
+        child = container.get_first_child()
+        while child:
+            child_motion = Gtk.EventControllerMotion.new()
+            child_motion.connect("enter", on_enter)
+            child_motion.connect("leave", on_leave)
+            child.add_controller(child_motion)
+            child = child.get_next_sibling()
+
 
     def _schedule_show_tooltip(self, widget, popover):
         """Schedule tooltip to show after 200ms delay."""

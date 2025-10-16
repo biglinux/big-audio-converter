@@ -244,7 +244,6 @@ class MainWindow(Adw.ApplicationWindow):
         window_buttons_left = self._window_buttons_on_left()
         self.clear_queue_button = Gtk.Button()
         self.clear_queue_button.set_icon_name("trash-symbolic")
-        self.clear_queue_button.set_tooltip_text("Clear Queue")
         self.clear_queue_button.add_css_class("circular")
         self.clear_queue_button.connect("clicked", self.on_clear_queue)
         self.clear_queue_button.add_css_class("destructive-action")
@@ -338,7 +337,6 @@ class MainWindow(Adw.ApplicationWindow):
         # Always create queue controls
         self.clear_queue_button = Gtk.Button()
         self.clear_queue_button.set_icon_name("edit-delete-remove")
-        self.clear_queue_button.set_tooltip_text("Clear Queue")
         self.clear_queue_button.add_css_class(
             "flat"
         )  # Flat style to match headerbar buttons
@@ -427,6 +425,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Add the file queue directly to right content (removed queue_controls container)
         self.file_queue = FileQueue(self.converter)
         self.file_queue._parent_window = self  # Set parent window for dialogs
+        self.file_queue._tooltip_helper = self.tooltip_helper  # Pass tooltip helper
         right_content.append(self.file_queue)
 
         # Connect queue size change handler
@@ -486,11 +485,6 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.play_selection_switch = Gtk.Switch()
         self.play_selection_switch.set_active(False)
-        self.play_selection_switch.set_tooltip_text(
-            _(
-                "When enabled, playback automatically plays only the marked segments, skipping unselected parts"
-            )
-        )
         self.play_selection_switch.connect(
             "notify::active", self._on_play_selection_switch_changed
         )
@@ -498,6 +492,9 @@ class MainWindow(Adw.ApplicationWindow):
             False
         )  # Disabled until markers are set
         play_selection_box.append(self.play_selection_switch)
+        
+        # Store reference to box for tooltip (apply to entire control)
+        self.play_selection_box = play_selection_box
 
         zoom_control_box.append(play_selection_box)
 
@@ -511,15 +508,13 @@ class MainWindow(Adw.ApplicationWindow):
         # Load saved setting from config
         auto_advance_enabled = self.app.config.get("auto_advance_enabled", True)
         self.auto_advance_switch.set_active(auto_advance_enabled)
-        self.auto_advance_switch.set_tooltip_text(
-            _(
-                "When enabled, automatically plays the next track when current track finishes"
-            )
-        )
         self.auto_advance_switch.connect(
             "notify::active", self._on_auto_advance_switch_changed
         )
         auto_advance_box.append(self.auto_advance_switch)
+        
+        # Store reference to box for tooltip (apply to entire control)
+        self.auto_advance_box = auto_advance_box
 
         zoom_control_box.append(auto_advance_box)
 
@@ -536,7 +531,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.prev_audio_btn.set_icon_name("media-skip-backward-symbolic")
         self.prev_audio_btn.add_css_class("flat")
         self.prev_audio_btn.add_css_class("circular")
-        self.prev_audio_btn.set_tooltip_text(_("Previous audio file"))
         self.prev_audio_btn.connect(
             "clicked", lambda btn: self._on_previous_audio_clicked()
         )
@@ -557,7 +551,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.next_audio_btn.set_icon_name("media-skip-forward-symbolic")
         self.next_audio_btn.add_css_class("flat")
         self.next_audio_btn.add_css_class("circular")
-        self.next_audio_btn.set_tooltip_text(_("Next audio file"))
         self.next_audio_btn.connect(
             "clicked", lambda btn: self._on_next_audio_clicked()
         )
@@ -871,6 +864,21 @@ class MainWindow(Adw.ApplicationWindow):
                 parent = parent.get_parent()
             if parent:
                 self.tooltip_helper.add_tooltip(parent, "mouseover_tips")
+        
+        # Add tooltips to headerbar controls
+        if hasattr(self, 'clear_queue_button'):
+            self.tooltip_helper.add_tooltip(self.clear_queue_button, "clear_queue_button")
+        if hasattr(self, 'prev_audio_btn'):
+            self.tooltip_helper.add_tooltip(self.prev_audio_btn, "prev_audio_btn")
+        if hasattr(self, 'pause_play_btn'):
+            self.tooltip_helper.add_tooltip(self.pause_play_btn, "pause_play_btn")
+        if hasattr(self, 'next_audio_btn'):
+            self.tooltip_helper.add_tooltip(self.next_audio_btn, "next_audio_btn")
+        # Apply tooltips to box containers with custom event handling
+        if hasattr(self, 'play_selection_box'):
+            self.tooltip_helper.add_tooltip_to_container(self.play_selection_box, "play_selection_switch")
+        if hasattr(self, 'auto_advance_box'):
+            self.tooltip_helper.add_tooltip_to_container(self.auto_advance_box, "auto_advance_switch")
 
     def _on_tips_switch_changed(self, switch, state):
         """Handle mouseover tips toggle and save setting."""
