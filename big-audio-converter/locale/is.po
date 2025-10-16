@@ -21,63 +21,63 @@ msgstr "MP3 staðall"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 18
 msgid ""
-"Select output audio format\n"
+"Select the output audio format\n"
 "\n"
-"• copy: Original audio data is preserved, but only cutting operations are available\n"
-"• mp3: Universal compatibility, good balance of size and quality\n"
-"• ogg: Open format, good quality at low bitrates\n"
-"• flac: Lossless compression, perfect quality\n"
-"• wav: Uncompressed audio, largest file size\n"
-"• aac: Modern format, good quality\n"
-"• opus: Best quality at low bitrates"
+"• copy: Keeps the original audio data — only cutting is available\n"
+"• mp3: Widely supported, great balance between size and quality\n"
+"• ogg: Open format, good quality at smaller file sizes\n"
+"• flac: Lossless compression, perfect audio fidelity\n"
+"• wav: Uncompressed format, very large files\n"
+"• aac: Modern format with good overall quality\n"
+"• opus: Excellent quality at low bitrates"
 msgstr ""
-"Veldu útgangs hljóðform\n"
+"Veldu útgangs hljóðformið\n"
 "\n"
-"• afrita: Upprunalegu hljóðgögnin eru varðveitt, en aðeins klippingaraðgerðir eru í boði\n"
-"• mp3: Alhliða samhæfi, gott jafnvægi á stærð og gæðum\n"
-"• ogg: Opin snið, góð gæði við lágar bitahraða\n"
-"• flac: Taplaus þjöppun, fullkomin gæði\n"
-"• wav: Óþjöppuð hljóð, stærsta skráarstærð\n"
-"• aac: Nútímalegt snið, góð gæði\n"
-"• opus: Best gæði við lágar bitahraða"
+"• afrita: Heldur upprunalegu hljóðgögnunum - aðeins klipping er í boði\n"
+"• mp3: Vel studd, frábær jafnvægi milli stærðar og gæð\n"
+"• ogg: Opin form, góð gæði við minni skráarstærðir\n"
+"• flac: Taplaus þjöppun, fullkomin hljóðfidelity\n"
+"• wav: Óþjöppuð skrá, mjög stórar skrár\n"
+"• aac: Nútíma form með góðum almennum gæðum\n"
+"• opus: Frábær gæði við lágar bitahraða"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 28
 msgid ""
-"Audio quality setting\n"
+"Choose the audio bitrate (quality level)\n"
 "\n"
-"• 32k: Low quality\n"
-"• 64k: Voice only, podcasts\n"
+"• 32k: Very low quality\n"
+"• 64k: Low quality\n"
 "• 128k: Standard quality\n"
 "• 192k: Good quality\n"
 "• 256k: High quality\n"
 "• 320k: Highest quality"
 msgstr ""
-"Hljóðgæðastilling\n"
+"Veldu hljóðbitrate (gæðastig)\n"
 "\n"
-"• 32k: Lág gæði\n"
-"• 64k: Bara raddir, hlaðvörp\n"
-"• 128k: Staðalgæði\n"
+"• 32k: Mjög léleg gæði\n"
+"• 64k: Léleg gæði\n"
+"• 128k: Staðlað gæði\n"
 "• 192k: Góð gæði\n"
 "• 256k: Há gæði\n"
-"• 320k: Hæstu gæði"
+"• 320k: Hæsta gæði"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 37
 msgid ""
-"Adjust audio volume\n"
+"Adjust the audio volume\n"
 "\n"
 "• 100 = original volume\n"
-"• < 100 = reduce volume\n"
-"• > 100 = increase volume\n"
+"• < 100 = lower volume\n"
+"• > 100 = higher volume\n"
 "\n"
-"Note: Values above 100 may cause distortion"
+"Tip: Values above 100 may cause distortion"
 msgstr ""
-"Aðlaga hljóðstyrk\n"
+"Aðlaga hljóðstyrkinn\n"
 "\n"
 "• 100 = upprunalegur hljóðstyrkur\n"
-"• < 100 = minnka hljóðstyrk\n"
-"• > 100 = auka hljóðstyrk\n"
+"• < 100 = lægri hljóðstyrkur\n"
+"• > 100 = hærri hljóðstyrkur\n"
 "\n"
-"Athugið: Gildin yfir 100 geta valdið skekkju"
+"Ábending: Gildin yfir 100 geta valdið skekkju"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 44
 msgid ""
@@ -87,116 +87,91 @@ msgid ""
 "• < 1.0 = slower\n"
 "• > 1.0 = faster\n"
 "\n"
-"Pitch is automatically corrected"
+"Pitch correction is applied automatically"
 msgstr ""
 "Breyting á spilun og umbreytingarhraða\n"
 "\n"
 "• 1.0 = eðlilegur hraði\n"
-"• < 1.0 = hægar\n"
-"• > 1.0 = hraðar\n"
+"• < 1.0 = hægari\n"
+"• > 1.0 = hraðari\n"
 "\n"
-"Tónhæð er sjálfkrafa leiðrétt"
+"Hljómbreyting er beitt sjálfkrafa"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 51
 msgid ""
-"Apply noise filter during conversion\n"
+"Reduce background noise during conversion\n"
 "\n"
-"This reduces background noise but is only applied during conversion, not in live preview"
+"Applies a noise filter to improve clarity. Note: it only affects the converted file, not the live "
+"preview."
 msgstr ""
-"Notkunarsíur eru notaðar við umbreytingu\n"
+"Minnkar bakgrunnshljóð við umbreytingu\n"
 "\n"
-"Þetta minnkar bakgrunnshljóð en er aðeins notað við umbreytingu, ekki í lifandi forsýningu."
+"Beitir hávaða síu til að bæta skýrleika. Athugið: það hefur aðeins áhrif á umbreytta skrá, ekki "
+"lifandi forsýningu."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 56
 msgid ""
-"Generate visual waveforms\n"
+"Display audio as a visual waveform\n"
 "\n"
-"Shows audio as a visual waveform for easy cutting.\n"
-"Disable for faster loading of large files."
+"Easily edit by viewing your audio as a waveform.\n"
+"Disable this option to load large files faster."
 msgstr ""
-"Búðu til sjónrænar bylgjur\n"
+"Sýna hljóð sem sjónrænt bylgjuflæði\n"
 "\n"
-"Sýnir hljóð sem sjónræna bylgju til að auðvelda klippingu.\n"
-"Virkjaðu ekki fyrir hraðari hleðslu á stórum skrám."
+"Auðveldlega breyta með því að skoða hljóðið þitt sem bylgjuflæði.\n"
+"Virkjaðu þessa valkost til að hlaða stórum skrám hraðar."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 61
 msgid ""
-"Adjust frequency balance\n"
+"Adjust the sound frequencies\n"
 "\n"
-"Fine-tune bass, midrange, and treble frequencies to enhance audio quality"
+"Fine-tune bass, midrange, and treble to enhance your audio."
 msgstr ""
-"Aðlaga tíðnibalansinn\n"
+"Aðlaga hljóðfrekvensur\n"
 "\n"
-"Fínstillu bass, miðtíðni og háa tíðni til að bæta hljóðgæði"
+"Fínstilltu bass, miðtónar og háa tóna til að bæta hljóðið þitt."
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 66
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 65
 msgid ""
-"Cut and extract audio segments\n"
+"Cut and export selected parts of your audio\n"
 "\n"
-"• Off: Convert entire file\n"
-"• Chronological: Segments ordered by timeline position\n"
-"• Segment Number: Segments numbered in marking order\n"
-"\n"
-"Click 'How to Use' for detailed instructions"
+"• Off: Converts the entire file\n"
+"• Chronological: Exports segments in timeline order\n"
+"• Segment Number: Exports segments by marking order"
 msgstr ""
-"Klippið og útdragið hljóðbrot\n"
+"Klippið og flytjið út valda hluta af hljóðinu ykkar\n"
 "\n"
-"• Slökkt: Breyta öllu skjali\n"
-"• Tímaröð: Brot raðað eftir tímalínu\n"
-"• Brot númer: Brot númeruð í merkingaröð\n"
-"\n"
-"Smellið á 'Hvernig á að nota' fyrir ítarlegar leiðbeiningar"
+"• Af: Breytir öllu skjalinu\n"
+"• Tímaröð: Flytur út hluta í tímaröð\n"
+"• Hluta númer: Flytur út hluta eftir merkingaröð"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 73
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 71
 msgid ""
-"   UPPER AREA (Playback):\n"
-"   Click on the top half of the waveform to jump to that position\n"
-"   and start playing the audio from there\n"
+" UPPER AREA (Playback):\n"
+" Click the top half of the waveform to jump to that point and start playback.\n"
 "\n"
-"   LOWER AREA (Segment Editing Zone):\n"
-"   Click on the bottom half to create segment markers:\n"
-"   • First click: Sets START marker (green)\n"
-"   • Second click: Sets END marker (red)\n"
-"   • Segment is highlighted in blue\n"
-"   • Click again to add more segments\n"
+" LOWER AREA (Segment Editing Zone):\n"
+" Click the bottom half to add segment markers:\n"
+" • First click: Set START marker (green)\n"
+" • Second click: Set END marker (red)\n"
 "\n"
-"   ZOOM CONTROLS:\n"
-"   • Mouse wheel: Zoom in/out for precise selection\n"
-"   • Use zoom slider below for fine control\n"
-"\n"
-"   EDITING:\n"
-"   • Drag markers to adjust position\n"
-"   • Click inside segment to delete it\n"
-"\n"
+" ZOOM CONTROLS:\n"
+" • Mouse wheel: Zoom in or out for precise selection"
 msgstr ""
 "EFRI SVÆÐI (Spilun):\n"
-"Smelltu á efri helming bylgjunnar til að hoppa á þá stöðu\n"
-"og byrja að spila hljóðið þaðan\n"
+" Smelltu á efri helming bylgjunnar til að hoppa á þann stað og byrja spilun.\n"
 "\n"
-"NEÐRI SVÆÐI (Sniðsritunar svæði):\n"
-"Smelltu á neðri helminginn til að búa til sniðmerki:\n"
-"• Fyrsti smellur: Setur START merki (grænt)\n"
-"• Annar smellur: Setur END merki (rautt)\n"
-"• Sniðið er merkt í bláu\n"
-"• Smelltu aftur til að bæta við fleiri sniðum\n"
+" NEÐRI SVÆÐI (Sniðsritunarvæði):\n"
+" Smelltu á neðri helminginn til að bæta við sniðmerki:\n"
+" • Fyrsti smellur: Setja START merki (grænt)\n"
+" • Annar smellur: Setja END merki (rautt)\n"
 "\n"
-"ZOOM STÝRINGAR:\n"
-"• Músarhjól: Zooma inn/út fyrir nákvæma val\n"
-"• Notaðu zoom rennibrautina neðan fyrir fínstillingu\n"
-"\n"
-"RITUN:\n"
-"• Dragðu merkin til að aðlaga stöðu\n"
-"• Smelltu inni í sniði til að eyða því"
+" NÁNARSTILLINGAR:\n"
+" • Músarhjól: Nálgast eða fjarlægja til að velja nákvæmlega"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 90
-msgid ""
-"Show helpful tooltips when hovering over controls\n"
-"\n"
-"Enable to see detailed explanations about each feature"
-msgstr ""
-"Sýna gagnlegar verkfæraumbreytingar þegar músin er yfir stjórntækjum\n"
-"\n"
-"Virkja til að sjá ítarlegar skýringar um hverja eiginleika"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 82
+msgid "You’re seeing an example of help shown when hovering over an item."
+msgstr "Þú ert að sjá dæmi um aðstoð sem sýnd er þegar músin er yfir hlut."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 100
 msgid "Delete File"
@@ -304,6 +279,18 @@ msgstr "Villa að eyða skrá."
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1196
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1202
 # 
@@ -369,39 +356,36 @@ msgstr "Velkomin í Big Audio Converter"
 msgid "Play and Convert Audio"
 msgstr "Spila og Breyta Hljóði"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 76
-msgid "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
-msgstr "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 75
+msgid "Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."
+msgstr "Breyta eða spila hljóðskrárnar þínar auðveldlega — styður MP3, FLAC, OGG, WAV, AAC, Opus og WMA."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
 msgid "Extract Audio from Video"
 msgstr "Dregðu hljóð úr myndbandi"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 81
-msgid ""
-"Get the audio track from video files\n"
-"and save it in any audio format"
-msgstr "Fáðu hljóðspóluna úr vídeóskrám og vistaðu hana í hvaða hljóðformi sem er."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
+msgid "Extract the soundtrack from any video file and save it in your preferred audio format."
+msgstr "Dregðu hljóðrásina úr hvaða vídeóskrá sem er og vistaðu hana í þínu uppáhalds hljóðformi."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 86
 msgid "Cut and Merge Audio"
 msgstr "Klippa og sameina hljóð"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 88
-msgid ""
-"Mark sections on the visual waveform\n"
-"and create new files with only those parts"
-msgstr "Merktu hluta á sjónræna bylgjunni og búið til nýja skrár með aðeins þeim hlutum."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 83
+msgid "Use the visual waveform to mark sections and create new files with only the parts you want."
+msgstr ""
+"Notaðu sjónræna bylgjuformið til að merkja kafla og búa til nýjar skrár með aðeins þeim hlutum sem "
+"þú vilt."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 93
 msgid "Fast Copy Mode"
 msgstr "Hraðaflutningshamur"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 95
-msgid ""
-"Cut audio in copy mode to fully preserve quality\n"
-"with ultra-fast processing—no re-encoding"
-msgstr "Klippu hljóð í afritunarham til að varðveita gæði að fullu með ofurhraðri vinnslu—enginn endurkóðun"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 87
+#, python-format
+msgid "Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."
+msgstr "Klippið eða afritið hljóð strax án þess að endurkóða — varðveitið 100% af upprunalegri gæðum."
 # 
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
@@ -410,29 +394,25 @@ msgstr "Klippu hljóð í afritunarham til að varðveita gæði að fullu með 
 msgid "Noise Reduction"
 msgstr "Hljóðdrægni"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 113
-msgid "Apply noise filter during conversion for cleaner audio"
-msgstr "Notaðu hávaða síu við umbreytingu fyrir hreinni hljóð."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 103
+msgid "Reduce background noise during conversion for cleaner, clearer audio."
+msgstr "Minnka bakgrunnshljóð við umbreytingu fyrir hreinni, skýrari hljóð."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 116
 msgid "Volume and Equalizer"
 msgstr "Hljómur og Jafnari"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 118
-msgid ""
-"Control audio volume levels and\n"
-"apply equalization for better sound"
-msgstr "Stjórna hljóðstyrk og beita jafnvægi fyrir betri hljóm."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 107
+msgid "Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."
+msgstr "Stilltuðu hljóðstyrkinn og fínstilltu tíðnir með innbyggða jafnvæginu fyrir bestu hljóðgæði."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 123
 msgid "Speed Control"
 msgstr "Hraða stjórnun"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 124
-msgid ""
-"Change playback and conversion speed\n"
-"to fit your needs"
-msgstr "Breyta spilun- og umbreytingarhraða til að passa þínar þarfir"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 111
+msgid "Change playback and conversion speed — slow down or speed up while keeping pitch corrected."
+msgstr "Breyta spilun- og umbreytingarhraða — hægja á sér eða flýta sér á meðan hljómurinn er leiðréttur."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 147
 msgid "Show dialog on startup"

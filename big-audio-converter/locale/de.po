@@ -21,41 +21,41 @@ msgstr "MP3-Standard"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 18
 msgid ""
-"Select output audio format\n"
+"Select the output audio format\n"
 "\n"
-"• copy: Original audio data is preserved, but only cutting operations are available\n"
-"• mp3: Universal compatibility, good balance of size and quality\n"
-"• ogg: Open format, good quality at low bitrates\n"
-"• flac: Lossless compression, perfect quality\n"
-"• wav: Uncompressed audio, largest file size\n"
-"• aac: Modern format, good quality\n"
-"• opus: Best quality at low bitrates"
+"• copy: Keeps the original audio data — only cutting is available\n"
+"• mp3: Widely supported, great balance between size and quality\n"
+"• ogg: Open format, good quality at smaller file sizes\n"
+"• flac: Lossless compression, perfect audio fidelity\n"
+"• wav: Uncompressed format, very large files\n"
+"• aac: Modern format with good overall quality\n"
+"• opus: Excellent quality at low bitrates"
 msgstr ""
 "Wählen Sie das Ausgabe-Audioformat aus\n"
 "\n"
-"• Kopieren: Original-Audiodaten werden beibehalten, aber nur Schneideoperationen sind verfügbar\n"
-"• mp3: Universelle Kompatibilität, gutes Verhältnis von Größe und Qualität\n"
-"• ogg: Offenes Format, gute Qualität bei niedrigen Bitraten\n"
-"• flac: Verlustfreie Kompression, perfekte Qualität\n"
-"• wav: Unkomprimiertes Audio, größte Dateigröße\n"
-"• aac: Modernes Format, gute Qualität\n"
-"• opus: Beste Qualität bei niedrigen Bitraten"
+"• Kopieren: Beibehaltung der ursprünglichen Audiodaten — nur Schneiden ist verfügbar\n"
+"• mp3: Weit verbreitet, gutes Gleichgewicht zwischen Größe und Qualität\n"
+"• ogg: Offenes Format, gute Qualität bei kleineren Dateigrößen\n"
+"• flac: Verlustfreie Kompression, perfekte Audioqualität\n"
+"• wav: Unkomprimiertes Format, sehr große Dateien\n"
+"• aac: Modernes Format mit guter Gesamtqualität\n"
+"• opus: Ausgezeichnete Qualität bei niedrigen Bitraten"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 28
 msgid ""
-"Audio quality setting\n"
+"Choose the audio bitrate (quality level)\n"
 "\n"
-"• 32k: Low quality\n"
-"• 64k: Voice only, podcasts\n"
+"• 32k: Very low quality\n"
+"• 64k: Low quality\n"
 "• 128k: Standard quality\n"
 "• 192k: Good quality\n"
 "• 256k: High quality\n"
 "• 320k: Highest quality"
 msgstr ""
-"Audioqualitätseinstellung\n"
+"Wählen Sie die Audio-Bitrate (Qualitätsstufe)\n"
 "\n"
-"• 32k: Niedrige Qualität\n"
-"• 64k: Nur Sprache, Podcasts\n"
+"• 32k: Sehr niedrige Qualität\n"
+"• 64k: Niedrige Qualität\n"
 "• 128k: Standardqualität\n"
 "• 192k: Gute Qualität\n"
 "• 256k: Hohe Qualität\n"
@@ -63,21 +63,21 @@ msgstr ""
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 37
 msgid ""
-"Adjust audio volume\n"
+"Adjust the audio volume\n"
 "\n"
 "• 100 = original volume\n"
-"• < 100 = reduce volume\n"
-"• > 100 = increase volume\n"
+"• < 100 = lower volume\n"
+"• > 100 = higher volume\n"
 "\n"
-"Note: Values above 100 may cause distortion"
+"Tip: Values above 100 may cause distortion"
 msgstr ""
-"Audio-Lautstärke anpassen\n"
+"Lautstärke anpassen\n"
 "\n"
 "• 100 = ursprüngliche Lautstärke\n"
-"• < 100 = Lautstärke reduzieren\n"
-"• > 100 = Lautstärke erhöhen\n"
+"• < 100 = niedrigere Lautstärke\n"
+"• > 100 = höhere Lautstärke\n"
 "\n"
-"Hinweis: Werte über 100 können Verzerrungen verursachen"
+"Tipp: Werte über 100 können Verzerrungen verursachen"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 44
 msgid ""
@@ -87,7 +87,7 @@ msgid ""
 "• < 1.0 = slower\n"
 "• > 1.0 = faster\n"
 "\n"
-"Pitch is automatically corrected"
+"Pitch correction is applied automatically"
 msgstr ""
 "Ändern Sie die Wiedergabe- und Konvertierungsgeschwindigkeit\n"
 "\n"
@@ -95,109 +95,84 @@ msgstr ""
 "• < 1.0 = langsamer\n"
 "• > 1.0 = schneller\n"
 "\n"
-"Die Tonhöhe wird automatisch korrigiert"
+"Die Tonhöhenkorrektur wird automatisch angewendet"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 51
 msgid ""
-"Apply noise filter during conversion\n"
+"Reduce background noise during conversion\n"
 "\n"
-"This reduces background noise but is only applied during conversion, not in live preview"
+"Applies a noise filter to improve clarity. Note: it only affects the converted file, not the live "
+"preview."
 msgstr ""
-"Wenden Sie während der Konvertierung einen Rauschfilter an\n"
+"Hintergrundgeräusche während der Konvertierung reduzieren\n"
 "\n"
-"Dies reduziert Hintergrundgeräusche, wird jedoch nur während der Konvertierung und nicht in der "
-"Live-Vorschau angewendet."
+"Wendet einen Rauschfilter an, um die Klarheit zu verbessern. Hinweis: Es betrifft nur die "
+"konvertierte Datei, nicht die Live-Vorschau."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 56
 msgid ""
-"Generate visual waveforms\n"
+"Display audio as a visual waveform\n"
 "\n"
-"Shows audio as a visual waveform for easy cutting.\n"
-"Disable for faster loading of large files."
+"Easily edit by viewing your audio as a waveform.\n"
+"Disable this option to load large files faster."
 msgstr ""
-"Generiere visuelle Wellenformen\n"
+"Audio als visuelle Wellenform anzeigen\n"
 "\n"
-"Zeigt Audio als visuelle Wellenform für einfaches Schneiden an.\n"
-"Deaktivieren für schnellere Ladezeiten großer Dateien."
+"Bearbeiten Sie einfach, indem Sie Ihr Audio als Wellenform anzeigen.\n"
+"Deaktivieren Sie diese Option, um große Dateien schneller zu laden."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 61
 msgid ""
-"Adjust frequency balance\n"
+"Adjust the sound frequencies\n"
 "\n"
-"Fine-tune bass, midrange, and treble frequencies to enhance audio quality"
+"Fine-tune bass, midrange, and treble to enhance your audio."
 msgstr ""
-"Frequenzbalance anpassen\n"
+"Passen Sie die Klangfrequenzen an\n"
 "\n"
-"Bass-, Mitten- und Höhenfrequenzen feinabstimmen, um die Audioqualität zu verbessern."
+"Feinabstimmung von Bass, Mitten und Höhen zur Verbesserung Ihres Audios."
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 66
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 65
 msgid ""
-"Cut and extract audio segments\n"
+"Cut and export selected parts of your audio\n"
 "\n"
-"• Off: Convert entire file\n"
-"• Chronological: Segments ordered by timeline position\n"
-"• Segment Number: Segments numbered in marking order\n"
-"\n"
-"Click 'How to Use' for detailed instructions"
+"• Off: Converts the entire file\n"
+"• Chronological: Exports segments in timeline order\n"
+"• Segment Number: Exports segments by marking order"
 msgstr ""
-"Audiosegmente schneiden und extrahieren\n"
+"Schneiden und exportieren Sie ausgewählte Teile Ihrer Audiodatei\n"
 "\n"
-"• Aus: Gesamte Datei konvertieren\n"
-"• Chronologisch: Segmente nach zeitlicher Position geordnet\n"
-"• Segmentnummer: Segmente in der Markierungsreihenfolge nummeriert\n"
-"\n"
-"Klicken Sie auf 'Wie man es benutzt' für detaillierte Anweisungen"
+"• Aus: Konvertiert die gesamte Datei\n"
+"• Chronologisch: Exportiert Segmente in zeitlicher Reihenfolge\n"
+"• Segmentnummer: Exportiert Segmente nach Markierungsreihenfolge"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 73
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 71
 msgid ""
-"   UPPER AREA (Playback):\n"
-"   Click on the top half of the waveform to jump to that position\n"
-"   and start playing the audio from there\n"
+" UPPER AREA (Playback):\n"
+" Click the top half of the waveform to jump to that point and start playback.\n"
 "\n"
-"   LOWER AREA (Segment Editing Zone):\n"
-"   Click on the bottom half to create segment markers:\n"
-"   • First click: Sets START marker (green)\n"
-"   • Second click: Sets END marker (red)\n"
-"   • Segment is highlighted in blue\n"
-"   • Click again to add more segments\n"
+" LOWER AREA (Segment Editing Zone):\n"
+" Click the bottom half to add segment markers:\n"
+" • First click: Set START marker (green)\n"
+" • Second click: Set END marker (red)\n"
 "\n"
-"   ZOOM CONTROLS:\n"
-"   • Mouse wheel: Zoom in/out for precise selection\n"
-"   • Use zoom slider below for fine control\n"
-"\n"
-"   EDITING:\n"
-"   • Drag markers to adjust position\n"
-"   • Click inside segment to delete it\n"
-"\n"
+" ZOOM CONTROLS:\n"
+" • Mouse wheel: Zoom in or out for precise selection"
 msgstr ""
 "OBERER BEREICH (Wiedergabe):\n"
-"Klicken Sie auf die obere Hälfte der Wellenform, um zu dieser Position zu springen und die "
-"Audioaufnahme von dort abzuspielen.\n"
+"Klicken Sie auf die obere Hälfte der Wellenform, um zu diesem Punkt zu springen und die Wiedergabe "
+"zu starten.\n"
 "\n"
 "UNTERER BEREICH (Segmentbearbeitungszone):\n"
-"Klicken Sie auf die untere Hälfte, um Segmentmarkierungen zu erstellen:\n"
-"• Erster Klick: Setzt START-Markierung (grün)\n"
-"• Zweiter Klick: Setzt END-Markierung (rot)\n"
-"• Segment wird blau hervorgehoben\n"
-"• Klicken Sie erneut, um weitere Segmente hinzuzufügen\n"
+"Klicken Sie auf die untere Hälfte, um Segmentmarkierungen hinzuzufügen:\n"
+"• Erster Klick: START-Markierung setzen (grün)\n"
+"• Zweiter Klick: ENDE-Markierung setzen (rot)\n"
 "\n"
 "ZOOM-STEUELEMENTE:\n"
-"• Mausrad: Hinein- oder Herauszoomen für präzise Auswahl\n"
-"• Verwenden Sie den Zoomregler unten für feine Steuerung\n"
-"\n"
-"B bearbeitung:\n"
-"• Ziehen Sie die Markierungen, um die Position anzupassen\n"
-"• Klicken Sie innerhalb des Segments, um es zu löschen"
+"• Mausrad: Hinein- oder Herauszoomen für präzise Auswahl"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 90
-msgid ""
-"Show helpful tooltips when hovering over controls\n"
-"\n"
-"Enable to see detailed explanations about each feature"
-msgstr ""
-"Zeigen Sie hilfreiche Tooltips an, wenn Sie über Steuerelemente fahren\n"
-"\n"
-"Aktivieren Sie die Anzeige detaillierter Erklärungen zu jeder Funktion"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 82
+msgid "You’re seeing an example of help shown when hovering over an item."
+msgstr "Sie sehen ein Beispiel für Hilfe, die angezeigt wird, wenn Sie über ein Element fahren."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 100
 msgid "Delete File"
@@ -305,6 +280,18 @@ msgstr "Fehler beim Löschen der Datei"
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1196
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1202
 # 
@@ -370,43 +357,40 @@ msgstr "Willkommen beim Big Audio Converter"
 msgid "Play and Convert Audio"
 msgstr "Audio abspielen und konvertieren"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 76
-msgid "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
-msgstr "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 75
+msgid "Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."
+msgstr ""
+"Konvertieren oder spielen Sie Ihre Audiodateien einfach ab – unterstützt MP3, FLAC, OGG, WAV, AAC, "
+"Opus und WMA."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
 msgid "Extract Audio from Video"
 msgstr "Audio aus Video extrahieren"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 81
-msgid ""
-"Get the audio track from video files\n"
-"and save it in any audio format"
-msgstr "Holen Sie die Audiospur aus Videodateien und speichern Sie sie in einem beliebigen Audioformat."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
+msgid "Extract the soundtrack from any video file and save it in your preferred audio format."
+msgstr ""
+"Extrahieren Sie den Soundtrack aus einer beliebigen Videodatei und speichern Sie ihn im gewünschten "
+"Audioformat."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 86
 msgid "Cut and Merge Audio"
 msgstr "Audio schneiden und zusammenfügen"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 88
-msgid ""
-"Mark sections on the visual waveform\n"
-"and create new files with only those parts"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 83
+msgid "Use the visual waveform to mark sections and create new files with only the parts you want."
 msgstr ""
-"Markieren Sie Abschnitte auf der visuellen Wellenform und erstellen Sie neue Dateien nur mit diesen "
-"Teilen."
+"Verwenden Sie die visuelle Wellenform, um Abschnitte zu markieren und neue Dateien nur mit den "
+"gewünschten Teilen zu erstellen."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 93
 msgid "Fast Copy Mode"
 msgstr "Schnellkopiermodus"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 95
-msgid ""
-"Cut audio in copy mode to fully preserve quality\n"
-"with ultra-fast processing—no re-encoding"
-msgstr ""
-"Audio im Kopiermodus schneiden, um die Qualität vollständig zu erhalten, mit ultraschneller "
-"Verarbeitung – keine Neukodierung."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 87
+#, python-format
+msgid "Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."
+msgstr "Audio sofort schneiden oder kopieren, ohne neu zu codieren – 100 % der Originalqualität erhalten."
 # 
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
@@ -415,31 +399,29 @@ msgstr ""
 msgid "Noise Reduction"
 msgstr "Rauschunterdrückung"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 113
-msgid "Apply noise filter during conversion for cleaner audio"
-msgstr "Wenden Sie während der Konvertierung einen Rauschfilter an, um saubereren Audio zu erhalten."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 103
+msgid "Reduce background noise during conversion for cleaner, clearer audio."
+msgstr "Reduzieren Sie Hintergrundgeräusche während der Konvertierung für saubereren, klareren Audio."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 116
 msgid "Volume and Equalizer"
 msgstr "Lautstärke und Equalizer"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 118
-msgid ""
-"Control audio volume levels and\n"
-"apply equalization for better sound"
-msgstr "Steuern Sie die Audio-Lautstärke und wenden Sie eine Equalizer-Einstellung für besseren Klang an."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 107
+msgid "Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."
+msgstr ""
+"Passen Sie die Lautstärkepegel an und optimieren Sie die Frequenzen mit dem integrierten Equalizer "
+"für optimalen Klang."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 123
 msgid "Speed Control"
 msgstr "Geschwindigkeitsregelung"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 124
-msgid ""
-"Change playback and conversion speed\n"
-"to fit your needs"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 111
+msgid "Change playback and conversion speed — slow down or speed up while keeping pitch corrected."
 msgstr ""
-"Ändern Sie die Wiedergabe- und Konvertierungsgeschwindigkeit, um Ihren Bedürfnissen gerecht zu "
-"werden."
+"Ändern Sie die Wiedergabe- und Konvertierungsgeschwindigkeit — verlangsamen oder beschleunigen Sie, "
+"während die Tonhöhe korrigiert bleibt."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 147
 msgid "Show dialog on startup"

@@ -21,41 +21,41 @@ msgstr "Štandard MP3"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 18
 msgid ""
-"Select output audio format\n"
+"Select the output audio format\n"
 "\n"
-"• copy: Original audio data is preserved, but only cutting operations are available\n"
-"• mp3: Universal compatibility, good balance of size and quality\n"
-"• ogg: Open format, good quality at low bitrates\n"
-"• flac: Lossless compression, perfect quality\n"
-"• wav: Uncompressed audio, largest file size\n"
-"• aac: Modern format, good quality\n"
-"• opus: Best quality at low bitrates"
+"• copy: Keeps the original audio data — only cutting is available\n"
+"• mp3: Widely supported, great balance between size and quality\n"
+"• ogg: Open format, good quality at smaller file sizes\n"
+"• flac: Lossless compression, perfect audio fidelity\n"
+"• wav: Uncompressed format, very large files\n"
+"• aac: Modern format with good overall quality\n"
+"• opus: Excellent quality at low bitrates"
 msgstr ""
 "Vyberte výstupný audio formát\n"
 "\n"
-"• kopírovať: Pôvodné audio dáta sú zachované, ale sú k dispozícii iba operácie strihania\n"
-"• mp3: Univerzálna kompatibilita, dobrá rovnováha medzi veľkosťou a kvalitou\n"
-"• ogg: Otvorený formát, dobrá kvalita pri nízkych bitratových rýchlostiach\n"
-"• flac: Bezztrátová kompresia, dokonalá kvalita\n"
-"• wav: Nezkomprimované audio, najväčšia veľkosť súboru\n"
-"• aac: Moderný formát, dobrá kvalita\n"
-"• opus: Najlepšia kvalita pri nízkych bitratových rýchlostiach"
+"• kopírovať: Zachováva pôvodné audio dáta — dostupné je iba strihanie\n"
+"• mp3: Široko podporovaný, skvelá rovnováha medzi veľkosťou a kvalitou\n"
+"• ogg: Otvorený formát, dobrá kvalita pri menších veľkostiach súborov\n"
+"• flac: Bezztrátová kompresia, dokonalá audio vernosť\n"
+"• wav: Nezkomprimovaný formát, veľmi veľké súbory\n"
+"• aac: Moderný formát s dobrou celkovou kvalitou\n"
+"• opus: Vynikajúca kvalita pri nízkych bitratoch"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 28
 msgid ""
-"Audio quality setting\n"
+"Choose the audio bitrate (quality level)\n"
 "\n"
-"• 32k: Low quality\n"
-"• 64k: Voice only, podcasts\n"
+"• 32k: Very low quality\n"
+"• 64k: Low quality\n"
 "• 128k: Standard quality\n"
 "• 192k: Good quality\n"
 "• 256k: High quality\n"
 "• 320k: Highest quality"
 msgstr ""
-"Nastavenie kvality zvuku\n"
+"Vyberte audio bitrate (úroveň kvality)\n"
 "\n"
-"• 32k: Nízka kvalita\n"
-"• 64k: Iba hlas, podcasty\n"
+"• 32k: Veľmi nízka kvalita\n"
+"• 64k: Nízka kvalita\n"
 "• 128k: Štandardná kvalita\n"
 "• 192k: Dobrá kvalita\n"
 "• 256k: Vysoká kvalita\n"
@@ -63,21 +63,21 @@ msgstr ""
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 37
 msgid ""
-"Adjust audio volume\n"
+"Adjust the audio volume\n"
 "\n"
 "• 100 = original volume\n"
-"• < 100 = reduce volume\n"
-"• > 100 = increase volume\n"
+"• < 100 = lower volume\n"
+"• > 100 = higher volume\n"
 "\n"
-"Note: Values above 100 may cause distortion"
+"Tip: Values above 100 may cause distortion"
 msgstr ""
 "Upravte hlasitosť zvuku\n"
 "\n"
 "• 100 = pôvodná hlasitosť\n"
-"• < 100 = znížiť hlasitosť\n"
-"• > 100 = zvýšiť hlasitosť\n"
+"• < 100 = nižšia hlasitosť\n"
+"• > 100 = vyššia hlasitosť\n"
 "\n"
-"Poznámka: Hodnoty nad 100 môžu spôsobiť skreslenie"
+"Tip: Hodnoty nad 100 môžu spôsobiť skreslenie"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 44
 msgid ""
@@ -87,7 +87,7 @@ msgid ""
 "• < 1.0 = slower\n"
 "• > 1.0 = faster\n"
 "\n"
-"Pitch is automatically corrected"
+"Pitch correction is applied automatically"
 msgstr ""
 "Zmeňte rýchlosť prehrávania a konverzie\n"
 "\n"
@@ -95,107 +95,83 @@ msgstr ""
 "• < 1.0 = pomalšie\n"
 "• > 1.0 = rýchlejšie\n"
 "\n"
-"Tón je automaticky opravený"
+"Oprava výšky tónu sa aplikuje automaticky"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 51
 msgid ""
-"Apply noise filter during conversion\n"
+"Reduce background noise during conversion\n"
 "\n"
-"This reduces background noise but is only applied during conversion, not in live preview"
+"Applies a noise filter to improve clarity. Note: it only affects the converted file, not the live "
+"preview."
 msgstr ""
-"Použiť filter šumu počas konverzie\n"
+"Zníži pozadí hluk počas konverzie\n"
 "\n"
-"Týmto sa znižuje pozadie šumu, ale aplikuje sa iba počas konverzie, nie v živom náhľade."
+"Aplikuje filter na hluk na zlepšenie jasnosti. Poznámka: ovplyvňuje iba prevedený súbor, nie živý "
+"náhľad."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 56
 msgid ""
-"Generate visual waveforms\n"
+"Display audio as a visual waveform\n"
 "\n"
-"Shows audio as a visual waveform for easy cutting.\n"
-"Disable for faster loading of large files."
+"Easily edit by viewing your audio as a waveform.\n"
+"Disable this option to load large files faster."
 msgstr ""
-"Generovať vizuálne vlnové formy\n"
+"Zobrazte zvuk ako vizuálnu vlnovku\n"
 "\n"
-"Zobrazuje zvuk ako vizuálnu vlnovú formu pre jednoduché strihanie.\n"
-"Zakázať pre rýchlejšie načítanie veľkých súborov."
+"Jednoducho upravujte zobrazením svojho zvuku ako vlnovky.\n"
+"Deaktivujte túto možnosť, aby ste rýchlejšie načítali veľké súbory."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 61
 msgid ""
-"Adjust frequency balance\n"
+"Adjust the sound frequencies\n"
 "\n"
-"Fine-tune bass, midrange, and treble frequencies to enhance audio quality"
+"Fine-tune bass, midrange, and treble to enhance your audio."
 msgstr ""
-"Upravte frekvenčnú rovnováhu\n"
+"Upravte zvukové frekvencie\n"
 "\n"
-"Dolaďte basy, stredné a výškové frekvencie na zlepšenie kvality zvuku"
+"Dolaďte basy, stredné pásmo a výšky na vylepšenie vášho zvuku."
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 66
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 65
 msgid ""
-"Cut and extract audio segments\n"
+"Cut and export selected parts of your audio\n"
 "\n"
-"• Off: Convert entire file\n"
-"• Chronological: Segments ordered by timeline position\n"
-"• Segment Number: Segments numbered in marking order\n"
-"\n"
-"Click 'How to Use' for detailed instructions"
+"• Off: Converts the entire file\n"
+"• Chronological: Exports segments in timeline order\n"
+"• Segment Number: Exports segments by marking order"
 msgstr ""
-"Orezať a extrahovať zvukové segmenty\n"
+"Vystrihnite a exportujte vybrané časti svojho zvuku\n"
 "\n"
-"• Vypnuté: Previesť celý súbor\n"
-"• Chronologicky: Segmenty usporiadané podľa časovej osi\n"
-"• Číslo segmentu: Segmenty číslované v poradí označenia\n"
-"\n"
-"Kliknite na 'Ako používať' pre podrobné pokyny"
+"• Vypnuté: Konvertuje celý súbor\n"
+"• Chronologicky: Exportuje segmenty v časovom poradí\n"
+"• Číslo segmentu: Exportuje segmenty podľa označeného poradia"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 73
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 71
 msgid ""
-"   UPPER AREA (Playback):\n"
-"   Click on the top half of the waveform to jump to that position\n"
-"   and start playing the audio from there\n"
+" UPPER AREA (Playback):\n"
+" Click the top half of the waveform to jump to that point and start playback.\n"
 "\n"
-"   LOWER AREA (Segment Editing Zone):\n"
-"   Click on the bottom half to create segment markers:\n"
-"   • First click: Sets START marker (green)\n"
-"   • Second click: Sets END marker (red)\n"
-"   • Segment is highlighted in blue\n"
-"   • Click again to add more segments\n"
+" LOWER AREA (Segment Editing Zone):\n"
+" Click the bottom half to add segment markers:\n"
+" • First click: Set START marker (green)\n"
+" • Second click: Set END marker (red)\n"
 "\n"
-"   ZOOM CONTROLS:\n"
-"   • Mouse wheel: Zoom in/out for precise selection\n"
-"   • Use zoom slider below for fine control\n"
-"\n"
-"   EDITING:\n"
-"   • Drag markers to adjust position\n"
-"   • Click inside segment to delete it\n"
-"\n"
+" ZOOM CONTROLS:\n"
+" • Mouse wheel: Zoom in or out for precise selection"
 msgstr ""
 "HORNÁ OBLASŤ (Prehrávanie):\n"
-"Kliknite na hornú polovicu vlny, aby ste preskočili na túto pozíciu a začali prehrávať zvuk odtiaľ\n"
+" Kliknite na hornú polovicu vlny, aby ste preskočili na tento bod a spustili prehrávanie.\n"
 "\n"
-"DOLNÁ OBLASŤ (Zóna úpravy segmentov):\n"
-"Kliknite na dolnú polovicu na vytvorenie segmentových značiek:\n"
-"• Prvý klik: Nastaví START značku (zelená)\n"
-"• Druhý klik: Nastaví END značku (červená)\n"
-"• Segment je zvýraznený modrou farbou\n"
-"• Kliknite znova na pridanie ďalších segmentov\n"
+" SPODNÁ OBLASŤ (Zóna úpravy segmentov):\n"
+" Kliknite na spodnú polovicu, aby ste pridali segmentové značky:\n"
+" • Prvý klik: Nastaviť START značku (zelená)\n"
+" • Druhý klik: Nastaviť END značku (červená)\n"
 "\n"
-"OVLÁDANIE ZOOMU:\n"
-"• Koliesko myši: Priblížiť/oddialiť pre presný výber\n"
-"• Použite posúvač zoomu nižšie na jemnú kontrolu\n"
-"\n"
-"ÚPRAVA:\n"
-"• Potiahnite značky na úpravu polohy\n"
-"• Kliknite vo vnútri segmentu na jeho odstránenie"
+" OVLÁDAČE ZOOMU:\n"
+" • Koliesko myši: Priblížiť alebo oddialiť pre presný výber"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 90
-msgid ""
-"Show helpful tooltips when hovering over controls\n"
-"\n"
-"Enable to see detailed explanations about each feature"
-msgstr ""
-"Zobrazte užitočné tipy pri prechode myšou nad ovládacími prvkami\n"
-"\n"
-"Povoliť zobrazenie podrobných vysvetlení o každej funkcii"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 82
+msgid "You’re seeing an example of help shown when hovering over an item."
+msgstr "Vidíte príklad nápovede zobrazený pri prechode kurzorom nad položkou."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 100
 msgid "Delete File"
@@ -303,6 +279,18 @@ msgstr "Chyba pri odstraňovaní súboru"
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1413
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1419
+# 
+# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 1375
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1196
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1202
 # 
@@ -368,41 +356,40 @@ msgstr "Vitajte v Big Audio Converter"
 msgid "Play and Convert Audio"
 msgstr "Prehraj a preved zvuk"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 76
-msgid "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
-msgstr "MP3, FLAC, OGG, WAV, AAC, Opus, WMA"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 75
+msgid "Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."
+msgstr ""
+"Jednoducho konvertujte alebo prehrávajte svoje audio súbory — podporuje MP3, FLAC, OGG, WAV, AAC, "
+"Opus a WMA."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
 msgid "Extract Audio from Video"
 msgstr "Extrahovať zvuk z videa"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 81
-msgid ""
-"Get the audio track from video files\n"
-"and save it in any audio format"
-msgstr "Získajte zvukovú stopu z video súborov a uložte ju v akomkoľvek audio formáte."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 79
+msgid "Extract the soundtrack from any video file and save it in your preferred audio format."
+msgstr ""
+"Extrahujte zvukový záznam z akéhokoľvek video súboru a uložte ho vo svojom preferovanom audio "
+"formáte."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 86
 msgid "Cut and Merge Audio"
 msgstr "Strihanie a zlúčenie zvuku"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 88
-msgid ""
-"Mark sections on the visual waveform\n"
-"and create new files with only those parts"
-msgstr "Označte sekcie na vizuálnom vlneformi a vytvorte nové súbory iba s týmito časťami."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 83
+msgid "Use the visual waveform to mark sections and create new files with only the parts you want."
+msgstr "Použite vizuálny priebeh na označenie sekcií a vytvorte nové súbory iba s časťami, ktoré chcete."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 93
 msgid "Fast Copy Mode"
 msgstr "Rýchly režim kopírovania"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 95
-msgid ""
-"Cut audio in copy mode to fully preserve quality\n"
-"with ultra-fast processing—no re-encoding"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 87
+#, python-format
+msgid "Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."
 msgstr ""
-"Strihnite zvuk v režime kopírovania na úplné zachovanie kvality s ultra-rýchlym spracovaním—bez "
-"opätovného kódovania"
+"Okamžité strihanie alebo kopírovanie zvuku bez opätovného kódovania — zachovanie 100% pôvodnej "
+"kvality."
 # 
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
@@ -411,29 +398,27 @@ msgstr ""
 msgid "Noise Reduction"
 msgstr "Redukcia šumu"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 113
-msgid "Apply noise filter during conversion for cleaner audio"
-msgstr "Použite filter šumu počas konverzie pre čistejší zvuk."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 103
+msgid "Reduce background noise during conversion for cleaner, clearer audio."
+msgstr "Znížte šum na pozadí počas konverzie pre čistejší a jasnejší zvuk."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 116
 msgid "Volume and Equalizer"
 msgstr "Hlasitosť a ekvalizér"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 118
-msgid ""
-"Control audio volume levels and\n"
-"apply equalization for better sound"
-msgstr "Ovládajte úrovne hlasitosti zvuku a aplikujte ekvalizáciu pre lepší zvuk."
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 107
+msgid "Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."
+msgstr ""
+"Upravte úrovne hlasitosti a jemne dolaďte frekvencie pomocou vstavaného ekvalizéra pre optimálny "
+"zvuk."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 123
 msgid "Speed Control"
 msgstr "Ovládanie rýchlosti"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 124
-msgid ""
-"Change playback and conversion speed\n"
-"to fit your needs"
-msgstr "Zmeňte rýchlosť prehrávania a konverzie podľa svojich potrieb"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 111
+msgid "Change playback and conversion speed — slow down or speed up while keeping pitch corrected."
+msgstr "Zmeňte rýchlosť prehrávania a konverzie — spomaľte alebo zrýchlite pri zachovaní opraveného tónu."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py, line: 147
 msgid "Show dialog on startup"
