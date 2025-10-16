@@ -65,35 +65,26 @@ class WelcomeDialog:
         columns_box.set_halign(Gtk.Align.CENTER)
         columns_box.set_hexpand(True)
 
-        # Left column - Features
+        # Left column - Core features
         left_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         left_column.set_hexpand(True)
 
         features = [
             (
                 "🎵 " + _("Play and Convert Audio"),
-                _("MP3, FLAC, OGG, WAV, AAC, Opus, WMA"),
+                _("Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."),
             ),
             (
                 "🎬 " + _("Extract Audio from Video"),
-                _(
-                    "Get the audio track from video files\n"
-                    "and save it in any audio format"
-                ),
+                _("Extract the soundtrack from any video file and save it in your preferred audio format."),
             ),
             (
                 "✂️ " + _("Cut and Merge Audio"),
-                _(
-                    "Mark sections on the visual waveform\n"
-                    "and create new files with only those parts"
-                ),
+                _("Use the visual waveform to mark sections and create new files with only the parts you want."),
             ),
             (
                 "⚡ " + _("Fast Copy Mode"),
-                _(
-                    "Cut audio in copy mode to fully preserve quality\n"
-                    "with ultra-fast processing—no re-encoding"
-                ),
+                _("Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."),
             ),
         ]
 
@@ -102,27 +93,25 @@ class WelcomeDialog:
 
         columns_box.append(left_column)
 
-        # Right column - More features
+        # Right column - Additional tools
         right_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         right_column.set_hexpand(True)
 
         more_features = [
             (
                 "🔇 " + _("Noise Reduction"),
-                _("Apply noise filter during conversion for cleaner audio"),
+                _("Reduce background noise during conversion for cleaner, clearer audio."),
             ),
             (
                 "🎚️ " + _("Volume and Equalizer"),
-                _(
-                    "Control audio volume levels and\n"
-                    "apply equalization for better sound"
-                ),
+                _("Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."),
             ),
             (
                 "⚙️ " + _("Speed Control"),
-                _("Change playback and conversion speed\nto fit your needs"),
+                _("Change playback and conversion speed — slow down or speed up while keeping pitch corrected."),
             ),
         ]
+
 
         for title, description in more_features:
             right_column.append(self._create_feature_box(title, description))

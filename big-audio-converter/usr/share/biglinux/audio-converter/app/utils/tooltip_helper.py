@@ -15,80 +15,71 @@ _ = gettext.gettext
 # Tooltip content dictionary
 TOOLTIPS = {
     "format": _(
-        "Select output audio format\n\n"
-        "• copy: Original audio data is preserved, but only cutting operations are available\n"
-        "• mp3: Universal compatibility, good balance of size and quality\n"
-        "• ogg: Open format, good quality at low bitrates\n"
-        "• flac: Lossless compression, perfect quality\n"
-        "• wav: Uncompressed audio, largest file size\n"
-        "• aac: Modern format, good quality\n"
-        "• opus: Best quality at low bitrates"
+        "Select the output audio format\n\n"
+        "• copy: Keeps the original audio data — only cutting is available\n"
+        "• mp3: Widely supported, great balance between size and quality\n"
+        "• ogg: Open format, good quality at smaller file sizes\n"
+        "• flac: Lossless compression, perfect audio fidelity\n"
+        "• wav: Uncompressed format, very large files\n"
+        "• aac: Modern format with good overall quality\n"
+        "• opus: Excellent quality at low bitrates"
     ),
     "bitrate": _(
-        "Audio quality setting\n\n"
-        "• 32k: Low quality\n"
-        "• 64k: Voice only, podcasts\n"
+        "Choose the audio bitrate (quality level)\n\n"
+        "• 32k: Very low quality\n"
+        "• 64k: Low quality\n"
         "• 128k: Standard quality\n"
         "• 192k: Good quality\n"
         "• 256k: High quality\n"
         "• 320k: Highest quality"
     ),
     "volume": _(
-        "Adjust audio volume\n\n"
+        "Adjust the audio volume\n\n"
         "• 100 = original volume\n"
-        "• < 100 = reduce volume\n"
-        "• > 100 = increase volume\n\n"
-        "Note: Values above 100 may cause distortion"
+        "• < 100 = lower volume\n"
+        "• > 100 = higher volume\n\n"
+        "Tip: Values above 100 may cause distortion"
     ),
     "speed": _(
         "Change playback and conversion speed\n\n"
         "• 1.0 = normal speed\n"
         "• < 1.0 = slower\n"
         "• > 1.0 = faster\n\n"
-        "Pitch is automatically corrected"
+        "Pitch correction is applied automatically"
     ),
     "noise_reduction": _(
-        "Apply noise filter during conversion\n\n"
-        "This reduces background noise but is only applied "
-        "during conversion, not in live preview"
+        "Reduce background noise during conversion\n\n"
+        "Applies a noise filter to improve clarity. "
+        "Note: it only affects the converted file, not the live preview."
     ),
     "waveform": _(
-        "Generate visual waveforms\n\n"
-        "Shows audio as a visual waveform for easy cutting.\n"
-        "Disable for faster loading of large files."
+        "Display audio as a visual waveform\n\n"
+        "Easily edit by viewing your audio as a waveform.\n"
+        "Disable this option to load large files faster."
     ),
     "equalizer": _(
-        "Adjust frequency balance\n\n"
-        "Fine-tune bass, midrange, and treble frequencies "
-        "to enhance audio quality"
+        "Adjust the sound frequencies\n\n"
+        "Fine-tune bass, midrange, and treble to enhance your audio."
     ),
     "cut": _(
-        "Cut and extract audio segments\n\n"
-        "• Off: Convert entire file\n"
-        "• Chronological: Segments ordered by timeline position\n"
-        "• Segment Number: Segments numbered in marking order\n\n"
-        "Click 'How to Use' for detailed instructions"
+        "Cut and export selected parts of your audio\n\n"
+        "• Off: Converts the entire file\n"
+        "• Chronological: Exports segments in timeline order\n"
+        "• Segment Number: Exports segments by marking order"
     ),
     "waveform_visualizer": _(
-        "   UPPER AREA (Playback):\n"
-        "   Click on the top half of the waveform to jump to that position\n"
-        "   and start playing the audio from there\n\n"
-        "   LOWER AREA (Segment Editing Zone):\n"
-        "   Click on the bottom half to create segment markers:\n"
-        "   • First click: Sets START marker (green)\n"
-        "   • Second click: Sets END marker (red)\n"
-        "   • Segment is highlighted in blue\n"
-        "   • Click again to add more segments\n\n"
-        "   ZOOM CONTROLS:\n"
-        "   • Mouse wheel: Zoom in/out for precise selection\n"
-        "   • Use zoom slider below for fine control\n\n"
-        "   EDITING:\n"
-        "   • Drag markers to adjust position\n"
-        "   • Click inside segment to delete it\n\n"
+        " UPPER AREA (Playback):\n"
+        " Click the top half of the waveform to jump to that point "
+        "and start playback.\n\n"
+        " LOWER AREA (Segment Editing Zone):\n"
+        " Click the bottom half to add segment markers:\n"
+        " • First click: Set START marker (green)\n"
+        " • Second click: Set END marker (red)\n\n"
+        " ZOOM CONTROLS:\n"
+        " • Mouse wheel: Zoom in or out for precise selection"
     ),
     "mouseover_tips": _(
-        "Show helpful tooltips when hovering over controls\n\n"
-        "Enable to see detailed explanations about each feature"
+        "You’re seeing an example of help shown when hovering over an item."
     ),
 }
 
