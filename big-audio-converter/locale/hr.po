@@ -19,6 +19,185 @@ msgstr ""
 msgid "MP3 Standard"
 msgstr "MP3 standard"
 # 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 18
+msgid ""
+"Select output audio format\n"
+"\n"
+"• copy: Original audio data is preserved, but only cutting operations are available\n"
+"• mp3: Universal compatibility, good balance of size and quality\n"
+"• ogg: Open format, good quality at low bitrates\n"
+"• flac: Lossless compression, perfect quality\n"
+"• wav: Uncompressed audio, largest file size\n"
+"• aac: Modern format, good quality\n"
+"• opus: Best quality at low bitrates"
+msgstr ""
+"Odaberite izlazni audio format\n"
+"\n"
+"• kopiraj: Izvorni audio podaci se čuvaju, ali su dostupne samo operacije rezanja\n"
+"• mp3: Univerzalna kompatibilnost, dobar balans veličine i kvalitete\n"
+"• ogg: Otvoreni format, dobra kvaliteta pri niskim bitratima\n"
+"• flac: Bez gubitaka kompresija, savršena kvaliteta\n"
+"• wav: Nekompresirani audio, najveća veličina datoteke\n"
+"• aac: Moderni format, dobra kvaliteta\n"
+"• opus: Najbolja kvaliteta pri niskim bitratima"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 28
+msgid ""
+"Audio quality setting\n"
+"\n"
+"• 32k: Low quality\n"
+"• 64k: Voice only, podcasts\n"
+"• 128k: Standard quality\n"
+"• 192k: Good quality\n"
+"• 256k: High quality\n"
+"• 320k: Highest quality"
+msgstr ""
+"Postavka kvalitete zvuka\n"
+"\n"
+"• 32k: Niska kvaliteta\n"
+"• 64k: Samo glas, podcasti\n"
+"• 128k: Standardna kvaliteta\n"
+"• 192k: Dobra kvaliteta\n"
+"• 256k: Visoka kvaliteta\n"
+"• 320k: Najviša kvaliteta"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 37
+msgid ""
+"Adjust audio volume\n"
+"\n"
+"• 100 = original volume\n"
+"• < 100 = reduce volume\n"
+"• > 100 = increase volume\n"
+"\n"
+"Note: Values above 100 may cause distortion"
+msgstr ""
+"Podesite glasnoću zvuka\n"
+"\n"
+"• 100 = izvorna glasnoća\n"
+"• < 100 = smanjite glasnoću\n"
+"• > 100 = povećajte glasnoću\n"
+"\n"
+"Napomena: Vrijednosti iznad 100 mogu uzrokovati izobličenje"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 44
+msgid ""
+"Change playback and conversion speed\n"
+"\n"
+"• 1.0 = normal speed\n"
+"• < 1.0 = slower\n"
+"• > 1.0 = faster\n"
+"\n"
+"Pitch is automatically corrected"
+msgstr ""
+"Promijenite brzinu reprodukcije i konverzije\n"
+"\n"
+"• 1.0 = normalna brzina\n"
+"• < 1.0 = sporije\n"
+"• > 1.0 = brže\n"
+"\n"
+"Ton se automatski ispravlja"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 51
+msgid ""
+"Apply noise filter during conversion\n"
+"\n"
+"This reduces background noise but is only applied during conversion, not in live preview"
+msgstr ""
+"Primijeni filtar šuma tijekom konverzije\n"
+"\n"
+"To smanjuje pozadinsku buku, ali se primjenjuje samo tijekom konverzije, a ne u prikazu uživo."
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 56
+msgid ""
+"Generate visual waveforms\n"
+"\n"
+"Shows audio as a visual waveform for easy cutting.\n"
+"Disable for faster loading of large files."
+msgstr ""
+"Generiraj vizualne valne oblike\n"
+"\n"
+"Prikazuje zvuk kao vizualnu valnu formu za lakše rezanje.\n"
+"Onemogući za brže učitavanje velikih datoteka."
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 61
+msgid ""
+"Adjust frequency balance\n"
+"\n"
+"Fine-tune bass, midrange, and treble frequencies to enhance audio quality"
+msgstr ""
+"Podesite ravnotežu frekvencija\n"
+"\n"
+"Fino podesite bas, srednje i visoke frekvencije za poboljšanje kvalitete zvuka"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 66
+msgid ""
+"Cut and extract audio segments\n"
+"\n"
+"• Off: Convert entire file\n"
+"• Chronological: Segments ordered by timeline position\n"
+"• Segment Number: Segments numbered in marking order\n"
+"\n"
+"Click 'How to Use' for detailed instructions"
+msgstr ""
+"Izreži i izdvoji audio segmente\n"
+"\n"
+"• Isključeno: Pretvori cijelu datoteku\n"
+"• Kronološki: Segmenti poredani prema vremenskoj poziciji\n"
+"• Broj segmenta: Segmenti numerirani prema redoslijedu označavanja\n"
+"\n"
+"Kliknite 'Kako koristiti' za detaljne upute"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 73
+msgid ""
+"   UPPER AREA (Playback):\n"
+"   Click on the top half of the waveform to jump to that position\n"
+"   and start playing the audio from there\n"
+"\n"
+"   LOWER AREA (Segment Editing Zone):\n"
+"   Click on the bottom half to create segment markers:\n"
+"   • First click: Sets START marker (green)\n"
+"   • Second click: Sets END marker (red)\n"
+"   • Segment is highlighted in blue\n"
+"   • Click again to add more segments\n"
+"\n"
+"   ZOOM CONTROLS:\n"
+"   • Mouse wheel: Zoom in/out for precise selection\n"
+"   • Use zoom slider below for fine control\n"
+"\n"
+"   EDITING:\n"
+"   • Drag markers to adjust position\n"
+"   • Click inside segment to delete it\n"
+"\n"
+msgstr ""
+"GORNJI PODRUČJE (Reprodukcija):\n"
+"Kliknite na gornju polovicu valne forme da biste skočili na tu poziciju\n"
+"i započeli reprodukciju zvuka odatle\n"
+"\n"
+"DONJI PODRUČJE (Zona uređivanja segmenata):\n"
+"Kliknite na donju polovicu za stvaranje oznaka segmenata:\n"
+"• Prvi klik: Postavlja START oznaku (zelena)\n"
+"• Drugi klik: Postavlja END oznaku (crvena)\n"
+"• Segment je označen plavom bojom\n"
+"• Kliknite ponovo za dodavanje više segmenata\n"
+"\n"
+"KONTROLE POVEĆANJA:\n"
+"• Kotačić miša: Povećajte/smanjite za preciznu selekciju\n"
+"• Koristite klizač za povećanje ispod za finu kontrolu\n"
+"\n"
+"UREĐIVANJE:\n"
+"• Povucite oznake za prilagodbu pozicije\n"
+"• Kliknite unutar segmenta da biste ga izbrisali"
+# 
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py, line: 90
+msgid ""
+"Show helpful tooltips when hovering over controls\n"
+"\n"
+"Enable to see detailed explanations about each feature"
+msgstr ""
+"Prikaži korisne savjete kada zadržite pokazivač iznad kontrola\n"
+"\n"
+"Omogući prikaz detaljnih objašnjenja o svakoj funkciji"
+# 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py, line: 100
 msgid "Delete File"
 msgstr "Izbriši datoteku"
@@ -283,29 +462,17 @@ msgstr "Bitrate"
 msgid "Volume"
 msgstr "Jedinica glasnoće"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 707
-msgid "100 = original volume"
-msgstr "100 = izvorni volumen"
-# 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 714
 msgid "Speed"
 msgstr "Brzina"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 715
-msgid "1.0 = original speed"
-msgstr "1.0 = izvorna brzina"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 724
-msgid "Applied during conversion only (not in live preview)"
-msgstr "Primijenjeno tijekom konverzije samo (ne u prikazu uživo)"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 734
 msgid "Generate Waveforms"
 msgstr "Generiraj valne oblike"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 735
-msgid "Disable for faster loading of large video files"
-msgstr "Onemoguće za brže učitavanje velikih video datoteka"
+# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 754
+msgid "Show help on hover"
+msgstr "Prikaži pomoć pri prelasku miša."
 # 
 # #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
 # 
@@ -321,10 +488,6 @@ msgstr "Konfiguriraj..."
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 752
 msgid "Cut"
 msgstr "Izreži"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 759
-msgid "How to use waveform cutting"
-msgstr "Kako koristiti rezanje valnog oblika"
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 769
 msgid "Off"
@@ -396,36 +559,6 @@ msgstr "Otvorite mapu"
 msgid "Close"
 msgstr "Zatvori"
 # 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1206
-msgid "Copy Mode - Fast Audio Cutting"
-msgstr "Način kopiranja - Brzo rezanje zvuka"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1208
-msgid ""
-"Copy mode allows you to cut audio segments without re-encoding.\n"
-"\n"
-"Benefits:\n"
-"• No quality loss - original audio data is preserved\n"
-"• Much faster processing - no conversion needed\n"
-"• Perfect for extracting sections from large files\n"
-"\n"
-"Limitations:\n"
-"• Quality, speed, volume, and noise reduction are disabled\n"
-"• Output format will match the input format\n"
-"• Only cutting operations are available"
-msgstr ""
-"Način kopiranja omogućuje vam rezanje audio segmenata bez ponovnog kodiranja.\n"
-"\n"
-"Prednosti:\n"
-"• Nema gubitka kvalitete - izvorni audio podaci se čuvaju\n"
-"• Mnogo brža obrada - konverzija nije potrebna\n"
-"• Savršeno za izdvajanje dijelova iz velikih datoteka\n"
-"\n"
-"Ograničenja:\n"
-"• Kvaliteta, brzina, glasnoća i smanjenje šuma su onemogućeni\n"
-"• Izlazni format će odgovarati ulaznom formatu\n"
-"• Dostupne su samo operacije rezanja"
-# 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 1380
 msgid "Clear Queue"
 msgstr "Isprazni red čekanja"
@@ -453,36 +586,6 @@ msgstr "Sve datoteke"
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2349
 msgid "Pause"
 msgstr "Pauza"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2601
-msgid "Waveform Cutting Help"
-msgstr "Pomoć za rezanje valnog oblika"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2602
-msgid "Learn how to use the waveform cutting feature:"
-msgstr "Naučite kako koristiti značajku rezanja valnog oblika:"
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2622
-msgid ""
-"Click on the waveform to set markers.\n"
-"First click sets start, second click sets end."
-msgstr ""
-"Kliknite na valnu formu za postavljanje oznaka.  \n"
-"Prvi klik postavlja početak, drugi klik postavlja kraj."
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2640
-msgid ""
-"After confirming a segment, you can add more\n"
-"segments by clicking again on the waveform."
-msgstr "Nakon potvrđivanja segmenta, možete dodati više segmenata ponovnim klikom na valnu formu."
-# 
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py, line: 2658
-msgid ""
-"To remove a segment, click on it in the waveform\n"
-"and confirm deletion when prompted."
-msgstr ""
-"Da biste uklonili segment, kliknite na njega u valnom obliku i potvrdite brisanje kada vas to "
-"zatraži."
 # 
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py, line: 146
 # File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py, line: 176
