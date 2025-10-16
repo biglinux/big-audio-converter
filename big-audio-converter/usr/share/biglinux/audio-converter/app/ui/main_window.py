@@ -477,10 +477,10 @@ class MainWindow(Adw.ApplicationWindow):
         zoom_control_box.set_margin_start(15)
         zoom_control_box.set_margin_end(15)
 
-        # Add "Play Selection Only" switch - when active, playback automatically skips non-selected parts
+        # Add "Only the Selected Area" switch - when active, playback automatically skips non-selected parts
         play_selection_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         play_selection_box.set_valign(Gtk.Align.CENTER)
-        play_selection_label = Gtk.Label(label=_("Play Selection Only"))
+        play_selection_label = Gtk.Label(label=_("Only the Selected Area"))
         play_selection_box.append(play_selection_label)
 
         self.play_selection_switch = Gtk.Switch()
