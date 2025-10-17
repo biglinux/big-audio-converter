@@ -1,15 +1,13 @@
 """
-Audio player module using GStreamer for playback functionality.
+Audio player module using MPV for playback functionality.
 """
 
 import os
 import logging
 import gettext
+import mpv
 
-import gi
-
-gi.require_version("Gst", "1.0")
-from gi.repository import Gst, GLib
+from gi.repository import GLib
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -19,14 +17,11 @@ logger = logging.getLogger(__name__)
 
 class AudioPlayer:
     """
-    Audio player using GStreamer for robust audio playback functionality.
+    Audio player using MPV for robust audio playback functionality.
     """
 
     def __init__(self, arnndn_model_path=None):
-        """Initialize the audio player with GStreamer."""
-        # Initialize GStreamer
-        Gst.init(None)
-
+        """Initialize the audio player with MPV."""
         self.arnndn_model_path = arnndn_model_path
         if self.arnndn_model_path and not os.path.exists(self.arnndn_model_path):
             logger.warning(
@@ -49,25 +44,15 @@ class AudioPlayer:
         # Initialize additional properties
         self.equalizer_settings = []  # Format: [(freq, gain), ...]
 
-        # GObject-style signal emulation
+        # Signal callbacks (GObject-style emulation)
         self.position_callback = None
         self.state_callback = None
         self.error_callback = None
         self.duration_callback = None
         self.eos_callback = None
 
-        # Create GStreamer pipeline
-        self.pipeline = None
-        self.source = None
-        self.decodebin = None
-        self.audioconvert = None
-        self.audiorate = None
-        self.volume_element = None
-        self.scaletempo = None
-        self.equalizer = None
-        self.arnndn_element = None
-        self.sink = None
-        self.bus = None
+        # MPV instance
+        self.mpv_instance = None
 
         # Position update timer
         self.position_timer_id = None
@@ -75,218 +60,99 @@ class AudioPlayer:
         # Track selection pending
         self.pending_track_index = None
 
-        # Seek throttling to prevent overwhelming GStreamer
+        # Seek throttling to prevent overwhelming MPV
         self.last_seek_time = 0
         self.seek_throttle_ms = 50  # Minimum time between seeks in milliseconds
         self.pending_seek_position = None
         self.seek_timer_id = None
         self.is_seeking = False
 
-        self._create_pipeline()
+        self._create_player()
 
-    def _create_pipeline(self):
-        """Create the GStreamer pipeline and elements."""
+    def _create_player(self):
+        """Create the MPV player instance."""
         try:
-            # Create pipeline
-            self.pipeline = Gst.Pipeline.new("audio-player")
+            # Create MPV instance with audio-only configuration
+            self.mpv_instance = mpv.MPV(
+                # Audio output
+                vo="null",  # No video output
+                # Audio options
+                audio_display="no",  # Don't show audio visualization
+                # Performance
+                cache="yes",
+                demuxer_max_bytes="50M",
+                # Log level
+                log_handler=self._log_handler,
+                loglevel="info",
+            )
 
-            # Create elements
-            self.source = Gst.ElementFactory.make("filesrc", "source")
-            self.decodebin = Gst.ElementFactory.make("decodebin", "decoder")
-            self.audioconvert = Gst.ElementFactory.make("audioconvert", "convert")
-            self.audiorate = Gst.ElementFactory.make("audioresample", "resample")
-            self.volume_element = Gst.ElementFactory.make("volume", "volume")
-            self.scaletempo = Gst.ElementFactory.make("scaletempo", "scaletempo")
-            self.equalizer = Gst.ElementFactory.make("equalizer-10bands", "equalizer")
-            self.sink = Gst.ElementFactory.make("autoaudiosink", "sink")
+            # Set up event handlers
+            @self.mpv_instance.event_callback('end-file')
+            def on_end_file(event):
+                if event['event']['reason'] == 0:  # EOF (not error or aborted)
+                    logger.info("Playback finished (EOF)")
+                    self.is_playing_flag = False
+                    self._position = 0
+                    
+                    if self.state_callback:
+                        GLib.idle_add(self.state_callback, self, False)
+                    
+                    if self.eos_callback:
+                        GLib.idle_add(self.eos_callback, self)
 
-            # Note: ARNNDN element is not available as a GStreamer plugin
-            # Noise reduction only works during file conversion with FFmpeg
-            self.arnndn_element = None
-            if self.arnndn_model_path:
-                logger.info(
-                    f"ARNNDN model available for conversion: {self.arnndn_model_path} "
-                    "(Note: Live noise reduction in playback is not supported)"
-                )
+            @self.mpv_instance.event_callback('file-loaded')
+            def on_file_loaded(event):
+                # File loaded successfully, query duration
+                try:
+                    duration = self.mpv_instance.duration
+                    if duration and duration > 0:
+                        self.duration = duration
+                        logger.info(f"Duration: {self.duration:.3f} seconds")
+                        
+                        if self.duration_callback:
+                            GLib.idle_add(self.duration_callback, self, self.duration)
+                        
+                        if self.position_callback:
+                            GLib.idle_add(self.position_callback, self, 0, self.duration)
+                except:
+                    pass
 
-            # Check if all elements were created
-            required_elements = [
-                (self.source, "filesrc"),
-                (self.decodebin, "decodebin"),
-                (self.audioconvert, "audioconvert"),
-                (self.audiorate, "audioresample"),
-                (self.volume_element, "volume"),
-                (self.scaletempo, "scaletempo"),
-                (self.equalizer, "equalizer-10bands"),
-                (self.sink, "autoaudiosink"),
-            ]
-
-            for element, name in required_elements:
-                if not element:
-                    logger.error(f"Failed to create GStreamer element: {name}")
-                    raise RuntimeError(f"GStreamer element {name} not available")
-
-            # Add elements to pipeline
-            self.pipeline.add(self.source)
-            self.pipeline.add(self.decodebin)
-            self.pipeline.add(self.audioconvert)
-            self.pipeline.add(self.audiorate)
-            self.pipeline.add(self.volume_element)
-            self.pipeline.add(self.scaletempo)
-            self.pipeline.add(self.equalizer)
-            self.pipeline.add(self.sink)
-
-            # Link static elements
-            self.source.link(self.decodebin)
-
-            # Link the audio chain (after decodebin)
-            # Chain: audioconvert -> audiorate -> volume -> scaletempo -> equalizer -> sink
-            self.audioconvert.link(self.audiorate)
-            self.audiorate.link(self.volume_element)
-            self.volume_element.link(self.scaletempo)
-            self.scaletempo.link(self.equalizer)
-            self.equalizer.link(self.sink)
-
-            # Connect decodebin's pad-added signal
-            self.decodebin.connect("pad-added", self._on_pad_added)
-
-            # Set up bus message handling
-            self.bus = self.pipeline.get_bus()
-            self.bus.add_signal_watch()
-            self.bus.connect("message", self._on_bus_message)
-
-            # Initialize volume (scaletempo handles tempo automatically via playback rate)
-            self.volume_element.set_property("volume", self.volume)
-
-            logger.info("GStreamer pipeline created successfully")
+            logger.info("MPV player created successfully")
 
         except Exception as e:
-            logger.error(f"Error creating GStreamer pipeline: {e}")
+            logger.error(f"Error creating MPV player: {e}")
             if self.error_callback:
-                self.error_callback(f"Failed to initialize GStreamer: {str(e)}")
+                self.error_callback(f"Failed to initialize MPV: {str(e)}")
 
-    def _on_pad_added(self, decodebin, pad):
-        """Handle pad-added signal from decodebin.
-
-        Only processes audio streams, completely ignoring video streams.
-        This ensures we work directly with audio data, avoiding video keyframe constraints.
-        """
-        # Get the pad capabilities
-        caps = pad.get_current_caps()
-        if not caps:
-            return
-
-        structure = caps.get_structure(0)
-        name = structure.get_name()
-
-        # Only link audio pads - explicitly ignore video streams
-        if name.startswith("audio/"):
-            # Link to audioconvert
-            sink_pad = self.audioconvert.get_static_pad("sink")
-            if not sink_pad.is_linked():
-                pad.link(sink_pad)
-                logger.info(f"Linked audio pad: {name} (video streams ignored)")
-        elif name.startswith("video/"):
-            # Explicitly log that we're ignoring video streams
-            logger.debug(f"Ignoring video pad: {name} (audio-only processing)")
-
-    def _on_bus_message(self, bus, message):
-        """Handle GStreamer bus messages."""
-        msg_type = message.type
-
-        if msg_type == Gst.MessageType.EOS:
-            # End of stream - playback finished
-            logger.info("Playback finished (EOS)")
-            self.is_playing_flag = False
-            self._position = 0
-
-            if self.state_callback:
-                GLib.idle_add(self.state_callback, self, False)
-
-            if self.eos_callback:
-                GLib.idle_add(self.eos_callback, self)
-
-        elif msg_type == Gst.MessageType.ERROR:
-            err, debug = message.parse_error()
-            logger.error(f"GStreamer error: {err.message}")
-            logger.debug(f"Debug info: {debug}")
-
-            self.is_playing_flag = False
-
-            if self.error_callback:
-                GLib.idle_add(self.error_callback, f"Playback error: {err.message}")
-
-        elif msg_type == Gst.MessageType.STATE_CHANGED:
-            if message.src == self.pipeline:
-                old_state, new_state, pending_state = message.parse_state_changed()
-                logger.debug(
-                    f"Pipeline state changed: {old_state.value_nick} -> {new_state.value_nick}"
-                )
-
-        elif msg_type == Gst.MessageType.ASYNC_DONE:
-            # Query duration after seeking or state change
-            self._update_duration()
-
-    def _update_duration(self):
-        """Query and update the duration from the pipeline."""
-        success, duration = self.pipeline.query_duration(Gst.Format.TIME)
-        if success and duration > 0:
-            old_duration = self.duration
-            self.duration = duration / Gst.SECOND
-
-            # Only log if duration changed significantly (more than 0.1s difference)
-            if abs(self.duration - old_duration) > 0.1:
-                logger.info(f"Duration updated: {self.duration:.3f} seconds")
-
-            if self.duration_callback and abs(self.duration - old_duration) > 0.1:
-                GLib.idle_add(self.duration_callback, self, self.duration)
+    def _log_handler(self, loglevel, component, message):
+        """Handle MPV log messages."""
+        if loglevel == "error":
+            logger.error(f"MPV [{component}]: {message}")
+            if self.error_callback and "Failed" in message:
+                GLib.idle_add(self.error_callback, f"MPV error: {message}")
+        elif loglevel == "warn":
+            logger.warning(f"MPV [{component}]: {message}")
+        elif loglevel == "info":
+            logger.info(f"MPV [{component}]: {message}")
         else:
-            logger.debug(
-                f"Duration query failed: success={success}, duration={duration if success else 'N/A'}"
-            )
-
-    def _retry_duration_query(self, attempt=0, max_attempts=10):
-        """Retry duration query with timeout (for files that take time to analyze)."""
-        success, duration = self.pipeline.query_duration(Gst.Format.TIME)
-
-        if success and duration > 0:
-            old_duration = self.duration
-            self.duration = duration / Gst.SECOND
-            logger.info(
-                f"Duration query succeeded (attempt {attempt + 1}): {self.duration:.3f} seconds"
-            )
-
-            if self.duration_callback and abs(self.duration - old_duration) > 0.1:
-                GLib.idle_add(self.duration_callback, self, self.duration)
-
-            if self.position_callback:
-                GLib.idle_add(self.position_callback, self, 0, self.duration)
-
-            return False  # Stop retrying
-
-        # Retry if we haven't exceeded max attempts
-        if attempt < max_attempts:
-            logger.debug(
-                f"Duration query attempt {attempt + 1} failed, retrying in 100ms..."
-            )
-            return True  # Continue retrying
-        else:
-            logger.warning(f"Duration query failed after {max_attempts} attempts")
-            return False  # Stop retrying
+            logger.debug(f"MPV [{component}]: {message}")
 
     def _position_update_callback(self):
         """Timer callback for position updates."""
-        if not self.is_playing_flag:
+        if not self.is_playing_flag or not self.mpv_instance:
             return True  # Keep timer running
 
-        # Query current position
-        success, position = self.pipeline.query_position(Gst.Format.TIME)
-        if success:
-            self._position = position / Gst.SECOND
+        try:
+            # Query current position
+            position = self.mpv_instance.time_pos
+            if position is not None:
+                self._position = position
 
-            # Emit position update
-            if self.position_callback:
-                self.position_callback(self, self._position, self.duration)
+                # Emit position update
+                if self.position_callback:
+                    self.position_callback(self, self._position, self.duration)
+        except:
+            pass
 
         return True  # Continue timer
 
@@ -337,49 +203,27 @@ class AudioPlayer:
         self.current_actual_file = actual_file_path
         self._position = 0
 
-        # Set the file location
-        self.source.set_property("location", actual_file_path)
+        try:
+            # Load file in MPV
+            self.mpv_instance.loadfile(actual_file_path)
+            
+            # If specific track index requested, select it
+            if self.pending_track_index is not None:
+                try:
+                    self.mpv_instance.aid = self.pending_track_index
+                    logger.info(f"Selected audio track: {self.pending_track_index}")
+                except Exception as e:
+                    logger.warning(f"Failed to select audio track {self.pending_track_index}: {e}")
 
-        # Set pipeline to PAUSED to preload
-        self.pipeline.set_state(Gst.State.PAUSED)
-
-        # Wait for state change and query duration
-        ret = self.pipeline.get_state(Gst.CLOCK_TIME_NONE)
-        if (
-            ret[0] == Gst.StateChangeReturn.SUCCESS
-            or ret[0] == Gst.StateChangeReturn.ASYNC
-        ):
-            # Try immediate duration query
-            self._update_duration()
-
-            # If duration is still 0, set up retry timer
-            if self.duration == 0:
-                logger.info(
-                    "Duration not immediately available, setting up retry mechanism..."
-                )
-
-                # Create a closure to track retry attempts
-                retry_count = [0]  # Use list to allow modification in nested function
-
-                def retry_callback():
-                    result = self._retry_duration_query(retry_count[0])
-                    retry_count[0] += 1
-                    return result
-
-                GLib.timeout_add(100, retry_callback)
-
-            logger.info(
-                f"Audio file loaded: {actual_file_path}, duration: {self.duration:.3f} seconds"
-            )
-
-            if self.position_callback:
-                self.position_callback(self, 0, self.duration)
+            # MPV loads asynchronously, duration will be available via file-loaded event
+            logger.info(f"Audio file loading: {actual_file_path}")
 
             return True
-        else:
-            logger.error("Failed to load audio file")
+            
+        except Exception as e:
+            logger.error(f"Failed to load audio file: {e}")
             if self.error_callback:
-                self.error_callback("Failed to load audio file")
+                self.error_callback(f"Failed to load audio file: {str(e)}")
             return False
 
     def play(self):
@@ -389,62 +233,71 @@ class AudioPlayer:
 
         logger.debug("Starting playback")
 
-        # Set pipeline to PLAYING
-        ret = self.pipeline.set_state(Gst.State.PLAYING)
-        if ret == Gst.StateChangeReturn.FAILURE:
-            logger.error("Failed to start playback")
+        try:
+            # Set MPV to play
+            self.mpv_instance.pause = False
+            
+            # Update state
+            self.is_playing_flag = True
+            if self.state_callback:
+                GLib.idle_add(self.state_callback, self, True)
+
+            # Start position update timer if not already running
+            if self.position_timer_id is None:
+                self.position_timer_id = GLib.timeout_add(
+                    100, self._position_update_callback
+                )
+
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to start playback: {e}")
             if self.error_callback:
-                self.error_callback("Failed to start playback")
+                self.error_callback(f"Failed to start playback: {str(e)}")
             return False
-
-        # Update state
-        self.is_playing_flag = True
-        if self.state_callback:
-            GLib.idle_add(self.state_callback, self, True)
-
-        # Start position update timer if not already running
-        if self.position_timer_id is None:
-            self.position_timer_id = GLib.timeout_add(
-                100, self._position_update_callback
-            )
-
-        return True
 
     def pause(self):
         """Pause playback, maintaining current position."""
         logger.debug("Pausing playback")
 
-        # Set pipeline to PAUSED
-        self.pipeline.set_state(Gst.State.PAUSED)
+        try:
+            # Set MPV to pause
+            self.mpv_instance.pause = True
 
-        # Update state
-        self.is_playing_flag = False
-        if self.state_callback:
-            GLib.idle_add(self.state_callback, self, False)
+            # Update state
+            self.is_playing_flag = False
+            if self.state_callback:
+                GLib.idle_add(self.state_callback, self, False)
 
-        # Position is preserved for resume - no need to callback since nothing changed
-        # (removing position_callback here prevents infinite recursion)
-
-        return True
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to pause: {e}")
+            return False
 
     def stop(self):
         """Stop playback."""
         logger.debug("Stopping playback")
 
-        # Set pipeline to NULL
-        self.pipeline.set_state(Gst.State.NULL)
+        try:
+            # Stop MPV
+            self.mpv_instance.command("stop")
 
-        # Update state
-        self.is_playing_flag = False
-        if self.state_callback:
-            GLib.idle_add(self.state_callback, self, False)
+            # Update state
+            self.is_playing_flag = False
+            if self.state_callback:
+                GLib.idle_add(self.state_callback, self, False)
 
-        # Reset position
-        self._position = 0
-        if self.position_callback:
-            self.position_callback(self, 0, self.duration)
+            # Reset position
+            self._position = 0
+            if self.position_callback:
+                self.position_callback(self, 0, self.duration)
 
-        return True
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to stop: {e}")
+            return False
 
     def seek(self, position):
         """Seek to a specific position in seconds with throttling for rapid seeks."""
@@ -488,133 +341,55 @@ class AudioPlayer:
         return False  # Don't repeat timer
 
     def _do_seek(self, position):
-        """Internal method to perform actual seek operation with resilience."""
+        """Internal method to perform actual seek operation."""
         import time
 
-        logger.debug(
-            f"Executing seek to position={position:.6f}s (duration={self.duration:.6f}s)"
-        )
+        logger.debug(f"Executing seek to position={position:.6f}s")
 
         # Update last seek time
         self.last_seek_time = time.time() * 1000
-
-        # If duration is not yet known, try to query it now
-        if self.duration <= 0:
-            logger.debug("Duration not available, querying now...")
-            self._update_duration()
 
         # Remember if we were playing
         was_playing = self.is_playing_flag
 
         try:
-            # Check current pipeline state
-            ret = self.pipeline.get_state(0)
-            current_state = ret[1]
-
-            # Ensure pipeline is at least in PAUSED state for seeking to work
-            if current_state == Gst.State.NULL:
-                logger.debug("Pipeline in NULL state, setting to PAUSED for seeking")
-                self.pipeline.set_state(Gst.State.PAUSED)
-                # Wait for state change with timeout
-                ret = self.pipeline.get_state(2 * Gst.SECOND)  # 2 second timeout
-                if ret[0] == Gst.StateChangeReturn.FAILURE:
-                    logger.error("Failed to set pipeline to PAUSED state")
-                    # Try to recover by stopping and reloading
-                    self._recover_pipeline()
-                    return False
-
             # Mark that we're seeking
             self.is_seeking = True
 
-            # Perform seek with ACCURATE flag to ignore video keyframes and seek precisely on audio
-            # This ensures we get exact position on the audio stream, not constrained by video keyframes
-            seek_flags = Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE
-            success = self.pipeline.seek_simple(
-                Gst.Format.TIME, seek_flags, int(position * Gst.SECOND)
-            )
-
-            if success:
-                self._position = position
-                logger.debug(f"Seek successful to {position:.3f}s")
-
-                # Restore playing state if we were playing
-                if was_playing and not self.is_playing_flag:
-                    logger.debug("Restoring playing state after seek")
-                    GLib.timeout_add(10, self._restore_playing_state)
-
-                return True
+            # For smoother segment transitions, pause briefly before seeking if playing
+            # This allows the audio buffer to drain, preventing stuttering/glitches
+            if was_playing:
+                self.mpv_instance.pause = True
+                # Small delay (20ms) to let audio buffer drain
+                GLib.timeout_add(20, lambda: self._complete_seek(position, True))
             else:
-                logger.error(f"Seek failed to {position:.3f}s")
-                # Try to recover from failed seek
-                self._recover_from_failed_seek(position, was_playing)
-                return False
+                self._complete_seek(position, False)
+            
+            return True
 
         except Exception as e:
             logger.error(f"Exception during seek: {e}")
-            self._recover_from_failed_seek(position, was_playing)
             return False
         finally:
             self.is_seeking = False
-
-    def _restore_playing_state(self):
-        """Restore playing state after a seek operation."""
-        if not self.is_playing_flag:
-            self.play()
-        return False  # Don't repeat
-
-    def _recover_from_failed_seek(self, position, was_playing):
-        """Attempt to recover from a failed seek operation."""
-        logger.warning(f"Attempting to recover from failed seek to {position:.3f}s")
+    
+    def _complete_seek(self, position, restore_playing):
+        """Complete the seek operation after audio buffer has been cleared."""
         try:
-            # Try to set pipeline back to PAUSED state
-            self.pipeline.set_state(Gst.State.PAUSED)
-            ret = self.pipeline.get_state(2 * Gst.SECOND)
-
-            if (
-                ret[0] == Gst.StateChangeReturn.SUCCESS
-                or ret[0] == Gst.StateChangeReturn.ASYNC
-            ):
-                # Try seek again with less strict flags
-                seek_flags = Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT
-                success = self.pipeline.seek_simple(
-                    Gst.Format.TIME, seek_flags, int(position * Gst.SECOND)
-                )
-                if success:
-                    logger.info("Recovery seek successful with KEY_UNIT flag")
-                    self._position = position
-                    if was_playing:
-                        GLib.timeout_add(10, self._restore_playing_state)
-                    return
-
-            # If still failing, try full recovery
-            self._recover_pipeline()
-
+            # Perform seek with exact precision for smooth segment transitions
+            self.mpv_instance.seek(position, reference='absolute', precision='exact')
+            
+            self._position = position
+            logger.debug(f"Seek completed to {position:.3f}s")
+            
+            # Restore playing state if needed
+            if restore_playing:
+                self.mpv_instance.pause = False
+                
         except Exception as e:
-            logger.error(f"Exception during seek recovery: {e}")
-            self._recover_pipeline()
-
-    def _recover_pipeline(self):
-        """Recover pipeline from stuck state by reloading the file."""
-        logger.warning("Attempting full pipeline recovery")
-        try:
-            if self.current_file:
-                # Save state
-                file_path = self.current_file
-                was_playing = self.is_playing_flag
-                position = self._position
-
-                # Stop and reload
-                self.stop()
-                if self.load(file_path, self.current_track_metadata):
-                    # Restore position
-                    GLib.timeout_add(100, lambda: self._do_seek(position))
-                    if was_playing:
-                        GLib.timeout_add(200, self._restore_playing_state)
-                    logger.info("Pipeline recovery successful")
-                else:
-                    logger.error("Pipeline recovery failed - could not reload file")
-        except Exception as e:
-            logger.error(f"Exception during pipeline recovery: {e}")
+            logger.error(f"Exception completing seek: {e}")
+        
+        return False  # Don't repeat timer
 
     def set_volume(self, volume):
         """Set playback volume (0.0 to 5.0) - updates in real-time."""
@@ -622,7 +397,11 @@ class AudioPlayer:
         logger.debug(f"Setting volume to: {volume}")
 
         self.volume = volume
-        self.volume_element.set_property("volume", volume)
+        try:
+            # MPV volume is 0-100, but we support up to 5.0 (500%)
+            self.mpv_instance.volume = volume * 100
+        except Exception as e:
+            logger.error(f"Failed to set volume: {e}")
 
     def set_playback_speed(self, speed):
         """Set playback speed (0.5 to 5.0) - updates in real-time."""
@@ -630,41 +409,54 @@ class AudioPlayer:
         logger.debug(f"Setting playback speed to: {speed}")
 
         self.speed = speed
-
-        # Scaletempo adjusts automatically based on pipeline playback rate
-        # We need to perform a seek with the new rate
-        if self.is_playing_flag or self.pipeline.get_state(0)[1] != Gst.State.NULL:
-            # Get current position
-            success, position = self.pipeline.query_position(Gst.Format.TIME)
-            if success:
-                # Perform seek with new rate
-                self.pipeline.seek(
-                    speed,  # rate
-                    Gst.Format.TIME,
-                    Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE,
-                    Gst.SeekType.SET,
-                    position,  # Start position
-                    Gst.SeekType.NONE,
-                    -1,  # Stop position (play to end)
-                )
+        try:
+            self.mpv_instance.speed = speed
+        except Exception as e:
+            logger.error(f"Failed to set speed: {e}")
 
     def set_pitch_correction(self, enabled):
-        """Enable or disable pitch correction when changing speed.
-
-        Note: Scaletempo always preserves pitch. To disable pitch correction,
-        we would need to use a different element or approach.
-        For now, this is a no-op as scaletempo doesn't support pitch changes.
-        """
-        logger.debug(
-            f"Setting pitch correction to: {enabled} (scaletempo always preserves pitch)"
-        )
+        """Enable or disable pitch correction when changing speed."""
+        logger.debug(f"Setting pitch correction to: {enabled}")
 
         self.pitch_correction = enabled
+        try:
+            # MPV audio-pitch-correction: yes (preserve pitch) or no (change pitch with speed)
+            self.mpv_instance['audio-pitch-correction'] = 'yes' if enabled else 'no'
+        except Exception as e:
+            logger.error(f"Failed to set pitch correction: {e}")
 
-        # Scaletempo always preserves pitch - we would need to swap elements
-        # to implement non-pitch-corrected speed changes
-        # This could be a future enhancement with dynamic pipeline modification
-
+    def _rebuild_audio_filters(self):
+        """Rebuild the complete audio filter chain from current settings."""
+        filters = []
+        
+        # Add equalizer if configured
+        if self.equalizer_settings:
+            eq_filters = []
+            for freq, gain in self.equalizer_settings:
+                width = freq
+                eq_filters.append(f"equalizer=f={freq}:t=peak:w={width}:g={gain}")
+            filters.extend(eq_filters)
+        
+        # Add ARNNDN if enabled
+        if self.noise_reduction and self.arnndn_model_path:
+            filters.append(f"arnndn=model={self.arnndn_model_path}:mix=1.0")
+        
+        # Apply the filter chain
+        try:
+            if filters:
+                filter_string = ",".join(filters)
+                self.mpv_instance['af'] = filter_string
+                logger.debug(f"Audio filters applied: {filter_string}")
+            else:
+                # Clear all filters
+                try:
+                    del self.mpv_instance['af']
+                except:
+                    self.mpv_instance['af'] = ""
+                logger.debug("All audio filters cleared")
+        except Exception as e:
+            logger.error(f"Failed to apply audio filters: {e}")
+    
     def set_equalizer_bands(self, eq_bands):
         """
         Set equalizer bands for the audio playback - updates in real-time.
@@ -676,42 +468,33 @@ class AudioPlayer:
         logger.debug(f"Setting equalizer bands: {eq_bands}")
         self.equalizer_settings = eq_bands
 
-        # Map frequencies to the 10-band equalizer
-        # Standard 10-band EQ frequencies: 29, 59, 119, 237, 474, 947, 1889, 3770, 7523, 15011 Hz
-        standard_freqs = [29, 59, 119, 237, 474, 947, 1889, 3770, 7523, 15011]
-
-        # Initialize all bands to 0
-        band_gains = [0.0] * 10
-
-        # Map user frequencies to closest band
-        for freq, gain in eq_bands:
-            # Find closest standard frequency
-            closest_band = min(
-                range(len(standard_freqs)), key=lambda i: abs(standard_freqs[i] - freq)
-            )
-            band_gains[closest_band] = gain
-
-        # Apply to equalizer
-        for band_idx, gain in enumerate(band_gains):
-            self.equalizer.set_property(f"band{band_idx}", gain)
+        try:
+            # Build MPV equalizer filter string
+            # Format: f=freq:t=peak:w=width:g=gain
+            if eq_bands:
+                eq_filters = []
+                for freq, gain in eq_bands:
+                    # Use octave width for natural sounding EQ
+                    width = freq
+                    eq_filters.append(f"f={freq}:t=peak:w={width}:g={gain}")
+                
+                eq_string = ",".join([f"equalizer={f}" for f in eq_filters])
+                self.mpv_instance['af'] = eq_string
+            else:
+                # Clear equalizer
+                self.mpv_instance['af'] = ""
+                
+        except Exception as e:
+            logger.error(f"Failed to set equalizer: {e}")
 
     def set_noise_reduction(self, enabled):
         """
-        Enable or disable noise reduction during playback.
+        Enable or disable noise reduction during playback using ARNNDN filter.
 
-        NOTE: Live noise reduction is not currently supported in GStreamer playback
-        because the ARNNDN plugin is not available as a native GStreamer element.
-
-        The arnndn filter works in FFmpeg for file conversion, but cannot be applied
-        in real-time during playback without significant performance impact.
-
-        This method is kept for API compatibility but logs a warning that the feature
-        is not available for live playback.
+        This uses the MPV ARNNDN audio filter for real-time noise reduction.
+        The filter processes audio in real-time using a trained RNN model.
         """
-        logger.warning(
-            f"Noise reduction toggle to {enabled} requested, but live noise reduction "
-            "is not supported in GStreamer playback. Use file conversion instead."
-        )
+        logger.debug(f"Setting noise reduction to: {enabled}")
 
         self.noise_reduction = enabled
 
@@ -722,12 +505,33 @@ class AudioPlayer:
                 )
             return
 
-        # Future enhancement: Could implement using FFmpeg subprocess with named pipes
-        # For now, noise reduction only works during file conversion
-        logger.info(
-            "Noise reduction is only available during file conversion, not live playback. "
-            "The ARNNDN filter requires FFmpeg and is not available as a GStreamer plugin."
-        )
+        try:
+            if enabled:
+                # Enable ARNNDN filter with model
+                # Format: arnndn=model=<path>:mix=<0.0-1.0>
+                # mix=1.0 means 100% processed audio (full noise reduction)
+                arnndn_filter = f"arnndn=model={self.arnndn_model_path}:mix=1.0"
+                
+                # Get current audio filters if any
+                current_filters = self.mpv_instance['af']
+                
+                # Add ARNNDN filter
+                if current_filters and current_filters != "":
+                    # Append to existing filters
+                    self.mpv_instance['af'] = f"{current_filters},{arnndn_filter}"
+                else:
+                    # Set as only filter
+                    self.mpv_instance['af'] = arnndn_filter
+                
+                logger.info(f"ARNNDN noise reduction enabled with model: {self.arnndn_model_path}")
+            
+            # Rebuild the complete audio filter chain
+            self._rebuild_audio_filters()
+                    
+        except Exception as e:
+            logger.error(f"Failed to set noise reduction: {e}")
+            if enabled:
+                logger.warning("ARNNDN filter may not be available in your MPV build")
 
     def is_playing(self):
         """Check if audio is currently playing."""
@@ -758,13 +562,12 @@ class AudioPlayer:
             GLib.source_remove(self.seek_timer_id)
             self.seek_timer_id = None
 
-        # Stop pipeline
-        if self.pipeline:
-            self.pipeline.set_state(Gst.State.NULL)
-
-        # Remove bus watch
-        if self.bus:
-            self.bus.remove_signal_watch()
+        # Stop MPV
+        if self.mpv_instance:
+            try:
+                self.mpv_instance.command("stop")
+            except:
+                pass
 
     def __del__(self):
         """Destructor to ensure cleanup."""

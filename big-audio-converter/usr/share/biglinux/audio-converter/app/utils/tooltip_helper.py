@@ -48,9 +48,8 @@ TOOLTIPS = {
         "Pitch correction is applied automatically"
     ),
     "noise_reduction": _(
-        "Reduce background noise during conversion\n\n"
-        "Applies a noise filter to improve clarity. "
-        "Note: it only affects the converted file, not the live preview."
+        "Reduce background noise during conversion.\n"
+        "Should not be used in music. "
     ),
     "waveform": _(
         "Display audio as a visual waveform\n\n"
