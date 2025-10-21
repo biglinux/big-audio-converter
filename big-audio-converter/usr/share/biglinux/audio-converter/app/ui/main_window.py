@@ -103,7 +103,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Initialize tooltip helper
         if hasattr(self.app, "config") and self.app.config:
-            self.tooltip_helper = TooltipHelper(self)  # Pass the MainWindow instance
+            self.tooltip_helper = TooltipHelper(self.app.config)
         else:
             self.tooltip_helper = None
 
@@ -874,11 +874,11 @@ class MainWindow(Adw.ApplicationWindow):
             self.tooltip_helper.add_tooltip(self.pause_play_btn, "pause_play_btn")
         if hasattr(self, 'next_audio_btn'):
             self.tooltip_helper.add_tooltip(self.next_audio_btn, "next_audio_btn")
-        # Apply tooltips to box containers
+        # Apply tooltips to box containers with custom event handling
         if hasattr(self, 'play_selection_box'):
-            self.tooltip_helper.add_tooltip(self.play_selection_box, "play_selection_switch")
+            self.tooltip_helper.add_tooltip_to_container(self.play_selection_box, "play_selection_switch")
         if hasattr(self, 'auto_advance_box'):
-            self.tooltip_helper.add_tooltip(self.auto_advance_box, "auto_advance_switch")
+            self.tooltip_helper.add_tooltip_to_container(self.auto_advance_box, "auto_advance_switch")
 
     def _on_tips_switch_changed(self, switch, state):
         """Handle mouseover tips toggle and save setting."""
