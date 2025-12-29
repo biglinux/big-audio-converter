@@ -16,7 +16,6 @@ from urllib.parse import unquote
 # This is mandatory in modern PyGObject to prevent warnings and ensure API compatibility.
 import gi
 gi.require_version('Gtk', '4.0')
-gi.require_version('Nautilus', '4.0')
 
 from gi.repository import GObject, Nautilus
 
