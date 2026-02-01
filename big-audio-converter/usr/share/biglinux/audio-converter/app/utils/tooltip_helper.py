@@ -20,6 +20,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GLib, Gtk
 
 import gettext
+
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
@@ -61,8 +62,7 @@ TOOLTIPS = {
         "Pitch correction is applied automatically"
     ),
     "noise_reduction": _(
-        "Reduce background noise during conversion.\n"
-        "Should not be used in music. "
+        "Reduce background noise during conversion.\nShould not be used in music. "
     ),
     "waveform": _(
         "Display audio as a visual waveform\n\n"
@@ -85,8 +85,8 @@ TOOLTIPS = {
         "and start playback.\n\n"
         " LOWER AREA (Segment Editing Zone):\n"
         " Click the bottom half to add segment markers:\n"
-        " • First click: Set START marker (green)\n"
-        " • Second click: Set END marker (red)\n\n"
+        " • First click: Set START marker (red)\n"
+        " • Second click: Set END marker (green)\n\n"
         " ZOOM CONTROLS:\n"
         " • Mouse wheel: Zoom in or out for precise selection"
     ),
@@ -94,18 +94,10 @@ TOOLTIPS = {
         "You're seeing an example of help shown when hovering over an item."
     ),
     # Headerbar controls
-    "clear_queue_button": _(
-        "Remove all files from the queue"
-    ),
-    "prev_audio_btn": _(
-        "Go to the previous audio file in the queue"
-    ),
-    "pause_play_btn": _(
-        "Play or pause the current audio"
-    ),
-    "next_audio_btn": _(
-        "Go to the next audio file in the queue"
-    ),
+    "clear_queue_button": _("Remove all files from the queue"),
+    "prev_audio_btn": _("Go to the previous audio file in the queue"),
+    "pause_play_btn": _("Play or pause the current audio"),
+    "next_audio_btn": _("Go to the next audio file in the queue"),
     "play_selection_switch": _(
         "When enabled, playback automatically plays only the marked segments, skipping unselected parts"
     ),
@@ -113,15 +105,9 @@ TOOLTIPS = {
         "When enabled, automatically plays the next track when current track finishes"
     ),
     # File queue controls
-    "play_this_file": _(
-        "Preview this audio file"
-    ),
-    "remove_from_queue": _(
-        "Remove this file from the queue"
-    ),
-    "right_click_options": _(
-        "Right-click for more options"
-    ),
+    "play_this_file": _("Preview this audio file"),
+    "remove_from_queue": _("Remove this file from the queue"),
+    "right_click_options": _("Right-click for more options"),
 }
 
 _tooltip_helper_instance: "TooltipHelper | None" = None
@@ -271,18 +257,18 @@ popover.custom-tooltip-static label {{
     def add_tooltip(self, widget: Gtk.Widget, tooltip_key: str) -> None:
         """
         Connects a widget to the tooltip management system.
-        
+
         Args:
             widget: The Gtk widget to add tooltip to
             tooltip_key: The key in TOOLTIPS dictionary to lookup text
         """
         if not tooltip_key:
             return
-            
+
         tooltip_text = TOOLTIPS.get(tooltip_key, None)
         if not tooltip_text:
             return
-            
+
         widget._custom_tooltip_text = tooltip_text
         widget.set_tooltip_text(None)
         self._add_controller(widget)
@@ -392,7 +378,7 @@ popover.custom-tooltip-static label {{
     def _on_enter(self, controller, x, y, widget):
         if not self.is_enabled():
             return
-            
+
         # If we are entering a new widget while another is still active (even if fading),
         # force close the previous one immediately
         if self.active_widget and self.active_widget != widget:
@@ -489,7 +475,7 @@ popover.custom-tooltip-static label {{
         if self.active_popover:
             popover_to_hide = self.active_popover
             self.active_popover = None
-            
+
             # Track this popover as closing
             self.closing_popover = popover_to_hide
 
