@@ -17,9 +17,9 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, GLib, Gtk
-
 import gettext
+
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -62,7 +62,42 @@ TOOLTIPS = {
         "Pitch correction is applied automatically"
     ),
     "noise_reduction": _(
-        "Reduce background noise during conversion.\nShould not be used in music. "
+        "Reduce background noise during conversion\n"
+        "using the GTCRN neural network.\n\n"
+        "Should not be used in music."
+    ),
+    "noise_reduction_strength": _(
+        "Adjust the intensity of noise reduction\n\n"
+        "• 1.0 = maximum reduction\n"
+        "• 0.5 = moderate reduction\n"
+        "• Lower values preserve more original audio detail\n\n"
+        "Tip: Start at 1.0 and reduce if the voice sounds muffled"
+    ),
+    "noise_gate": _(
+        "Noise gate silences audio below a volume threshold\n\n"
+        "Useful combined with noise reduction to eliminate\n"
+        "residual noise during pauses between speech.\n\n"
+        "Should not be used in music."
+    ),
+    "gate_threshold": _(
+        "Volume level below which the gate closes\n\n"
+        "• Higher values (e.g. -20 dB): Gate closes more often\n"
+        "• Lower values (e.g. -50 dB): Gate only closes in near-silence"
+    ),
+    "gate_range": _(
+        "How much the audio is attenuated when the gate closes\n\n"
+        "• -60 dB: Almost complete silence\n"
+        "• -20 dB: Gentle reduction, some background remains"
+    ),
+    "gate_attack": _(
+        "How quickly the gate opens when signal exceeds threshold\n\n"
+        "• Low values (5 ms): Fast opening, may cause clicks\n"
+        "• High values (50+ ms): Smooth opening, may cut speech starts"
+    ),
+    "gate_release": _(
+        "How quickly the gate closes after signal drops below threshold\n\n"
+        "• Low values (50 ms): Fast closing, may cut word endings\n"
+        "• High values (300+ ms): Smooth closing, keeps natural tails"
     ),
     "waveform": _(
         "Display audio as a visual waveform\n\n"
@@ -79,16 +114,23 @@ TOOLTIPS = {
         "• Chronological: Exports segments in timeline order\n"
         "• Segment Number: Exports segments by marking order"
     ),
+    "cut_output": _(
+        "Choose how cut segments are saved\n\n"
+        "• Separate Files: Each segment becomes its own file\n"
+        "• Merge into One: All segments are joined into a single file"
+    ),
+    "channels": _(
+        "Limit the number of audio channels\n\n"
+        "• Original: Keeps the source channel layout\n"
+        "• Mono: Downmix to 1 channel\n"
+        "• Stereo: Limit to 2 channels\n\n"
+        "Useful for reducing file size or ensuring compatibility"
+    ),
     "waveform_visualizer": _(
-        " UPPER AREA (Playback):\n"
-        " Click the top half of the waveform to jump to that point "
-        "and start playback.\n\n"
-        " LOWER AREA (Segment Editing Zone):\n"
-        " Click the bottom half to add segment markers:\n"
-        " • First click: Set START marker (red)\n"
-        " • Second click: Set END marker (green)\n\n"
-        " ZOOM CONTROLS:\n"
-        " • Mouse wheel: Zoom in or out for precise selection"
+        "Click the top half to seek playback\n"
+        "Click the bottom half to set cut markers:\n"
+        "  1st click → Start (red) · 2nd click → End (green)\n"
+        "Scroll to zoom in/out for precision"
     ),
     "mouseover_tips": _(
         "You're seeing an example of help shown when hovering over an item."
@@ -104,13 +146,21 @@ TOOLTIPS = {
     "auto_advance_switch": _(
         "When enabled, automatically plays the next track when current track finishes"
     ),
+    "eq_toggle_btn": _("Show or hide the equalizer panel to adjust audio frequencies"),
+    "zoom_btn": _("Open zoom control to adjust the waveform view magnification"),
+    "volume_btn": _("Adjust the output volume level (0-1000%)"),
+    "speed_btn": _("Adjust the playback and conversion speed"),
     # File queue controls
     "play_this_file": _("Preview this audio file"),
     "remove_from_queue": _("Remove this file from the queue"),
     "right_click_options": _("Right-click for more options"),
+    "normalize": _(
+        "Normalize the audio volume to a standard level (EBU R128)\n\n"
+        "• Target: -16 LUFS (broadcast standard)\n"
+        "• Ensures consistent volume across different files\n"
+        "• Applied as the last step in the audio chain"
+    ),
 }
-
-_tooltip_helper_instance: "TooltipHelper | None" = None
 
 
 class TooltipHelper:
@@ -254,13 +304,16 @@ popover.custom-tooltip-static label {{
         except Exception:
             return True
 
-    def add_tooltip(self, widget: Gtk.Widget, tooltip_key: str) -> None:
+    def add_tooltip(
+        self, widget: Gtk.Widget, tooltip_key: str, y_offset: int = 0
+    ) -> None:
         """
         Connects a widget to the tooltip management system.
 
         Args:
             widget: The Gtk widget to add tooltip to
             tooltip_key: The key in TOOLTIPS dictionary to lookup text
+            y_offset: Extra vertical offset in pixels (negative = move up)
         """
         if not tooltip_key:
             return
@@ -270,6 +323,7 @@ popover.custom-tooltip-static label {{
             return
 
         widget._custom_tooltip_text = tooltip_text
+        widget._custom_tooltip_y_offset = y_offset
         widget.set_tooltip_text(None)
         self._add_controller(widget)
 
@@ -451,9 +505,10 @@ popover.custom-tooltip-static label {{
 
             # Point to the entire widget (0,0 to width,height)
             alloc = self.active_widget.get_allocation()
+            y_offset = getattr(self.active_widget, "_custom_tooltip_y_offset", 0)
             rect = Gdk.Rectangle()
             rect.x = 0
-            rect.y = 0
+            rect.y = y_offset
             rect.width = alloc.width
             rect.height = alloc.height
 

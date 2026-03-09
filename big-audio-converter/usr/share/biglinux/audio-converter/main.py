@@ -29,13 +29,6 @@ from app.audio.converter import AudioConverter
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 
-# Create an __init__.py file if it doesn't exist to make the app directory a proper package
-app_init_path = os.path.join(project_root, "app", "__init__.py")
-if not os.path.exists(app_init_path):
-    os.makedirs(os.path.dirname(app_init_path), exist_ok=True)
-    with open(app_init_path, "w") as f:
-        f.write('"""Audio Converter application package."""\n')
-
 
 class Application(Adw.Application):
     """Main application class for Audio Converter."""
@@ -48,21 +41,17 @@ class Application(Adw.Application):
         )
 
         self.config = AppConfig()
-        # Determine ARNNDN model path relative to this script (main.py)
-        self.project_root = os.path.dirname(os.path.abspath(__file__))
-        self.arnndn_model_path = os.path.join(
-            self.project_root, "arnndn-models", "std.rnnn"
-        )
-        if not os.path.exists(self.arnndn_model_path):
-            # Model is optional - noise reduction just won't be available
+        # Check if GTCRN LADSPA plugin is available for noise reduction
+        self.gtcrn_ladspa_path = "/usr/lib/ladspa/libgtcrn_ladspa.so"
+        if not os.path.exists(self.gtcrn_ladspa_path):
             logging.debug(
-                f"ARNNDN model not found at {self.arnndn_model_path}. "
+                f"GTCRN LADSPA plugin not found at {self.gtcrn_ladspa_path}. "
                 "Noise reduction will not be available."
             )
-            self.arnndn_model_path = None  # Ensure it's None if not found
+            self.gtcrn_ladspa_path = None
 
-        self.player = AudioPlayer(arnndn_model_path=self.arnndn_model_path)
-        self.converter = AudioConverter(arnndn_model_path=self.arnndn_model_path)
+        self.player = AudioPlayer(gtcrn_ladspa_path=self.gtcrn_ladspa_path)
+        self.converter = AudioConverter(gtcrn_ladspa_path=self.gtcrn_ladspa_path)
         self.logger = logging.getLogger(__name__)
         self._create_actions()
 
@@ -118,6 +107,9 @@ class Application(Adw.Application):
             action.connect("activate", callback)
             self.add_action(action)
 
+        # Keyboard accelerators
+        self.set_accels_for_action("app.quit", ["<Control>q"])
+
     def do_activate(self):
         """Called when the application is activated."""
         win = self.props.active_window
@@ -141,17 +133,16 @@ class Application(Adw.Application):
 
     def on_about_action(self, *args):
         """Show the about dialog with the system 'big-audio-converter' icon."""
-        about = Adw.AboutWindow(
-            transient_for=self.props.active_window,
+        about = Adw.AboutDialog(
             application_name=_("Audio Converter"),
-            application_icon="big-audio-converter",  # Use system icon
+            application_icon="big-audio-converter",
             developer_name=_("BigLinux Team"),
             version="3.0.0",
             developers=[_("BigLinux Team")],
             website="https://github.com/biglinux/big-audio-converter",
             license_type=Gtk.License.GPL_3_0,
         )
-        about.present()
+        about.present(self.props.active_window)
 
     def on_show_welcome_action(self, *args):
         """Show the welcome dialog."""

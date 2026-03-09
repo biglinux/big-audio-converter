@@ -4,12 +4,18 @@
 Audio converter module for handling audio conversion with ffmpeg.
 """
 
-import os
-import re
-import subprocess
-import logging
-import tempfile
 import gettext
+import logging
+import math
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+
+from gi.repository import GLib
+
 from .segment_processor import SegmentProcessor  # Import the segment processor
 
 gettext.textdomain("big-audio-converter")
@@ -23,18 +29,16 @@ class AudioConverter:
     Audio converter using ffmpeg for conversion functionality.
     """
 
-    def __init__(self, arnndn_model_path=None):
+    def __init__(self, gtcrn_ladspa_path=None):
         """Initialize the audio converter."""
         self.ffmpeg_path = self._find_ffmpeg()
         if not self.ffmpeg_path:
             logger.error("ffmpeg not found! Audio conversion will not work.")
 
-        self.arnndn_model_path = arnndn_model_path
-        if self.arnndn_model_path and not os.path.exists(self.arnndn_model_path):
-            logger.warning(
-                f"Provided ARNNDN model path does not exist: {self.arnndn_model_path}"
-            )
-            self.arnndn_model_path = None
+        self.gtcrn_ladspa_path = gtcrn_ladspa_path
+        if self.gtcrn_ladspa_path and not os.path.exists(self.gtcrn_ladspa_path):
+            logger.warning(f"GTCRN LADSPA plugin not found: {self.gtcrn_ladspa_path}")
+            self.gtcrn_ladspa_path = None
 
         # Conversion properties
         self.cancel_flag = False
@@ -70,14 +74,9 @@ class AudioConverter:
     def convert_all_files(self, files, settings, progress_callback, finish_callback):
         """Convert a list of files with the given settings."""
         if not self.ffmpeg_path:
-            try:
-                from gi.repository import GLib
-
-                GLib.idle_add(
-                    finish_callback, False, "ffmpeg not found. Please install FFmpeg."
-                )
-            except ImportError:
-                finish_callback(False, "ffmpeg not found. Please install FFmpeg.")
+            GLib.idle_add(
+                finish_callback, False, "ffmpeg not found. Please install FFmpeg."
+            )
             return
 
         try:
@@ -100,29 +99,15 @@ class AudioConverter:
             for i, file_path in enumerate(files):
                 if self.cancel_flag:
                     # If canceled, report partial success with successfully converted files
-                    try:
-                        from gi.repository import GLib
-
-                        if successful_files:
-                            GLib.idle_add(
-                                finish_callback,
-                                True,
-                                "Conversion partially completed.",
-                                successful_files,
-                            )
-                        else:
-                            GLib.idle_add(
-                                finish_callback, False, "Conversion canceled."
-                            )
-                    except ImportError:
-                        if successful_files:
-                            finish_callback(
-                                True,
-                                "Conversion partially completed.",
-                                successful_files,
-                            )
-                        else:
-                            finish_callback(False, "Conversion canceled.")
+                    if successful_files:
+                        GLib.idle_add(
+                            finish_callback,
+                            True,
+                            "Conversion partially completed.",
+                            successful_files,
+                        )
+                    else:
+                        GLib.idle_add(finish_callback, False, "Conversion canceled.")
                     return
 
                 # Clone settings for each file to prevent interference
@@ -158,38 +143,21 @@ class AudioConverter:
                     )
 
             # All files processed, report success with list of converted files
-            try:
-                from gi.repository import GLib
-
-                if successful_files:
-                    GLib.idle_add(
-                        finish_callback,
-                        True,
-                        f"Successfully converted {len(successful_files)} of {total_files} files.",
-                        successful_files,
-                    )
-                else:
-                    GLib.idle_add(
-                        finish_callback, False, "No files were successfully converted."
-                    )
-            except ImportError:
-                if successful_files:
-                    finish_callback(
-                        True,
-                        f"Successfully converted {len(successful_files)} of {total_files} files.",
-                        successful_files,
-                    )
-                else:
-                    finish_callback(False, "No files were successfully converted.")
+            if successful_files:
+                GLib.idle_add(
+                    finish_callback,
+                    True,
+                    f"Successfully converted {len(successful_files)} of {total_files} files.",
+                    successful_files,
+                )
+            else:
+                GLib.idle_add(
+                    finish_callback, False, "No files were successfully converted."
+                )
 
         except Exception as e:
             logger.exception(f"Error during conversion: {str(e)}")
-            try:
-                from gi.repository import GLib
-
-                GLib.idle_add(finish_callback, False, f"Conversion error: {str(e)}")
-            except ImportError:
-                finish_callback(False, f"Conversion error: {str(e)}")
+            GLib.idle_add(finish_callback, False, f"Conversion error: {str(e)}")
 
     def convert_file(self, input_path, output_path, settings, progress_callback=None):
         """Convert a single file with the given settings.
@@ -283,150 +251,29 @@ class AudioConverter:
 
                 audio_filters = []
             else:
-                audio_filters = []
-                if settings.get("volume", 1.0) != 1.0:
-                    audio_filters.append(f"volume={settings['volume']}")
-                if settings.get("speed", 1.0) != 1.0:
-                    audio_filters.append(f"atempo={settings['speed']}")
-                if settings.get("noise_reduction", False) and self.arnndn_model_path:
-                    audio_filters.append(f"arnndn=m='{self.arnndn_model_path}'")
-                if settings.get("normalize", False):
-                    audio_filters.append("loudnorm=I=-16:LRA=11:TP=-1.5")
+                audio_filters = self._build_audio_filters(settings)
                 if audio_filters:
                     cmd.extend(["-af", ",".join(audio_filters)])
-                if settings["format"] == "aac":
-                    cmd.extend(["-f", "adts", "-c:a", "aac", "-strict", "-2"])
-                else:
-                    cmd.extend(["-f", settings["format"]])
-                if settings.get("bitrate") and settings["format"] in [
-                    "mp3",
-                    "aac",
-                    "ogg",
-                    "opus",
-                ]:
-                    cmd.extend(["-b:a", settings["bitrate"]])
+                cmd.extend(self._build_codec_args(settings))
 
-            self.cancel_requested = False
+            # Apply channel limit if specified (1=mono, 2=stereo)
+            channels = settings.get("channels")
+            if channels and settings["format"] != "copy":
+                cmd.extend(["-ac", str(channels)])
 
             # Handle cut functionality
             if file_has_segments:
                 segments = settings["cut_segments"]
                 if segments:
                     temp_dir = tempfile.mkdtemp(prefix="audioconv_")
-                    segment_processor = SegmentProcessor(self.ffmpeg_path)
-
-                    # Determine the actual output format for segment processing
-                    # In copy mode, use the OUTPUT file extension (not input)
-                    segment_output_format = settings["format"]
-                    segment_codec_params = None
-
-                    if segment_output_format == "copy":
-                        _, output_ext = os.path.splitext(output_path)
-                        segment_output_format = (
-                            output_ext[1:].lower() if output_ext else "mp3"
-                        )
-                    else:
-                        # Build codec parameters for encoding (not copy mode)
-                        segment_codec_params = []
-                        if settings["format"] == "aac":
-                            segment_codec_params.extend([
-                                "-f",
-                                "adts",
-                                "-c:a",
-                                "aac",
-                                "-strict",
-                                "-2",
-                            ])
-                        else:
-                            segment_codec_params.extend(["-f", settings["format"]])
-
-                        # Add bitrate if specified for supported formats
-                        if settings.get("bitrate") and settings["format"] in [
-                            "mp3",
-                            "aac",
-                            "ogg",
-                            "opus",
-                        ]:
-                            segment_codec_params.extend(["-b:a", settings["bitrate"]])
-
-                    processed_output = segment_processor.process_segments(
-                        actual_input_path,
-                        segments,
-                        segment_output_format,
-                        temp_dir,
-                        ",".join(audio_filters) if audio_filters else None,
-                        track_metadata.get("track_index") if track_metadata else None,
-                        output_path,  # Pass final output path for optimization
-                        segment_codec_params,  # Pass codec parameters for encoding
+                    return self._convert_segments(
+                        actual_input_path, segments, settings, audio_filters,
+                        track_metadata, output_path, channels, temp_dir,
                     )
-                    if processed_output and os.path.exists(processed_output):
-                        import shutil
-
-                        # Check if output is already at final destination (optimization path)
-                        if os.path.abspath(processed_output) == os.path.abspath(
-                            output_path
-                        ):
-                            logger.info(
-                                f"Conversion with segments successful (direct): {input_path} -> {output_path}"
-                            )
-                            # Still clean up temp directory if it exists
-                            if temp_dir and os.path.exists(temp_dir):
-                                try:
-                                    shutil.rmtree(temp_dir)
-                                    temp_dir = None
-                                    logger.debug("Temporary directory cleaned up")
-                                except Exception as cleanup_err:
-                                    logger.warning(
-                                        f"Failed to clean up temp directory: {cleanup_err}"
-                                    )
-                            return True
-
-                        # Otherwise copy from temp to final destination
-                        try:
-                            shutil.copy2(processed_output, output_path)
-                            logger.info(
-                                f"Conversion with segments successful: {input_path} -> {output_path}"
-                            )
-                        finally:
-                            # Clean up temp directory immediately after copying
-                            if temp_dir and os.path.exists(temp_dir):
-                                try:
-                                    shutil.rmtree(temp_dir)
-                                    temp_dir = None  # Mark as cleaned
-                                    logger.debug(
-                                        "Temporary directory cleaned up after segment processing"
-                                    )
-                                except Exception as cleanup_err:
-                                    logger.warning(
-                                        f"Failed to clean up temp directory: {cleanup_err}"
-                                    )
-                        return True
-                    else:
-                        logger.error("Segment processing failed.")
-                        # Clean up temp directory on failure too
-                        if temp_dir and os.path.exists(temp_dir):
-                            try:
-                                import shutil
-
-                                shutil.rmtree(temp_dir)
-                                temp_dir = None
-                            except Exception as cleanup_err:
-                                logger.warning(
-                                    f"Failed to clean up temp directory: {cleanup_err}"
-                                )
-                        return False
-                else:
                     # Fall through to normal conversion if no valid segments
-                    pass
 
             # Normal conversion (no segments)
             cmd.append(output_path)
-            print("\n=== FFMPEG COMMAND ===")
-            print(f"{' '.join(cmd)}")
-            print("======================\n")
-            logger.info("=== FFMPEG COMMAND ===")
-            logger.info(f"{' '.join(cmd)}")
-            logger.info("======================")
             logger.debug(f"FFmpeg command: {' '.join(cmd)}")
 
             process = subprocess.Popen(
@@ -472,14 +319,175 @@ class AudioConverter:
             return False
         finally:
             self.current_process = None
-            if temp_dir and os.path.exists(temp_dir):
-                import shutil
+            self._cleanup_temp_dir(temp_dir)
 
-                try:
-                    shutil.rmtree(temp_dir)
-                    logger.debug("Temporary directory cleaned up")
-                except Exception as e:
-                    logger.error(f"Failed to clean up temp directory: {e}")
+    def _build_audio_filters(self, settings):
+        """Build the list of FFmpeg audio filters from settings.
+
+        Filter order: HPF → Transient → Compressor → GTCRN NR → Gate → EQ → Volume → Speed → Normalize
+        """
+        filters = []
+
+        # 1. High-pass filter (remove low-frequency rumble)
+        if settings.get("hpf_enabled", False):
+            freq = settings.get("hpf_frequency", 80)
+            filters.append(f"highpass=f={freq}:poles=2")
+
+        # 2. Transient suppressor (clicks and plosives)
+        if settings.get("transient_enabled", False) and self.gtcrn_ladspa_path:
+            attack = settings.get("transient_attack", -0.5)
+            ladspa_dir = str(Path(self.gtcrn_ladspa_path).parent)
+            filters.append(
+                f"ladspa=file={ladspa_dir}/transient_split.so:plugin=transient:controls=c0={attack}"
+            )
+
+        # 3. Compressor (before NR to even out dynamics)
+        if settings.get("compressor_enabled", False):
+            ci = settings.get("compressor_intensity", 1.0)
+            threshold_db = -20.0 - ci * 20.0
+            ratio = 3.0 + ci * 7.0
+            makeup_db = 6.0 + ci * 12.0
+            knee_db = 12.0 + ci * 4.0
+            threshold_lin = 10 ** (threshold_db / 20.0)
+            makeup_lin = 10 ** (makeup_db / 20.0)
+            knee_lin = 10 ** (knee_db / 20.0)  # FFmpeg acompressor knee range: 1-8
+            filters.append(
+                f"acompressor=threshold={threshold_lin:.6f}:ratio={ratio:.1f}:attack=150:release=800:makeup={makeup_lin:.4f}:knee={knee_lin:.4f}:detection=rms"
+            )
+
+        # 4. GTCRN noise reduction
+        if settings.get("noise_reduction", False) and self.gtcrn_ladspa_path:
+            strength = settings.get("noise_strength", 1.0)
+            model = settings.get("noise_model", 0)
+            speech_strength = settings.get("noise_speech_strength", 1.0)
+            lookahead = settings.get("noise_lookahead", 0)
+            voice_enhance = settings.get("noise_voice_enhance", 0.0)
+            model_blend = 1 if settings.get("noise_model_blend", False) else 0
+            filters.append(
+                f"ladspa=file={self.gtcrn_ladspa_path}:plugin=gtcrn_mono:controls="
+                f"c0=1|c1={strength}|c2={model}|c3={speech_strength}|c4={lookahead}|c5={voice_enhance}|c6={model_blend}"
+            )
+
+        # 5. Noise gate (after NR)
+        if settings.get("gate_enabled", False):
+            intensity = settings.get("gate_intensity", 0.5)
+            threshold_db = -50.0 + math.sqrt(intensity) * 35.0
+            range_db = -40.0 - math.sqrt(intensity) * 50.0
+            threshold_lin = 10 ** (threshold_db / 20.0)
+            range_lin = 10 ** (range_db / 20.0)
+            filters.append(
+                f"agate=threshold={threshold_lin:.6f}:range={range_lin:.6f}:attack=10:release=10:detection=rms"
+            )
+
+        # 6. Equalizer
+        if settings.get("eq_enabled", False):
+            eq_bands_str = settings.get("eq_bands", "0,0,0,0,0,0,0,0,0,0")
+            try:
+                gains = [float(x) for x in eq_bands_str.split(",")]
+            except (ValueError, AttributeError):
+                gains = [0.0] * 10
+            eq_freqs = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+            for i, (freq, gain) in enumerate(zip(eq_freqs, gains)):
+                if gain != 0.0:
+                    filters.append(f"equalizer=f={freq}:width_type=o:w=1.5:g={gain}")
+
+        # 7. Volume
+        if settings.get("volume", 1.0) != 1.0:
+            filters.append(f"volume={settings['volume']}")
+
+        # 8. Speed (atempo supports 0.5-100.0, chain filters for values outside)
+        speed = settings.get("speed", 1.0)
+        if speed != 1.0:
+            remaining = speed
+            while remaining < 0.5:
+                filters.append("atempo=0.5")
+                remaining /= 0.5
+            while remaining > 100.0:
+                filters.append("atempo=100.0")
+                remaining /= 100.0
+            filters.append(f"atempo={remaining}")
+
+        # 9. Normalization (last)
+        if settings.get("normalize", False):
+            filters.append("loudnorm=I=-16:LRA=11:TP=-1.5")
+
+        return filters
+
+    def _build_codec_args(self, settings, channels=None):
+        """Build FFmpeg codec/format arguments for encoding from settings."""
+        args = []
+        if settings["format"] == "aac":
+            args.extend(["-f", "adts", "-c:a", "aac", "-strict", "-2"])
+        else:
+            args.extend(["-f", settings["format"]])
+        if settings.get("bitrate") and settings["format"] in ("mp3", "aac", "ogg", "opus"):
+            args.extend(["-b:a", settings["bitrate"]])
+        if channels and settings["format"] != "copy":
+            args.extend(["-ac", str(channels)])
+        return args
+
+    @staticmethod
+    def _cleanup_temp_dir(temp_dir):
+        """Clean up a temporary directory, logging any errors."""
+        if temp_dir and os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+                logger.debug("Temporary directory cleaned up")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp directory: {e}")
+
+    def _convert_segments(self, actual_input_path, segments, settings, audio_filters,
+                          track_metadata, output_path, channels, temp_dir):
+        """Handle segment-based conversion (cut mode). Returns True on success."""
+        segment_processor = SegmentProcessor(self.ffmpeg_path)
+        segment_output_format = settings["format"]
+        segment_codec_params = None
+
+        if segment_output_format == "copy":
+            _, output_ext = os.path.splitext(output_path)
+            segment_output_format = output_ext[1:].lower() if output_ext else "mp3"
+        else:
+            segment_codec_params = self._build_codec_args(settings, channels)
+
+        cut_merge = settings.get("cut_merge", True)
+        filter_str = ",".join(audio_filters) if audio_filters else None
+        track_index = track_metadata.get("track_index") if track_metadata else None
+
+        if not cut_merge and len(segments) > 1:
+            # Separate files mode
+            base_name, base_ext = os.path.splitext(output_path)
+            all_ok = True
+            for seg_idx, segment in enumerate(segment_processor._validate_segments(segments)):
+                seg_output = f"{base_name}_segment{seg_idx + 1}{base_ext}"
+                if not segment_processor._extract_segment(
+                    actual_input_path, segment, seg_output,
+                    filter_str, track_index, segment_codec_params,
+                ):
+                    logger.error(f"Failed to extract segment {seg_idx + 1} to {seg_output}")
+                    all_ok = False
+            self._cleanup_temp_dir(temp_dir)
+            return all_ok
+
+        # Merge mode (default)
+        processed_output = segment_processor.process_segments(
+            actual_input_path, segments, segment_output_format, temp_dir,
+            filter_str, track_index, output_path, segment_codec_params,
+        )
+        if not processed_output or not os.path.exists(processed_output):
+            logger.error("Segment processing failed.")
+            self._cleanup_temp_dir(temp_dir)
+            return False
+
+        if os.path.abspath(processed_output) != os.path.abspath(output_path):
+            try:
+                shutil.copy2(processed_output, output_path)
+            finally:
+                self._cleanup_temp_dir(temp_dir)
+        else:
+            self._cleanup_temp_dir(temp_dir)
+
+        logger.info(f"Conversion with segments successful: {actual_input_path} -> {output_path}")
+        return True
 
     def _log_ffmpeg_version(self):
         """Log FFmpeg version for diagnostics."""

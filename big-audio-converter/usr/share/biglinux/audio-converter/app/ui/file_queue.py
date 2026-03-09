@@ -3,16 +3,23 @@ File queue UI component for managing files to be converted.
 """
 
 import gettext
-import gi
+import json
+import logging
 import os
+import queue
+import subprocess
+import threading
+import time
+
+import gi
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Gdk, GLib, Adw
-import logging
+
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 logger = logging.getLogger(__name__)
 
@@ -61,15 +68,21 @@ class FileQueueRow(Adw.ActionRow):
         )
         self.play_button.add_css_class("flat")
         self.play_button.set_valign(Gtk.Align.CENTER)
+        self.play_button.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Play file")],
+        )
         self.play_button.connect(
             "clicked", lambda btn: self.on_play_callback(self.file_path, self.index)
         )
         self.add_prefix(self.play_button)
 
         # Remove from queue button (left side, after play button)
-        remove_button = Gtk.Button.new_from_icon_name("edit-delete-remove")
+        remove_button = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
         remove_button.add_css_class("flat")
         remove_button.set_valign(Gtk.Align.CENTER)
+        remove_button.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Remove from queue")],
+        )
         remove_button.connect(
             "clicked", lambda btn: self.on_remove_callback(self.index)
         )
@@ -95,8 +108,6 @@ class FileQueueRow(Adw.ActionRow):
 
     def _setup_context_menu(self):
         """Setup right-click context menu for the file row."""
-        from gi.repository import Gio
-
         # Create popup menu
         menu = Gtk.PopoverMenu()
         menu_model = Gio.Menu()
@@ -184,8 +195,6 @@ class FileQueueRow(Adw.ActionRow):
 
     def _on_open_folder(self, action, param):
         """Open the folder containing the file."""
-        import subprocess
-
         # Handle virtual track paths (contain ::)
         actual_path = (
             self.file_path.split("::")[0] if "::" in self.file_path else self.file_path
@@ -199,11 +208,157 @@ class FileQueueRow(Adw.ActionRow):
             except Exception as e:
                 logger.error(f"Failed to open folder: {e}")
 
+    @staticmethod
+    def _format_size(size_bytes):
+        """Format byte count to human-readable string."""
+        if size_bytes < 1024:
+            return f"{size_bytes} B"
+        if size_bytes < 1024 * 1024:
+            return f"{size_bytes / 1024:.1f} KB"
+        if size_bytes < 1024 * 1024 * 1024:
+            return f"{size_bytes / (1024 * 1024):.1f} MB"
+        return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
+
+    @staticmethod
+    def _parse_duration_tag(value):
+        """Parse a duration tag string like '00:20:55.072000000' into seconds."""
+        time_parts = value.split(":")
+        if len(time_parts) == 3:
+            return int(time_parts[0]) * 3600 + int(time_parts[1]) * 60 + float(time_parts[2])
+        return None
+
+    @staticmethod
+    def _format_duration(total_secs):
+        """Format seconds into H:MM:SS or M:SS string."""
+        hours = int(total_secs // 3600)
+        minutes = int((total_secs % 3600) // 60)
+        seconds = int(total_secs % 60)
+        if hours > 0:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+
+    @staticmethod
+    def _find_audio_stream(data, file_path, is_video_track):
+        """Find the correct audio stream from ffprobe data."""
+        if "streams" not in data:
+            return None
+        if is_video_track:
+            try:
+                track_part = file_path.split("::")[-1]
+                track_num = int(track_part.split("track")[-1].split(".")[0])
+                audio_streams = [s for s in data["streams"] if s.get("codec_type") == "audio"]
+                if track_num <= len(audio_streams):
+                    return audio_streams[track_num - 1]
+            except Exception:
+                pass
+        # Fallback: first audio stream, or first stream
+        for s in data["streams"]:
+            if s.get("codec_type") == "audio":
+                return s
+        return data["streams"][0] if data["streams"] else None
+
+    def _get_stream_tag(self, stream, prefixes):
+        """Get the first matching tag value from a stream's tags."""
+        if not stream or "tags" not in stream:
+            return None
+        for key, value in stream["tags"].items():
+            for prefix in prefixes:
+                if key.startswith(prefix + "-") or key == prefix:
+                    return value
+        return None
+
+    def _extract_audio_props(self, audio_stream, data, is_video_track, actual_path):
+        """Extract ordered list of (label, value) for audio properties."""
+        props = []
+
+        # --- Size ---
+        duration_val = self._get_tag_as_duration(audio_stream)
+        if duration_val is None and audio_stream and "duration" in audio_stream:
+            try:
+                duration_val = float(audio_stream["duration"])
+            except (ValueError, TypeError):
+                pass
+
+        bitrate_val = self._get_tag_as_int(audio_stream, ("BPS",))
+        if bitrate_val is None and audio_stream and "bit_rate" in audio_stream:
+            try:
+                bitrate_val = int(audio_stream["bit_rate"])
+            except (ValueError, TypeError):
+                pass
+
+        if duration_val is not None and bitrate_val is not None:
+            props.append(("Size", self._format_size(int(duration_val * bitrate_val / 8))))
+        elif not is_video_track:
+            try:
+                props.append(("Size", self._format_size(os.path.getsize(actual_path))))
+            except OSError:
+                props.append(("Size", "Unknown"))
+        else:
+            props.append(("Size", "Unknown"))
+
+        # --- Duration ---
+        if duration_val is not None:
+            props.append(("Duration", self._format_duration(duration_val)))
+        elif "format" in data and "duration" in data["format"]:
+            try:
+                props.append(("Duration", self._format_duration(float(data["format"]["duration"]))))
+            except (ValueError, TypeError):
+                pass
+
+        # --- Format ---
+        if audio_stream and "codec_long_name" in audio_stream:
+            props.append(("Format", audio_stream["codec_long_name"]))
+        elif "format" in data and "format_long_name" in data["format"]:
+            props.append(("Format", data["format"]["format_long_name"]))
+
+        # --- Bitrate ---
+        if bitrate_val is not None:
+            props.append(("Bitrate", f"{bitrate_val // 1000} kbps"))
+        elif "format" in data and "bit_rate" in data["format"]:
+            try:
+                props.append(("Bitrate", f"{int(data['format']['bit_rate']) // 1000} kbps"))
+            except (ValueError, TypeError):
+                pass
+
+        # --- Sample rate, channels, bit depth ---
+        if audio_stream:
+            if "sample_rate" in audio_stream:
+                try:
+                    props.append(("Sample Rate", f"{int(audio_stream['sample_rate']) // 1000} kHz"))
+                except (ValueError, TypeError):
+                    pass
+            if "channels" in audio_stream:
+                ch = audio_stream["channels"]
+                layout = audio_stream.get("channel_layout", "")
+                props.append(("Channels", f"{ch} ({layout})" if layout else str(ch)))
+            bps = audio_stream.get("bits_per_sample", 0)
+            if bps and int(bps) > 0:
+                props.append(("Bit Depth", f"{bps} bit"))
+
+        return props
+
+    def _get_tag_as_duration(self, stream):
+        """Get duration in seconds from stream tags."""
+        raw = self._get_stream_tag(stream, ("DURATION",))
+        if raw:
+            try:
+                return self._parse_duration_tag(raw)
+            except Exception:
+                pass
+        return None
+
+    def _get_tag_as_int(self, stream, prefixes):
+        """Get an integer tag value from stream."""
+        raw = self._get_stream_tag(stream, prefixes)
+        if raw:
+            try:
+                return int(raw)
+            except (ValueError, TypeError):
+                pass
+        return None
+
     def _on_show_info(self, action, param):
         """Show detailed information dialog about the file."""
-        import subprocess
-        import json
-
         # Get parent window
         widget = self.get_parent()
         while widget and not isinstance(widget, Gtk.Window):
@@ -227,30 +382,29 @@ class FileQueueRow(Adw.ActionRow):
             default_height=600,
         )
 
-        # Create header bar
+        # Create header bar with copy button
         header = Gtk.HeaderBar()
         header.set_show_title_buttons(True)
-
-        # Copy button
         copy_button = Gtk.Button()
         copy_button.set_icon_name("edit-copy-symbolic")
         copy_button.set_tooltip_text(_("Copy information to clipboard"))
         copy_button.add_css_class("flat")
+        copy_button.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Copy information to clipboard")],
+        )
         header.pack_end(copy_button)
-
         dialog.set_titlebar(header)
 
-        # Create scrolled window for content
+        # Create scrolled content area
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
         dialog.set_child(scrolled)
 
-        # Create main content box
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         scrolled.set_child(main_box)
 
-        # File name as title (large, prominent)
+        # File name title
         title_label = Gtk.Label()
         title_label.set_markup(
             f"<span size='large' weight='bold'>{GLib.markup_escape_text(os.path.basename(self.file_path))}</span>"
@@ -262,7 +416,7 @@ class FileQueueRow(Adw.ActionRow):
         title_label.set_margin_end(24)
         main_box.append(title_label)
 
-        # File path (secondary text)
+        # File path subtitle
         path_label = Gtk.Label()
         path_label.set_text(actual_path)
         path_label.set_wrap(True)
@@ -273,332 +427,80 @@ class FileQueueRow(Adw.ActionRow):
         path_label.set_margin_end(24)
         main_box.append(path_label)
 
-        # Store all info for copying
-        info_text = []
-        info_text.append(f"File: {os.path.basename(self.file_path)}")
-        info_text.append(f"Path: {actual_path}")
-        info_text.append("")
+        # Clipboard text accumulator
+        info_text = [f"File: {os.path.basename(self.file_path)}", f"Path: {actual_path}", ""]
 
-        # Get file basic info
-        size_str = "Unknown"
-        basic_items = []
-
-        # We'll calculate size from ffprobe data regardless of file type
-        size_str = "Calculating..."
-        if is_video_track:
-            basic_items = [("Size (Audio Track)", size_str)]
-        else:
-            basic_items = [("Size", size_str)]
-
-        # Create groups for different types of information
-        # We'll update basic_group after getting stream info
-        basic_group = None
-
-        # Get complete metadata using ffprobe
+        # Populate info from ffprobe
         try:
-            cmd = [
-                "ffprobe",
-                "-v",
-                "quiet",
-                "-print_format",
-                "json",
-                "-show_format",
-                "-show_streams",
-                actual_path,
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
+            result = subprocess.run(
+                ["ffprobe", "-v", "quiet", "-print_format", "json",
+                 "-show_format", "-show_streams", actual_path],
+                capture_output=True, text=True, timeout=10,
+            )
             if result.returncode == 0:
                 data = json.loads(result.stdout)
+                audio_stream = self._find_audio_stream(data, self.file_path, is_video_track)
 
-                # Audio properties group - will be built in specific order
-                audio_props = []
+                # File details group
+                main_box.append(self._create_info_group(_("File Details"), [("Path", actual_path)]))
 
-                # Stream information - get this first to calculate size
-                audio_stream = None
-                if "streams" in data:
-                    # Find the correct audio stream
-                    if is_video_track:
-                        # Extract track number from virtual path (format: ...::track1.ext)
-                        try:
-                            track_part = self.file_path.split("::")[-1]
-                            track_num = int(track_part.split("track")[-1].split(".")[0])
-                            # Get all audio streams
-                            audio_streams = [
-                                s
-                                for s in data["streams"]
-                                if s.get("codec_type") == "audio"
-                            ]
-                            if track_num <= len(audio_streams):
-                                audio_stream = audio_streams[track_num - 1]
-                        except:
-                            # Fallback to first audio stream
-                            for s in data["streams"]:
-                                if s.get("codec_type") == "audio":
-                                    audio_stream = s
-                                    break
-                    else:
-                        # For regular files, get first audio stream
-                        for s in data["streams"]:
-                            if s.get("codec_type") == "audio":
-                                audio_stream = s
-                                break
-                        if not audio_stream and len(data["streams"]) > 0:
-                            audio_stream = data["streams"][0]
-
-                # 1. Calculate and add SIZE first
-                size_calculated = False
-                if audio_stream:
-                    # Try to get duration and bitrate from tags first (more accurate for video files)
-                    duration_value = None
-                    bitrate_value = None
-
-                    # Check tags for language-specific values
-                    if "tags" in audio_stream:
-                        tags = audio_stream["tags"]
-                        # Find DURATION-* and BPS-* tags (or DURATION/BPS without suffix)
-                        for key, value in tags.items():
-                            if key.startswith("DURATION-") or key == "DURATION":
-                                # Parse duration like "00:20:55.072000000"
-                                try:
-                                    time_parts = value.split(":")
-                                    if len(time_parts) == 3:
-                                        hours = int(time_parts[0])
-                                        minutes = int(time_parts[1])
-                                        seconds = float(time_parts[2])
-                                        duration_value = (
-                                            hours * 3600 + minutes * 60 + seconds
-                                        )
-                                except:
-                                    pass
-                            elif key.startswith("BPS-") or key == "BPS":
-                                try:
-                                    bitrate_value = int(value)
-                                except:
-                                    pass
-
-                    # Fallback to stream-level values if tags not found
-                    if duration_value is None and "duration" in audio_stream:
-                        duration_value = float(audio_stream["duration"])
-                    if bitrate_value is None and "bit_rate" in audio_stream:
-                        bitrate_value = int(audio_stream["bit_rate"])
-
-                    # Calculate size if we have both values
-                    if duration_value is not None and bitrate_value is not None:
-                        try:
-                            size_bytes = int((duration_value * bitrate_value) / 8)
-
-                            if size_bytes < 1024:
-                                size_str = f"{size_bytes} B"
-                            elif size_bytes < 1024 * 1024:
-                                size_str = f"{size_bytes / 1024:.1f} KB"
-                            elif size_bytes < 1024 * 1024 * 1024:
-                                size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
-                            else:
-                                size_str = f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
-
-                            audio_props.append(("Size", size_str))
-                            size_calculated = True
-                        except:
-                            pass
-
-                if not size_calculated:
-                    # Only use file size as fallback for non-video files
-                    if not is_video_track:
-                        try:
-                            size_bytes = os.path.getsize(actual_path)
-                            if size_bytes < 1024:
-                                size_str = f"{size_bytes} B"
-                            elif size_bytes < 1024 * 1024:
-                                size_str = f"{size_bytes / 1024:.1f} KB"
-                            elif size_bytes < 1024 * 1024 * 1024:
-                                size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
-                            else:
-                                size_str = f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
-                            audio_props.append(("Size", size_str))
-                        except:
-                            audio_props.append(("Size", "Unknown"))
-                    else:
-                        audio_props.append(("Size", "Unknown"))
-
-                # 2. Add DURATION
-                duration_added = False
-                if audio_stream and "tags" in audio_stream:
-                    # Try to get duration from tags first
-                    for key, value in audio_stream["tags"].items():
-                        if key.startswith("DURATION-") or key == "DURATION":
-                            # Parse and format duration
-                            try:
-                                time_parts = value.split(":")
-                                if len(time_parts) == 3:
-                                    hours = int(time_parts[0])
-                                    minutes = int(time_parts[1])
-                                    seconds = float(time_parts[2])
-                                    total_secs = hours * 3600 + minutes * 60 + seconds
-
-                                    hours_int = int(total_secs // 3600)
-                                    minutes_int = int((total_secs % 3600) // 60)
-                                    seconds_int = int(total_secs % 60)
-
-                                    if hours_int > 0:
-                                        duration_str = f"{hours_int}:{minutes_int:02d}:{seconds_int:02d}"
-                                    else:
-                                        duration_str = (
-                                            f"{minutes_int}:{seconds_int:02d}"
-                                        )
-                                    audio_props.append(("Duration", duration_str))
-                                    duration_added = True
-                                    break
-                            except:
-                                pass
-
-                if not duration_added:
-                    # Fallback to format duration
-                    if "format" in data and "duration" in data["format"]:
-                        duration_secs = float(data["format"]["duration"])
-                        hours = int(duration_secs // 3600)
-                        minutes = int((duration_secs % 3600) // 60)
-                        seconds = int(duration_secs % 60)
-                        if hours > 0:
-                            duration_str = f"{hours}:{minutes:02d}:{seconds:02d}"
-                        else:
-                            duration_str = f"{minutes}:{seconds:02d}"
-                        audio_props.append(("Duration", duration_str))
-
-                # 3. Add FORMAT (codec)
-                if audio_stream and "codec_long_name" in audio_stream:
-                    audio_props.append(("Format", audio_stream["codec_long_name"]))
-                elif "format" in data and "format_long_name" in data["format"]:
-                    audio_props.append(("Format", data["format"]["format_long_name"]))
-
-                # 4. Add BITRATE
-                bitrate_added = False
-                if audio_stream and "tags" in audio_stream:
-                    # Try to get bitrate from tags first
-                    for key, value in audio_stream["tags"].items():
-                        if key.startswith("BPS-") or key == "BPS":
-                            try:
-                                bitrate = int(value) // 1000
-                                audio_props.append(("Bitrate", f"{bitrate} kbps"))
-                                bitrate_added = True
-                                break
-                            except:
-                                pass
-
-                if not bitrate_added:
-                    if audio_stream and "bit_rate" in audio_stream:
-                        bitrate = int(audio_stream["bit_rate"]) // 1000
-                        audio_props.append(("Bitrate", f"{bitrate} kbps"))
-                    elif "format" in data and "bit_rate" in data["format"]:
-                        bitrate = int(data["format"]["bit_rate"]) // 1000
-                        audio_props.append(("Bitrate", f"{bitrate} kbps"))
-
-                # 5. Add other audio stream properties
-                if audio_stream:
-                    if "sample_rate" in audio_stream:
-                        sample_rate = int(audio_stream["sample_rate"]) // 1000
-                        audio_props.append(("Sample Rate", f"{sample_rate} kHz"))
-
-                    if "channels" in audio_stream:
-                        channels = audio_stream["channels"]
-                        channel_layout = audio_stream.get("channel_layout", "")
-                        if channel_layout:
-                            audio_props.append((
-                                "Channels",
-                                f"{channels} ({channel_layout})",
-                            ))
-                        else:
-                            audio_props.append(("Channels", str(channels)))
-
-                    if (
-                        "bits_per_sample" in audio_stream
-                        and audio_stream["bits_per_sample"] > 0
-                    ):
-                        audio_props.append((
-                            "Bit Depth",
-                            f"{audio_stream['bits_per_sample']} bit",
-                        ))
-
-                # Add basic group with file path info
-                basic_items = [("Path", actual_path)]
-                basic_group = self._create_info_group(_("File Details"), basic_items)
-                main_box.append(basic_group)
-
+                # Audio properties group
+                audio_props = self._extract_audio_props(audio_stream, data, is_video_track, actual_path)
                 if audio_props:
-                    audio_group = self._create_info_group(
-                        _("Audio Properties"), audio_props
-                    )
-                    main_box.append(audio_group)
+                    main_box.append(self._create_info_group(_("Audio Properties"), audio_props))
+                    for label, value in audio_props:
+                        info_text.append(f"{label}: {value}")
 
                 # Metadata tags group
-                if "format" in data and "tags" in data["format"]:
-                    tags = data["format"]["tags"]
-                    metadata_items = []
-
-                    # Order common tags first
-                    tag_order = [
-                        "title",
-                        "artist",
-                        "album",
-                        "album_artist",
-                        "date",
-                        "genre",
-                        "track",
-                        "disc",
-                        "comment",
-                        "composer",
-                        "performer",
-                        "copyright",
-                        "encoded_by",
-                        "encoder",
-                    ]
-
-                    # Add common tags in order
-                    for tag_key in tag_order:
-                        if tag_key in tags:
-                            label = tag_key.replace("_", " ").title()
-                            metadata_items.append((label, tags[tag_key]))
-
-                    # Add any other tags
-                    for key, value in tags.items():
-                        if key.lower() not in tag_order:
-                            label = key.replace("_", " ").title()
-                            metadata_items.append((label, value))
-
-                    if metadata_items:
-                        metadata_group = self._create_info_group(
-                            _("Metadata Tags"), metadata_items
-                        )
-                        main_box.append(metadata_group)
+                self._append_metadata_group(data, main_box, info_text)
 
         except subprocess.TimeoutExpired:
-            error_label = Gtk.Label(label=_("Timeout getting metadata"))
-            error_label.add_css_class("dim-label")
-            error_label.set_margin_top(12)
-            error_label.set_margin_bottom(12)
-            main_box.append(error_label)
+            self._append_error_label(main_box, _("Timeout getting metadata"))
         except json.JSONDecodeError:
-            error_label = Gtk.Label(label=_("Failed to parse metadata"))
-            error_label.add_css_class("dim-label")
-            error_label.set_margin_top(12)
-            error_label.set_margin_bottom(12)
-            main_box.append(error_label)
+            self._append_error_label(main_box, _("Failed to parse metadata"))
         except Exception as e:
             logger.error(f"Error getting metadata: {e}")
-            error_label = Gtk.Label(label=_("Error: {0}").format(str(e)))
-            error_label.add_css_class("dim-label")
-            error_label.set_margin_top(12)
-            error_label.set_margin_bottom(12)
-            main_box.append(error_label)
+            self._append_error_label(main_box, _("Error: {0}").format(str(e)))
 
-        # Connect copy button to copy all info
         clipboard_text = "\n".join(info_text)
         copy_button.connect(
             "clicked", lambda btn: self._copy_to_clipboard(clipboard_text, dialog)
         )
-
         dialog.present()
+
+    def _append_metadata_group(self, data, main_box, info_text):
+        """Extract and append metadata tags group to the dialog."""
+        if "format" not in data or "tags" not in data["format"]:
+            return
+        tags = data["format"]["tags"]
+        metadata_items = []
+        tag_order = [
+            "title", "artist", "album", "album_artist", "date", "genre",
+            "track", "disc", "comment", "composer", "performer",
+            "copyright", "encoded_by", "encoder",
+        ]
+        for tag_key in tag_order:
+            if tag_key in tags:
+                label = tag_key.replace("_", " ").title()
+                metadata_items.append((label, tags[tag_key]))
+        for key, value in tags.items():
+            if key.lower() not in tag_order:
+                label = key.replace("_", " ").title()
+                metadata_items.append((label, value))
+        if metadata_items:
+            main_box.append(self._create_info_group(_("Metadata Tags"), metadata_items))
+            info_text.append("")
+            for label, value in metadata_items:
+                info_text.append(f"{label}: {value}")
+
+    @staticmethod
+    def _append_error_label(main_box, message):
+        """Append an error label to the dialog."""
+        error_label = Gtk.Label(label=message)
+        error_label.add_css_class("dim-label")
+        error_label.set_margin_top(12)
+        error_label.set_margin_bottom(12)
+        main_box.append(error_label)
 
     def _create_info_group(self, title, items):
         """Create a group of information items with Adwaita styling.
@@ -649,6 +551,9 @@ class FileQueueRow(Adw.ActionRow):
             copy_btn.add_css_class("flat")
             copy_btn.add_css_class("circular")
             copy_btn.set_valign(Gtk.Align.CENTER)
+            copy_btn.update_property(
+                [Gtk.AccessibleProperty.LABEL], [_("Copy value")],
+            )
             copy_btn.connect(
                 "clicked", lambda b, v=str(value): self._copy_value_to_clipboard(v)
             )
@@ -694,7 +599,7 @@ class FileQueue(Gtk.Box):
         self.currently_playing_index = None
         self.active_file_index = None  # Index of file showing its waveform
         self._updates_suspended = False
-        self._metadata_queue = []  # Files waiting for metadata processing
+        self._metadata_queue = queue.Queue()  # Thread-safe queue for metadata processing
         self._metadata_thread = None  # Background thread for metadata
         self._parent_window = None  # Will be set by MainWindow for dialogs
         self._tooltip_helper = None  # Will be set by MainWindow for tooltips
@@ -921,9 +826,6 @@ class FileQueue(Gtk.Box):
                   [{'index': 0, 'codec': 'aac', 'channels': 2, 'language': 'eng', 'title': 'Stereo'}, ...]
                   Returns empty list if no tracks found or on error
         """
-        import subprocess
-        import json
-
         try:
             # Run ffprobe to get stream information in JSON format
             cmd = [
@@ -988,9 +890,6 @@ class FileQueue(Gtk.Box):
         Returns:
             float: Duration in seconds, or 0 if unable to determine
         """
-        import subprocess
-        import json
-
         try:
             cmd = [
                 "ffprobe",
@@ -1008,7 +907,7 @@ class FileQueue(Gtk.Box):
                 data = json.loads(result.stdout)
                 if "format" in data and "duration" in data["format"]:
                     return float(data["format"]["duration"])
-        except:
+        except Exception:
             pass
 
         return 0
@@ -1099,7 +998,7 @@ class FileQueue(Gtk.Box):
                         else:
                             duration_str = f"{minutes}:{seconds:02d}"
                         subtitle_parts.append(duration_str)
-                except:
+                except Exception:
                     pass
 
             # 3. Add codec (format) - without "Codec:" label
@@ -1110,7 +1009,7 @@ class FileQueue(Gtk.Box):
                 try:
                     bitrate_kbps = int(track_info["bitrate"]) // 1000
                     subtitle_parts.append(f"{bitrate_kbps} kbps")
-                except:
+                except Exception:
                     pass
 
             row.set_metadata(" • ".join(subtitle_parts))
@@ -1242,7 +1141,7 @@ class FileQueue(Gtk.Box):
                 self.update_queue_size_label()
 
             # Queue for background metadata extraction
-            self._metadata_queue.append((file_index, file_path, row))
+            self._metadata_queue.put((file_index, file_path, row))
             self._start_metadata_thread()
 
             # If queue was empty and callback is set, trigger it
@@ -1264,74 +1163,70 @@ class FileQueue(Gtk.Box):
 
     def _start_metadata_thread(self):
         """Start the background thread to process metadata if needed."""
-        import threading
-
         # Check if thread is already running
         if self._metadata_thread and self._metadata_thread.is_alive():
+            # Thread is running; it will pick up new items from the queue
             return
 
         # Start new thread
         self._metadata_thread = threading.Thread(
             target=self._process_metadata_queue,
-            daemon=True,  # Make thread exit when main program exits
+            daemon=True,
         )
         self._metadata_thread.start()
 
     def _process_metadata_queue(self):
         """Process files in the metadata queue in the background."""
-        import time
+        # Use idle rounds to avoid race condition: after draining the queue,
+        # wait briefly and re-check before exiting, so items appended right
+        # before thread exit are still processed.
+        idle_rounds = 0
+        max_idle_rounds = 3
 
-        while self._metadata_queue:
+        while idle_rounds < max_idle_rounds:
             try:
-                # Get next file from queue
-                index, file_path, row = self._metadata_queue.pop(0)
+                index, file_path, row = self._metadata_queue.get(timeout=0.15)
+            except queue.Empty:
+                idle_rounds += 1
+                continue
+
+            idle_rounds = 0  # Reset on work
+
+            try:
 
                 # Skip if file no longer exists in queue
                 if index >= len(self.files) or self.files[index] != file_path:
                     continue
 
-                # Get comprehensive metadata - this already uses ffprobe to validate
                 metadata = self.converter.get_file_metadata(file_path)
 
-                # If no duration was found, the file is not a valid media file
                 if "duration" not in metadata:
                     logger.warning(
                         f"Removing invalid media file from queue: {os.path.basename(file_path)}"
                     )
+                    _idx, _fp = index, file_path
 
-                    def remove_invalid_file():
-                        # Check if file is still in the queue at the same index
-                        if index < len(self.files) and self.files[index] == file_path:
-                            self.remove_file(index)
+                    def remove_invalid_file(_idx=_idx, _fp=_fp):
+                        if _idx < len(self.files) and self.files[_idx] == _fp:
+                            self.remove_file(_idx)
                         return False
 
-                    # Schedule removal on main thread
                     GLib.idle_add(remove_invalid_file)
                     continue
 
-                # Update the UI with the metadata
-                def update_ui():
-                    if index < len(self.file_rows) and self.file_rows[index] == row:
-                        # Build metadata string
-                        metadata_parts = []
-                        if "size" in metadata:
-                            metadata_parts.append(metadata["size"])
-                        if "duration" in metadata:
-                            metadata_parts.append(metadata["duration"])
-                        if "format" in metadata:
-                            metadata_parts.append(metadata["format"])
-                        if "bitrate" in metadata:
-                            metadata_parts.append(metadata["bitrate"])
+                # Capture values for the closure
+                _idx, _row, _meta = index, row, metadata
 
-                        # Update subtitle
-                        row.set_metadata(" • ".join(metadata_parts))
-
+                def update_ui(_idx=_idx, _row=_row, _meta=_meta):
+                    if _idx < len(self.file_rows) and self.file_rows[_idx] == _row:
+                        parts = []
+                        for key in ("size", "duration", "format", "bitrate"):
+                            if key in _meta:
+                                parts.append(_meta[key])
+                        _row.set_metadata(" • ".join(parts))
                     return False
 
-                # Update UI on the main thread
                 GLib.idle_add(update_ui)
-
-                # Small delay to prevent hogging CPU
                 time.sleep(0.01)
 
             except Exception as e:

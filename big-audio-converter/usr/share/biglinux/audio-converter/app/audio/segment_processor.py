@@ -4,10 +4,10 @@
 Segment processor for handling audio segments during conversion.
 """
 
-import os
 import logging
+import os
 import subprocess
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,20 +47,6 @@ class SegmentProcessor:
         Returns:
             Path to the processed output file or None if processing failed
         """
-        """
-        Process multiple segments from input file and return path to the processed output.
-
-        Args:
-            input_file: Path to the input audio file
-            segments: List of segment dictionaries with start and stop times
-            output_format: Output audio format (mp3, ogg, etc.)
-            temp_dir: Directory for temporary files
-            audio_filters: Optional audio filters to apply
-            track_index: Optional absolute stream index for video track extraction
-
-        Returns:
-            Path to the processed output file or None if processing failed
-        """
         if not segments or len(segments) == 0:
             logger.warning("No segments provided for processing")
             return None
@@ -68,7 +54,7 @@ class SegmentProcessor:
         logger.info(f"Processing {len(segments)} segments from {input_file}")
 
         # Original segment order for debugging
-        print(
+        logger.debug(
             f"Original segment order: {[(s.get('segment_index', '?'), s['start_str']) for s in segments]}"
         )
 
@@ -151,12 +137,12 @@ class SegmentProcessor:
         """Validate segments and return only valid ones."""
         valid_segments = []
 
-        # Debugging: Print what we received
-        print(f"Validating {len(segments)} segments from converter")
+        # Debugging: log what we received
+        logger.debug(f"Validating {len(segments)} segments from converter")
 
         for segment in segments:
             # Log the segment we're processing
-            print(f"Processing segment: {segment}")
+            logger.debug(f"Processing segment: {segment}")
 
             start = segment.get("start")
             stop = segment.get("stop")
@@ -165,17 +151,17 @@ class SegmentProcessor:
 
             # Skip segments with missing start/stop or invalid values
             if start is None or stop is None:
-                print(f"Skipping segment with missing values: {segment}")
+                logger.debug(f"Skipping segment with missing values: {segment}")
                 continue
 
             # Skip segments that are too short (less than 100ms)
             if abs(stop - start) < 0.1:
-                print(f"Skipping segment that is too short: {segment}")
+                logger.debug(f"Skipping segment that is too short: {segment}")
                 continue
 
             # Verify we have at least one valid time string
             if not start_str or not stop_str:
-                print("Missing time strings, using numeric values")
+                logger.debug("Missing time strings, using numeric values")
                 # Use our numeric values to create strings if needed
                 if not start_str:
                     start_str = self._format_time(start)
@@ -184,7 +170,7 @@ class SegmentProcessor:
 
             # Ensure start is before stop
             if start > stop:
-                print(f"Swapping start/stop: {start} > {stop}")
+                logger.debug(f"Swapping start/stop: {start} > {stop}")
                 start, stop = stop, start
                 start_str, stop_str = stop_str, start_str
 
@@ -196,10 +182,10 @@ class SegmentProcessor:
                 "stop_str": stop_str,
             }
 
-            print(f"Added valid segment: {valid_seg}")
+            logger.debug(f"Added valid segment: {valid_seg}")
             valid_segments.append(valid_seg)
 
-        print(f"Validated {len(valid_segments)} of {len(segments)} segments")
+        logger.debug(f"Validated {len(valid_segments)} of {len(segments)} segments")
         return valid_segments
 
     def _format_time(self, seconds):
@@ -309,12 +295,9 @@ class SegmentProcessor:
             cmd.append(output_file)
 
             # Log full command for debugging
-            print("\n=== SEGMENT EXTRACTION COMMAND ===")
-            print(f"{' '.join(cmd)}")
-            print("===================================\n")
-            logger.info("=== SEGMENT EXTRACTION COMMAND ===")
-            logger.info(f"{' '.join(cmd)}")
-            logger.info("===================================")
+            logger.debug("=== SEGMENT EXTRACTION COMMAND ===")
+            logger.debug(f"{' '.join(cmd)}")
+            logger.debug("===================================")
             logger.debug(f"Extracting segment: {' '.join(cmd)}")
 
             # Run FFmpeg command

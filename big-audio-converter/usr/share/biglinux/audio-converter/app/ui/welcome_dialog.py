@@ -3,11 +3,12 @@ Welcome dialog for Big Audio Converter
 """
 
 import gettext
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, GLib
+from gi.repository import Adw, Gtk
 
 from app.utils.config import AppConfig
 
@@ -72,19 +73,27 @@ class WelcomeDialog:
         features = [
             (
                 "🎵 " + _("Play and Convert Audio"),
-                _("Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."),
+                _(
+                    "Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, AAC, Opus, and WMA."
+                ),
             ),
             (
                 "🎬 " + _("Extract Audio from Video"),
-                _("Extract the soundtrack from any video file and save it in your preferred audio format."),
+                _(
+                    "Extract the soundtrack from any video file and save it in your preferred audio format."
+                ),
             ),
             (
                 "✂️ " + _("Cut and Merge Audio"),
-                _("Use the visual waveform to mark sections and create new files with only the parts you want."),
+                _(
+                    "Use the visual waveform to mark sections and create new files with only the parts you want."
+                ),
             ),
             (
                 "⚡ " + _("Fast Copy Mode"),
-                _("Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."),
+                _(
+                    "Cut or copy audio instantly without re-encoding — preserving 100% of the original quality."
+                ),
             ),
         ]
 
@@ -100,18 +109,23 @@ class WelcomeDialog:
         more_features = [
             (
                 "🔇 " + _("Noise Reduction"),
-                _("Reduce background noise during conversion for cleaner, clearer audio."),
+                _(
+                    "Reduce background noise during conversion for cleaner, clearer audio."
+                ),
             ),
             (
                 "🎚️ " + _("Volume and Equalizer"),
-                _("Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."),
+                _(
+                    "Adjust volume levels and fine-tune frequencies with the built-in equalizer for optimal sound."
+                ),
             ),
             (
                 "⚙️ " + _("Speed Control"),
-                _("Change playback and conversion speed — slow down or speed up while keeping pitch corrected."),
+                _(
+                    "Change playback and conversion speed — slow down or speed up while keeping pitch corrected."
+                ),
             ),
         ]
-
 
         for title, description in more_features:
             right_column.append(self._create_feature_box(title, description))
@@ -131,6 +145,10 @@ class WelcomeDialog:
 
         self.show_switch = Gtk.Switch()
         self.show_switch.set_valign(Gtk.Align.CENTER)
+        self.show_switch.update_property(
+            [Gtk.AccessibleProperty.LABEL],
+            [_("Show dialog on startup")],
+        )
 
         switch_label = Gtk.Label(label=_("Show dialog on startup"))
         switch_label.set_xalign(0)
@@ -164,6 +182,7 @@ class WelcomeDialog:
 
         # Create Adwaita Dialog with responsive sizing
         self.dialog = Adw.Dialog()
+        self.dialog.set_title(_("Welcome"))
         # Use larger defaults but allow dialog to adapt to screen size
         self.dialog.set_content_width(900)
         self.dialog.set_content_height(650)
@@ -175,11 +194,6 @@ class WelcomeDialog:
         """Present the dialog"""
         if self.dialog and self.parent_window:
             self.dialog.present(self.parent_window)
-
-    def destroy(self):
-        """Destroy/close the dialog"""
-        if self.dialog:
-            self.dialog.close()
 
     def _create_feature_box(self, title, description):
         """Create a feature box with title and description"""
@@ -211,13 +225,6 @@ class WelcomeDialog:
         # Close the dialog
         if self.dialog:
             self.dialog.close()
-
-    def on_response(self, dialog, response):
-        """Handle dialog response"""
-        # Get the switch state and save preference
-        if self.show_switch:
-            show_on_startup = self.show_switch.get_active()
-            self.config.set("show_welcome_dialog", show_on_startup)
 
     @staticmethod
     def should_show_welcome():

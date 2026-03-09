@@ -1,0 +1,373 @@
+=== RUFF CHECK ===
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/controls_bar_mixin.py:22:1
+   |
+20 | gi.require_version("Gtk", "4.0")
+21 | gi.require_version("Adw", "1")
+22 | from gi.repository import GLib
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 |
+24 | logger = logging.getLogger(__name__)
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:12:1
+   |
+10 | gi.require_version("Gtk", "4.0")
+11 | gi.require_version("Adw", "1")
+12 | from gi.repository import Gdk, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |
+14 | gettext.textdomain("big-audio-converter")
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:15:1
+   |
+13 | gi.require_version("Gtk", "4.0")
+14 | gi.require_version("Adw", "1")
+15 | import logging
+   | ^^^^^^^^^^^^^^
+16 |
+17 | from gi.repository import Adw, Gdk, GLib, Gtk
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:17:1
+   |
+15 | import logging
+16 |
+17 | from gi.repository import Adw, Gdk, GLib, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |
+19 | logger = logging.getLogger(__name__)
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:13:1
+   |
+11 | gettext.textdomain("big-audio-converter")
+12 | _ = gettext.gettext
+13 | import logging
+   | ^^^^^^^^^^^^^^
+14 | import os
+15 | import threading
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:14:1
+   |
+12 | _ = gettext.gettext
+13 | import logging
+14 | import os
+   | ^^^^^^^^^
+15 | import threading
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:15:1
+   |
+13 | import logging
+14 | import os
+15 | import threading
+   | ^^^^^^^^^^^^^^^^
+16 |
+17 | gi.require_version("Gtk", "4.0")
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:19:1
+   |
+17 | gi.require_version("Gtk", "4.0")
+18 | gi.require_version("Adw", "1")
+19 | from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | from app.ui.controls_bar_mixin import ControlsBarMixin
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:21:1
+   |
+19 | from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+20 |
+21 | from app.ui.controls_bar_mixin import ControlsBarMixin
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+22 | from app.ui.equalizer_panel import EqualizerPanel
+23 | from app.ui.file_queue import FileQueue
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:22:1
+   |
+21 | from app.ui.controls_bar_mixin import ControlsBarMixin
+22 | from app.ui.equalizer_panel import EqualizerPanel
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 | from app.ui.file_queue import FileQueue
+24 | from app.ui.playback_controller import PlaybackControllerMixin
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:23:1
+   |
+21 | from app.ui.controls_bar_mixin import ControlsBarMixin
+22 | from app.ui.equalizer_panel import EqualizerPanel
+23 | from app.ui.file_queue import FileQueue
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | from app.ui.playback_controller import PlaybackControllerMixin
+25 | from app.ui.settings_mixin import SettingsManagerMixin
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:24:1
+   |
+22 | from app.ui.equalizer_panel import EqualizerPanel
+23 | from app.ui.file_queue import FileQueue
+24 | from app.ui.playback_controller import PlaybackControllerMixin
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 | from app.ui.settings_mixin import SettingsManagerMixin
+26 | from app.ui.visualizer import AudioVisualizer, SeekBar
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:25:1
+   |
+23 | from app.ui.file_queue import FileQueue
+24 | from app.ui.playback_controller import PlaybackControllerMixin
+25 | from app.ui.settings_mixin import SettingsManagerMixin
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 | from app.ui.visualizer import AudioVisualizer, SeekBar
+27 | from app.utils.tooltip_helper import TooltipHelper
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:26:1
+   |
+24 | from app.ui.playback_controller import PlaybackControllerMixin
+25 | from app.ui.settings_mixin import SettingsManagerMixin
+26 | from app.ui.visualizer import AudioVisualizer, SeekBar
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 | from app.utils.tooltip_helper import TooltipHelper
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:27:1
+   |
+25 | from app.ui.settings_mixin import SettingsManagerMixin
+26 | from app.ui.visualizer import AudioVisualizer, SeekBar
+27 | from app.utils.tooltip_helper import TooltipHelper
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+28 |
+29 | logger = logging.getLogger(__name__)
+   |
+
+F841 Local variable `height` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:101:9
+    |
+ 99 |         """Find if the given x,y position is on an existing segment."""
+100 |         width = self.get_width()
+101 |         height = self.get_height()
+    |         ^^^^^^
+102 |
+103 |         # Calculate visible time range
+    |
+help: Remove assignment to unused variable `height`
+
+F841 Local variable `height` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161:9
+    |
+159 |         """Find if x,y is inside a segment body (not on edge)."""
+160 |         width = self.get_width()
+161 |         height = self.get_height()
+    |         ^^^^^^
+162 |
+163 |         # Calculate visible time range
+    |
+help: Remove assignment to unused variable `height`
+
+F841 Local variable `card_r` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:229:9
+    |
+228 |         # Card and button layout must match _draw_markers() exactly
+229 |         card_r = 12
+    |         ^^^^^^
+230 |         btn_h = 30
+231 |         btn_r = 6
+    |
+help: Remove assignment to unused variable `card_r`
+
+F841 Local variable `btn_r` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:231:9
+    |
+229 |         card_r = 12
+230 |         btn_h = 30
+231 |         btn_r = 6
+    |         ^^^^^
+232 |
+233 |         # Check if we're in delete all confirmation mode
+    |
+help: Remove assignment to unused variable `btn_r`
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:24:1
+   |
+22 | gi.require_version("Gtk", "4.0")
+23 | gi.require_version("Adw", "1")
+24 | from gi.repository import Adw, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 |
+26 | from app.audio import waveform
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:26:1
+   |
+24 | from gi.repository import Adw, Gtk
+25 |
+26 | from app.audio import waveform
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 | gettext.textdomain("big-audio-converter")
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:19:1
+   |
+18 | gi.require_version("Gtk", "4.0")
+19 | from gi.repository import Gdk, GLib, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | gettext.textdomain("big-audio-converter")
+   |
+
+F841 Local variable `height` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:354:9
+    |
+353 |         width = self.get_width()
+354 |         height = self.get_height()
+    |         ^^^^^^
+355 |
+356 |         # Account for zoom and pan when calculating position
+    |
+help: Remove assignment to unused variable `height`
+
+F841 Local variable `height` is assigned to but never used
+   --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:914:9
+    |
+912 |         # Get dimensions for all cursor checks
+913 |         width = self.get_width()
+914 |         height = self.get_height()
+    |         ^^^^^^
+915 |
+916 |         # Check if hovering over scrollbar (when zoomed)
+    |
+help: Remove assignment to unused variable `height`
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:11:1
+   |
+ 9 | gi.require_version("Gtk", "4.0")
+10 | gi.require_version("Adw", "1")
+11 | from gi.repository import Adw, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 | from app.utils.config import AppConfig
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:13:1
+   |
+11 | from gi.repository import Adw, Gtk
+12 |
+13 | from app.utils.config import AppConfig
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | gettext.textdomain("big-audio-converter")
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:20:1
+   |
+18 | gi.require_version("Gdk", "4.0")
+19 | gi.require_version("Adw", "1")
+20 | import gettext
+   | ^^^^^^^^^^^^^^
+21 |
+22 | from gi.repository import Adw, Gdk, GLib, Gtk
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:22:1
+   |
+20 | import gettext
+21 |
+22 | from gi.repository import Adw, Gdk, GLib, Gtk
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 |
+24 | gettext.textdomain("big-audio-converter")
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:18:1
+   |
+16 | gi.require_version("Gtk", "4.0")
+17 | gi.require_version("Adw", "1")
+18 | from gi.repository import Gtk, Adw, Gio, GLib
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 | # Application imports
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:21:1
+   |
+20 | # Application imports
+21 | from app.ui.main_window import MainWindow
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+22 | from app.ui.welcome_dialog import WelcomeDialog
+23 | from app.utils.config import AppConfig
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:22:1
+   |
+20 | # Application imports
+21 | from app.ui.main_window import MainWindow
+22 | from app.ui.welcome_dialog import WelcomeDialog
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+23 | from app.utils.config import AppConfig
+24 | from app.audio.player import AudioPlayer
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:23:1
+   |
+21 | from app.ui.main_window import MainWindow
+22 | from app.ui.welcome_dialog import WelcomeDialog
+23 | from app.utils.config import AppConfig
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | from app.audio.player import AudioPlayer
+25 | from app.audio.converter import AudioConverter
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:24:1
+   |
+22 | from app.ui.welcome_dialog import WelcomeDialog
+23 | from app.utils.config import AppConfig
+24 | from app.audio.player import AudioPlayer
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 | from app.audio.converter import AudioConverter
+   |
+
+E402 Module level import not at top of file
+  --> /home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/main.py:25:1
+   |
+23 | from app.utils.config import AppConfig
+24 | from app.audio.player import AudioPlayer
+25 | from app.audio.converter import AudioConverter
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+Found 34 errors.
+No fixes available (6 hidden fixes can be enabled with the `--unsafe-fixes` option).

@@ -2,11 +2,12 @@
 Application configuration management.
 """
 
-import os
+import gettext
 import json
 import logging
-import gettext
+import os
 from pathlib import Path
+from threading import Timer
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -24,8 +25,8 @@ class AppConfig:
             os.path.expanduser("~"), ".config", "audio-converter"
         )
 
-        # Ensure config directory exists
-        os.makedirs(self.config_dir, exist_ok=True)
+        # Ensure config directory exists with restricted permissions
+        os.makedirs(self.config_dir, mode=0o700, exist_ok=True)
 
         self.config_file = os.path.join(self.config_dir, "config.json")
 
@@ -38,6 +39,33 @@ class AppConfig:
             "auto_play_preview": True,
             "confirm_overwrite": True,
             "show_welcome_dialog": True,
+            # Noise reduction
+            "conversion_noise_reduction": "false",
+            "noise_reduction_strength": "1.0",
+            # GTCRN advanced controls
+            "noise_model": "0",
+            "noise_speech_strength": "1.0",
+            "noise_lookahead": "0",
+            "noise_voice_enhance": "0.0",
+            "noise_model_blend": "false",
+            # Gate (single intensity slider, sqrt curve)
+            "gate_enabled": "false",
+            "gate_intensity": "0.5",
+            # Compressor
+            "compressor_enabled": "false",
+            "compressor_intensity": "1.0",
+            # HPF
+            "hpf_enabled": "false",
+            "hpf_frequency": "80",
+            # Transient
+            "transient_enabled": "false",
+            "transient_attack": "-0.5",
+            # EQ
+            "eq_enabled": "false",
+            "eq_preset": "flat",
+            "eq_bands": "0,0,0,0,0,0,0,0,0,0",
+            # Normalization
+            "normalize_enabled": "false",
         }
 
         # Load configuration
@@ -45,6 +73,10 @@ class AppConfig:
 
         # Track which keys have been modified in this instance
         self.modified_keys = set()
+
+        # Debounce timer for batching saves
+        self._save_timer = None
+        self._save_delay = 0.5  # seconds
 
     def load_config(self):
         """Load configuration from file or create defaults if not found."""
@@ -86,7 +118,8 @@ class AppConfig:
             config = self.config
 
         try:
-            with open(self.config_file, "w") as f:
+            fd = os.open(self.config_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as f:
                 json.dump(config, f, indent=2)
             logger.info(f"Saved configuration to {self.config_file}")
             return True
@@ -99,7 +132,23 @@ class AppConfig:
         return self.config.get(key, default)
 
     def set(self, key, value):
-        """Set a configuration value and save it."""
+        """Set a configuration value with debounced save."""
         self.config[key] = value
-        self.modified_keys.add(key)  # Track that this key was modified
-        return self.save_config()
+        self.modified_keys.add(key)
+        self._schedule_save()
+
+    def _schedule_save(self):
+        """Schedule a debounced save to disk."""
+        if self._save_timer is not None:
+            self._save_timer.cancel()
+        self._save_timer = Timer(self._save_delay, self.save_config)
+        self._save_timer.daemon = True
+        self._save_timer.start()
+
+    def flush(self):
+        """Force an immediate save of pending changes."""
+        if self._save_timer is not None:
+            self._save_timer.cancel()
+            self._save_timer = None
+        if self.modified_keys:
+            self.save_config()

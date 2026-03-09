@@ -1,0 +1,55 @@
+=== RADON CC ===
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py
+    M 159:4 AudioConverter.convert_file - F (72)
+    C 24:0 AudioConverter - C (14)
+    M 71:4 AudioConverter.convert_all_files - C (13)
+    M 559:4 AudioConverter._get_output_path - C (13)
+    M 628:4 AudioConverter.get_file_metadata - C (13)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py
+    M 189:4 AudioPlayer.load - C (15)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py
+    M 24:4 SegmentProcessor.process_segments - C (15)
+    M 217:4 SegmentProcessor._extract_segment - C (12)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py
+    M 74:4 WaveformGenerator.generate - C (19)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py
+    M 204:4 FileQueueRow._on_show_info - F (89)
+    M 1142:4 FileQueue.add_file - D (21)
+    M 1439:4 FileQueue.remove_file - C (16)
+    M 1018:4 FileQueue._add_track_entry - C (14)
+    M 1668:4 FileQueue._on_row_drop - C (13)
+    C 22:0 FileQueueRow - C (12)
+    M 146:4 FileQueueRow._on_row_realized - C (11)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/playback_controller.py
+    M 366:4 PlaybackControllerMixin.on_visualizer_seek - C (20)
+    M 224:4 PlaybackControllerMixin.on_player_position_updated - C (18)
+    M 485:4 PlaybackControllerMixin._on_marker_drag_state_changed - C (15)
+    M 176:4 PlaybackControllerMixin._load_file_for_visualization - C (13)
+    M 587:4 PlaybackControllerMixin._on_pause_play_clicked - C (13)
+    M 282:4 PlaybackControllerMixin._do_segment_transition_with_retry - C (11)
+    M 451:4 PlaybackControllerMixin._on_markers_updated - C (11)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py
+    M 1073:4 MainWindow._apply_tooltips - D (23)
+    M 192:4 MainWindow.__init__ - D (22)
+    M 1012:4 MainWindow.update_queue_size_label - C (17)
+    M 1196:4 MainWindow.on_convert - C (17)
+    M 1771:4 MainWindow._on_open_files_complete - C (15)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py
+    M 500:4 SettingsManagerMixin._restore_conversion_settings - E (39)
+    M 337:4 SettingsManagerMixin._on_cut_combo_changed - C (16)
+    M 446:4 SettingsManagerMixin._set_copy_mode_ui - C (13)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py
+    M 473:4 AudioVisualizer.on_drag_update - E (33)
+    M 1297:4 AudioVisualizer.on_draw - E (32)
+    M 910:4 AudioVisualizer.on_motion - D (26)
+    M 329:4 AudioVisualizer.on_click_handler - D (21)
+    M 733:4 AudioVisualizer.on_key_pressed - C (17)
+    M 682:4 AudioVisualizer.on_scroll - C (14)
+    M 1670:4 SeekBar._draw - C (14)
+    M 138:4 AudioVisualizer.set_waveform - C (13)
+    M 223:4 AudioVisualizer.set_position - C (11)
+/home/bruno/codigo-pacotes/multimidia/big-audio-converter/big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py
+    M 606:4 MarkerManagerMixin._draw_markers - E (34)
+    M 223:4 MarkerManagerMixin._check_delete_buttons - C (19)
+    M 124:4 MarkerManagerMixin._find_marker_at_position - C (12)
+    M 483:4 MarkerManagerMixin.get_marker_pairs - C (12)
