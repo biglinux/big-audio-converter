@@ -1,10 +1,10 @@
-"""Apply the current, idempotent corrective group on the feature branch."""
+"""Wire owned conversion sessions into the real desktop application."""
 
 from pathlib import Path
 import subprocess
-import correct_regressions
+import gui_ownership
 
-subprocess.run(["git", "merge-base", "--is-ancestor", "2d7fc16ce12e15adafb6a8212d8f440d62f485ba", "HEAD"], check=True)
+subprocess.run(["git", "merge-base", "--is-ancestor", "a02fb57a4eb879cc0b8d50c2ed9d97d43bf29035", "HEAD"], check=True)
 Path("scripts").mkdir(exist_ok=True)
-correct_regressions.apply()
-print("Corrective source changes applied; native tests follow.")
+gui_ownership.apply()
+print("Applied UI ownership changes; native and graphical tests follow.")
