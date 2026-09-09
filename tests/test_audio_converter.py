@@ -19,6 +19,7 @@ sys.path.insert(
 )
 
 from app.audio.converter import AudioConverter
+from app.audio.process import MediaError
 
 
 @pytest.fixture
@@ -60,8 +61,8 @@ class TestBuildAudioFilters:
     def test_noise_reduction_without_ladspa(self, converter):
         converter.gtcrn_ladspa_path = None
         settings = {"noise_reduction": True}
-        filters = converter._build_audio_filters(settings)
-        assert not any("ladspa" in f for f in filters)
+        with pytest.raises(MediaError, match="unavailable"):
+            converter._build_audio_filters(settings)
 
     def test_hpf_filter(self, converter):
         settings = {"hpf_enabled": True, "hpf_frequency": 120}
@@ -87,13 +88,12 @@ class TestBuildAudioFilters:
         assert any("agate" in f for f in filters)
 
     def test_gate_intensity_affects_params(self, converter):
-        import math
         settings_low = {"gate_enabled": True, "gate_intensity": 0.1}
         settings_high = {"gate_enabled": True, "gate_intensity": 0.9}
         filters_low = converter._build_audio_filters(settings_low)
         filters_high = converter._build_audio_filters(settings_high)
-        gate_low = [f for f in filters_low if "agate" in f][0]
-        gate_high = [f for f in filters_high if "agate" in f][0]
+        gate_low = next(f for f in filters_low if "agate" in f)
+        gate_high = next(f for f in filters_high if "agate" in f)
         assert gate_low != gate_high
 
     def test_compressor_filter(self, converter):
@@ -106,8 +106,8 @@ class TestBuildAudioFilters:
         settings_high = {"compressor_enabled": True, "compressor_intensity": 0.9}
         filters_low = converter._build_audio_filters(settings_low)
         filters_high = converter._build_audio_filters(settings_high)
-        comp_low = [f for f in filters_low if "acompressor" in f][0]
-        comp_high = [f for f in filters_high if "acompressor" in f][0]
+        comp_low = next(f for f in filters_low if "acompressor" in f)
+        comp_high = next(f for f in filters_high if "acompressor" in f)
         assert comp_low != comp_high
 
     def test_eq_filter(self, converter):
@@ -132,7 +132,7 @@ class TestBuildAudioFilters:
             "noise_model_blend": True,
         }
         filters = converter._build_audio_filters(settings)
-        nr = [f for f in filters if "gtcrn" in f][0]
+        nr = next(f for f in filters if "gtcrn" in f)
         assert "c2=1" in nr  # Model VCTK
         assert "c3=0.8" in nr  # speech_strength
         assert "c4=50" in nr  # lookahead
@@ -308,22 +308,20 @@ class TestSegmentProcessorValidation:
         result = processor._validate_segments(segments)
         assert len(result) == 1
 
-    def test_too_short_segment(self, processor):
+    def test_short_segment_is_not_silently_discarded(self, processor):
         segments = [{"start": 1.0, "stop": 1.05, "start_str": "0:01", "stop_str": "0:01.05"}]
         result = processor._validate_segments(segments)
-        assert len(result) == 0
+        assert len(result) == 1
 
     def test_missing_start(self, processor):
         segments = [{"stop": 5.0, "stop_str": "0:05"}]
-        result = processor._validate_segments(segments)
-        assert len(result) == 0
+        with pytest.raises(MediaError):
+            processor._validate_segments(segments)
 
-    def test_swaps_reversed_segment(self, processor):
+    def test_rejects_reversed_segment(self, processor):
         segments = [{"start": 10.0, "stop": 5.0, "start_str": "0:10", "stop_str": "0:05"}]
-        result = processor._validate_segments(segments)
-        assert len(result) == 1
-        assert result[0]["start"] == 5.0
-        assert result[0]["stop"] == 10.0
+        with pytest.raises(MediaError):
+            processor._validate_segments(segments)
 
     def test_format_time(self, processor):
         result = processor._format_time(3661.5)

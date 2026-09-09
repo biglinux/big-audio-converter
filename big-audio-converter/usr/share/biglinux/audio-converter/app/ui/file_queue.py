@@ -3,15 +3,15 @@ File queue UI component for managing files to be converted.
 """
 
 import gettext
-import json
 import logging
 import os
-import queue
-import subprocess
-import threading
 import time
+from collections import deque
+from pathlib import Path
 
 import gi
+
+from app.audio.media import track_identifier
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -20,6 +20,12 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+
+from app.audio.media import audio_duration, audio_stream
+from app.audio.probe_service import ProbeService
+from app.audio.process import MediaError
+from app.audio.profiles import copy_container
+from app.utils.main_loop import MainLoopSources
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +45,10 @@ class FileQueueRow(Adw.ActionRow):
         super().__init__()
 
         self.file_path = file_path
+        self.source_path = file_path
+        self.stream_index = None
+        self.probe_service = None
+        self._info_dialogs = []
         self.index = index
         self.on_remove_callback = on_remove_callback
         self.on_play_callback = on_play_callback
@@ -113,7 +123,7 @@ class FileQueueRow(Adw.ActionRow):
         menu_model = Gio.Menu()
 
         # Delete file from filesystem action
-        menu_model.append(_("Delete File"), "row.delete")
+        menu_model.append(_("Move to Trash"), "row.delete")
 
         # Open containing folder action
         menu_model.append(_("Open Containing Folder"), "row.open_folder")
@@ -122,7 +132,6 @@ class FileQueueRow(Adw.ActionRow):
         menu_model.append(_("More Information..."), "row.info")
 
         menu.set_menu_model(menu_model)
-        menu.set_parent(self)
 
         # Create action group
         action_group = Gio.SimpleActionGroup()
@@ -145,6 +154,11 @@ class FileQueueRow(Adw.ActionRow):
         action_group.add_action(info_action)
 
         self.insert_action_group("row", action_group)
+        self._context_menu = menu
+        more = Gtk.MenuButton(icon_name="view-more-symbolic", popover=menu)
+        more.set_tooltip_text(_("File actions"))
+        more.update_property([Gtk.AccessibleProperty.LABEL], [_("File actions")])
+        self.add_suffix(more)
 
         # Add right-click gesture
         right_click = Gtk.GestureClick.new()
@@ -159,10 +173,8 @@ class FileQueueRow(Adw.ActionRow):
         # In Adwaita, the title is typically in a Box containing labels
         def find_title_label(widget):
             """Recursively find the title label widget."""
-            if isinstance(widget, Gtk.Label):
-                # Check if this label's text matches our title
-                if widget.get_label() == self.get_title():
-                    return widget
+            if (isinstance(widget, Gtk.Label)) and (widget.get_label() == self.get_title()):
+                return widget
 
             # If widget is a container, check its children
             if hasattr(widget, "get_first_child"):
@@ -194,19 +206,15 @@ class FileQueueRow(Adw.ActionRow):
                     file_queue._tooltip_helper.add_tooltip(title_label, "right_click_options")
 
     def _on_open_folder(self, action, param):
-        """Open the folder containing the file."""
-        # Handle virtual track paths (contain ::)
-        actual_path = (
-            self.file_path.split("::")[0] if "::" in self.file_path else self.file_path
-        )
+        parent = self.get_root()
+        launcher = Gtk.FileLauncher(file=Gio.File.new_for_path(self.source_path))
+        launcher.open_containing_folder(parent, None, self._folder_opened)
 
-        if os.path.isfile(actual_path):
-            folder_path = os.path.dirname(actual_path)
-            try:
-                # Open file manager at folder location
-                subprocess.Popen(["xdg-open", folder_path])
-            except Exception as e:
-                logger.error(f"Failed to open folder: {e}")
+    def _folder_opened(self, launcher, result):
+        try:
+            launcher.open_containing_folder_finish(result)
+        except GLib.Error as exc:
+            logger.warning("The containing folder could not be opened: %s", exc.message)
 
     @staticmethod
     def _format_size(size_bytes):
@@ -237,25 +245,6 @@ class FileQueueRow(Adw.ActionRow):
             return f"{hours}:{minutes:02d}:{seconds:02d}"
         return f"{minutes}:{seconds:02d}"
 
-    @staticmethod
-    def _find_audio_stream(data, file_path, is_video_track):
-        """Find the correct audio stream from ffprobe data."""
-        if "streams" not in data:
-            return None
-        if is_video_track:
-            try:
-                track_part = file_path.split("::")[-1]
-                track_num = int(track_part.split("track")[-1].split(".")[0])
-                audio_streams = [s for s in data["streams"] if s.get("codec_type") == "audio"]
-                if track_num <= len(audio_streams):
-                    return audio_streams[track_num - 1]
-            except Exception:
-                pass
-        # Fallback: first audio stream, or first stream
-        for s in data["streams"]:
-            if s.get("codec_type") == "audio":
-                return s
-        return data["streams"][0] if data["streams"] else None
 
     def _get_stream_tag(self, stream, prefixes):
         """Get the first matching tag value from a stream's tags."""
@@ -324,7 +313,7 @@ class FileQueueRow(Adw.ActionRow):
         if audio_stream:
             if "sample_rate" in audio_stream:
                 try:
-                    props.append(("Sample Rate", f"{int(audio_stream['sample_rate']) // 1000} kHz"))
+                    props.append(("Sample Rate", f"{int(audio_stream['sample_rate']) / 1000:g} kHz"))
                 except (ValueError, TypeError):
                     pass
             if "channels" in audio_stream:
@@ -343,8 +332,8 @@ class FileQueueRow(Adw.ActionRow):
         if raw:
             try:
                 return self._parse_duration_tag(raw)
-            except Exception:
-                pass
+            except (ValueError, TypeError, OverflowError):
+                logger.debug("Unrecognized duration tag", exc_info=True)
         return None
 
     def _get_tag_as_int(self, stream, prefixes):
@@ -358,115 +347,70 @@ class FileQueueRow(Adw.ActionRow):
         return None
 
     def _on_show_info(self, action, param):
-        """Show detailed information dialog about the file."""
-        # Get parent window
-        widget = self.get_parent()
-        while widget and not isinstance(widget, Gtk.Window):
-            widget = widget.get_parent()
-
-        # Handle virtual track paths
-        is_video_track = "::" in self.file_path
-        actual_path = (
-            self.file_path.split("::")[0] if is_video_track else self.file_path
-        )
-
-        if not os.path.isfile(actual_path):
+        """Present immediately; refresh metadata without blocking the GTK thread."""
+        if self.probe_service is None:
             return
-
-        # Create dialog window
-        dialog = Gtk.Window(
-            transient_for=widget,
-            modal=True,
-            title=_("File Information"),
-            default_width=800,
-            default_height=600,
-        )
-
-        # Create header bar with copy button
+        dialog = Gtk.Window(transient_for=self.get_root(), modal=True,
+                            title=_("File Information"), default_width=640, default_height=540)
         header = Gtk.HeaderBar()
-        header.set_show_title_buttons(True)
-        copy_button = Gtk.Button()
-        copy_button.set_icon_name("edit-copy-symbolic")
-        copy_button.set_tooltip_text(_("Copy information to clipboard"))
-        copy_button.add_css_class("flat")
-        copy_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Copy information to clipboard")],
-        )
+        copy_button = Gtk.Button(icon_name="edit-copy-symbolic", sensitive=False,
+                                 tooltip_text=_("Copy information to clipboard"))
         header.pack_end(copy_button)
         dialog.set_titlebar(header)
-
-        # Create scrolled content area
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_vexpand(True)
-        dialog.set_child(scrolled)
-
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        scrolled = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         scrolled.set_child(main_box)
+        dialog.set_child(scrolled)
+        title = Gtk.Label(label=os.path.basename(self.file_path), wrap=True,
+                          margin_top=18, margin_start=18, margin_end=18)
+        title.add_css_class("title-2")
+        main_box.append(title)
+        spinner = Gtk.Spinner(spinning=True, margin_top=18, margin_bottom=18)
+        main_box.append(spinner)
+        clipboard = []
+        copy_button.connect("clicked", lambda button: self._copy_to_clipboard("\n".join(clipboard), dialog))
 
-        # File name title
-        title_label = Gtk.Label()
-        title_label.set_markup(
-            f"<span size='large' weight='bold'>{GLib.markup_escape_text(os.path.basename(self.file_path))}</span>"
-        )
-        title_label.set_wrap(True)
-        title_label.set_margin_top(24)
-        title_label.set_margin_bottom(12)
-        title_label.set_margin_start(24)
-        title_label.set_margin_end(24)
-        main_box.append(title_label)
+        def ready(token, path, info, error):
+            spinner.stop()
+            main_box.remove(spinner)
+            if error or not info:
+                self._append_error_label(main_box, error or _("No audio information is available."))
+                return
+            try:
+                stream = audio_stream(info, self.stream_index)
+                properties = self._extract_audio_props(stream, info, self.stream_index is not None, path)
+                main_box.append(self._create_info_group(_("File Details"), [(_("Path"), path)]))
+                main_box.append(self._create_info_group(_("Audio Properties"), properties))
+                clipboard.extend([path, ""] + [f"{label}: {value}" for label, value in properties])
+                self._append_metadata_group(info, main_box, clipboard)
+                copy_button.set_sensitive(True)
+            except (MediaError, ValueError, TypeError) as exc:
+                self._append_error_label(main_box, str(exc))
 
-        # File path subtitle
-        path_label = Gtk.Label()
-        path_label.set_text(actual_path)
-        path_label.set_wrap(True)
-        path_label.set_xalign(0)
-        path_label.add_css_class("dim-label")
-        path_label.set_margin_bottom(24)
-        path_label.set_margin_start(24)
-        path_label.set_margin_end(24)
-        main_box.append(path_label)
-
-        # Clipboard text accumulator
-        info_text = [f"File: {os.path.basename(self.file_path)}", f"Path: {actual_path}", ""]
-
-        # Populate info from ffprobe
         try:
-            result = subprocess.run(
-                ["ffprobe", "-v", "quiet", "-print_format", "json",
-                 "-show_format", "-show_streams", actual_path],
-                capture_output=True, text=True, timeout=10,
-            )
-            if result.returncode == 0:
-                data = json.loads(result.stdout)
-                audio_stream = self._find_audio_stream(data, self.file_path, is_video_track)
+            token = self.probe_service.request(self.source_path, ready, priority=True)
+        except (MediaError, RuntimeError) as exc:
+            spinner.stop()
+            self._append_error_label(main_box, str(exc))
+            token = None
+        self._info_dialogs.append(dialog)
 
-                # File details group
-                main_box.append(self._create_info_group(_("File Details"), [("Path", actual_path)]))
+        def closed(window):
+            if token is not None:
+                self.probe_service.cancel(token)
+            if window in self._info_dialogs:
+                self._info_dialogs.remove(window)
+            return False
 
-                # Audio properties group
-                audio_props = self._extract_audio_props(audio_stream, data, is_video_track, actual_path)
-                if audio_props:
-                    main_box.append(self._create_info_group(_("Audio Properties"), audio_props))
-                    for label, value in audio_props:
-                        info_text.append(f"{label}: {value}")
-
-                # Metadata tags group
-                self._append_metadata_group(data, main_box, info_text)
-
-        except subprocess.TimeoutExpired:
-            self._append_error_label(main_box, _("Timeout getting metadata"))
-        except json.JSONDecodeError:
-            self._append_error_label(main_box, _("Failed to parse metadata"))
-        except Exception as e:
-            logger.error(f"Error getting metadata: {e}")
-            self._append_error_label(main_box, _("Error: {0}").format(str(e)))
-
-        clipboard_text = "\n".join(info_text)
-        copy_button.connect(
-            "clicked", lambda btn: self._copy_to_clipboard(clipboard_text, dialog)
-        )
+        dialog.connect("close-request", closed)
         dialog.present()
+
+    def cleanup(self):
+        for dialog in self._info_dialogs[:]:
+            dialog.close()
+        self._info_dialogs.clear()
+        self.on_remove_callback = self.on_play_callback = self.on_delete_callback = None
+        self.on_activate_callback = None
 
     def _append_metadata_group(self, data, main_box, info_text):
         """Extract and append metadata tags group to the dialog."""
@@ -482,11 +426,11 @@ class FileQueueRow(Adw.ActionRow):
         for tag_key in tag_order:
             if tag_key in tags:
                 label = tag_key.replace("_", " ").title()
-                metadata_items.append((label, tags[tag_key]))
-        for key, value in tags.items():
+                metadata_items.append((label, str(tags[tag_key])[:4096]))
+        for key, value in list(tags.items())[:128]:
             if key.lower() not in tag_order:
                 label = key.replace("_", " ").title()
-                metadata_items.append((label, value))
+                metadata_items.append((label, str(value)[:4096]))
         if metadata_items:
             main_box.append(self._create_info_group(_("Metadata Tags"), metadata_items))
             info_text.append("")
@@ -534,7 +478,7 @@ class FileQueueRow(Adw.ActionRow):
 
         for label, value in items:
             row = Adw.ActionRow()
-            row.set_title(label)
+            row.set_title(GLib.markup_escape_text(str(label)))
 
             # Value label
             value_label = Gtk.Label(label=str(value))
@@ -568,7 +512,7 @@ class FileQueueRow(Adw.ActionRow):
         """Copy a single value to clipboard."""
         clipboard = Gdk.Display.get_default().get_clipboard()
         clipboard.set(str(value))
-        logger.info(f"Value copied to clipboard: {value}")
+        logger.debug("Metadata value copied to clipboard")
 
     def _copy_to_clipboard(self, text, dialog):
         """Copy text to clipboard."""
@@ -599,8 +543,14 @@ class FileQueue(Gtk.Box):
         self.currently_playing_index = None
         self.active_file_index = None  # Index of file showing its waveform
         self._updates_suspended = False
-        self._metadata_queue = queue.Queue()  # Thread-safe queue for metadata processing
-        self._metadata_thread = None  # Background thread for metadata
+        self._probes = ProbeService(converter.ffmpeg_path)
+        self._sources = MainLoopSources()
+        self._pending_probes = {}
+        self._imports = deque()
+        self._import_source = None
+        self._closed = False
+        self.on_probe_error = None
+        self.on_pending_changed = None
         self._parent_window = None  # Will be set by MainWindow for dialogs
         self._tooltip_helper = None  # Will be set by MainWindow for tooltips
 
@@ -687,8 +637,8 @@ class FileQueue(Gtk.Box):
     def _setup_styles(self):
         """Set up custom CSS styles for the file list."""
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(
-            b"""
+        css_provider.load_from_string(
+            """
             .drag-highlight {
                 background-color: alpha(@accent_color, 0.2);
                 border: 2px dashed @accent_color;
@@ -702,7 +652,6 @@ class FileQueue(Gtk.Box):
                 background-color: alpha(@accent_bg_color, 0.15);
             }
             """,
-            -1,
         )
 
         Gtk.StyleContext.add_provider_for_display(
@@ -711,549 +660,185 @@ class FileQueue(Gtk.Box):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-    def _is_valid_media_file_quick(self, file_path):
-        """Quick check if file is likely a media file by extension."""
-        ext = os.path.splitext(file_path)[1].lower()
-        valid_extensions = [
-            # Audio formats
-            ".mp3",
-            ".wav",
-            ".ogg",
-            ".flac",
-            ".m4a",
-            ".aac",
-            ".opus",
-            ".wma",
-            ".aiff",
-            ".ape",
-            ".alac",
-            ".dsd",
-            ".dsf",
-            ".mka",
-            ".oga",
-            ".spx",
-            ".tta",
-            ".wv",
-            ".eac3",  # Dolby Digital Plus / E-AC-3
-            ".ac3",  # Dolby Digital / AC-3
-            ".dts",  # DTS audio
-            # Video formats (can be converted to audio)
-            ".mp4",
-            ".mkv",
-            ".avi",
-            ".mov",
-            ".wmv",
-            ".flv",
-            ".webm",
-            ".m4v",
-            ".mpg",
-            ".mpeg",
-            ".3gp",
-            ".ogv",
-            ".ts",
-            ".mts",
-            ".m2ts",
-        ]
-        return ext in valid_extensions
 
-    def _is_video_file(self, file_path):
-        """Check if file is a video file by extension.
-
-        Args:
-            file_path: Path to the file to check
-
-        Returns:
-            bool: True if file has video extension, False otherwise
-        """
-        ext = os.path.splitext(file_path)[1].lower()
-        video_extensions = [
-            ".mp4",
-            ".mkv",
-            ".avi",
-            ".mov",
-            ".wmv",
-            ".flv",
-            ".webm",
-            ".m4v",
-            ".mpg",
-            ".mpeg",
-            ".3gp",
-            ".ogv",
-            ".ts",
-            ".mts",
-            ".m2ts",
-        ]
-        return ext in video_extensions
 
     def _get_audio_codec_extension(self, codec_name):
-        """Map audio codec name to file extension.
+        """Choose an audio-only container rather than guess AAC for unknown codecs."""
+        extension, _ = copy_container({"codec_name": codec_name}, "")
+        return "." + extension
 
-        Args:
-            codec_name: FFprobe codec name (e.g., 'aac', 'mp3', 'opus')
 
-        Returns:
-            str: File extension including dot (e.g., '.aac', '.mp3')
-        """
-        # Map common codecs to extensions
-        codec_map = {
-            "aac": ".aac",
-            "mp3": ".mp3",
-            "opus": ".opus",
-            "vorbis": ".ogg",
-            "flac": ".flac",
-            "pcm_s16le": ".wav",
-            "pcm_s24le": ".wav",
-            "pcm_s32le": ".wav",
-            "ac3": ".ac3",
-            "eac3": ".eac3",
-            "dts": ".dts",
-            "truehd": ".thd",
-            "alac": ".m4a",
-            "wmav2": ".wma",
-        }
-
-        # Return mapped extension or default to .aac
-        return codec_map.get(codec_name.lower(), ".aac")
-
-    def _get_audio_tracks(self, file_path):
-        """Extract audio track information from video file using ffprobe.
-
-        Args:
-            file_path: Path to video file
-
-        Returns:
-            list: List of dictionaries with track info:
-                  [{'index': 0, 'codec': 'aac', 'channels': 2, 'language': 'eng', 'title': 'Stereo'}, ...]
-                  Returns empty list if no tracks found or on error
-        """
-        try:
-            # Run ffprobe to get stream information in JSON format
-            cmd = [
-                "ffprobe",
-                "-v",
-                "quiet",
-                "-print_format",
-                "json",
-                "-show_streams",
-                "-select_streams",
-                "a",  # Only audio streams
-                file_path,
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-            if result.returncode != 0:
-                logger.error(f"ffprobe failed for {file_path}: {result.stderr}")
-                return []
-
-            # Parse JSON output
-            data = json.loads(result.stdout)
-            streams = data.get("streams", [])
-
-            if not streams:
-                logger.info(f"No audio tracks found in {file_path}")
-                return []
-
-            # Extract track information
-            tracks = []
-            for stream in streams:
-                track_info = {
-                    "index": stream.get("index", 0),
-                    "codec": stream.get("codec_name", "unknown"),
-                    "channels": stream.get("channels", 0),
-                    "sample_rate": stream.get("sample_rate", ""),
-                    "bitrate": stream.get("bit_rate", ""),
-                    "language": stream.get("tags", {}).get("language", ""),
-                    "title": stream.get("tags", {}).get("title", ""),
-                }
-                tracks.append(track_info)
-
-            logger.info(f"Found {len(tracks)} audio track(s) in {file_path}")
-            return tracks
-
-        except subprocess.TimeoutExpired:
-            logger.error(f"ffprobe timeout for {file_path}")
-            return []
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse ffprobe JSON output: {e}")
-            return []
-        except Exception as e:
-            logger.error(f"Error extracting audio tracks from {file_path}: {e}")
-            return []
-
-    def _get_track_duration(self, file_path):
-        """Get the duration of a video/audio file in seconds.
-
-        Args:
-            file_path: Path to the video/audio file
-
-        Returns:
-            float: Duration in seconds, or 0 if unable to determine
-        """
-        try:
-            cmd = [
-                "ffprobe",
-                "-v",
-                "quiet",
-                "-print_format",
-                "json",
-                "-show_format",
-                file_path,
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-
-            if result.returncode == 0:
-                data = json.loads(result.stdout)
-                if "format" in data and "duration" in data["format"]:
-                    return float(data["format"]["duration"])
-        except Exception:
-            pass
-
-        return 0
 
     def _add_track_entry(self, video_file, track_info, track_display_index):
-        """Add a single audio track from a video file to the queue.
-
-        Args:
-            video_file: Path to source video file
-            track_info: Dictionary with track information (index, codec, channels, etc.)
-            track_display_index: Display index (1-based) for user-friendly naming
-
-        Returns:
-            bool: True if track was added successfully
-        """
-        try:
-            # Generate a virtual file path for this track
-            # Format: video_filename_track1.extension
-            video_basename = os.path.splitext(os.path.basename(video_file))[0]
-            extension = self._get_audio_codec_extension(track_info["codec"])
-            virtual_path = f"{video_file}::track{track_display_index}{extension}"
-
-            # Check if this track is already in queue
-            normalized_path = os.path.abspath(virtual_path)
-            for existing_file in self.files:
-                if os.path.abspath(existing_file) == normalized_path:
-                    logger.debug(f"Track already in queue: {virtual_path}")
-                    return False
-
-            # Add to internal file list
-            self.files.append(virtual_path)
-            file_index = len(self.files) - 1
-
-            # Store track metadata
-            self.track_metadata[virtual_path] = {
-                "source_video": video_file,
-                "track_index": track_info["index"],
-                "codec": track_info["codec"],
-                "channels": track_info["channels"],
-                "sample_rate": track_info.get("sample_rate", ""),
-                "bitrate": track_info.get("bitrate", ""),
-                "language": track_info.get("language", ""),
-                "title": track_info.get("title", ""),
-            }
-
-            # Create row with track-specific title
-            row = FileQueueRow(
-                virtual_path,
-                file_index,
-                self.on_remove_file,
-                self.on_play_file,
-                self.on_delete_file,
-                self.on_activate_file,
-            )
-
-            # Set initial title with track indicator (escape special characters)
-            track_title = f"🎬 {video_basename}_track{track_display_index}{extension}"
-            row.set_title(GLib.markup_escape_text(track_title))
-
-            # Build subtitle with track info - similar to regular audio files
-            subtitle_parts = []
-
-            # 1. Calculate and add size from duration and bitrate if available
-            if track_info.get("bitrate") and track_info.get("sample_rate"):
-                try:
-                    # Get duration from video file
-                    duration_secs = self._get_track_duration(video_file)
-                    if duration_secs > 0:
-                        bitrate_val = int(track_info["bitrate"])
-                        size_bytes = int((duration_secs * bitrate_val) / 8)
-
-                        if size_bytes < 1024:
-                            size_str = f"{size_bytes} B"
-                        elif size_bytes < 1024 * 1024:
-                            size_str = f"{size_bytes / 1024:.1f} KB"
-                        elif size_bytes < 1024 * 1024 * 1024:
-                            size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
-                        else:
-                            size_str = f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
-                        subtitle_parts.append(size_str)
-
-                        # 2. Add duration
-                        hours = int(duration_secs // 3600)
-                        minutes = int((duration_secs % 3600) // 60)
-                        seconds = int(duration_secs % 60)
-                        if hours > 0:
-                            duration_str = f"{hours}:{minutes:02d}:{seconds:02d}"
-                        else:
-                            duration_str = f"{minutes}:{seconds:02d}"
-                        subtitle_parts.append(duration_str)
-                except Exception:
-                    pass
-
-            # 3. Add codec (format) - without "Codec:" label
-            subtitle_parts.append(track_info["codec"].upper())
-
-            # 4. Add bitrate
-            if track_info.get("bitrate"):
-                try:
-                    bitrate_kbps = int(track_info["bitrate"]) // 1000
-                    subtitle_parts.append(f"{bitrate_kbps} kbps")
-                except Exception:
-                    pass
-
-            row.set_metadata(" • ".join(subtitle_parts))
-
-            self.file_rows.append(row)
-            self.file_list.append(row)
-
-            # Apply custom tooltips to row if tooltip_helper is available
-            self._apply_row_tooltips(row)
-
-            # Enable drag source for reordering
-            drag_source = Gtk.DragSource()
-            drag_source.set_actions(Gdk.DragAction.MOVE)
-            drag_source.connect("prepare", self._on_row_drag_prepare, row)
-            drag_source.connect("drag-begin", self._on_row_drag_begin, row)
-            row.add_controller(drag_source)
-
-            logger.info(
-                f"Added track {track_display_index} from {os.path.basename(video_file)}"
-            )
-            return True
-
-        except Exception as e:
-            logger.error(f"Error adding track entry: {e}")
+        """Expand an inspected source without additional blocking probes."""
+        codec = track_info.get("codec_name", "unknown")
+        extension = self._get_audio_codec_extension(codec)
+        identifier = track_identifier(video_file, track_info["index"])
+        if identifier in self.files:
             return False
+        self.track_metadata[identifier] = {
+            "source_video": video_file, "track_index": track_info["index"],
+            "output_name": f"{Path(video_file).stem}-track{track_display_index}{extension}",
+            "display_name": os.path.basename(video_file) + " — " + _("Track {number}").format(number=track_display_index),
+            "codec": codec, "channels": track_info.get("channels", 0),
+            "sample_rate": track_info.get("sample_rate", ""),
+            "bitrate": track_info.get("bit_rate", ""),
+            "language": track_info.get("tags", {}).get("language", ""),
+            "title": track_info.get("tags", {}).get("title", ""),
+        }
+        row = self._append_row(identifier)
+        row.source_path = video_file
+        row.stream_index = track_info["index"]
+        title = os.path.basename(video_file) + " — " + _("Track {number}").format(number=track_display_index)
+        row.set_title(GLib.markup_escape_text(title))
+        return True
+
+    def _append_row(self, identifier):
+        row = FileQueueRow(identifier, len(self.files), self.on_remove_file,
+                           self.on_play_file, self.on_delete_file, self.on_activate_file)
+        row.probe_service = self._probes
+        self.files.append(identifier)
+        self.file_rows.append(row)
+        self.file_list.append(row)
+        self._apply_row_tooltips(row)
+        drag = Gtk.DragSource(actions=Gdk.DragAction.MOVE)
+        drag.connect("prepare", self._on_row_drag_prepare, row)
+        drag.connect("drag-begin", self._on_row_drag_begin, row)
+        row.add_controller(drag)
+        return row
+
+    @property
+    def pending(self):
+        return bool(self._pending_probes or self._imports)
+
+    def _pending_changed(self):
+        if self.on_pending_changed and not self._closed:
+            self.on_pending_changed(self.pending)
+
+    def _probe_failed(self, path, message):
+        if self.on_probe_error and not self._closed:
+            self.on_probe_error(path, message)
+        else:
+            logger.warning("Media inspection failed: %s", message)
+
+    def _probe_ready(self, token, path, info, error):
+        if self._closed or self._pending_probes.get(path) != token:
+            return
+        self._pending_probes.pop(path, None)
+        if path not in self.files:
+            self._pending_changed()
+            return
+        index = self.files.index(path)
+        tracks = [s for s in (info or {}).get("streams", []) if s.get("codec_type") == "audio"]
+        if error or not tracks:
+            self.remove_file(index)
+            self._probe_failed(path, error or _("This file has no supported audio track."))
+            self._pending_changed()
+            return
+        row = self.file_rows[index]
+        if len(tracks) > 1:
+            # Replace the pending row in place, preserving any user's reordering.
+            self.files.pop(index)
+            self.file_rows.pop(index)
+            self.file_list.remove(row)
+            row.cleanup()
+            added = []
+            for number, track in enumerate(tracks, 1):
+                if self._add_track_entry(path, track, number):
+                    added.append((self.files.pop(), self.file_rows.pop()))
+            for offset, (identifier, track_row) in enumerate(added):
+                self.file_list.remove(track_row)
+                self.files.insert(index + offset, identifier)
+                self.file_rows.insert(index + offset, track_row)
+                self.file_list.insert(track_row, index + offset)
+                self._set_probed_metadata(track_row, info)
+            for position, current_row in enumerate(self.file_rows):
+                current_row.index = position
+        else:
+            row.stream_index = tracks[0]["index"]
+            row.set_activatable(True)
+            row.play_button.set_sensitive(True)
+            self._set_probed_metadata(row, info)
+        self.update_queue_size_label()
+        self._pending_changed()
+        if self.active_file_index is None and self.files and self.on_file_added_to_empty_queue:
+            first = next((r for r in self.file_rows if r.source_path not in self._pending_probes), None)
+            if first is not None:
+                self.on_file_added_to_empty_queue(first.file_path, first.index)
+
+    def _set_probed_metadata(self, row, info):
+        stream = audio_stream(info, row.stream_index)
+        duration = audio_duration(info, stream)
+        parts = [stream.get("codec_name", "").upper()]
+        if duration is not None:
+            parts.append(FileQueueRow._format_duration(duration))
+        else:
+            parts.append(_("Unknown duration"))
+        rate = stream.get("sample_rate")
+        if rate:
+            parts.append(_("{rate} Hz").format(rate=rate))
+        language = stream.get("tags", {}).get("language")
+        if language and language != "und":
+            parts.append(language)
+        row.set_metadata(GLib.markup_escape_text(" · ".join(parts)))
 
     def add_file(self, file_path):
-        """Add a file to the queue without blocking for metadata.
-
-        If the file is a video with multiple audio tracks, each track will be added
-        as a separate item in the queue.
-        """
+        """Add immediately; inspect and expand tracks on a bounded worker."""
+        if self._closed:
+            return False
         try:
-            # Check file existence
-            if not os.path.isfile(file_path):
+            if not file_path or "\0" in file_path:
+                raise MediaError(_("Choose a valid local media file."))
+            path = os.path.abspath(os.fspath(file_path))
+            if path in self.files or any(m["source_video"] == path for m in self.track_metadata.values()):
                 return False
-
-            # Quick validation by extension only (fast)
-            if not self._is_valid_media_file_quick(file_path):
-                logger.info(f"Skipping non-media file: {os.path.basename(file_path)}")
-                return False
-
-            # Normalize path for comparison
-            normalized_path = os.path.abspath(file_path)
-
-            # Check if file is already in queue
-            for existing_file in self.files:
-                # Skip track entries (they contain ::)
-                if "::" in existing_file:
-                    continue
-                if os.path.abspath(existing_file) == normalized_path:
-                    logger.debug(
-                        f"File already in queue: {os.path.basename(file_path)}"
-                    )
-                    return False
-
-            # Check if queue was empty before adding
-            was_empty = len(self.files) == 0
-
-            # Check if this is a video file with multiple audio tracks
-            if self._is_video_file(file_path):
-                logger.info(f"Detected video file: {os.path.basename(file_path)}")
-                tracks = self._get_audio_tracks(file_path)
-
-                if len(tracks) > 1:
-                    # Multiple tracks - add each as separate entry
-                    logger.info(f"Found {len(tracks)} audio tracks in video")
-                    added_any = False
-                    for i, track in enumerate(tracks):
-                        if self._add_track_entry(file_path, track, i + 1):
-                            added_any = True
-
-                    # Update queue size
-                    if not self._updates_suspended and added_any:
-                        self.update_queue_size_label()
-
-                    # If queue was empty and we added tracks, trigger waveform for first
-                    if was_empty and added_any and self.on_file_added_to_empty_queue:
-                        first_track_path = self.files[0]
-                        logger.info(
-                            "Queue was empty, triggering waveform for first track"
-                        )
-                        GLib.idle_add(
-                            self.on_file_added_to_empty_queue, first_track_path, 0
-                        )
-
-                    return added_any
-                elif len(tracks) == 1:
-                    # Single track - treat as regular audio extraction from video
-                    logger.info("Video has single audio track, adding as regular file")
-                    # Fall through to regular file handling
-                else:
-                    logger.warning(f"No audio tracks found in video: {file_path}")
-                    return False
-
-            # Regular file handling (audio files or single-track videos)
-            # Add to the internal file list
-            self.files.append(file_path)
-            file_index = len(self.files) - 1
-
-            # Create row
-            row = FileQueueRow(
-                file_path,
-                file_index,
-                self.on_remove_file,
-                self.on_play_file,
-                self.on_delete_file,
-                self.on_activate_file,
-            )
-            row.set_metadata("Loading...")
-
-            self.file_rows.append(row)
-
-            # Add to ListBox
-            self.file_list.append(row)
-
-            # Apply custom tooltips to row if tooltip_helper is available
-            self._apply_row_tooltips(row)
-
-            # Enable drag source for this row to allow reordering
-            drag_source = Gtk.DragSource()
-            drag_source.set_actions(Gdk.DragAction.MOVE)
-            drag_source.connect("prepare", self._on_row_drag_prepare, row)
-            drag_source.connect("drag-begin", self._on_row_drag_begin, row)
-            row.add_controller(drag_source)
-
-            # Update queue size
+            token = self._probes.request(path, self._probe_ready)
+            self._pending_probes[path] = token
+            row = self._append_row(path)
+            row.set_metadata(_("Inspecting audio…"))
+            row.set_activatable(False)
+            row.play_button.set_sensitive(False)
             if not self._updates_suspended:
                 self.update_queue_size_label()
-
-            # Queue for background metadata extraction
-            self._metadata_queue.put((file_index, file_path, row))
-            self._start_metadata_thread()
-
-            # If queue was empty and callback is set, trigger it
-            if was_empty and self.on_file_added_to_empty_queue:
-                logger.info(
-                    f"Queue was empty, triggering waveform generation for first file: {file_path}"
-                )
-                # Use GLib.idle_add to ensure UI is ready
-                GLib.idle_add(self.on_file_added_to_empty_queue, file_path, file_index)
-            elif was_empty:
-                logger.warning(
-                    "Queue was empty but on_file_added_to_empty_queue callback is not set"
-                )
-
+            self._pending_changed()
             return True
-        except Exception as e:
-            logger.error(f"Error adding file {file_path}: {str(e)}")
+        except (MediaError, OSError, TypeError, ValueError) as exc:
+            self._probe_failed(str(file_path), str(exc))
             return False
 
-    def _start_metadata_thread(self):
-        """Start the background thread to process metadata if needed."""
-        # Check if thread is already running
-        if self._metadata_thread and self._metadata_thread.is_alive():
-            # Thread is running; it will pick up new items from the queue
+
+
+    def add_files(self, paths):
+        """Build rows in small GTK work slices; queue inspection stays bounded."""
+        if self._closed:
             return
+        for path in paths:
+            if len(self._imports) + len(self.files) >= 10000:
+                self._probe_failed(str(path), _("The queue limit is 10,000 files. Convert this batch before adding more."))
+                break
+            self._imports.append(path)
+        if self._imports and self._import_source is None:
+            self._import_source = self._sources.idle(self._import_chunk)
+        self._pending_changed()
 
-        # Start new thread
-        self._metadata_thread = threading.Thread(
-            target=self._process_metadata_queue,
-            daemon=True,
-        )
-        self._metadata_thread.start()
-
-    def _process_metadata_queue(self):
-        """Process files in the metadata queue in the background."""
-        # Use idle rounds to avoid race condition: after draining the queue,
-        # wait briefly and re-check before exiting, so items appended right
-        # before thread exit are still processed.
-        idle_rounds = 0
-        max_idle_rounds = 3
-
-        while idle_rounds < max_idle_rounds:
-            try:
-                index, file_path, row = self._metadata_queue.get(timeout=0.15)
-            except queue.Empty:
-                idle_rounds += 1
-                continue
-
-            idle_rounds = 0  # Reset on work
-
-            try:
-
-                # Skip if file no longer exists in queue
-                if index >= len(self.files) or self.files[index] != file_path:
-                    continue
-
-                metadata = self.converter.get_file_metadata(file_path)
-
-                if "duration" not in metadata:
-                    logger.warning(
-                        f"Removing invalid media file from queue: {os.path.basename(file_path)}"
-                    )
-                    _idx, _fp = index, file_path
-
-                    def remove_invalid_file(_idx=_idx, _fp=_fp):
-                        if _idx < len(self.files) and self.files[_idx] == _fp:
-                            self.remove_file(_idx)
-                        return False
-
-                    GLib.idle_add(remove_invalid_file)
-                    continue
-
-                # Capture values for the closure
-                _idx, _row, _meta = index, row, metadata
-
-                def update_ui(_idx=_idx, _row=_row, _meta=_meta):
-                    if _idx < len(self.file_rows) and self.file_rows[_idx] == _row:
-                        parts = []
-                        for key in ("size", "duration", "format", "bitrate"):
-                            if key in _meta:
-                                parts.append(_meta[key])
-                        _row.set_metadata(" • ".join(parts))
-                    return False
-
-                GLib.idle_add(update_ui)
-                time.sleep(0.01)
-
-            except Exception as e:
-                logger.error(f"Error processing metadata: {str(e)}")
+    def _import_chunk(self):
+        self._import_source = None
+        deadline = time.monotonic() + .008
+        while self._imports and len(self._pending_probes) < 128 and time.monotonic() < deadline:
+            self.add_file(self._imports.popleft())
+        if self._imports:
+            self._import_source = self._sources.later(16, self._import_chunk)
+        self._pending_changed()
 
     def update_queue_size_label(self):
-        """Update the queue size label."""
-        count = len(self.files)
-        if count == 1:
-            text = _("1 file")
-        else:
-            text = _("{} files").format(count)
-        self.queue_size_label.set_text(text)
-
-        # Notify listeners about the change
-        if hasattr(self, "on_queue_size_changed") and callable(
-            self.on_queue_size_changed
-        ):
-            self.on_queue_size_changed(count, text)
+        self.queue_size_label.set_text(self.get_queue_size_text())
+        callback = getattr(self, "on_queue_size_changed", None)
+        if callback and not self._closed:
+            callback(len(self.files), self.get_queue_size_text())
 
     def get_queue_size_text(self):
-        """Get the current queue size as text."""
         count = len(self.files)
-        if count == 1:
-            return _("1 file")
-        else:
-            return _("{} files").format(count)
+        return gettext.ngettext("{count} file", "{count} files", count).format(count=count)
 
     def get_queue_size(self):
         """Get the current queue size as a number."""
@@ -1273,145 +858,112 @@ class FileQueue(Gtk.Box):
         self.remove_file(index)
 
     def on_delete_file(self, index, file_path):
-        """Delete a file permanently with confirmation dialog."""
-        # Get parent window for dialog
-        parent = self._parent_window
-        if not parent:
-            # Try to find the parent window
-            widget = self.get_parent()
-            while widget:
-                if isinstance(widget, Gtk.Window):
-                    parent = widget
-                    break
-                widget = widget.get_parent()
-
-        # Create confirmation dialog
-        filename = os.path.basename(file_path)
-        dialog = Adw.MessageDialog(
-            transient_for=parent,
-            heading=_("Delete File Permanently?"),
-            body=_(
-                "Are you sure you want to delete '{0}'? This action cannot be undone and the file will be permanently deleted from your disk."
-            ).format(filename),
-        )
+        if self.converter.busy:
+            self._probe_failed(file_path, _("Cancel the conversion or wait for it to finish before moving its input to Trash."))
+            return
+        actual = self.track_metadata.get(file_path, {}).get("source_video", file_path)
+        dialog = Adw.AlertDialog(heading=_("Move File to Trash?"),
+                                body=_("Move '{name}' to Trash? All of its tracks will be removed from the queue.").format(name=os.path.basename(actual)))
         dialog.add_response("cancel", _("Cancel"))
-        dialog.add_response("delete", _("Delete"))
-        dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.add_response("trash", _("Move to Trash"))
+        dialog.set_response_appearance("trash", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response("cancel")
         dialog.set_close_response("cancel")
+        dialog.connect("response", self._on_delete_response, actual)
+        dialog.present(self._parent_window)
 
-        # Connect response handler
-        dialog.connect("response", self._on_delete_response, index, file_path)
-        dialog.present()
+    def _on_delete_response(self, dialog, response, path):
+        if response != "trash" or self._closed:
+            return
+        if self.converter.busy:
+            self._probe_failed(path, _("The file is in use by a conversion. Cancel it before moving the input to Trash."))
+            return
 
-    def _on_delete_response(self, dialog, response, index, file_path):
-        """Handle delete confirmation dialog response."""
-        if response == "delete":
+        def trashed(file, result):
             try:
-                # Remove from queue first
-                self.remove_file(index)
+                file.trash_finish(result)
+            except GLib.Error as exc:
+                if not self._closed:
+                    self._probe_failed(path, _("The file could not be moved to Trash. It has not been deleted."))
+                logger.debug("Trash operation failed: %s", exc.message)
+                return
+            if not self._closed:
+                for index in reversed(range(len(self.file_rows))):
+                    if self.file_rows[index].source_path == path:
+                        self.remove_file(index)
 
-                # Delete the actual file
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logger.info(f"Deleted file: {file_path}")
-                else:
-                    logger.warning(f"File not found for deletion: {file_path}")
-
-            except Exception as e:
-                logger.error(f"Error deleting file {file_path}: {e}")
-                # Show error dialog
-                error_dialog = Adw.MessageDialog(
-                    transient_for=self._parent_window,
-                    heading=_("Error Deleting File"),
-                    body=f"Could not delete the file: {str(e)}",
-                )
-                error_dialog.add_response("ok", _("OK"))
-                error_dialog.present()
+        Gio.File.new_for_path(path).trash_async(GLib.PRIORITY_DEFAULT, None, trashed)
 
     def remove_file(self, index):
-        """Remove a file from the queue."""
-        if 0 <= index < len(self.files):
-            # Store the file_id before removing it
-            file_id = self.files[index]  # The file path is the ID
-
-            # Check if this file is currently playing and stop playback if it is
-            if self.currently_playing_index == index:
-                logger.debug(f"Stopping playback of file being removed (index {index})")
-                # Call the stop playback callback if it exists and is callable
-                if self.on_stop_playback and callable(self.on_stop_playback):
-                    self.on_stop_playback()
-
-                # Reset the UI state for the playing file
-                if 0 <= index < len(self.file_rows):
-                    row = self.file_rows[index]
-                    row.play_button.set_icon_name("media-playback-start-symbolic")
-                    row.remove_css_class("accent")
-
-                # Reset playing index immediately to avoid further references to this file
-                self.currently_playing_index = None
-
-            # Always notify about file removal - regardless of whether it was playing
-            # This ensures the visualizer can clear if needed
-            if self.on_playing_file_removed and callable(self.on_playing_file_removed):
-                logger.debug("Notifying file removal to allow visualizer cleanup")
-                self.on_playing_file_removed()
-
-            # Store references before removing
-            row = self.file_rows[index]
-
-            # Continue with existing removal logic...
-            # Immediately update internal data structures
-            self.files.pop(index)
-            self.file_rows.pop(index)
-
-            # Update currently playing index if needed
-            if self.currently_playing_index is not None:
-                if index == self.currently_playing_index:
-                    self.currently_playing_index = None
-                elif index < self.currently_playing_index:
-                    self.currently_playing_index -= 1
-
-            # Update active file index if needed
-            if self.active_file_index is not None:
-                if index == self.active_file_index:
-                    self.active_file_index = None
-                elif index < self.active_file_index:
-                    self.active_file_index -= 1
-
-            # Update indexes for all remaining rows
-            for i, remaining_row in enumerate(self.file_rows):
-                remaining_row.index = i
-
-            # Remove the row from ListBox
-            self.file_list.remove(row)
-
-            # Update the queue size label
-            self.update_queue_size_label()
-
-            # Notify about the removal with the file ID
-            if self.file_removed_signal:
-                logger.debug(f"Notifying file removal: file_id={file_id}")
-                self.file_removed_signal(file_id)
-
-            return True
-        return False
+        if not 0 <= index < len(self.files):
+            return False
+        identifier = self.files[index]
+        row = self.file_rows[index]
+        token = self._pending_probes.pop(identifier, None)
+        if token is not None:
+            self._probes.cancel(token)
+        was_playing = self.currently_playing_index == index
+        if was_playing and self.on_stop_playback:
+            self.on_stop_playback()
+        self.files.pop(index)
+        self.file_rows.pop(index)
+        self.track_metadata.pop(identifier, None)
+        for attribute in ("currently_playing_index", "active_file_index"):
+            current = getattr(self, attribute)
+            if current is not None:
+                setattr(self, attribute, None if current == index else current - int(current > index))
+        for position, remaining in enumerate(self.file_rows):
+            remaining.index = position
+        row.cleanup()
+        self.file_list.remove(row)
+        if was_playing and self.on_playing_file_removed:
+            self.on_playing_file_removed()
+        if self.file_removed_signal:
+            self.file_removed_signal(identifier)
+        self.update_queue_size_label()
+        self._pending_changed()
+        return True
 
     def on_clear_queue(self, button):
         """Clear the entire queue."""
         self.clear_queue()
 
     def clear_queue(self):
-        """Remove all files from the queue."""
-        # Remove all rows from ListBox
+        self._imports.clear()
+        self._sources.cancel(self._import_source)
+        self._import_source = None
+        for token in self._pending_probes.values():
+            self._probes.cancel(token)
+        self._pending_probes.clear()
+        if self.on_stop_playback:
+            self.on_stop_playback()
+        previous = self.files[:]
         for row in self.file_rows:
+            row.cleanup()
             self.file_list.remove(row)
-
-        self.files = []
-        self.file_rows = []
-
-        # Update the queue size label
+        self.files.clear()
+        self.file_rows.clear()
+        self.track_metadata.clear()
+        self.currently_playing_index = self.active_file_index = None
+        if self.file_removed_signal:
+            for identifier in previous:
+                self.file_removed_signal(identifier)
         self.update_queue_size_label()
+        self._pending_changed()
+
+    def cleanup(self):
+        if self._closed:
+            return
+        self._closed = True
+        self._imports.clear()
+        self._sources.close()
+        self._probes.cleanup()
+        self._pending_probes.clear()
+        for row in self.file_rows:
+            row.cleanup()
+        for name in ("on_stop_playback", "on_playing_file_removed", "on_file_added_to_empty_queue",
+                     "on_activate_file", "file_removed_signal", "on_probe_error", "on_pending_changed"):
+            setattr(self, name, None)
 
     def get_files(self):
         """Get all files in the queue."""
@@ -1441,12 +993,11 @@ class FileQueue(Gtk.Box):
                     row.progress_bar.set_visible(False)
                     return False
 
-                GLib.timeout_add(1500, hide_progress)
+                self._sources.later(1500, hide_progress)
 
     def on_play_file(self, file_path, index):
         """Handle play button click on a file."""
         # This will be implemented by the main window and connected
-        pass
 
     def on_stop_playback(self):
         """Stop playback of the current file.
@@ -1454,7 +1005,6 @@ class FileQueue(Gtk.Box):
         This method should be overridden by the main window or other component
         that controls audio playback.
         """
-        pass
 
     def set_currently_playing(self, index):
         """Set the currently playing file and update UI."""
@@ -1519,30 +1069,14 @@ class FileQueue(Gtk.Box):
         )
 
     def _on_drop(self, drop_target, value, x, y):
-        """Handle dropped files (multiple file support).
-        Args:
-            drop_target: The drop target controller.
-            value: The dropped value (Gdk.FileList).
-            x: X coordinate.
-            y: Y coordinate.
-        Returns:
-            bool: True if files were added, False otherwise.
-        """
-        # Clear drag highlight immediately when drop occurs
-        if self.placeholder.get_parent():
-            self.placeholder.remove_css_class("drag-highlight")
-        else:
-            self.file_list.remove_css_class("drag-highlight")
-
-        file_list = value
-        if file_list:
-            for file in file_list:
-                if hasattr(file, "get_path"):
-                    file_path = file.get_path()
-                    if file_path:
-                        self.add_file(file_path)
-            return True
-        return False
+        self.placeholder.remove_css_class("drag-highlight")
+        self.file_list.remove_css_class("drag-highlight")
+        if not value:
+            return False
+        files = value.get_files() if isinstance(value, Gdk.FileList) else value
+        paths = [file.get_path() for file in files if isinstance(file, Gio.File) and file.get_path()]
+        self.add_files(paths)
+        return bool(paths)
 
     def _on_row_drag_prepare(self, drag_source, x, y, row):
         """Prepare drag operation for a row."""
@@ -1589,13 +1123,8 @@ class FileQueue(Gtk.Box):
             old_index = dragged_row.index
             new_index = target_row.index if target_row else len(self.file_rows)
 
-            # Determine if we're moving up or down
-            if old_index < new_index:
-                # Moving down - insert after target
-                new_index = new_index
-            else:
-                # Moving up - insert before target (or at target position)
-                pass
+            active_path = self.files[self.active_file_index] if self.active_file_index is not None else None
+            playing_path = self.files[self.currently_playing_index] if self.currently_playing_index is not None else None
 
             # Move the file in the internal list
             file_path = self.files.pop(old_index)
@@ -1608,6 +1137,9 @@ class FileQueue(Gtk.Box):
             # Update row indices
             for i, row in enumerate(self.file_rows):
                 row.index = i
+
+            self.active_file_index = self.files.index(active_path) if active_path in self.files else None
+            self.currently_playing_index = self.files.index(playing_path) if playing_path in self.files else None
 
             # Reorder in the ListBox
             self.file_list.remove(dragged_row)
@@ -1624,7 +1156,7 @@ class FileQueue(Gtk.Box):
             logger.debug(f"Reordered file from index {old_index} to {new_index}")
             return True
 
-        except Exception as e:
+        except (ValueError, IndexError, TypeError, RuntimeError) as e:
             logger.error(f"Error reordering files: {e}")
             return False
 
@@ -1636,7 +1168,6 @@ class FileQueue(Gtk.Box):
     def _on_row_drag_leave(self, drop_target):
         """Handle drag leave for row reordering."""
         # No cleanup needed since we don't add visual feedback
-        pass
 
     # Drop zone visual feedback
     def _on_drop_enter(self, drop_target, x, y):

@@ -12,11 +12,7 @@ Usage:
 """
 
 import logging
-import threading
 
-from gi.repository import GLib
-
-from app.audio import waveform
 from app.utils.time_formatter import format_time_short
 
 logger = logging.getLogger(__name__)
@@ -38,7 +34,7 @@ class PlaybackControllerMixin:
         )
         if not auto_advance_enabled:
             logger.info("Auto-advance disabled, stopping playback")
-            GLib.idle_add(self.file_queue.update_playing_state, False)
+            self._playback_sources.idle(self.file_queue.update_playing_state, False)
             return
 
         current_index = self.file_queue.get_current_playing_index()
@@ -55,13 +51,16 @@ class PlaybackControllerMixin:
         if next_index < len(files):
             logger.info(f"Auto-playing next file (index {next_index})")
             next_file = files[next_index]
-            GLib.timeout_add(300, self._play_next_file, next_file, next_index)
+            self._playback_sources.later(300, self._play_next_file, next_file, next_index)
         else:
             logger.info("Reached end of queue, stopping playback")
-            GLib.idle_add(self.file_queue.update_playing_state, False)
+            self._playback_sources.idle(self.file_queue.update_playing_state, False)
 
     def _play_next_file(self, file_path, index):
         """Helper to play the next file with proper UI updates."""
+        if self._closed or file_path not in self.file_queue.files:
+            return False
+        index = self.file_queue.files.index(file_path)
         if self.player.current_file == file_path and self.player.is_playing():
             return False
 
@@ -84,20 +83,7 @@ class PlaybackControllerMixin:
                 self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
             if not same_file_as_active:
-                threading.Thread(
-                    target=waveform.generate,
-                    args=(
-                        file_path,
-                        self.converter,
-                        self.visualizer,
-                        self.file_markers,
-                        self.zoom_control_box
-                        if hasattr(self, "zoom_control_box")
-                        else None,
-                        self.file_queue.track_metadata,
-                    ),
-                    daemon=True,
-                ).start()
+                self._request_waveform(file_path, enabled=None)
             else:
                 logger.debug(f"Same file, skipping waveform generation: {file_path}")
 
@@ -131,7 +117,11 @@ class PlaybackControllerMixin:
 
     def _prepare_visualizer_for_new_file(self, file_path, index):
         """Clears the old visualizer state and starts waveform generation for a new file."""
-        logger.debug(f"Resetting visualizer for new file: {file_path}")
+        self._playback_sources.clear()
+        self._playing_selection = False
+        self._is_transitioning_segment = False
+        self.waveform_generator.cancel()
+        logger.debug("Preparing a new audio file")
         self.visualizer.set_waveform(None, 0)
         self.seekbar.set_duration(0)
         self.seekbar.set_position(0)
@@ -147,35 +137,18 @@ class PlaybackControllerMixin:
         self.visualizer.markers_enabled = markers_enabled
 
         if self.cut_row.get_selected() > 0:
-            threading.Thread(
-                target=waveform.generate,
-                args=(
-                    file_path,
-                    self.converter,
-                    self.visualizer,
-                    self.file_markers,
-                    self.zoom_control_box,
-                    self.file_queue.track_metadata,
-                ),
-                daemon=True,
-            ).start()
+            self._request_waveform(file_path, enabled=None)
         else:
-            threading.Thread(
-                target=waveform.activate_without_waveform,
-                args=(
-                    file_path,
-                    self.converter,
-                    self.visualizer,
-                    self.file_markers,
-                    self.zoom_control_box,
-                    self.file_queue.track_metadata,
-                ),
-                daemon=True,
-            ).start()
+            self._request_waveform(file_path, enabled=False)
 
     def _load_file_for_visualization(self, file_path, index, play_audio=True):
         """Load a file for visualization and optional playback."""
-        logger.info(f"_load_file_for_visualization: file={file_path}, play={play_audio}, current_playing={self.player.is_playing()}, current_file={self.player.current_file}")
+        logger.debug(f"_load_file_for_visualization: file={file_path}, play={play_audio}, current_playing={self.player.is_playing()}, current_file={self.player.current_file}")
+        if self._closed or file_path not in self.file_queue.files:
+            return
+        index = self.file_queue.files.index(file_path)
+        if self.file_queue.file_rows[index].source_path in self.file_queue._pending_probes:
+            return
         # Toggling play/pause on the currently loaded file
         if (
             play_audio
@@ -199,16 +172,15 @@ class PlaybackControllerMixin:
             self._prepare_visualizer_for_new_file(file_path, index)
 
         # Load the file into the player
-        if self.player.load(file_path, self.file_queue.track_metadata):
-            if play_audio:
-                if hasattr(self.file_queue, "set_currently_playing"):
-                    self.file_queue.set_currently_playing(index)
-                self.player.play()
-                # Sync UI immediately — on_file_loaded will confirm later
-                if hasattr(self, "pause_play_btn"):
-                    self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
-                if hasattr(self.file_queue, "update_playing_state"):
-                    self.file_queue.update_playing_state(True)
+        if (self.player.load(file_path, self.file_queue.track_metadata)) and (play_audio):
+            if hasattr(self.file_queue, "set_currently_playing"):
+                self.file_queue.set_currently_playing(index)
+            self.player.play()
+            # Sync UI immediately — on_file_loaded will confirm later
+            if hasattr(self, "pause_play_btn"):
+                self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
+            if hasattr(self.file_queue, "update_playing_state"):
+                self.file_queue.update_playing_state(True)
 
     # --- Time display ---
 
@@ -235,8 +207,8 @@ class PlaybackControllerMixin:
             self.visualizer.zoom_level, self.visualizer.viewport_offset
         )
 
-        GLib.idle_add(self._update_time_display, position, duration)
-        GLib.idle_add(self._update_play_selection_button)
+        self._update_time_display(position, duration)
+        self._update_play_selection_button()
 
         # Handle segment transitions in Play Selection Only mode
         if self._playing_selection and self._selection_segments:
@@ -258,7 +230,7 @@ class PlaybackControllerMixin:
                 )
                 self._is_transitioning_segment = True
                 self._current_segment_index += 1
-                GLib.idle_add(self._do_segment_transition_with_retry)
+                self._playback_sources.idle(self._do_segment_transition_with_retry)
                 return
 
             if position < start - TOLERANCE:
@@ -267,17 +239,6 @@ class PlaybackControllerMixin:
                 )
                 self.player.seek(start)
                 return
-
-        # Auto-next detection fallback
-        if duration > 0 and position >= duration - 0.2:
-            if (
-                not hasattr(self, "_end_of_track_handled")
-                or not self._end_of_track_handled
-            ):
-                self._end_of_track_handled = True
-                GLib.idle_add(self.on_playback_finished, player)
-        elif hasattr(self, "_end_of_track_handled") and self._end_of_track_handled:
-            self._end_of_track_handled = False
 
     def _do_segment_transition_with_retry(self, retry_count=0):
         """Execute segment transition with error handling and retry capability."""
@@ -311,7 +272,7 @@ class PlaybackControllerMixin:
                     logger.warning(
                         f"Segment transition seek failed, retry {retry_count + 1}/{max_retries}"
                     )
-                    GLib.timeout_add(
+                    self._playback_sources.later(
                         100,
                         lambda: self._do_segment_transition_with_retry(retry_count + 1),
                     )
@@ -330,11 +291,11 @@ class PlaybackControllerMixin:
                         self.player.play()
                     return False
 
-                GLib.timeout_add(50, ensure_playing)
+                self._playback_sources.later(50, ensure_playing)
                 self._is_transitioning_segment = False
                 logger.debug("Transition lock released after successful seek.")
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 logger.error(f"Exception during segment transition: {e}")
                 self._playing_selection = False
                 self._is_transitioning_segment = False
@@ -522,7 +483,7 @@ class PlaybackControllerMixin:
                         self._current_segment_index = 0
                         start, _ = self._selection_segments[0]
                         self._marker_dragging = True
-                        GLib.idle_add(
+                        self._playback_sources.idle(
                             lambda: (
                                 self.player.seek(start)
                                 if self.player.is_playing()
@@ -535,7 +496,7 @@ class PlaybackControllerMixin:
                             f"Position {current_position:.3f}s is after all segments, stopping"
                         )
                         self._playing_selection = False
-                        GLib.idle_add(
+                        self._playback_sources.idle(
                             lambda: (
                                 self.player.stop() if self.player.is_playing() else None
                             )
@@ -549,10 +510,10 @@ class PlaybackControllerMixin:
                                 self._current_segment_index = i
                                 self._marker_dragging = True
 
-                                def do_seek_and_reenable():
+                                def do_seek_and_reenable(target=start):
                                     if self.player.is_playing():
-                                        self.player.seek(start)
-                                    GLib.timeout_add(
+                                        self.player.seek(target)
+                                    self._playback_sources.later(
                                         150,
                                         lambda: (
                                             setattr(self, "_marker_dragging", False),
@@ -561,7 +522,7 @@ class PlaybackControllerMixin:
                                     )
                                     return False
 
-                                GLib.idle_add(do_seek_and_reenable)
+                                self._playback_sources.idle(do_seek_and_reenable)
                                 break
 
     # --- Player state ---

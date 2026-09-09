@@ -4,7 +4,7 @@
 Controls Bar Mixin for MainWindow.
 
 Extracts all bottom controls bar related methods (zoom popover, volume popover,
-speed popover, hover controllers, visualizer height/viewport sync) from
+speed popover, visualizer height/viewport sync) from
 MainWindow into a reusable mixin.
 
 Usage:
@@ -19,7 +19,6 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import GLib
 
 logger = logging.getLogger(__name__)
 
@@ -118,210 +117,53 @@ class ControlsBarMixin:
             if self.visualizer.zoom_changed_callback:
                 self.visualizer.zoom_changed_callback(self.visualizer.zoom_level)
 
-        # Schedule auto-close of popover after user finishes adjusting
-        if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            GLib.source_remove(self._zoom_close_timer)
-        self._zoom_close_timer = GLib.timeout_add(1500, self._auto_close_zoom_popover)
 
     def _on_zoom_btn_clicked(self, button):
         """Open the zoom popover."""
         self._close_all_bar_popovers(except_name="zoom")
         self.zoom_popover.popup()
 
-    def _auto_close_zoom_popover(self):
-        """Auto-close the zoom popover after inactivity."""
-        self._zoom_close_timer = None
-        if hasattr(self, "zoom_popover"):
-            self.zoom_popover.popdown()
-        return False  # Don't repeat
 
-    def _cancel_zoom_hover_close(self):
-        """Cancel pending hover close timer."""
-        if hasattr(self, "_zoom_hover_close_timer") and self._zoom_hover_close_timer:
-            GLib.source_remove(self._zoom_hover_close_timer)
-            self._zoom_hover_close_timer = None
 
-    def _on_zoom_btn_hover_enter(self, controller, x, y):
-        """Show zoom popover on mouse hover."""
-        self._cancel_zoom_hover_close()
-        if not self.zoom_popover.is_visible():
-            self._close_all_bar_popovers(except_name="zoom")
-            self.zoom_popover.popup()
 
-    def _on_zoom_btn_hover_leave(self, controller):
-        """Schedule close when mouse leaves zoom button."""
-        self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_zoom_popover
-        )
 
-    def _on_zoom_popover_hover_enter(self, controller, x, y):
-        """Cancel close when mouse enters the popover."""
-        self._cancel_zoom_hover_close()
-        # Also cancel the scale-change auto-close timer
-        if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            GLib.source_remove(self._zoom_close_timer)
-            self._zoom_close_timer = None
 
-    def _on_zoom_popover_hover_leave(self, controller):
-        """Schedule close when mouse leaves the popover."""
-        self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_zoom_popover
-        )
 
-    def _hover_close_zoom_popover(self):
-        """Close the zoom popover after hover inactivity."""
-        self._zoom_hover_close_timer = None
-        if hasattr(self, "zoom_popover"):
-            self.zoom_popover.popdown()
-        return False
 
     # --- Volume popover ---
 
     def _close_all_bar_popovers(self, except_name=None):
-        """Close all bottom bar popovers except the specified one."""
-        popovers = {
-            "volume": ("volume_popover", "_volume_hover_close_timer"),
-            "speed": ("speed_popover", "_speed_hover_close_timer"),
-            "zoom": ("zoom_popover", "_zoom_hover_close_timer"),
-        }
-        for name, (pop_attr, timer_attr) in popovers.items():
-            if name == except_name:
-                continue
-            timer = getattr(self, timer_attr, None)
-            if timer:
-                GLib.source_remove(timer)
-                setattr(self, timer_attr, None)
-            popover = getattr(self, pop_attr, None)
-            if popover and popover.is_visible():
-                popover.popdown()
+        for name in ("volume", "speed", "zoom"):
+            if name != except_name and hasattr(self, name + "_popover"):
+                getattr(self, name + "_popover").popdown()
 
-    def _cancel_volume_hover_close(self):
-        if (
-            hasattr(self, "_volume_hover_close_timer")
-            and self._volume_hover_close_timer
-        ):
-            GLib.source_remove(self._volume_hover_close_timer)
-            self._volume_hover_close_timer = None
 
-    def _on_volume_btn_hover_enter(self, controller, x, y):
-        if not self.volume_btn.get_sensitive():
-            return
-        self._cancel_volume_hover_close()
-        if not self.volume_popover.is_visible():
-            self._close_all_bar_popovers(except_name="volume")
-            self.volume_popover.popup()
 
-    def _on_volume_btn_hover_leave(self, controller):
-        self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_volume_popover
-        )
 
-    def _on_volume_popover_hover_enter(self, controller, x, y):
-        self._cancel_volume_hover_close()
 
-    def _on_volume_popover_hover_leave(self, controller):
-        self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_volume_popover
-        )
 
-    def _hover_close_volume_popover(self):
-        self._volume_hover_close_timer = None
-        if hasattr(self, "volume_popover"):
-            self.volume_popover.popdown()
-        return False
 
     def _on_volume_btn_clicked(self, button):
         self._close_all_bar_popovers(except_name="volume")
         self.volume_popover.popup()
 
     def _on_volume_scale_changed(self, scale):
-        """Handle volume scale changes from bottom bar."""
-        slider_value = scale.get_value()
-        volume = self._slider_to_volume(slider_value)
-        # Update label
-        self.volume_value_label.set_text(f"{int(volume)}")
-        # Update icon based on level
-        if volume == 0:
-            self.volume_btn.set_icon_name("audio-volume-muted-symbolic")
-        elif volume <= 33:
-            self.volume_btn.set_icon_name("audio-volume-low-symbolic")
-        elif volume <= 100:
-            self.volume_btn.set_icon_name("audio-volume-medium-symbolic")
-        else:
-            self.volume_btn.set_icon_name("audio-volume-high-symbolic")
-        # Sync with hidden spin row
-        self.volume_spin.handler_block_by_func(self._on_volume_spin_changed)
-        self.volume_spin.set_value(volume)
-        self.volume_spin.handler_unblock_by_func(self._on_volume_spin_changed)
-        # Apply volume
-        player_volume = volume / 100.0
-        if player_volume > 1.0:
-            player_volume = 1.0 + (player_volume - 1.0) * 0.5
-        self.player.set_volume(player_volume)
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("conversion_volume", str(volume))
+        self._set_processing_volume(self._slider_to_volume(scale.get_value()))
 
     # --- Speed popover ---
 
-    def _cancel_speed_hover_close(self):
-        if hasattr(self, "_speed_hover_close_timer") and self._speed_hover_close_timer:
-            GLib.source_remove(self._speed_hover_close_timer)
-            self._speed_hover_close_timer = None
 
-    def _on_speed_btn_hover_enter(self, controller, x, y):
-        if not self.speed_btn.get_sensitive():
-            return
-        self._cancel_speed_hover_close()
-        if not self.speed_popover.is_visible():
-            self._close_all_bar_popovers(except_name="speed")
-            self.speed_popover.popup()
 
-    def _on_speed_btn_hover_leave(self, controller):
-        self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_speed_popover
-        )
 
-    def _on_speed_popover_hover_enter(self, controller, x, y):
-        self._cancel_speed_hover_close()
 
-    def _on_speed_popover_hover_leave(self, controller):
-        self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = GLib.timeout_add(
-            1000, self._hover_close_speed_popover
-        )
 
-    def _hover_close_speed_popover(self):
-        self._speed_hover_close_timer = None
-        if hasattr(self, "speed_popover"):
-            self.speed_popover.popdown()
-        return False
 
     def _on_speed_btn_clicked(self, button):
         self._close_all_bar_popovers(except_name="speed")
         self.speed_popover.popup()
 
     def _on_speed_scale_changed(self, scale):
-        """Handle speed scale changes from bottom bar."""
-        slider_value = scale.get_value()
-        speed = self._slider_to_speed(slider_value)
-        # Clamp to valid range
-        speed = max(0.10, min(5.0, speed))
-        # Update label
-        self.speed_value_label.set_text(f"{speed:.2f}x")
-        # Sync with hidden spin row
-        self.speed_spin.handler_block_by_func(self._on_speed_spin_changed)
-        self.speed_spin.set_value(speed)
-        self.speed_spin.handler_unblock_by_func(self._on_speed_spin_changed)
-        # Apply speed
-        self.player.set_playback_speed(speed)
-        self.player.set_pitch_correction(True)
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("conversion_speed", str(speed))
+        self._set_processing_speed(self._slider_to_speed(scale.get_value()))
 
     # --- Visualizer/seekbar sync ---
 

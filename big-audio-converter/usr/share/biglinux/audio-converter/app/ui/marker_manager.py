@@ -12,7 +12,11 @@ import logging
 from enum import Enum, auto
 
 import cairo
+from gi.repository import Adw
 
+from app.audio.media import Segment
+from app.audio.process import MediaError
+from app.ui.cairo_text import show_text, text_extents
 from app.utils.time_formatter import format_time_short
 
 gettext.textdomain("big-audio-converter")
@@ -26,10 +30,6 @@ class MarkerMode(Enum):
 
     START = auto()
     STOP = auto()
-    CONFIRM = auto()
-    NORMAL = auto()
-    DELETE_PROMPT = auto()
-    DELETE_ALL_CONFIRM = auto()
 
 
 class MarkerManagerMixin:
@@ -42,6 +42,7 @@ class MarkerManagerMixin:
 
     def _init_marker_state(self):
         """Initialize all marker-related state variables."""
+        self._marker_dialog = None
         self.markers_enabled = False
         self.marker_mode = MarkerMode.START  # Use Enum for state
         self.marker_pairs = []  # List of {start, stop} pairs
@@ -184,126 +185,30 @@ class MarkerManagerMixin:
 
         return None
 
-    def _check_confirm_buttons(self, x, y, just_check=False):
-        """Check if x,y is on confirm/cancel buttons and handle if needed."""
-        width = self.get_width()
-        height = self.get_height()
 
-        # Define button regions (higher up to avoid segment overlap)
-        button_y = height * 0.2  # Position higher than before (was 0.25)
-        button_height = 30  # Taller for easier targeting
-
-        # Confirm button (green, on right)
-        confirm_x = width * 0.6
-        confirm_width = 80
-
-        # Cancel button (red, on left)
-        cancel_x = width * 0.4 - 80
-        cancel_width = 80
-
-        # Expanded hit area for better tap detection (add 10px padding)
-        if (
-            confirm_x - 10 <= x <= confirm_x + confirm_width + 10
-            and button_y - 10 <= y <= button_y + button_height + 10
-        ):
-            if not just_check:
-                self._confirm_current_segment()
-            return True
-
-        # Check if clicked on cancel button (with expanded hit area)
-        if (
-            cancel_x - 10 <= x <= cancel_x + cancel_width + 10
-            and button_y - 10 <= y <= button_y + button_height + 10
-        ):
-            if not just_check:
-                self._cancel_current_segment()
-            return True
-
-        return False
-
-    def _check_delete_buttons(self, x, y, just_check=False):
-        """Check if x,y is on delete/cancel buttons and handle if needed."""
-        width = self.get_width()
-        height = self.get_height()
-
-        # Card and button layout must match _draw_markers() exactly
-        btn_h = 30
-
-        # Check if we're in delete all confirmation mode
-        if self.marker_mode == MarkerMode.DELETE_ALL_CONFIRM:
-            card_w = min(380, width - 32)
-            card_h = 110
-            card_x = (width - card_w) / 2
-            card_y = (height - card_h) / 2
-
-            btn_gap = 12
-            btn_w = (card_w - 32 - btn_gap) / 2
-            btn_y = card_y + card_h - btn_h - 14
-            cancel_x = card_x + 16
-            confirm_x = cancel_x + btn_w + btn_gap
-
-            # Check Cancel button
-            if (cancel_x <= x <= cancel_x + btn_w and btn_y <= y <= btn_y + btn_h):
-                if not just_check:
-                    self.marker_mode = MarkerMode.DELETE_PROMPT
-                    self.queue_draw()
-                return True
-
-            # Check Confirm button
-            if (confirm_x <= x <= confirm_x + btn_w and btn_y <= y <= btn_y + btn_h):
-                if not just_check:
-                    self._delete_all_segments()
-                return True
-
-            return False
-
-        # Normal delete prompt mode
-        card_w = min(340, width - 32)
-        card_h = 110
-        card_x = (width - card_w) / 2
-        card_y = (height - card_h) / 2
-
-        show_delete_all = len(self.marker_pairs) > 1
-
-        if show_delete_all:
-            btn_gap = 8
-            total_btn_w = card_w - 32
-            btn_w = (total_btn_w - 2 * btn_gap) / 3
-            cancel_x = card_x + 16
-            delete_x = cancel_x + btn_w + btn_gap
-            delete_all_x = delete_x + btn_w + btn_gap
-        else:
-            btn_gap = 12
-            btn_w = (card_w - 32 - btn_gap) / 2
-            cancel_x = card_x + 16
-            delete_x = cancel_x + btn_w + btn_gap
-
-        btn_y = card_y + card_h - btn_h - 14
-
-        # Cancel button
-        if (cancel_x <= x <= cancel_x + btn_w and btn_y <= y <= btn_y + btn_h):
-            if not just_check:
-                self._cancel_delete_prompt()
-            return True
-
-        # Delete button
-        if (delete_x <= x <= delete_x + btn_w and btn_y <= y <= btn_y + btn_h):
-            if not just_check:
-                self._delete_highlighted_segment()
-            return True
-
-        # Delete All button (only if showing)
-        if show_delete_all and (delete_all_x <= x <= delete_all_x + btn_w and btn_y <= y <= btn_y + btn_h):
-            if not just_check:
-                self._prompt_delete_all_confirmation()
-            return True
-
-        return False
 
     def _prompt_delete_all_confirmation(self):
-        """Show confirmation dialog for delete all action."""
-        self.marker_mode = MarkerMode.DELETE_ALL_CONFIRM
-        self.queue_draw()
+        self._close_marker_dialog()
+        pairs = self.marker_pairs
+        dialog = Adw.AlertDialog(heading=_("Delete All Segments"), body=_("Delete all marked segments? Source files will not be changed."))
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("delete", _("Delete All"))
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+        dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+        def responded(dialog, response):
+            self._marker_dialog = None
+            if self.marker_pairs is pairs and response == "delete":
+                self._delete_all_segments()
+            self.grab_focus()
+        dialog.connect("response", responded)
+        self._marker_dialog = dialog
+        dialog.present(self.get_root())
+
+    def _close_marker_dialog(self):
+        if self._marker_dialog is not None:
+            dialog, self._marker_dialog = self._marker_dialog, None
+            dialog.force_close()
 
     def _delete_all_segments(self):
         """Delete all segments."""
@@ -311,6 +216,7 @@ class MarkerManagerMixin:
             return
 
         # Clear all markers
+        self._close_marker_dialog()
         self.marker_pairs = []
         self.current_pair_index = -1
         self.marker_mode = MarkerMode.START
@@ -351,30 +257,36 @@ class MarkerManagerMixin:
             self.queue_draw()
 
     def _prompt_delete_segment(self, pair_index):
-        """Display deletion prompt for the segment."""
-        # Store the index of pair to potentially delete
-        self.highlighted_pair = pair_index
-        # Set flag to keep delete prompt visible
-        # Switch to delete prompt mode
-        self.marker_mode = MarkerMode.DELETE_PROMPT
+        if not 0 <= pair_index < len(self.marker_pairs):
+            return
+        self._close_marker_dialog()
+        pairs = self.marker_pairs
+        selected_pair = pairs[pair_index]
+        dialog = Adw.AlertDialog(heading=_("Delete Segment"), body=_("Delete segment {number}?").format(number=pair_index + 1))
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("delete", _("Delete"))
+        if len(pairs) > 1:
+            dialog.add_response("all", _("Delete All"))
+            dialog.set_response_appearance("all", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+        def responded(dialog, response):
+            self._marker_dialog = None
+            if self.marker_pairs is not pairs:
+                return
+            if response == "all":
+                self._prompt_delete_all_confirmation()
+            elif response == "delete":
+                index = next((i for i, pair in enumerate(pairs) if pair is selected_pair), None)
+                if index is not None:
+                    self.remove_marker_pair(index)
+            self.grab_focus()
+        dialog.connect("response", responded)
+        self._marker_dialog = dialog
+        dialog.present(self.get_root())
 
-        self.queue_draw()
 
-    def _delete_highlighted_segment(self):
-        """Delete the currently highlighted segment."""
-        if self.highlighted_pair >= 0:
-            self.remove_marker_pair(self.highlighted_pair)
-            # Exit delete mode
-            self.marker_mode = MarkerMode.START
-            self.highlighted_pair = -1
-            self.queue_draw()
-
-    def _cancel_delete_prompt(self):
-        """Cancel the delete prompt."""
-        # Exit delete mode
-        self.marker_mode = MarkerMode.START
-        self.highlighted_pair = -1
-        self.queue_draw()
 
     def add_start_marker(self, position):
         """Add a start marker at the given position."""
@@ -415,7 +327,11 @@ class MarkerManagerMixin:
                 # Normal case - stop marker is after start
                 self.marker_pairs[self.current_pair_index]["stop"] = position
 
-            # Automatically confirm the segment instead of showing confirmation dialog
+            if position == start:
+                self.marker_pairs[self.current_pair_index]["stop"] = None
+                return
+
+            # Commit only a nonempty segment.
             self._confirm_current_segment()
             self.queue_draw()
 
@@ -445,6 +361,7 @@ class MarkerManagerMixin:
     def clear_all_markers(self):
         """Clear all marker pairs."""
         logger.debug("Clearing all markers")
+        self._close_marker_dialog()
         self.marker_pairs = []
         self.current_pair_index = -1
         self.marker_mode = MarkerMode.START
@@ -480,40 +397,12 @@ class MarkerManagerMixin:
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 
     def get_marker_pairs(self):
-        """Get a copy of the current marker pairs with formatted strings."""
+        """Export every complete valid segment, without hidden minimum durations."""
         result = []
-        for i, pair in enumerate(self.marker_pairs):
-            # Skip incomplete pairs or pairs where both values are the same
-            if (
-                pair["start"] is None
-                or pair["stop"] is None
-                or abs(pair["start"] - pair["stop"]) < 0.1
-            ):  # Skip segments shorter than 0.1s
-                continue
-
-            # Ensure both values are valid and properly rounded
-            start = round(pair["start"], 3) if pair["start"] is not None else None
-            stop = round(pair["stop"], 3) if pair["stop"] is not None else None
-
-            # Force start to be before stop (swap if needed)
-            if start is not None and stop is not None and start > stop:
-                start, stop = stop, start
-
-            # Only include valid pairs
-            if start is not None and stop is not None:
-                # Create formatted time strings in FFmpeg-compatible format
-                start_str = self._format_time(start)
-                stop_str = self._format_time(stop)
-
-                result.append({
-                    "start": start,
-                    "stop": stop,
-                    "start_str": start_str,
-                    "stop_str": stop_str,
-                    "segment_index": i
-                    + 1,  # Store the segment's display number (1-based)
-                })
-
+        for index, pair in enumerate(self.marker_pairs, 1):
+            if pair.get("start") is None or pair.get("stop") is None:
+                continue  # An unfinished mouse gesture is not a committed segment.
+            result.append(Segment.from_mapping(dict(pair, segment_index=index), self.duration or None).as_mapping())
         return result
 
     def get_ordered_marker_pairs(self, order_by_number=False):
@@ -551,61 +440,19 @@ class MarkerManagerMixin:
 
     # Add a new method for setting existing markers from strings
     def restore_markers(self, markers):
-        """Restore markers from a list of marker pairs."""
-        if not markers or not self.markers_enabled or self.duration <= 0:
-            logger.debug(
-                "Cannot restore markers - conditions not met: markers=%s, enabled=%s, duration=%s",
-                bool(markers), self.markers_enabled, self.duration,
-            )
+        """Restore an entire valid edit atomically, including an empty edit."""
+        try:
+            validated = [Segment.from_mapping(pair, self.duration or None).as_mapping() for pair in markers]
+        except (MediaError, TypeError, ValueError) as exc:
+            logger.warning("Saved segments could not be restored: %s", exc)
             return False
-
-        # Clear existing markers but maintain enabled state
-        logger.debug(
-            "Restoring %d markers for file with duration %s",
-            len(markers), self.duration,
-        )
-        self.marker_pairs = []
+        self._close_marker_dialog()
+        self.marker_pairs = validated
         self.current_pair_index = -1
         self.marker_mode = MarkerMode.START
         self.highlighted_pair = -1
-        # Add each marker pair from the provided list
-        valid_markers = 0
-        for pair in markers:
-            if "start" in pair and "stop" in pair:
-                try:
-                    start_time = float(pair["start"])
-                    stop_time = float(pair["stop"])
-
-                    # Ensure times are within duration
-                    start_time = min(start_time, self.duration)
-                    stop_time = min(stop_time, self.duration)
-
-                    # Skip invalid markers
-                    if start_time >= stop_time or start_time < 0:
-                        logger.debug(
-                            "Skipping invalid marker: %s-%s",
-                            start_time, stop_time,
-                        )
-                        continue
-
-                    # Create a new marker pair and add it to our list
-                    validated_pair = {
-                        "start": start_time,
-                        "stop": stop_time,
-                        "start_str": self._format_time(start_time),
-                        "stop_str": self._format_time(stop_time),
-                    }
-                    self.marker_pairs.append(validated_pair)
-                    valid_markers += 1
-                except (ValueError, TypeError) as e:
-                    logger.warning("Error processing marker: %s", e)
-                    continue
-
-        logger.debug("Successfully restored %d valid markers", valid_markers)
-
-        # Queue redraw
         self.queue_draw()
-        return valid_markers > 0
+        return True
 
     def _draw_markers(self, cr, width, height):
         """Draw all marker pairs on the waveform.
@@ -633,9 +480,8 @@ class MarkerManagerMixin:
         # First draw the segments and markers
         for i, pair in enumerate(self.marker_pairs):
             # Skip markers outside visible range
-            if pair["start"] is not None and pair["stop"] is not None:
-                if pair["stop"] < start_time or pair["start"] > end_time:
-                    continue  # Skip this pair, it's not visible
+            if (pair["start"] is not None and pair["stop"] is not None) and (pair["stop"] < start_time or pair["start"] > end_time):
+                continue  # Skip this pair, it's not visible
 
             # Use highlight color if this segment is highlighted
             is_highlighted = i == self.highlighted_pair
@@ -715,7 +561,7 @@ class MarkerManagerMixin:
                 badge_text = f"#{i + 1}"
                 cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
                 cr.set_font_size(11)
-                ext = cr.text_extents(badge_text)
+                ext = text_extents(cr, badge_text)
                 badge_w = ext.width + 12
                 badge_h = 18
                 badge_x = x_start + 4
@@ -727,30 +573,15 @@ class MarkerManagerMixin:
                 # Badge text
                 cr.set_source_rgba(1, 1, 1, 0.90)
                 cr.move_to(badge_x + 6, badge_y + badge_h - 5)
-                cr.show_text(badge_text)
+                show_text(cr, badge_text)
 
                 # Draw delete button when hovering over this segment
-                if i == self.hovered_segment_index and self.marker_mode not in [
-                    MarkerMode.DELETE_PROMPT,
-                    MarkerMode.DELETE_ALL_CONFIRM,
-                    MarkerMode.CONFIRM,
-                ]:
+                if i == self.hovered_segment_index and self._marker_dialog is None:
                     self._draw_segment_delete_button(cr, x_start, x_stop, height, i)
 
         # Draw marker time labels with collision avoidance
         if label_items:
             self._draw_marker_labels(cr, width, label_items)
-
-        # IMPORTANT: Now draw the dialogs and buttons AFTER all segments
-        # to ensure they're always on top and clickable
-
-        # Draw confirmation UI if in confirm mode
-        if self.marker_mode == MarkerMode.CONFIRM and self.current_pair_index >= 0:
-            self._draw_confirm_dialog(cr, width, height)
-        elif self.marker_mode == MarkerMode.DELETE_PROMPT and self.highlighted_pair >= 0:
-            self._draw_delete_prompt_dialog(cr, width, height)
-        elif self.marker_mode == MarkerMode.DELETE_ALL_CONFIRM:
-            self._draw_delete_all_dialog(cr, width, height)
 
     def _draw_marker_labels(self, cr, width, label_items):
         """Draw time labels for markers with collision-aware vertical stacking."""
@@ -763,7 +594,7 @@ class MarkerManagerMixin:
 
         placed = []  # (x_left, x_right, y_top)
         for x_center, text, color in label_items:
-            text_width = len(text) * 6
+            text_width = text_extents(cr, text).width + 4
             x_left = x_center - text_width / 2
             x_right = x_left + text_width
 
@@ -771,8 +602,7 @@ class MarkerManagerMixin:
             for px_left, px_right, py_top in placed:
                 if x_left < px_right + label_pad and x_right > px_left - label_pad:
                     candidate = py_top + label_h + 2
-                    if candidate > label_y:
-                        label_y = candidate
+                    label_y = max(label_y, candidate)
 
             placed.append((x_left, x_right, label_y))
             x_left = max(1, min(width - text_width - 1, x_left))
@@ -783,199 +613,12 @@ class MarkerManagerMixin:
 
             cr.set_source_rgba(1, 1, 1, 0.9)
             cr.move_to(x_left + 2, label_y + label_h - 3)
-            cr.show_text(text)
+            show_text(cr, text)
 
-    def _draw_confirm_dialog(self, cr, width, height):
-        """Draw the segment confirmation overlay dialog."""
-        cr.set_source_rgba(0, 0, 0, 0.5)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
 
-        msg = _("Confirm selection?")
-        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-        cr.set_font_size(14)
-        text_extents = cr.text_extents(msg)
 
-        # Text background
-        cr.set_source_rgba(0, 0, 0, 0.7)
-        cr.rectangle(
-            (width - text_extents.width) / 2 - 10,
-            height / 2 - 40 - text_extents.height,
-            text_extents.width + 20,
-            text_extents.height + 10,
-        )
-        cr.fill()
 
-        cr.set_source_rgba(1, 1, 1, 0.9)
-        cr.move_to((width - text_extents.width) / 2, height / 2 - 40)
-        cr.show_text(msg)
 
-        button_bg = (0.2, 0.2, 0.2, 0.8)
-        button_y = height * 0.2
-        button_height = 30
-
-        # Confirm button (green, right)
-        confirm_x = width * 0.6
-        cr.set_source_rgba(*button_bg)
-        cr.rectangle(confirm_x, button_y, 80, button_height)
-        cr.fill()
-        cr.set_source_rgba(0.2, 0.8, 0.2, 1.0)
-        cr.set_font_size(12)
-        cr.move_to(confirm_x + 10, button_y + 18)
-        cr.show_text(_("Confirm"))
-
-        # Cancel button (red, left)
-        cancel_x = width * 0.4 - 80
-        cr.set_source_rgba(*button_bg)
-        cr.rectangle(cancel_x, button_y, 80, button_height)
-        cr.fill()
-        cr.set_source_rgba(0.8, 0.2, 0.2, 1.0)
-        cr.move_to(cancel_x + 18, button_y + 18)
-        cr.show_text(_("Cancel"))
-
-    def _draw_dialog_card(self, cr, width, height, card_w, accent_color):
-        """Draw a modal dialog card with overlay, shadow, background and accent line.
-
-        Returns (card_x, card_y, card_h, card_r) for button placement.
-        """
-        card_h = 110
-        card_x = (width - card_w) / 2
-        card_y = (height - card_h) / 2
-        card_r = 12
-
-        # Drop shadow
-        cr.set_source_rgba(0, 0, 0, 0.40)
-        self._draw_rounded_rect(cr, card_x + 2, card_y + 3, card_w, card_h, card_r)
-        cr.fill()
-
-        # Background
-        cr.set_source_rgb(0.16, 0.16, 0.18)
-        self._draw_rounded_rect(cr, card_x, card_y, card_w, card_h, card_r)
-        cr.fill()
-
-        # Top accent line
-        cr.set_source_rgba(*accent_color)
-        cr.set_line_width(2)
-        cr.move_to(card_x + card_r, card_y + 1)
-        cr.line_to(card_x + card_w - card_r, card_y + 1)
-        cr.stroke()
-
-        return card_x, card_y, card_h, card_r
-
-    def _draw_dialog_button(self, cr, x, y, w, h, r, label, style="outline"):
-        """Draw a dialog button. style: 'outline', 'solid_red', 'solid_dark_red'."""
-        if style == "outline":
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.10)
-            self._draw_rounded_rect(cr, x, y, w, h, r)
-            cr.fill()
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.30)
-            cr.set_line_width(1)
-            self._draw_rounded_rect(cr, x + 0.5, y + 0.5, w - 1, h - 1, r)
-            cr.stroke()
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-            cr.set_font_size(12)
-            ext = cr.text_extents(label)
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.70)
-        elif style == "solid_red":
-            cr.set_source_rgb(0.78, 0.18, 0.18)
-            self._draw_rounded_rect(cr, x, y, w, h, r)
-            cr.fill()
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-            cr.set_font_size(12)
-            ext = cr.text_extents(label)
-            cr.set_source_rgb(1.0, 1.0, 1.0)
-        elif style == "solid_dark_red":
-            cr.set_source_rgb(0.55, 0.10, 0.10)
-            self._draw_rounded_rect(cr, x, y, w, h, r)
-            cr.fill()
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-            cr.set_font_size(12)
-            ext = cr.text_extents(label)
-            cr.set_source_rgb(1.0, 1.0, 1.0)
-        elif style == "solid_confirm":
-            cr.set_source_rgb(0.65, 0.12, 0.12)
-            self._draw_rounded_rect(cr, x, y, w, h, r)
-            cr.fill()
-            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-            cr.set_font_size(12)
-            ext = cr.text_extents(label)
-            cr.set_source_rgb(1.0, 1.0, 1.0)
-        cr.move_to(x + (w - ext.width) / 2, y + h / 2 + ext.height / 2)
-        cr.show_text(label)
-
-    def _draw_delete_prompt_dialog(self, cr, width, height):
-        """Draw the delete-segment confirmation dialog."""
-        # Dim overlay
-        cr.set_source_rgba(0, 0, 0, 0.55)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
-
-        card_w = min(340, width - 32)
-        card_x, card_y, card_h, card_r = self._draw_dialog_card(
-            cr, width, height, card_w, (0.85, 0.22, 0.22, 0.80)
-        )
-
-        # Title text
-        msg = _("Delete segment #{}?").format(self.highlighted_pair + 1)
-        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-        cr.set_font_size(14)
-        text_extents = cr.text_extents(msg)
-        cr.set_source_rgb(0.93, 0.93, 0.93)
-        cr.move_to(card_x + (card_w - text_extents.width) / 2, card_y + 34)
-        cr.show_text(msg)
-
-        # Buttons row
-        btn_h, btn_r = 30, 6
-        btn_y = card_y + card_h - btn_h - 14
-        show_delete_all = len(self.marker_pairs) > 1
-
-        if show_delete_all:
-            btn_gap = 8
-            btn_w = (card_w - 32 - 2 * btn_gap) / 3
-            cancel_x = card_x + 16
-            delete_x = cancel_x + btn_w + btn_gap
-            delete_all_x = delete_x + btn_w + btn_gap
-        else:
-            btn_gap = 12
-            btn_w = (card_w - 32 - btn_gap) / 2
-            cancel_x = card_x + 16
-            delete_x = cancel_x + btn_w + btn_gap
-
-        self._draw_dialog_button(cr, cancel_x, btn_y, btn_w, btn_h, btn_r, _("Cancel"), "outline")
-        self._draw_dialog_button(cr, delete_x, btn_y, btn_w, btn_h, btn_r, _("Delete"), "solid_red")
-        if show_delete_all:
-            self._draw_dialog_button(cr, delete_all_x, btn_y, btn_w, btn_h, btn_r, _("Delete All"), "solid_dark_red")
-
-    def _draw_delete_all_dialog(self, cr, width, height):
-        """Draw the delete-all-segments confirmation dialog."""
-        # Dim overlay
-        cr.set_source_rgba(0, 0, 0, 0.60)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
-
-        card_w = min(380, width - 32)
-        card_x, card_y, card_h, card_r = self._draw_dialog_card(
-            cr, width, height, card_w, (0.90, 0.30, 0.15, 0.85)
-        )
-
-        # Warning text
-        msg = _("Delete ALL segments? This cannot be undone.")
-        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-        cr.set_font_size(13)
-        text_extents = cr.text_extents(msg)
-        cr.set_source_rgb(1.0, 0.82, 0.80)
-        cr.move_to(card_x + (card_w - text_extents.width) / 2, card_y + 34)
-        cr.show_text(msg)
-
-        # Buttons
-        btn_h, btn_r, btn_gap = 30, 6, 12
-        btn_w = (card_w - 32 - btn_gap) / 2
-        btn_y = card_y + card_h - btn_h - 14
-        cancel_x = card_x + 16
-        confirm_x = cancel_x + btn_w + btn_gap
-
-        self._draw_dialog_button(cr, cancel_x, btn_y, btn_w, btn_h, btn_r, _("Cancel"), "outline")
-        self._draw_dialog_button(cr, confirm_x, btn_y, btn_w, btn_h, btn_r, _("Confirm"), "solid_confirm")
 
     def _draw_segment_delete_button(self, cr, x_start, x_stop, height, segment_index):
         """Draw a modern floating delete button with trash icon on the hovered segment."""
