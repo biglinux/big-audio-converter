@@ -68,7 +68,7 @@ class WaveformJobs:
             self._sources.close()
             self._sources = SourceGroup()
             metadata = {identifier: copy.deepcopy(track_metadata[identifier])} if track_metadata and identifier in track_metadata else {}
-            task = WaveformRequest(self._generation, identifier, ffmpeg, markers or {},
+            task = WaveformRequest(self._generation, identifier, ffmpeg, markers if markers is not None else {},
                                    weakref.ref(zoom) if zoom is not None else None,
                                    metadata, enabled)
             self._pending = task

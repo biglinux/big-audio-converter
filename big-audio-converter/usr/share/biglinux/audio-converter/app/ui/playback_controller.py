@@ -84,9 +84,7 @@ class PlaybackControllerMixin:
                 self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
             if not same_file_as_active:
-                threading.Thread(
-                    target=waveform.generate,
-                    args=(
+                waveform.request(*(
                         file_path,
                         self.converter,
                         self.visualizer,
@@ -95,9 +93,7 @@ class PlaybackControllerMixin:
                         if hasattr(self, "zoom_control_box")
                         else None,
                         self.file_queue.track_metadata,
-                    ),
-                    daemon=True,
-                ).start()
+                    ), enabled=True)
             else:
                 logger.debug(f"Same file, skipping waveform generation: {file_path}")
 
@@ -147,31 +143,23 @@ class PlaybackControllerMixin:
         self.visualizer.markers_enabled = markers_enabled
 
         if self.cut_row.get_selected() > 0:
-            threading.Thread(
-                target=waveform.generate,
-                args=(
+            waveform.request(*(
                     file_path,
                     self.converter,
                     self.visualizer,
                     self.file_markers,
                     self.zoom_control_box,
                     self.file_queue.track_metadata,
-                ),
-                daemon=True,
-            ).start()
+                ), enabled=True)
         else:
-            threading.Thread(
-                target=waveform.activate_without_waveform,
-                args=(
+            waveform.request(*(
                     file_path,
                     self.converter,
                     self.visualizer,
                     self.file_markers,
                     self.zoom_control_box,
                     self.file_queue.track_metadata,
-                ),
-                daemon=True,
-            ).start()
+                ), enabled=False)
 
     def _load_file_for_visualization(self, file_path, index, play_audio=True):
         """Load a file for visualization and optional playback."""

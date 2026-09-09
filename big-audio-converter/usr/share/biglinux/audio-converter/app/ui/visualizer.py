@@ -5,6 +5,7 @@ Audio visualization component for displaying waveforms.
 """
 
 import gettext
+from app.audio import waveform
 import logging
 import math
 import time
@@ -279,6 +280,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
     def clear_waveform(self):
         """Clear the current waveform visualization when audio is removed."""
         # Clear loading state
+        waveform.cancel(self)
         self.is_loading = False
 
         with self.waveform_data_lock:
@@ -1346,7 +1348,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             text = _("Waveform visualization disabled")
             subtitle = _("Enable in settings to see waveform")
         else:
-            text = _("No audio loaded")
+            text = getattr(self, "analysis_error", None) or _("No audio loaded")
             subtitle = None
 
         extents = cr.text_extents(text)

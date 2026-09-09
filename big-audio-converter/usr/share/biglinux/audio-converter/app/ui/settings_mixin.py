@@ -571,9 +571,7 @@ class SettingsManagerMixin:
                     f"Waveforms enabled, generating for active file: {self.active_audio_id}"
                 )
 
-                threading.Thread(
-                    target=waveform.generate,
-                    args=(
+                waveform.request(*(
                         self.active_audio_id,
                         self.converter,
                         self.visualizer,
@@ -582,9 +580,7 @@ class SettingsManagerMixin:
                         if hasattr(self, "zoom_control_box")
                         else None,
                         self.file_queue.track_metadata,
-                    ),
-                    daemon=True,
-                ).start()
+                    ), enabled=True)
 
     def _on_cut_combo_changed(self, row, pspec):
         """Handle cut audio combo box changes."""
@@ -619,9 +615,7 @@ class SettingsManagerMixin:
         # Generate waveform if enabling cut and active file has no waveform data
         if enabled and hasattr(self, "active_audio_id") and self.active_audio_id:
             if hasattr(self, "visualizer") and self.visualizer.waveform_data is None:
-                threading.Thread(
-                    target=waveform.generate,
-                    args=(
+                waveform.request(*(
                         self.active_audio_id,
                         self.converter,
                         self.visualizer,
@@ -632,9 +626,7 @@ class SettingsManagerMixin:
                         self.file_queue.track_metadata
                         if hasattr(self, "file_queue")
                         else None,
-                    ),
-                    daemon=True,
-                ).start()
+                    ), enabled=True)
 
         # Save setting
         if hasattr(self.app, "config") and self.app.config:

@@ -24,28 +24,11 @@ from app.utils.config import AppConfig
 
 
 @pytest.fixture
-def config(tmp_path, monkeypatch):
-    """Create an AppConfig that writes to a temp directory."""
-    config_dir = str(tmp_path / "config")
-    monkeypatch.setattr(
-        "app.utils.config.AppConfig.__init__",
-        lambda self: None,
-    )
-    cfg = AppConfig.__new__(AppConfig)
-    cfg.config_dir = config_dir
-    os.makedirs(config_dir, mode=0o700, exist_ok=True)
-    cfg.config_file = os.path.join(config_dir, "config.json")
-    cfg.defaults = {
-        "last_directory": "/home",
-        "default_format": "mp3",
-        "auto_play_preview": True,
-        "confirm_overwrite": True,
-    }
-    cfg.config = cfg.defaults.copy()
-    cfg.modified_keys = set()
-    cfg._save_timer = None
-    cfg._save_delay = 0.01  # Fast saves for tests
-    return cfg
+def config(tmp_path):
+    cfg = AppConfig(config_dir=tmp_path / "config")
+    cfg._save_delay = 0.01
+    yield cfg
+    cfg.close()
 
 
 class TestAppConfigGetSet:
