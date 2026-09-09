@@ -118,12 +118,15 @@ class SettingsManagerMixin:
         parent_box.append(self.cut_options_box)
 
         # --- Noise reduction group ---
-        noise_group = Adw.PreferencesGroup(title=_("Noise Reduction"))
+        noise_group = Adw.PreferencesGroup(title=_("Audio Effects"))
+        self.voice_expander = Adw.ExpanderRow(title=_("Voice Processing"))
+        self.voice_expander.set_subtitle(_("Optional tools for speech; each effect has its own switch"))
+        noise_group.add(self.voice_expander)
         noise_group.set_margin_start(12)
         noise_group.set_margin_end(12)
         noise_group.set_margin_top(6)
 
-        self.noise_expander = Adw.ExpanderRow(title=_("Enable"))
+        self.noise_expander = Adw.ExpanderRow(title=_("Neural Noise Reduction"))
         self.noise_expander.set_subtitle(_("Filter background noise from audio"))
         self.noise_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         self.noise_switch.update_property(
@@ -134,7 +137,7 @@ class SettingsManagerMixin:
         self.noise_expander.add_suffix(self.noise_switch)
         self.noise_expander.set_enable_expansion(False)
         self.noise_expander.set_expanded(False)
-        noise_group.add(self.noise_expander)
+        self.voice_expander.add_row(self.noise_expander)
 
         self.noise_strength_row = Adw.ActionRow(title=_("Strength"))
         self.noise_strength_adj = Gtk.Adjustment(value=1.0, lower=0.0, upper=1.0, step_increment=0.05, page_increment=0.1)
@@ -232,7 +235,7 @@ class SettingsManagerMixin:
         self.gate_intensity_row.add_suffix(self.gate_intensity_scale)
         self.gate_expander.add_row(self.gate_intensity_row)
 
-        self.noise_expander.add_row(self.gate_expander)
+        self.voice_expander.add_row(self.gate_expander)
 
         # Compressor
         self.compressor_expander = Adw.ExpanderRow(title=_("Compressor"))
@@ -261,14 +264,14 @@ class SettingsManagerMixin:
         self.compressor_intensity_row.add_suffix(self.compressor_intensity_scale)
         self.compressor_expander.add_row(self.compressor_intensity_row)
 
-        self.noise_expander.add_row(self.compressor_expander)
+        self.voice_expander.add_row(self.compressor_expander)
 
         # High-pass filter
         self.hpf_row = Adw.SwitchRow(title=_("High-Pass Filter"))
         self.hpf_row.set_subtitle(_("Removes low-frequency rumble"))
         self.hpf_row.set_active(False)
         self.hpf_row.connect("notify::active", self._on_hpf_switch_changed)
-        self.noise_expander.add_row(self.hpf_row)
+        self.voice_expander.add_row(self.hpf_row)
 
         self.hpf_freq_row = Adw.ActionRow(title=_("Frequency (Hz)"))
         self.hpf_freq_adj = Gtk.Adjustment(value=80, lower=20, upper=500, step_increment=5, page_increment=20)
@@ -284,14 +287,14 @@ class SettingsManagerMixin:
         self.hpf_freq_scale.connect("value-changed", self._on_hpf_freq_changed)
         self.hpf_freq_row.add_suffix(self.hpf_freq_scale)
         self.hpf_freq_row.set_visible(False)
-        self.noise_expander.add_row(self.hpf_freq_row)
+        self.voice_expander.add_row(self.hpf_freq_row)
 
         # Transient suppressor
         self.transient_row = Adw.SwitchRow(title=_("Transient Suppressor"))
         self.transient_row.set_subtitle(_("Suppresses clicks and plosives"))
         self.transient_row.set_active(False)
         self.transient_row.connect("notify::active", self._on_transient_switch_changed)
-        self.noise_expander.add_row(self.transient_row)
+        self.voice_expander.add_row(self.transient_row)
 
         self.transient_attack_row = Adw.ActionRow(title=_("Attack"))
         self.transient_attack_adj = Gtk.Adjustment(value=-0.5, lower=-1.0, upper=0.0, step_increment=0.1, page_increment=0.2)
@@ -306,7 +309,7 @@ class SettingsManagerMixin:
         self.transient_attack_scale.connect("value-changed", self._on_transient_attack_changed)
         self.transient_attack_row.add_suffix(self.transient_attack_scale)
         self.transient_attack_row.set_visible(False)
-        self.noise_expander.add_row(self.transient_attack_row)
+        self.voice_expander.add_row(self.transient_attack_row)
 
         parent_box.append(noise_group)
 
@@ -317,7 +320,7 @@ class SettingsManagerMixin:
         normalize_group.set_margin_top(6)
 
         self.normalize_row = Adw.SwitchRow(title=_("Loudness Normalization"))
-        self.normalize_row.set_subtitle(_("EBU R128 standard (-16 LUFS)"))
+        self.normalize_row.set_subtitle(_("Target: -16 LUFS; true-peak limit: -1.5 dBTP"))
         self.normalize_row.set_active(False)
         self.normalize_row.connect("notify::active", self._on_normalize_switch_changed)
         normalize_group.add(self.normalize_row)
@@ -329,6 +332,13 @@ class SettingsManagerMixin:
 
         # Restore saved settings after UI is created
         self._restore_conversion_settings()
+        if not self.converter.gtcrn_ladspa_path:
+            self.noise_switch.set_sensitive(False)
+            self.noise_expander.set_subtitle(_("Unavailable: install the GTCRN plugin and models"))
+            self.transient_row.set_sensitive(False)
+            self.transient_row.set_subtitle(_("Unavailable: install the transient-processing plugin"))
+        self.voice_expander.set_expanded(False)
+        self.player.set_bypass_processing(self._format_list[self.format_row.get_selected()] == "copy")
 
     # --- Settings change handlers ---
 
@@ -366,18 +376,9 @@ class SettingsManagerMixin:
             self.app.config.set("audio_channels", str(row.get_selected()))
 
     def _on_volume_spin_changed(self, spin):
-        """Handle volume spin change and save setting."""
         volume = spin.get_value()
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("conversion_volume", str(volume))
-
-        # Also update player volume (original functionality)
-        player_volume = volume / 100.0
-        if player_volume > 1.0:
-            player_volume = (
-                1.0 + (player_volume - 1.0) * 0.5
-            )  # Scale values above 100% appropriately
-        self.player.set_volume(player_volume)
+        self.app.config.set("conversion_volume", str(volume))
+        self.player.set_volume(volume / 100.0)
 
     def _on_speed_spin_changed(self, spin):
         """Handle playback speed spin change and save setting."""
@@ -390,20 +391,16 @@ class SettingsManagerMixin:
         self.player.set_pitch_correction(True)
 
     def _on_noise_switch_changed(self, switch, state):
-        """Handle noise reduction toggle and save setting."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("conversion_noise_reduction", str(state).lower())
-
+        """This switch controls neural denoising, not independently selected effects."""
+        if state and not self.converter.gtcrn_ladspa_path:
+            self.app.config.set("conversion_noise_reduction", "false")
+            self._sources.idle(switch.set_active, False)
+            return True
+        self.app.config.set("conversion_noise_reduction", str(state).lower())
         self.noise_expander.set_enable_expansion(state)
-        # Prevent auto-expansion from click propagation on the ExpanderRow
-        self._sources.idle(self.noise_expander.set_expanded, False)
+        self.player.set_noise_reduction(state)
         if not state:
-            self.gate_switch.set_active(False)
-            self.compressor_switch.set_active(False)
-
-        if hasattr(self.player, "set_noise_reduction"):
-            self.player.set_noise_reduction(state)
-
+            self.noise_expander.set_expanded(False)
         return False
 
     def _on_noise_strength_changed(self, scale):
@@ -552,10 +549,8 @@ class SettingsManagerMixin:
             self.player.set_transient_attack(attack)
 
     def _on_normalize_switch_changed(self, row, pspec):
-        """Handle loudness normalization toggle."""
-        state = row.get_active()
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("normalize_enabled", str(state).lower())
+        self.app.config.set("normalize_enabled", str(row.get_active()).lower())
+        self.player.set_normalize_enabled(row.get_active())
 
     def _on_waveform_switch_changed(self, row, pspec):
         """Handle waveform generation toggle and save setting."""
@@ -703,12 +698,6 @@ class SettingsManagerMixin:
             self.eq_toggle_btn.set_sensitive(not is_copy_mode)
 
         if is_copy_mode:
-            # Reset volume to 100 via the scale (triggers full sync)
-            if hasattr(self, "volume_scale"):
-                self.volume_scale.set_value(self._volume_to_slider(100.0))
-            # Reset speed to 1.0 via the scale (triggers full sync)
-            if hasattr(self, "speed_scale"):
-                self.speed_scale.set_value(self._speed_to_slider(1.0))
             # Close volume/speed popovers if open
             if hasattr(self, "volume_popover") and self.volume_popover.is_visible():
                 self.volume_popover.popdown()
@@ -717,6 +706,10 @@ class SettingsManagerMixin:
             # Hide equalizer if shown
             if hasattr(self, "eq_revealer") and self.eq_revealer.get_reveal_child():
                 self.eq_revealer.set_reveal_child(False)
+        self.player.set_bypass_processing(is_copy_mode)
+        if hasattr(self, "voice_expander"):
+            self.voice_expander.set_sensitive(not is_copy_mode)
+        self.format_row.set_subtitle(_("No re-encoding. Cuts follow packet boundaries and may be approximate.") if is_copy_mode else "")
 
     # --- Slider / value conversion utilities ---
 

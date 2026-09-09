@@ -118,11 +118,6 @@ class ControlsBarMixin:
             if self.visualizer.zoom_changed_callback:
                 self.visualizer.zoom_changed_callback(self.visualizer.zoom_level)
 
-        # Schedule auto-close of popover after user finishes adjusting
-        if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            self._sources.remove(self._zoom_close_timer)
-        self._zoom_close_timer = self._sources.timeout(1500, self._auto_close_zoom_popover)
-
     def _on_zoom_btn_clicked(self, button):
         """Open the zoom popover."""
         self._close_all_bar_popovers(except_name="zoom")
@@ -141,34 +136,17 @@ class ControlsBarMixin:
             self._sources.remove(self._zoom_hover_close_timer)
             self._zoom_hover_close_timer = None
 
-    def _on_zoom_btn_hover_enter(self, controller, x, y):
-        """Show zoom popover on mouse hover."""
-        self._cancel_zoom_hover_close()
-        if not self.zoom_popover.is_visible():
-            self._close_all_bar_popovers(except_name="zoom")
-            self.zoom_popover.popup()
+    def _on_zoom_btn_hover_enter(self, *args):
+        return None
 
-    def _on_zoom_btn_hover_leave(self, controller):
-        """Schedule close when mouse leaves zoom button."""
-        self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_zoom_popover
-        )
+    def _on_zoom_btn_hover_leave(self, *args):
+        return None
 
-    def _on_zoom_popover_hover_enter(self, controller, x, y):
-        """Cancel close when mouse enters the popover."""
-        self._cancel_zoom_hover_close()
-        # Also cancel the scale-change auto-close timer
-        if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            self._sources.remove(self._zoom_close_timer)
-            self._zoom_close_timer = None
+    def _on_zoom_popover_hover_enter(self, *args):
+        return None
 
-    def _on_zoom_popover_hover_leave(self, controller):
-        """Schedule close when mouse leaves the popover."""
-        self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_zoom_popover
-        )
+    def _on_zoom_popover_hover_leave(self, *args):
+        return None
 
     def _hover_close_zoom_popover(self):
         """Close the zoom popover after hover inactivity."""
@@ -205,28 +183,17 @@ class ControlsBarMixin:
             self._sources.remove(self._volume_hover_close_timer)
             self._volume_hover_close_timer = None
 
-    def _on_volume_btn_hover_enter(self, controller, x, y):
-        if not self.volume_btn.get_sensitive():
-            return
-        self._cancel_volume_hover_close()
-        if not self.volume_popover.is_visible():
-            self._close_all_bar_popovers(except_name="volume")
-            self.volume_popover.popup()
+    def _on_volume_btn_hover_enter(self, *args):
+        return None
 
-    def _on_volume_btn_hover_leave(self, controller):
-        self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_volume_popover
-        )
+    def _on_volume_btn_hover_leave(self, *args):
+        return None
 
-    def _on_volume_popover_hover_enter(self, controller, x, y):
-        self._cancel_volume_hover_close()
+    def _on_volume_popover_hover_enter(self, *args):
+        return None
 
-    def _on_volume_popover_hover_leave(self, controller):
-        self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_volume_popover
-        )
+    def _on_volume_popover_hover_leave(self, *args):
+        return None
 
     def _hover_close_volume_popover(self):
         self._volume_hover_close_timer = None
@@ -259,8 +226,6 @@ class ControlsBarMixin:
         self.volume_spin.handler_unblock_by_func(self._on_volume_spin_changed)
         # Apply volume
         player_volume = volume / 100.0
-        if player_volume > 1.0:
-            player_volume = 1.0 + (player_volume - 1.0) * 0.5
         self.player.set_volume(player_volume)
         if hasattr(self.app, "config") and self.app.config:
             self.app.config.set("conversion_volume", str(volume))
@@ -272,28 +237,17 @@ class ControlsBarMixin:
             self._sources.remove(self._speed_hover_close_timer)
             self._speed_hover_close_timer = None
 
-    def _on_speed_btn_hover_enter(self, controller, x, y):
-        if not self.speed_btn.get_sensitive():
-            return
-        self._cancel_speed_hover_close()
-        if not self.speed_popover.is_visible():
-            self._close_all_bar_popovers(except_name="speed")
-            self.speed_popover.popup()
+    def _on_speed_btn_hover_enter(self, *args):
+        return None
 
-    def _on_speed_btn_hover_leave(self, controller):
-        self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_speed_popover
-        )
+    def _on_speed_btn_hover_leave(self, *args):
+        return None
 
-    def _on_speed_popover_hover_enter(self, controller, x, y):
-        self._cancel_speed_hover_close()
+    def _on_speed_popover_hover_enter(self, *args):
+        return None
 
-    def _on_speed_popover_hover_leave(self, controller):
-        self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = self._sources.timeout(
-            1000, self._hover_close_speed_popover
-        )
+    def _on_speed_popover_hover_leave(self, *args):
+        return None
 
     def _hover_close_speed_popover(self):
         self._speed_hover_close_timer = None

@@ -18,6 +18,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from app.ui.segment_editor import SegmentEditor
 from app.ui.conversion_session import ConversionSession
 from app.utils.main_context import SourceGroup
 from app.ui.controls_bar_mixin import ControlsBarMixin
@@ -227,7 +228,7 @@ class MainWindow(
 
         # Set minimum window size to prevent controls from being cut off
         # Left sidebar (300px) + right content (620px) = 920px minimum width
-        self.set_size_request(920, 600)
+        self.set_size_request(640, 480)
         # For debouncing window size save
         self._size_save_timeout_id = None
 
@@ -391,95 +392,12 @@ class MainWindow(
 
         # Create CSS for sidebar styling
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(
-            b"""
-        .sidebar {
-            background-color: @sidebar_bg_color;
-        }
-        .dark-bottom-panel {
-            background-color: #1a1a1e;
-        }
-        .dark-controls-bar {
-            background-color: #2a2a30;
-            padding: 6px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .dark-controls-bar label {
-            color: rgba(255, 255, 255, 0.75);
-        }
-        .dark-controls-bar button {
-            color: rgba(255, 255, 255, 0.85);
-            background: none;
-            box-shadow: none;
-            border: none;
-        }
-        .dark-controls-bar button:hover {
-            color: #ffffff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .dark-controls-bar button:active,
-        .dark-controls-bar button:checked {
-            color: rgba(255, 255, 255, 0.95);
-            background-color: alpha(@accent_bg_color, 0.5);
-        }
-        .dark-controls-bar scale trough {
-            background-color: rgba(255, 255, 255, 0.12);
-        }
-        .dark-controls-bar scale highlight {
-            background-color: @accent_bg_color;
-        }
-        .dark-controls-bar scale slider {
-            background-color: rgba(255, 255, 255, 0.85);
-        }
-        .dark-controls-bar scale value {
-            color: rgba(255, 255, 255, 0.75);
-        }
-        popover.dark-popover {
-            background: none;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-        }
-        popover.dark-popover > contents {
-            background-color: #2a2a30;
-            color: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        popover.dark-popover > arrow {
-            background-color: #2a2a30;
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        popover.dark-popover label {
-            color: rgba(255, 255, 255, 0.85);
-        }
-        popover.dark-popover scale trough {
-            background-color: rgba(255, 255, 255, 0.25);
-            min-width: 10px;
-            min-height: 10px;
-            border-radius: 5px;
-        }
-        popover.dark-popover scale highlight {
-            background-color: @accent_bg_color;
-            min-width: 10px;
-            min-height: 10px;
-            border-radius: 5px;
-        }
-        popover.dark-popover scale slider {
-            background-color: rgba(255, 255, 255, 0.9);
-            min-width: 20px;
-            min-height: 20px;
-            border-radius: 10px;
-        }
-        popover.dark-popover scale indicator {
-            background-color: rgba(255, 255, 255, 0.3);
-            min-width: 6px;
-            min-height: 1px;
-        }
-        """,
-            -1,
-        )
+        css_provider.load_from_string("""
+        .sidebar { background-color: @sidebar_bg_color; }
+        .dark-controls-bar { background-color: @headerbar_bg_color; padding: 6px 12px; }
+        .dark-controls-bar label { color: @headerbar_fg_color; }
+        .dark-controls-bar button { color: @headerbar_fg_color; }
+        """)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
             css_provider,
@@ -509,7 +427,7 @@ class MainWindow(
         left_box = Adw.ToolbarView()
         left_box.add_css_class("sidebar")
         # Set minimum width for left sidebar
-        left_box.set_size_request(300, -1)
+        left_box.set_size_request(260, -1)
 
         # Create header bar for left side
         left_header = Adw.HeaderBar()
@@ -574,7 +492,7 @@ class MainWindow(
         # RIGHT SIDE - Now contains file queue (previously on left)
         right_box = Adw.ToolbarView()
         # Set minimum width for right content area
-        right_box.set_size_request(620, -1)
+        right_box.set_size_request(360, -1)
 
         # Create header bar for right side using the dedicated class
         # This handles proper layout behavior and resizing
@@ -1071,6 +989,14 @@ class MainWindow(
 
         # Apply tooltips to all UI elements (must be after all widgets are created)
         self._apply_tooltips()
+        self.edit_segments_button = Gtk.Button(label=_("Edit Segments…"), halign=Gtk.Align.START)
+        self.edit_segments_button.connect("clicked", self.on_edit_segments)
+        self.edit_segments_button.set_tooltip_text(_("Edit start and end times using the keyboard"))
+        right_content.append(self.edit_segments_button)
+        breakpoint = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 850px"))
+        breakpoint.add_setter(self.split_view, "orientation", Gtk.Orientation.VERTICAL)
+        breakpoint.add_setter(self.split_view, "position", 220)
+        self.add_breakpoint(breakpoint)
 
     def update_queue_size_label(self, count=None, text=None):
         """Update the queue size label in the header."""
@@ -1237,6 +1163,7 @@ class MainWindow(
             # Hide visualizer tooltip
             if hasattr(self, "visualizer"):
                 self._hide_visualizer_tooltip()
+        self.tooltip_helper.refresh()
 
     def _setup_visualizer_tooltip(self):
         """Setup tooltip for the waveform visualizer using the standard TooltipHelper."""
@@ -1553,6 +1480,8 @@ class MainWindow(
         return False
 
     def _on_sidebar_width_changed(self, paned, param):
+        if self.split_view.get_orientation() == Gtk.Orientation.VERTICAL:
+            return
         """Handle sidebar width changes and save to config."""
         width = paned.get_position()
 
@@ -1917,3 +1846,25 @@ class MainWindow(
             self.tooltip_helper.cleanup()
         self._sources.close()
         self.app.config.close()
+
+    def on_edit_segments(self, *args):
+        identifier = self.active_audio_id
+        duration = self.visualizer.duration
+        if not identifier or duration <= 0:
+            self._show_error_dialog(_("Select a File"), _("Select a file and wait for its duration to load before editing segments."))
+            return
+        def apply(segments):
+            if self._disposed or identifier != self.active_audio_id:
+                return False
+            self.file_markers[identifier] = segments
+            if self.cut_row.get_selected() == 0:
+                self.cut_row.set_selected(1)
+            if segments:
+                self.visualizer.restore_markers(segments)
+            else:
+                self.visualizer.clear_all_markers()
+            self.visualizer.queue_draw()
+            return True
+        dialog = SegmentEditor(duration, self.visualizer.get_marker_pairs(), apply, self.player.seek)
+        self.segment_editor = dialog
+        dialog.present(self)

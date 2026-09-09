@@ -13,6 +13,7 @@ from enum import Enum, auto
 
 import cairo
 
+from app.audio.models import format_timestamp
 from app.utils.time_formatter import format_time_short
 
 gettext.textdomain("big-audio-converter")
@@ -464,20 +465,7 @@ class MarkerManagerMixin:
         self.marker_drag_callback = callback
 
     def _format_time(self, time_in_seconds):
-        """Format time in seconds to HH:MM:SS.ms format for FFmpeg compatibility."""
-        if time_in_seconds is None:
-            return ""
-
-        # Ensure we have consistent precision (3 decimal places for milliseconds)
-        time_in_seconds = round(time_in_seconds, 3)
-
-        hours = int(time_in_seconds // 3600)
-        minutes = int((time_in_seconds % 3600) // 60)
-        seconds = int(time_in_seconds % 60)
-        milliseconds = int((time_in_seconds % 1) * 1000)
-
-        # Use FFmpeg-compatible format (HH:MM:SS.mmm)
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+        return format_timestamp(time_in_seconds)
 
     def get_marker_pairs(self):
         """Get a copy of the current marker pairs with formatted strings."""
