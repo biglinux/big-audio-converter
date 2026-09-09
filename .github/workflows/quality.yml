@@ -1,0 +1,60 @@
+name: Product quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['audit/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Record the source and environment
+        shell: bash
+        run: |
+          mkdir -p evidence
+          git rev-parse HEAD > evidence/commit.txt
+          git ls-tree -r HEAD > evidence/tree.txt
+          git archive --format=tar HEAD > evidence/source.tar
+          git bundle create evidence/repository.bundle HEAD
+          uname -a > evidence/environment.txt
+      - name: Preserve reproducible source snapshot
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-${{ github.sha }}
+          path: evidence/
+          retention-days: 7
+      - name: Install Linux test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            python3-gi python3-gi-cairo python3-numpy python3-mpv \
+            python3-pytest python3-pytest-cov python3-hypothesis \
+            gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg \
+            gettext desktop-file-utils xvfb xauth dbus-x11 xdotool \
+            x11-utils imagemagick at-spi2-core python3-pyatspi
+      - name: Run tests
+        run: |
+          /usr/bin/python3 -m pytest -q tests --junitxml=evidence/tests.xml
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tests-${{ github.sha }}
+          path: evidence/*.xml
+          if-no-files-found: warn
+          retention-days: 14
