@@ -5,6 +5,7 @@ Audio converter module for handling audio conversion with ffmpeg.
 """
 
 import gettext
+import json
 import logging
 import math
 import os
@@ -15,6 +16,11 @@ import subprocess
 import tempfile
 
 from gi.repository import GLib
+
+from .models import BatchResult, FileResult, MediaSource, Segment, finite_number
+from .process_runner import ProcessRunner, OperationCancelled
+from .output_transaction import OutputTransaction
+from .codec_profiles import build_codec_args, output_rate, ARTWORK_FORMATS, artwork_args
 
 from .segment_processor import SegmentProcessor  # Import the segment processor
 
@@ -45,121 +51,44 @@ class AudioConverter:
         self.current_process = None
 
     def _find_ffmpeg(self):
-        """Find the ffmpeg executable in the PATH."""
-        try:
-            # Try the ffmpeg command
-            result = subprocess.run(
-                ["ffmpeg", "-version"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            if result.returncode == 0:
-                return "ffmpeg"
-        except FileNotFoundError:
-            pass
-
-        # Try common installation locations
-        common_paths = [
-            "/usr/lib/jellyfin-ffmpeg/ffmpeg",
-            "/opt/local/bin/ffmpeg",
-        ]
-
-        for path in common_paths:
-            if os.path.isfile(path) and os.access(path, os.X_OK):
-                return path
-
+        """Discover executables without launching a process during GTK startup."""
+        found = shutil.which("ffmpeg")
+        if found:
+            return found
+        for candidate in ("/usr/lib/jellyfin-ffmpeg/ffmpeg", "/opt/local/bin/ffmpeg"):
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                return candidate
         return None
 
     def convert_all_files(self, files, settings, progress_callback, finish_callback):
-        """Convert a list of files with the given settings."""
-        if not self.ffmpeg_path:
-            GLib.idle_add(
-                finish_callback, False, "ffmpeg not found. Please install FFmpeg."
-            )
-            return
-
+        """Process a stable request snapshot and report every input's final state."""
+        import copy
+        files = list(files)
+        self.last_batch = BatchResult()
         try:
-            total_files = len(files)
-            self.cancel_flag = False
-            successful_files = []
-
-            logger.info(f"Starting conversion of {total_files} files")
-            # Log cut settings if available
-            if settings.get("cut_enabled") and "file_markers" in settings:
-                file_markers = settings.get("file_markers", {})
-                for file_path in files:
-                    if file_path in file_markers:
-                        logger.info(
-                            f"File {file_path} has {len(file_markers[file_path])} cut segments"
-                        )
-                    else:
-                        logger.info(f"File {file_path} has no cut segments")
-
-            for i, file_path in enumerate(files):
+            self.reset_cancellation()
+            snapshot = copy.deepcopy(settings)
+            for index, identifier in enumerate(files):
                 if self.cancel_flag:
-                    # If canceled, report partial success with successfully converted files
-                    if successful_files:
-                        GLib.idle_add(
-                            finish_callback,
-                            True,
-                            "Conversion partially completed.",
-                            successful_files,
-                        )
-                    else:
-                        GLib.idle_add(finish_callback, False, "Conversion canceled.")
-                    return
+                    self.last_batch.files.extend(FileResult(path, "cancelled", message="Not processed because the batch was cancelled.") for path in files[index:])
+                    break
+                output = self._get_output_path(identifier, snapshot["format"])
+                def progress(value, index=index, identifier=identifier):
+                    self._dispatch(progress_callback, index, identifier, value)
+                self.convert_file(identifier, output, snapshot, progress)
+                self.last_batch.files.append(self.last_result)
+            succeeded = self.last_batch.successful_sources
+            failed = len(self.last_batch.failed_sources)
+            cancelled = sum(item.status == "cancelled" for item in self.last_batch.files)
+            message = f"{len(succeeded)} completed; {failed} failed; {cancelled} cancelled."
+            self._dispatch(finish_callback, bool(succeeded), message, succeeded)
+        except Exception as error:
+            # This is the worker's presentation boundary. Preserve diagnostics
+            # while ensuring an unexpected error cannot strand a progress dialog.
+            logger.exception("Batch conversion failed")
+            self._dispatch(finish_callback, False, str(error), self.last_batch.successful_sources)
 
-                # Clone settings for each file to prevent interference
-                file_settings = settings.copy()
-
-                # Log which file we're processing
-                logger.info(
-                    f"Processing file {i + 1} of {total_files}: {os.path.basename(file_path)}"
-                )
-
-                # Generate output path with proper handling for special characters
-                output_format = file_settings["format"]
-                output_path = self._get_output_path(file_path, output_format)
-
-                # Process this file with progress updates
-                success = self.convert_file(
-                    file_path,
-                    output_path,
-                    file_settings,
-                    lambda progress: progress_callback(i, file_path, progress),
-                )
-
-                if success:
-                    # Track successful conversion
-                    successful_files.append(file_path)
-                    logger.info(
-                        f"Successfully converted file {i + 1}: {os.path.basename(file_path)}"
-                    )
-                elif not self.cancel_flag:
-                    # Report failure for this file but continue with others
-                    logger.error(
-                        f"Failed to convert file {i + 1}: {os.path.basename(file_path)}"
-                    )
-
-            # All files processed, report success with list of converted files
-            if successful_files:
-                GLib.idle_add(
-                    finish_callback,
-                    True,
-                    f"Successfully converted {len(successful_files)} of {total_files} files.",
-                    successful_files,
-                )
-            else:
-                GLib.idle_add(
-                    finish_callback, False, "No files were successfully converted."
-                )
-
-        except Exception as e:
-            logger.exception(f"Error during conversion: {str(e)}")
-            GLib.idle_add(finish_callback, False, f"Conversion error: {str(e)}")
-
-    def convert_file(self, input_path, output_path, settings, progress_callback=None):
+    def _convert_file_staged(self, input_path, output_path, settings, progress_callback=None):
         """Convert a single file with the given settings.
 
         Supports extracting specific audio tracks from video files using track metadata.
@@ -168,9 +97,9 @@ class AudioConverter:
         try:
             # Check if this is a virtual track path (format: video_path::track1.ext)
             track_metadata = None
-            actual_input_path = input_path
+            actual_input_path = os.path.abspath(input_path)
 
-            if "::" in input_path:
+            if "::" in input_path and not os.path.isfile(input_path):
                 # This is a track extraction request
                 logger.info(f"Detected track extraction request: {input_path}")
                 if (
@@ -178,7 +107,7 @@ class AudioConverter:
                     and input_path in settings["track_metadata"]
                 ):
                     track_metadata = settings["track_metadata"][input_path]
-                    actual_input_path = track_metadata["source_video"]
+                    actual_input_path = os.path.abspath(track_metadata["source_video"])
                     logger.info(
                         f"Extracting track {track_metadata['track_index']} from {actual_input_path}"
                     )
@@ -206,19 +135,22 @@ class AudioConverter:
                 settings["cut_segments"] = []
 
             # Log FFmpeg version for diagnostics
-            self._log_ffmpeg_version()
 
             output_dir = os.path.dirname(output_path)
             if output_dir and not os.path.exists(output_dir):
                 os.makedirs(output_dir, exist_ok=True)
 
             # Build ffmpeg command
-            cmd = [self.ffmpeg_path, "-vn", "-sn", "-y", "-i", actual_input_path]
+            cmd = [self.ffmpeg_path, "-y", "-i", actual_input_path, "-map_metadata", "0"]
 
             if track_metadata:
                 track_index = track_metadata["track_index"]
                 cmd.extend(["-map", f"0:{track_index}"])
                 logger.info(f"Mapping audio stream 0:{track_index}")
+
+            if not track_metadata:
+                cmd.extend(["-map", "0:a:0"])
+            cmd.extend(artwork_args(settings.get("_source_probe", {}), output_path, format_hint=settings.get("format")))
 
             # Handle copy mode
             if settings["format"] == "copy":
@@ -276,39 +208,9 @@ class AudioConverter:
             cmd.append(output_path)
             logger.debug(f"FFmpeg command: {' '.join(cmd)}")
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                text=True,
-            )
-            self.current_process = process
-
             duration = self._get_duration(actual_input_path) or 0
-            if progress_callback and duration > 0:
-                for line in process.stderr:
-                    if self.cancel_flag:
-                        process.terminate()
-                        return False
-                    time_match = re.search(r"time=(\d+):(\d+):(\d+\.\d+)", line)
-                    if time_match:
-                        hours, minutes, seconds = map(float, time_match.groups())
-                        current_time = hours * 3600 + minutes * 60 + seconds
-                        progress = min(current_time / duration, 1.0)
-                        progress_callback(progress)
-
-            process.wait()
-            self.current_process = None
-
-            if process.returncode != 0 and not self.cancel_flag:
-                logger.error(
-                    f"FFmpeg error (code {process.returncode}):\n{process.stderr.read()}"
-                )
-                return False
-
-            if not os.path.exists(output_path):
-                logger.error("FFmpeg did not create output file")
+            speed = float(settings.get("speed", 1.0)) if settings.get("format") != "copy" else 1.0
+            if not self._run_ffmpeg(cmd, duration / speed, progress_callback):
                 return False
 
             logger.info(f"Conversion successful: {input_path} -> {output_path}")
@@ -326,6 +228,16 @@ class AudioConverter:
 
         Filter order: HPF → Transient → Compressor → GTCRN NR → Gate → EQ → Volume → Speed → Normalize
         """
+        settings = dict(settings)
+        settings["speed"] = finite_number(settings.get("speed", 1.0), "Speed", 0.1, 100)
+        settings["volume"] = finite_number(settings.get("volume", 1.0), "Volume", 0, 10)
+        for key in ("gate_intensity", "compressor_intensity", "noise_strength", "noise_speech_strength", "noise_voice_enhance"):
+            if key in settings:
+                settings[key] = finite_number(settings[key], key, 0, 1)
+        if settings.get("noise_reduction") and not self.gtcrn_ladspa_path:
+            raise ValueError("Neural noise reduction is unavailable: install the GTCRN plugin and models")
+        if settings.get("transient_enabled") and not self.gtcrn_ladspa_path:
+            raise ValueError("Transient suppression is unavailable: install the audio processing plugin")
         filters = []
 
         # 1. High-pass filter (remove low-frequency rumble)
@@ -402,9 +314,9 @@ class AudioConverter:
             while remaining < 0.5:
                 filters.append("atempo=0.5")
                 remaining /= 0.5
-            while remaining > 100.0:
-                filters.append("atempo=100.0")
-                remaining /= 100.0
+            while remaining > 2.0:
+                filters.append("atempo=2.0")
+                remaining /= 2.0
             filters.append(f"atempo={remaining}")
 
         # 9. Normalization (last)
@@ -414,17 +326,7 @@ class AudioConverter:
         return filters
 
     def _build_codec_args(self, settings, channels=None):
-        """Build FFmpeg codec/format arguments for encoding from settings."""
-        args = []
-        if settings["format"] == "aac":
-            args.extend(["-f", "adts", "-c:a", "aac", "-strict", "-2"])
-        else:
-            args.extend(["-f", settings["format"]])
-        if settings.get("bitrate") and settings["format"] in ("mp3", "aac", "ogg", "opus"):
-            args.extend(["-b:a", settings["bitrate"]])
-        if channels and settings["format"] != "copy":
-            args.extend(["-ac", str(channels)])
-        return args
+        return build_codec_args(settings, channels, settings.get("_source_stream"))
 
     @staticmethod
     def _cleanup_temp_dir(temp_dir):
@@ -439,7 +341,9 @@ class AudioConverter:
     def _convert_segments(self, actual_input_path, segments, settings, audio_filters,
                           track_metadata, output_path, channels, temp_dir):
         """Handle segment-based conversion (cut mode). Returns True on success."""
-        segment_processor = SegmentProcessor(self.ffmpeg_path)
+        segment_processor = SegmentProcessor(self.ffmpeg_path, self._get_runner())
+        segment_processor.source_info = settings.get("_source_probe", {})
+        segment_processor.source_file = actual_input_path
         segment_output_format = settings["format"]
         segment_codec_params = None
 
@@ -509,39 +413,17 @@ class AudioConverter:
             logger.warning(f"Could not determine FFmpeg version: {str(e)}")
 
     def _get_duration(self, file_path):
-        """Get the duration of an audio file in seconds."""
-        if not self.ffmpeg_path:
-            return 0
-
-        # Use ffprobe to get the duration
-        ffprobe_path = self.ffmpeg_path.replace("ffmpeg", "ffprobe")
-        if not os.path.exists(ffprobe_path):
-            ffprobe_path = "ffprobe"  # Try using the command directly
-
         try:
-            cmd = [
-                ffprobe_path,
-                "-v",
-                "error",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "default=noprint_wrappers=1:nokey=1",
-                file_path,
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode == 0 and result.stdout:
-                return float(result.stdout.strip())
-        except Exception as e:
-            logger.error(f"Error getting duration: {str(e)}")
-
-        return 0
+            info = self._probe_media(file_path)
+            value = float(info.get("format", {}).get("duration", 0))
+            return value if math.isfinite(value) and value > 0 else 0
+        except (OSError, ValueError, subprocess.SubprocessError, OperationCancelled):
+            return 0
 
     def _get_output_path(self, input_path, output_format):
         """Generate the output path based on input path and format."""
         # Handle virtual track paths (format: video_path::trackN.ext)
-        if "::" in input_path:
+        if "::" in input_path and not os.path.isfile(input_path):
             # Extract the video path and track filename
             video_path, track_filename = input_path.split("::", 1)
             # Use the video directory as the output directory
@@ -592,20 +474,15 @@ class AudioConverter:
             output_path = os.path.join(input_dir, output_filename)
             counter += 1
 
-            # Safety check to avoid infinite loops
-            if counter > 100:
-                break
 
         return output_path
 
     def cancel_conversion(self):
-        """Cancel the current conversion process."""
+        """Request cancellation; the worker retains ownership until it reaps the child."""
         self.cancel_flag = True
-        if self.current_process:
-            try:
-                self.current_process.terminate()
-            except Exception as e:
-                logger.error(f"Error terminating process: {str(e)}")
+        runner = getattr(self, "_runner", None)
+        if runner is not None:
+            runner.cancel()
 
     def get_file_metadata(self, file_path):
         """Extract file metadata like size, duration, format."""
@@ -692,3 +569,139 @@ class AudioConverter:
     def cleanup(self):
         """Clean up any resources."""
         self.cancel_conversion()  # Make sure any ongoing conversions are stopped
+
+    def _get_runner(self):
+        if not hasattr(self, "_runner"):
+            self._runner = ProcessRunner(lambda: self.cancel_flag)
+        return self._runner
+
+    def _probe_media(self, path):
+        """Read bounded JSON metadata with a cancellable ten-second deadline."""
+        candidate = str(Path(self.ffmpeg_path or "ffmpeg").with_name("ffprobe"))
+        ffprobe = candidate if os.path.isfile(candidate) else shutil.which("ffprobe")
+        if not ffprobe:
+            raise ValueError("FFprobe is not installed")
+        result = self._get_runner().run(
+            [ffprobe, "-v", "error", "-show_streams", "-show_format", "-of", "json", os.path.abspath(path)],
+            timeout=10,
+        )
+        if result.returncode:
+            self.last_diagnostics = result.stderr
+            raise ValueError("The media could not be read. It may be damaged or unsupported.")
+        return json.loads(result.stdout)
+
+    def _run_ffmpeg(self, command, duration=0, progress_callback=None):
+        """Drain both pipes even when duration or a progress callback is absent."""
+        pending = bytearray()
+        def consume(data):
+            pending.extend(data)
+            while b"\n" in pending:
+                line, _, rest = pending.partition(b"\n")
+                pending[:] = rest
+                if line.startswith(b"out_time_us=") and duration and progress_callback:
+                    try:
+                        position = float(line.partition(b"=")[2]) / 1_000_000
+                    except ValueError:
+                        continue
+                    progress_callback(max(0.0, min(position / duration, 0.99)))
+            if len(pending) > 8192:
+                raise ValueError("Invalid FFmpeg progress stream")
+        cmd = command[:1] + ["-hide_banner", "-nostdin", "-loglevel", "error", "-xerror", "-nostats", "-progress", "pipe:1"] + command[1:]
+        result = self._get_runner().run(cmd, stdout_consumer=consume)
+        self.last_diagnostics = result.stderr
+        return result.returncode == 0 and not self.cancel_flag
+
+    def reset_cancellation(self):
+        """Start a new operation only after the previous process has finished."""
+        self._get_runner().reset()
+        self.cancel_flag = False
+
+    def convert_file(self, input_path, output_path, settings, progress_callback=None):
+        """Convert an immutable request and publish only validated complete outputs."""
+        identifier = os.fspath(input_path)
+        options = dict(settings)
+        self.last_diagnostics = ""
+        try:
+            if self.cancel_flag:
+                raise OperationCancelled()
+            if not self.ffmpeg_path:
+                raise ValueError("FFmpeg is not installed")
+            if not os.fspath(output_path) or "\x00" in os.fspath(output_path):
+                raise ValueError("A valid output filename is required")
+            source = MediaSource.resolve(identifier, options.get("track_metadata"))
+            if not os.path.isfile(source.path):
+                raise ValueError("The input is not a readable local file")
+            info = self._probe_media(source.path)
+            streams = [stream for stream in info.get("streams", [])
+                       if stream.get("codec_type") == "audio"
+                       and (source.stream_index is None or stream["index"] == source.stream_index)]
+            if not streams:
+                raise ValueError("The selected file or stream does not contain audio")
+            stream = streams[0]
+            options["_source_stream"] = stream
+            options["_source_probe"] = info
+            value = stream.get("duration") or info.get("format", {}).get("duration")
+            duration = float(value) if value not in (None, "N/A") else None
+            if duration is not None and (not math.isfinite(duration) or duration <= 0):
+                duration = None
+            raw = []
+            if options.get("cut_enabled"):
+                raw = options.get("file_markers", {}).get(identifier, options.get("cut_segments", []))
+            if not isinstance(raw, (list, tuple)) or len(raw) > 256:
+                raise ValueError("Provide at most 256 valid segments")
+            segments = [Segment.from_mapping(item, duration).as_dict() for item in raw]
+            separate = bool(segments) and not options.get("cut_merge", True) and len(segments) > 1
+            base, extension = os.path.splitext(os.fspath(output_path))
+            destinations = ([f"{base}_segment{index + 1}{extension}" for index in range(len(segments))]
+                            if separate else [os.fspath(output_path)])
+            warnings = []
+            fmt = options.get("format", "mp3")
+            if fmt == "copy" and segments:
+                warnings.append("Stream-copy cuts are approximate and follow codec packet boundaries.")
+            if fmt != "copy" and output_rate(options, stream) != int(stream.get("sample_rate", 48000)):
+                warnings.append("The output codec requires a different sample rate.")
+            if fmt == "copy":
+                artwork_format = extension.lstrip(".").lower()
+            else:
+                artwork_format = fmt
+            if any(s.get("disposition", {}).get("attached_pic") for s in info.get("streams", [])) and artwork_format not in ARTWORK_FORMATS:
+                warnings.append("This output container does not preserve the embedded cover image.")
+            with OutputTransaction(destinations) as transaction:
+                for index, staged in enumerate(transaction.staged):
+                    current = dict(options)
+                    current_segments = [segments[index]] if separate else segments
+                    current["file_markers"] = {identifier: current_segments}
+                    current["cut_merge"] = True
+                    def progress(value, index=index):
+                        if progress_callback is not None:
+                            progress_callback(min(0.99, (index + value) / len(destinations)))
+                    if not self._convert_file_staged(identifier, staged, current, progress):
+                        if self.cancel_flag:
+                            raise OperationCancelled()
+                        raise RuntimeError("Audio processing failed. Check the format, write permission and free disk space.")
+                    output_info = self._probe_media(staged)
+                    if not any(s.get("codec_type") == "audio" for s in output_info.get("streams", [])) or os.path.getsize(staged) == 0:
+                        raise RuntimeError("The encoder did not produce a valid audio output")
+                if self.cancel_flag:
+                    raise OperationCancelled()
+                outputs = transaction.commit()
+            self.last_result = FileResult(identifier, "success", outputs, warnings=tuple(warnings))
+            if progress_callback is not None:
+                progress_callback(1.0)
+            return True
+        except OperationCancelled:
+            self.last_result = FileResult(identifier, "cancelled", message="Conversion cancelled; unfinished outputs were removed.")
+            return False
+        except (OSError, ValueError, TypeError, RuntimeError, subprocess.SubprocessError) as error:
+            self.last_result = FileResult(identifier, "failed", message=str(error), diagnostics=self.last_diagnostics)
+            logger.error("Conversion failed: %s", error)
+            return False
+
+    @staticmethod
+    def _dispatch(callback, *args):
+        if callback is None:
+            return
+        def invoke():
+            callback(*args)
+            return False
+        GLib.idle_add(invoke)

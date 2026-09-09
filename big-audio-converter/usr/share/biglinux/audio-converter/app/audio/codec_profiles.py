@@ -45,6 +45,7 @@ def pcm_codec(source):
 
 
 def build_codec_args(settings, channels=None, source=None):
+    channels = settings.get("channels") if channels is None else channels
     fmt = settings.get("format", "mp3")
     if fmt == "copy":
         return ["-c:a", "copy"]
@@ -70,3 +71,15 @@ def build_codec_args(settings, channels=None, source=None):
         if fmt == "mp3" and not channels and int(source.get("channels", 2)) > 2:
             raise ValueError("MP3 supports at most two channels; select Mono or Stereo explicitly")
     return args
+
+
+def artwork_args(info, output_path, input_index=0, format_hint=None):
+    """Map only an attached picture, never a video's moving-image stream."""
+    from pathlib import Path
+    fmt = Path(output_path).suffix.lstrip(".").lower() if format_hint in (None, "copy") else format_hint
+    if fmt not in ARTWORK_FORMATS:
+        return []
+    for image in info.get("streams", []):
+        if image.get("disposition", {}).get("attached_pic") and image.get("codec_name") in ("png", "mjpeg"):
+            return ["-map", f"{input_index}:{image['index']}", "-c:v", "copy", "-disposition:v:0", "attached_pic"]
+    return []

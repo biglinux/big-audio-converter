@@ -53,8 +53,9 @@ class OutputTransaction:
     preexisting files. Temporary files are on the destination filesystem.
     """
 
-    def __init__(self, destinations):
+    def __init__(self, destinations, rename_on_conflict=True):
         self.destinations = [str(Path(p).absolute()) for p in destinations]
+        self.rename_on_conflict = rename_on_conflict
         self.staged = []
         self._directories = []
         self._published = []
@@ -68,8 +69,6 @@ class OutputTransaction:
                 directory = tempfile.mkdtemp(prefix=".bac-", dir=parent)
                 self._directories.append(directory)
                 staged = os.path.join(directory, "output" + Path(destination).suffix)
-                fd = os.open(staged, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                os.close(fd)
                 self.staged.append(staged)
             return self
         except BaseException:
@@ -78,15 +77,18 @@ class OutputTransaction:
 
     def commit(self):
         for staged, requested in zip(self.staged, self.destinations, strict=True):
+            os.chmod(staged, 0o600)
             with open(staged, "rb") as stream:
                 os.fsync(stream.fileno())
                 identity = os.fstat(stream.fileno())
-            target = available_path(requested)
+            target = available_path(requested) if self.rename_on_conflict else requested
             while True:
                 try:
                     _publish_no_replace(staged, target)
                     break
                 except FileExistsError:
+                    if not self.rename_on_conflict:
+                        raise
                     target = available_path(requested)
             self._published.append((target, identity.st_dev, identity.st_ino))
         for parent in {str(Path(path).parent) for path, _, _ in self._published}:
