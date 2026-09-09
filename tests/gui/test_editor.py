@@ -1,6 +1,7 @@
 """Interact with real semantic controls through X11 keyboard events."""
 
 import os
+import uuid
 import pytest
 
 pytestmark = pytest.mark.skipif(not os.environ.get("DISPLAY"), reason="An X11 graphical session is required")
@@ -29,7 +30,7 @@ def test_segment_editor_add_and_apply_from_keyboard():
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gio
     from app.ui.segment_editor import SegmentEditor
-    app = Adw.Application(flags=Gio.ApplicationFlags.NON_UNIQUE)
+    app = Adw.Application(application_id="org.biglinux.EditorTest" + uuid.uuid4().hex, flags=Gio.ApplicationFlags.NON_UNIQUE)
     app.register(None)
     window = Adw.ApplicationWindow(application=app, default_width=700, default_height=600)
     results = []
@@ -64,7 +65,7 @@ def test_invalid_segment_does_not_modify_the_model():
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gio
     from app.ui.segment_editor import SegmentEditor
-    app = Adw.Application(flags=Gio.ApplicationFlags.NON_UNIQUE)
+    app = Adw.Application(application_id="org.biglinux.EditorTest" + uuid.uuid4().hex, flags=Gio.ApplicationFlags.NON_UNIQUE)
     app.register(None)
     window = Adw.ApplicationWindow(application=app, default_width=700, default_height=600)
     results = []
