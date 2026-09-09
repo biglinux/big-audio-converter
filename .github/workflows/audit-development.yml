@@ -30,11 +30,13 @@ jobs:
           sudo apt-get install --no-install-recommends -y -qq python3-gi python3-gi-cairo \
             python3-numpy python3-mpv python3-pytest python3-pytest-cov python3-hypothesis \
             python3-polib gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg gettext \
-            desktop-file-utils xvfb xauth dbus-x11 xdotool x11-utils imagemagick > /tmp/bac-install.log 2>&1
+            at-spi2-core python3-pyatspi desktop-file-utils xvfb xauth dbus-x11 xdotool \
+            x11-utils imagemagick > /tmp/bac-install.log 2>&1
       - name: Apply the reviewed source transformations
         run: |
           /usr/bin/python3 .audit-dev/apply.py
           /usr/bin/python3 -m compileall -q big-audio-converter/usr/share/biglinux/audio-converter
+          git diff --exit-code -- .github
       - name: Record the generated source changes on the audit branch only
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,7 +44,7 @@ jobs:
           test "$GITHUB_REF" = 'refs/heads/audit/product-quality-20260908'
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add big-audio-converter tests docs scripts README.md pkgbuild .github
+          git add big-audio-converter tests docs scripts README.md pkgbuild
           if ! git diff --cached --quiet; then
             git commit -m 'fix: apply reviewed audit remediation'
             gh auth setup-git
