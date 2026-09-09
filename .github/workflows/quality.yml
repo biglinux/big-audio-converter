@@ -21,21 +21,61 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Linux test dependencies
+        id: runtime
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install --no-install-recommends -y \
             python3-gi python3-gi-cairo python3-numpy python3-mpv \
-            python3-pytest python3-pytest-cov python3-hypothesis python3-polib \
+            python3-pytest python3-pytest-cov python3-hypothesis python3-polib python3-venv \
             gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg \
             gettext desktop-file-utils xvfb xauth dbus-x11 xdotool \
             x11-utils imagemagick at-spi2-core python3-pyatspi
-      - name: Run tests against native dependencies
+          python3 -m venv /tmp/bac-lint
+          /tmp/bac-lint/bin/python -m pip install --disable-pip-version-check --no-deps ruff==0.16.6
+      - name: Record versions and portable review tools
         run: |
-          mkdir -p evidence
+          mkdir -p evidence /tmp/bac-review-tools
           git rev-parse HEAD > evidence/commit.txt
-          /usr/bin/python3 -m pytest -q tests --junitxml=evidence/tests.xml
+          dpkg-query -W > evidence/packages.tsv
+          /tmp/bac-lint/bin/ruff --version > evidence/ruff-version.txt
+          # Only pure Python packages and the portable linter are exported.
+          # Native runtime libraries are never copied between distributions.
+          tar --exclude='__pycache__' --exclude='*.pyc' -czf /tmp/bac-review-tools/python-tools.tar.gz \
+            -C /usr/lib/python3/dist-packages hypothesis sortedcontainers attr attrs polib.py
+          gzip -c /tmp/bac-lint/bin/ruff > /tmp/bac-review-tools/ruff.gz
+          cp evidence/packages.tsv evidence/ruff-version.txt /tmp/bac-review-tools/
+          (cd /tmp/bac-review-tools && sha256sum *.gz > SHA256SUMS)
+      - name: Preserve small offline review tools
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: review-tools-${{ github.run_id }}
+          path: /tmp/bac-review-tools/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Record static-analysis baseline
+        run: |
+          /tmp/bac-lint/bin/ruff check --select E4,E7,E9,F --output-format json \
+            big-audio-converter/usr/share/biglinux/audio-converter tests > evidence/ruff.json || status=$?
+          # Findings are retained for review; an actual tool failure is not hidden.
+          test "${status:-0}" -le 1
+      - name: Run backend regressions against native dependencies
+        run: |
+          /usr/bin/python3 -m pytest -q tests --ignore=tests/gui --junitxml=evidence/tests.xml
+      - name: Run GTK regressions on an actual display
+        if: ${{ !cancelled() && steps.runtime.outcome == 'success' }}
+        env:
+          GDK_BACKEND: x11
+          GSK_RENDERER: cairo
+          BAC_EVIDENCE_DIR: ${{ github.workspace }}/evidence
+        run: |
+          set -o pipefail
+          xvfb-run -a -s '-screen 0 1600x1000x24' dbus-run-session -- \
+            /usr/bin/python3 -X faulthandler -m pytest -q -s tests/gui --junitxml=evidence/gui.xml 2>&1 | tee evidence/gui.log
+      - name: Ensure tests do not modify tracked sources
+        if: ${{ !cancelled() }}
+        run: git diff --exit-code
       - name: Preserve test evidence
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tests-${{ github.sha }}
