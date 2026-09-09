@@ -1,29 +1,45 @@
-name: Audit remediation development
+name: Native audit verification
 
 on:
   push:
     branches: [audit/product-quality-20260908]
-    paths: ['.audit-dev/**', '.github/workflows/audit-development.yml']
+    paths: ['.github/workflows/audit-development.yml', 'big-audio-converter/**', 'tests/**']
 
 permissions:
   contents: read
 
 concurrency:
-  group: audit-remediation-development
-  cancel-in-progress: false
+  group: native-audit-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  apply-and-validate:
-    if: github.ref == 'refs/heads/audit/product-quality-20260908'
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Export immutable inputs for offline review
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bac-source /tmp/bac-evidence
+          git rev-parse HEAD > /tmp/bac-source/head.txt
+          git ls-tree -r HEAD > /tmp/bac-source/head-tree.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/bac-source/pr4-source.tar.gz
+          git archive --format=tar d2c396b4e0b40c8be162d23cf2dc972b734b2ee9 | gzip -n > /tmp/bac-source/pr3-source.tar.gz
+          git ls-tree -r d2c396b4e0b40c8be162d23cf2dc972b734b2ee9 > /tmp/bac-source/pr3-tree.txt
+          cd /tmp/bac-source
+          sha256sum *.tar.gz > SHA256SUMS
+      - name: Preserve review inputs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: review-source-${{ github.run_number }}
+          path: /tmp/bac-source/
+          retention-days: 7
+          if-no-files-found: error
       - name: Install the native Linux test runtime
         run: |
           sudo apt-get update -qq
@@ -31,31 +47,13 @@ jobs:
             python3-numpy python3-mpv python3-pytest python3-pytest-cov python3-hypothesis \
             python3-polib gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg gettext \
             at-spi2-core python3-pyatspi desktop-file-utils xvfb xauth dbus-x11 xdotool \
-            x11-utils imagemagick > /tmp/bac-install.log 2>&1
-      - name: Apply the reviewed source transformations
-        run: |
-          /usr/bin/python3 .audit-dev/apply.py
-          /usr/bin/python3 -m compileall -q big-audio-converter/usr/share/biglinux/audio-converter
-          git diff --exit-code -- .github
-      - name: Record the generated source changes on the audit branch only
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          test "$GITHUB_REF" = 'refs/heads/audit/product-quality-20260908'
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add big-audio-converter tests docs scripts README.md pkgbuild
-          if ! git diff --cached --quiet; then
-            git commit -m 'fix: apply reviewed audit remediation'
-            gh auth setup-git
-            git push origin HEAD:refs/heads/audit/product-quality-20260908
-          fi
+            x11-utils imagemagick
       - name: Run native audio and lifecycle regressions
         run: |
-          mkdir -p /tmp/bac-evidence
           git rev-parse HEAD > /tmp/bac-evidence/commit.txt
           /usr/bin/python3 -m pytest -q tests --ignore=tests/gui --junitxml=/tmp/bac-evidence/tests.xml
-      - name: Exercise the real GTK window with mouse and keyboard
+      - name: Exercise the real GTK window
+        if: ${{ !cancelled() }}
         env:
           GDK_BACKEND: x11
           GSK_RENDERER: cairo
@@ -64,11 +62,14 @@ jobs:
           set -o pipefail
           xvfb-run -a -s '-screen 0 1600x1000x24' dbus-run-session -- \
             /usr/bin/python3 -X faulthandler -m pytest -q -s tests/gui --junitxml=/tmp/bac-evidence/gui.xml 2>&1 | tee /tmp/bac-evidence/gui.log
+      - name: Ensure verification never rewrites production sources
+        if: ${{ !cancelled() }}
+        run: git diff --exit-code
       - name: Preserve verification evidence
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: audit-development-${{ github.run_number }}
+          name: native-audit-${{ github.run_number }}
           path: /tmp/bac-evidence/
-          if-no-files-found: warn
           retention-days: 14
+          if-no-files-found: warn
