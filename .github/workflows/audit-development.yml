@@ -1,0 +1,63 @@
+name: Audit remediation development
+
+on:
+  push:
+    branches: [audit/product-quality-20260908]
+    paths: ['.audit-dev/**', '.github/workflows/audit-development.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-remediation-development
+  cancel-in-progress: false
+
+jobs:
+  apply-and-validate:
+    if: github.ref == 'refs/heads/audit/product-quality-20260908'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install the native Linux test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y python3-gi python3-gi-cairo \
+            python3-numpy python3-mpv python3-pytest python3-pytest-cov python3-hypothesis \
+            python3-polib gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg gettext \
+            desktop-file-utils xvfb xauth dbus-x11 xdotool x11-utils imagemagick
+      - name: Apply the reviewed source transformations
+        run: |
+          /usr/bin/python3 .audit-dev/apply.py
+          /usr/bin/python3 -m compileall -q big-audio-converter/usr/share/biglinux/audio-converter
+      - name: Record the generated source changes on the audit branch only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/audit/product-quality-20260908'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add big-audio-converter tests docs scripts README.md pkgbuild .github
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix: apply audit remediation and regression coverage'
+            gh auth setup-git
+            git push origin HEAD:refs/heads/audit/product-quality-20260908
+          fi
+      - name: Run product regression tests
+        run: |
+          mkdir -p /tmp/bac-evidence
+          git rev-parse HEAD > /tmp/bac-evidence/commit.txt
+          /usr/bin/python3 -m pytest -q tests --junitxml=/tmp/bac-evidence/tests.xml
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: audit-development-${{ github.run_number }}
+          path: /tmp/bac-evidence/
+          if-no-files-found: warn
+          retention-days: 14
