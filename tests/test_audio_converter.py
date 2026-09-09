@@ -59,9 +59,8 @@ class TestBuildAudioFilters:
 
     def test_noise_reduction_without_ladspa(self, converter):
         converter.gtcrn_ladspa_path = None
-        settings = {"noise_reduction": True}
-        filters = converter._build_audio_filters(settings)
-        assert not any("ladspa" in f for f in filters)
+        with pytest.raises(ValueError, match="unavailable"):
+            converter._build_audio_filters({"noise_reduction": True})
 
     def test_hpf_filter(self, converter):
         settings = {"hpf_enabled": True, "hpf_frequency": 120}

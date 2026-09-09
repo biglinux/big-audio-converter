@@ -5,6 +5,15 @@ Segment processor for handling audio segments during conversion.
 """
 
 import logging
+import json
+import math
+from pathlib import Path
+import tempfile
+
+from .models import Segment, format_timestamp
+from .process_runner import ProcessRunner, OperationCancelled
+from .output_transaction import OutputTransaction
+from .codec_profiles import artwork_args, COPY_MUXERS
 import os
 import subprocess
 from typing import Dict, List, Optional
@@ -18,8 +27,10 @@ class SegmentProcessor:
     Ensures all segments are properly cut and combined.
     """
 
-    def __init__(self, ffmpeg_path):
+    def __init__(self, ffmpeg_path, runner=None):
         self.ffmpeg_path = ffmpeg_path
+        self.runner = runner if runner is not None else ProcessRunner()
+        self.source_info = {}
 
     def process_segments(
         self,
@@ -55,11 +66,14 @@ class SegmentProcessor:
 
         # Original segment order for debugging
         logger.debug(
-            f"Original segment order: {[(s.get('segment_index', '?'), s['start_str']) for s in segments]}"
+            f"Original segment order: {[(s.get('segment_index', '?'), s.get('start_str', s.get('start'))) for s in segments]}"
         )
 
         # Filter out invalid segments
         valid_segments = self._validate_segments(segments)
+        if len(valid_segments) != len(segments):
+            logger.error("Every requested segment must be valid")
+            return None
         if not valid_segments:
             logger.warning("No valid segments found after validation")
             return None
@@ -116,6 +130,7 @@ class SegmentProcessor:
                 )
             else:
                 logger.error(f"Failed to extract segment {i + 1}")
+                return None
 
         # If no segments were successfully extracted, return None
         if not temp_segments:
@@ -134,254 +149,109 @@ class SegmentProcessor:
         return None
 
     def _validate_segments(self, segments):
-        """Validate segments and return only valid ones."""
-        valid_segments = []
-
-        # Debugging: log what we received
-        logger.debug(f"Validating {len(segments)} segments from converter")
-
-        for segment in segments:
-            # Log the segment we're processing
-            logger.debug(f"Processing segment: {segment}")
-
-            start = segment.get("start")
-            stop = segment.get("stop")
-            start_str = segment.get("start_str", "")
-            stop_str = segment.get("stop_str", "")
-
-            # Skip segments with missing start/stop or invalid values
-            if start is None or stop is None:
-                logger.debug(f"Skipping segment with missing values: {segment}")
+        """Normalize valid intervals; callers must reject an incomplete result."""
+        if not isinstance(segments, (list, tuple)) or len(segments) > 256:
+            return []
+        valid = []
+        for item in segments:
+            try:
+                valid.append(Segment.from_mapping(item).as_dict())
+            except (AttributeError, TypeError, ValueError):
                 continue
-
-            # Skip segments that are too short (less than 100ms)
-            if abs(stop - start) < 0.1:
-                logger.debug(f"Skipping segment that is too short: {segment}")
-                continue
-
-            # Verify we have at least one valid time string
-            if not start_str or not stop_str:
-                logger.debug("Missing time strings, using numeric values")
-                # Use our numeric values to create strings if needed
-                if not start_str:
-                    start_str = self._format_time(start)
-                if not stop_str:
-                    stop_str = self._format_time(stop)
-
-            # Ensure start is before stop
-            if start > stop:
-                logger.debug(f"Swapping start/stop: {start} > {stop}")
-                start, stop = stop, start
-                start_str, stop_str = stop_str, start_str
-
-            # Create a new segment with validated values
-            valid_seg = {
-                "start": start,
-                "stop": stop,
-                "start_str": start_str,
-                "stop_str": stop_str,
-            }
-
-            logger.debug(f"Added valid segment: {valid_seg}")
-            valid_segments.append(valid_seg)
-
-        logger.debug(f"Validated {len(valid_segments)} of {len(segments)} segments")
-        return valid_segments
+        return valid
 
     def _format_time(self, seconds):
-        """Format time in seconds to HH:MM:SS.mmm format for FFmpeg."""
-        if seconds is None:
-            return ""
+        return format_timestamp(seconds)
 
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        seconds_part = seconds % 60
-
-        # Always use HH:MM:SS.mmm format for FFmpeg compatibility
-        return f"{hours:02d}:{minutes:02d}:{seconds_part:09.6f}"
-
-    def _extract_segment(
-        self,
-        input_file,
-        segment,
-        output_file,
-        audio_filters=None,
-        track_index=None,
-        codec_params=None,
-    ):
-        """Extract a single segment from the input file.
-
-        Args:
-            input_file: Path to input file
-            segment: Segment dictionary with start/stop times
-            output_file: Path to output file
-            audio_filters: Optional audio filters string
-            track_index: Optional absolute stream index for track extraction
-            codec_params: Optional codec parameters list (e.g., ['-c:a', 'aac', '-b:a', '192k'])
-        """
+    def _extract_segment(self, input_file, segment, output_file, audio_filters=None,
+                         track_index=None, codec_params=None):
+        """Extract into a private file, then publish without replacing anything."""
         try:
-            # Ensure paths are absolute
-            input_file = os.path.abspath(input_file)
-            output_file = os.path.abspath(output_file)
-
-            # Calculate expected segment duration for the -t flag
-            expected_duration = segment["stop"] - segment["start"]
-            logger.debug(
-                f"Extracting from {segment['start_str']} for duration {expected_duration:.6f}s"
-            )
-
-            # Build command to extract segment
-            cmd = [
-                self.ffmpeg_path,
-                "-vn",
-                "-sn",
-                "-y",  # Overwrite output
-                "-v",
-                "warning",  # Set verbosity level
-                "-accurate_seek",
-                "-ss",
-                segment["start_str"],  # Start time (BEFORE input for faster seeking)
-                "-i",
-                input_file,  # Input file
-                "-t",
-                f"{expected_duration:.6f}",  # Duration is more precise than -to
-                "-avoid_negative_ts",
-                "1",
-                "-map_metadata",
-                "-1",  # Remove metadata for cleaner output
-            ]
-
-            # If track_index is provided, add -map option for stream selection
-            if track_index is not None:
-                cmd.extend(["-map", f"0:{track_index}"])
-                logger.debug(f"Mapping stream 0:{track_index} for segment extraction")
-
-            # Add codec parameters if provided, otherwise use copy mode or filters
-            if codec_params:
-                # Use provided codec parameters (e.g., for AAC encoding)
-                cmd.extend(codec_params)
-                logger.debug(f"Using codec params: {codec_params}")
-            elif audio_filters:
-                # Apply audio filters (requires encoding)
-                cmd.extend(["-af", audio_filters])
-            else:
-                # Copy mode - use codec copy
-                cmd.extend(["-c:a", "copy"])
-
-                # When extracting from video source, force output format
-                # CRITICAL: -f must come AFTER -c:a copy, but BEFORE output path
-                if track_index is not None:
-                    _, ext = os.path.splitext(output_file)
-                    ext_lower = ext[1:].lower() if ext else ""
-
-                    format_map = {
-                        "eac3": "eac3",
-                        "ac3": "ac3",
-                        "dts": "dts",
-                        "flac": "flac",
-                        "aac": "adts",
-                        "mp3": "mp3",
-                        "opus": "opus",
-                        "ogg": "ogg",
-                    }
-
-                    if ext_lower in format_map:
-                        cmd.extend(["-f", format_map[ext_lower]])
-                        logger.debug(
-                            f"Forcing {format_map[ext_lower]} format for video track extraction"
-                        )
-
-            # Add output file
-            cmd.append(output_file)
-
-            # Log full command for debugging
-            logger.debug("=== SEGMENT EXTRACTION COMMAND ===")
-            logger.debug(f"{' '.join(cmd)}")
-            logger.debug("===================================")
-            logger.debug(f"Extracting segment: {' '.join(cmd)}")
-
-            # Run FFmpeg command
-            process = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=300,  # 5 minute timeout
-            )
-
-            if process.returncode != 0:
-                logger.error(
-                    f"Segment extraction failed with code {process.returncode}: {process.stderr}"
-                )
-                return False
-
-            if not os.path.exists(output_file) or os.path.getsize(output_file) < 100:
-                logger.error(f"Output file is missing or empty: {output_file}")
-                return False
-
+            interval = Segment.from_mapping(segment)
+            with OutputTransaction([output_file], rename_on_conflict=False) as transaction:
+                staged = transaction.staged[0]
+                command = [self.ffmpeg_path, "-hide_banner", "-nostdin", "-v", "error", "-xerror", "-y",
+                           "-ss", f"{interval.start:.9f}", "-t", f"{interval.duration:.9f}",
+                           "-i", os.path.abspath(input_file),
+                           "-map", f"0:{track_index}" if track_index is not None else "0:a:0",
+                           "-map_metadata", "0"]
+                source_info = getattr(self, "source_info", {})
+                command.extend(artwork_args(source_info, output_file))
+                if codec_params or audio_filters:
+                    chain = [f"atrim=duration={interval.duration:.9f}", "asetpts=PTS-STARTPTS"]
+                    if audio_filters:
+                        chain.append(audio_filters)
+                    command.extend(["-af", ",".join(chain)])
+                    if codec_params:
+                        command.extend(codec_params)
+                else:
+                    extension = os.path.splitext(output_file)[1].lstrip(".").lower()
+                    command.extend(["-c:a", "copy", "-f", COPY_MUXERS.get(extension, extension)])
+                command.append(staged)
+                result = self.runner.run(command)
+                if result.returncode:
+                    logger.error("Segment extraction failed: %s", result.stderr)
+                    return False
+                if not self._output_has_audio(staged):
+                    return False
+                transaction.commit()
             return True
-
-        except subprocess.TimeoutExpired:
-            logger.error("FFmpeg segment extraction timed out after 300 seconds")
-            return False
-        except Exception as e:
-            logger.exception(f"Error extracting segment: {str(e)}")
+        except (OSError, ValueError, subprocess.SubprocessError, OperationCancelled) as error:
+            logger.error("Segment extraction did not complete: %s", error)
             return False
 
     def _concatenate_segments(self, segment_files, output_file):
-        """Concatenate multiple segment files into one output file."""
-        try:
-            # Create concat file with absolute paths
-            concat_file = os.path.join(os.path.dirname(output_file), "concat_list.txt")
-            logger.debug(f"Preparing to concatenate {len(segment_files)} segments:")
-
-            with open(concat_file, "w") as f:
-                for segment in segment_files:
-                    abs_path = os.path.abspath(segment)
-                    f.write(f"file '{abs_path}'\n")
-
-            # Build command to concatenate segments
-            cmd = [
-                self.ffmpeg_path,
-                "-vn",
-                "-sn",
-                "-y",  # Overwrite output
-                "-v",
-                "warning",
-                "-f",
-                "concat",
-                "-safe",
-                "0",
-                "-i",
-                concat_file,
-                "-c",
-                "copy",
-                output_file,
-            ]
-
-            # Run FFmpeg command
-            logger.debug(f"Concatenating segments: {' '.join(cmd)}")
-            process = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=300,  # 5 minute timeout
-            )
-
-            if process.returncode != 0:
-                logger.error(
-                    f"Concatenation failed with code {process.returncode}: {process.stderr}"
-                )
-                return False
-
-            if not os.path.exists(output_file) or os.path.getsize(output_file) < 100:
-                logger.error(f"Concat output file is missing or empty: {output_file}")
-                return False
-
-            logger.info(f"Successfully concatenated segments to {output_file}")
-            return True
-
-        except Exception as e:
-            logger.exception(f"Error concatenating segments: {str(e)}")
+        """Use private ASCII list entries, avoiding filename escaping ambiguities."""
+        if not segment_files:
             return False
+        try:
+            with OutputTransaction([output_file], rename_on_conflict=False) as transaction:
+                parent = os.path.dirname(transaction.staged[0])
+                with tempfile.TemporaryDirectory(prefix="concat-", dir=parent) as directory:
+                    entries = []
+                    for index, source in enumerate(segment_files):
+                        name = f"part{index:04d}"
+                        os.symlink(os.path.abspath(source), os.path.join(directory, name))
+                        entries.append(f"file '{name}'\n")
+                    playlist = os.path.join(directory, "list.txt")
+                    Path(playlist).write_text("".join(entries), encoding="utf-8")
+                    original = getattr(self, "source_file", segment_files[0])
+                    command = [self.ffmpeg_path, "-hide_banner", "-nostdin", "-v", "error", "-xerror", "-y",
+                               "-f", "concat", "-safe", "1", "-i", playlist, "-i", os.path.abspath(original),
+                               "-map", "0:a:0", "-map_metadata", "1", "-c:a", "copy"]
+                    command.extend(artwork_args(self.source_info, output_file, input_index=1))
+                    command.append(transaction.staged[0])
+                    result = self.runner.run(command)
+                    if result.returncode:
+                        logger.error("Segment concatenation failed: %s", result.stderr)
+                        return False
+                    if not self._output_has_audio(transaction.staged[0]):
+                        return False
+                    transaction.commit()
+            return True
+        except (OSError, ValueError, subprocess.SubprocessError, OperationCancelled) as error:
+            logger.error("Segment concatenation did not complete: %s", error)
+            return False
+
+    def _output_has_audio(self, path):
+        """Reject empty headers, including containers with substantial metadata."""
+        if not os.path.isfile(path) or os.path.getsize(path) == 0:
+            return False
+        candidate = str(Path(self.ffmpeg_path).with_name("ffprobe"))
+        ffprobe = candidate if os.path.isfile(candidate) else "ffprobe"
+        result = self.runner.run([ffprobe, "-v", "error", "-select_streams", "a:0",
+                                  "-show_entries", "stream=duration:format=duration", "-of", "json", path], timeout=10)
+        if result.returncode:
+            return False
+        info = json.loads(result.stdout)
+        if not info.get("streams"):
+            return False
+        durations = [s.get("duration") for s in info["streams"]] + [info.get("format", {}).get("duration")]
+        for value in durations:
+            if value not in (None, "N/A"):
+                duration = float(value)
+                if math.isfinite(duration) and duration > 0:
+                    return True
+        result = self.runner.run([ffprobe, "-v", "error", "-select_streams", "a:0", "-show_packets",
+                                  "-read_intervals", "%+#1", "-of", "json", path], timeout=10)
+        return result.returncode == 0 and bool(json.loads(result.stdout).get("packets"))

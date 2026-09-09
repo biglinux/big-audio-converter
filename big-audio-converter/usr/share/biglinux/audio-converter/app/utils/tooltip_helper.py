@@ -1,584 +1,74 @@
-"""
-Tooltip helper for showing helpful explanations on UI elements.
-Provides a simple way to add custom tooltips with fade animation to any GTK widget.
+"""Native, concise contextual help for the audio converter."""
 
-PORTABLE VERSION (Backported from Ashyterm):
-- Self-contained (no external app dependencies).
-- Widget-Anchored Popover for correct positioning (even inside other popovers).
-- Custom CSS styling with Fade-Out.
-- Auto-detects and updates colors from Adwaita StyleManager.
-"""
-
-import logging
-from typing import Optional
-
-import gi
-
-gi.require_version("Gtk", "4.0")
-gi.require_version("Gdk", "4.0")
-gi.require_version("Adw", "1")
 import gettext
 
-from gi.repository import Adw, Gdk, GLib, Gtk
-
-gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
-logger = logging.getLogger(__name__)
-
-# Tooltip content dictionary
 TOOLTIPS = {
-    "format": _(
-        "Select the output audio format\n\n"
-        "• copy: Keeps the original audio data — only cutting is available\n"
-        "• mp3: Widely supported, great balance between size and quality\n"
-        "• ogg: Open format, good quality at smaller file sizes\n"
-        "• flac: Lossless compression, perfect audio fidelity\n"
-        "• wav: Uncompressed format, very large files\n"
-        "• aac: Modern format with good overall quality\n"
-        "• opus: Excellent quality at low bitrates"
-    ),
-    "bitrate": _(
-        "Choose the audio bitrate (quality level)\n\n"
-        "• 32k: Very low quality\n"
-        "• 64k: Low quality\n"
-        "• 128k: Standard quality\n"
-        "• 192k: Good quality\n"
-        "• 256k: High quality\n"
-        "• 320k: Highest quality"
-    ),
-    "volume": _(
-        "Adjust the audio volume\n\n"
-        "• 100 = original volume\n"
-        "• < 100 = lower volume\n"
-        "• > 100 = higher volume\n\n"
-        "Tip: Values above 100 may cause distortion"
-    ),
-    "speed": _(
-        "Change playback and conversion speed\n\n"
-        "• 1.0 = normal speed\n"
-        "• < 1.0 = slower\n"
-        "• > 1.0 = faster\n\n"
-        "Pitch correction is applied automatically"
-    ),
-    "noise_reduction": _(
-        "Reduce background noise during conversion\n"
-        "using the GTCRN neural network.\n\n"
-        "Should not be used in music."
-    ),
-    "noise_reduction_strength": _(
-        "Adjust the intensity of noise reduction\n\n"
-        "• 1.0 = maximum reduction\n"
-        "• 0.5 = moderate reduction\n"
-        "• Lower values preserve more original audio detail\n\n"
-        "Tip: Start at 1.0 and reduce if the voice sounds muffled"
-    ),
-    "noise_gate": _(
-        "Noise gate silences audio below a volume threshold\n\n"
-        "Useful combined with noise reduction to eliminate\n"
-        "residual noise during pauses between speech.\n\n"
-        "Should not be used in music."
-    ),
-    "gate_threshold": _(
-        "Volume level below which the gate closes\n\n"
-        "• Higher values (e.g. -20 dB): Gate closes more often\n"
-        "• Lower values (e.g. -50 dB): Gate only closes in near-silence"
-    ),
-    "gate_range": _(
-        "How much the audio is attenuated when the gate closes\n\n"
-        "• -60 dB: Almost complete silence\n"
-        "• -20 dB: Gentle reduction, some background remains"
-    ),
-    "gate_attack": _(
-        "How quickly the gate opens when signal exceeds threshold\n\n"
-        "• Low values (5 ms): Fast opening, may cause clicks\n"
-        "• High values (50+ ms): Smooth opening, may cut speech starts"
-    ),
-    "gate_release": _(
-        "How quickly the gate closes after signal drops below threshold\n\n"
-        "• Low values (50 ms): Fast closing, may cut word endings\n"
-        "• High values (300+ ms): Smooth closing, keeps natural tails"
-    ),
-    "waveform": _(
-        "Display audio as a visual waveform\n\n"
-        "Easily edit by viewing your audio as a waveform.\n"
-        "Disable this option to load large files faster."
-    ),
-    "equalizer": _(
-        "Adjust the sound frequencies\n\n"
-        "Fine-tune bass, midrange, and treble to enhance your audio."
-    ),
-    "cut": _(
-        "Cut and export selected parts of your audio\n\n"
-        "• Off: Converts the entire file\n"
-        "• Chronological: Exports segments in timeline order\n"
-        "• Segment Number: Exports segments by marking order"
-    ),
-    "cut_output": _(
-        "Choose how cut segments are saved\n\n"
-        "• Separate Files: Each segment becomes its own file\n"
-        "• Merge into One: All segments are joined into a single file"
-    ),
-    "channels": _(
-        "Limit the number of audio channels\n\n"
-        "• Original: Keeps the source channel layout\n"
-        "• Mono: Downmix to 1 channel\n"
-        "• Stereo: Limit to 2 channels\n\n"
-        "Useful for reducing file size or ensuring compatibility"
-    ),
-    "waveform_visualizer": _(
-        "Click the top half to seek playback\n"
-        "Click the bottom half to set cut markers:\n"
-        "  1st click → Start (red) · 2nd click → End (green)\n"
-        "Scroll to zoom in/out for precision"
-    ),
-    "mouseover_tips": _(
-        "You're seeing an example of help shown when hovering over an item."
-    ),
-    # Headerbar controls
-    "clear_queue_button": _("Remove all files from the queue"),
-    "prev_audio_btn": _("Go to the previous audio file in the queue"),
-    "pause_play_btn": _("Play or pause the current audio"),
-    "next_audio_btn": _("Go to the next audio file in the queue"),
-    "play_selection_switch": _(
-        "When enabled, playback automatically plays only the marked segments, skipping unselected parts"
-    ),
-    "auto_advance_switch": _(
-        "When enabled, automatically plays the next track when current track finishes"
-    ),
-    "eq_toggle_btn": _("Show or hide the equalizer panel to adjust audio frequencies"),
-    "zoom_btn": _("Open zoom control to adjust the waveform view magnification"),
-    "volume_btn": _("Adjust the output volume level (0-1000%)"),
-    "speed_btn": _("Adjust the playback and conversion speed"),
-    # File queue controls
-    "play_this_file": _("Preview this audio file"),
-    "remove_from_queue": _("Remove this file from the queue"),
-    "right_click_options": _("Right-click for more options"),
-    "normalize": _(
-        "Normalize the audio volume to a standard level (EBU R128)\n\n"
-        "• Target: -16 LUFS (broadcast standard)\n"
-        "• Ensures consistent volume across different files\n"
-        "• Applied as the last step in the audio chain"
-    ),
+    'format': _('Choose the output format. Copy mode keeps encoded audio and uses approximate cuts.'),
+    'bitrate': _('Choose the target bitrate. Suitable values depend on the codec, channels and content.'),
+    'volume': _('100% keeps the original gain. Higher gain can cause clipping.'),
+    'speed': _('Change playback and conversion speed'),
+    'noise_reduction': _('Optional neural denoising for speech. It can damage music.'),
+    'noise_reduction_strength': _('Adjust the intensity of noise reduction'),
+    'noise_gate': _('Noise gate silences audio below a volume threshold'),
+    'gate_threshold': _('Volume level below which the gate closes'),
+    'gate_range': _('How much the audio is attenuated when the gate closes'),
+    'gate_attack': _('How quickly the gate opens when signal exceeds threshold'),
+    'gate_release': _('How quickly the gate closes after signal drops below threshold'),
+    'waveform': _('Display audio as a visual waveform'),
+    'equalizer': _('Adjust the sound frequencies'),
+    'cut': _('Cut and export selected parts of your audio'),
+    'cut_output': _('Choose how cut segments are saved'),
+    'channels': _('Limit the number of audio channels'),
+    'waveform_visualizer': _('Seek in the upper area or mark cuts below. Edit Segments provides a keyboard-accessible alternative.'),
+    'mouseover_tips': _("You're seeing an example of help shown when hovering over an item."),
+    'clear_queue_button': _('Remove all files from the queue'),
+    'prev_audio_btn': _('Go to the previous audio file in the queue'),
+    'pause_play_btn': _('Play or pause the current audio'),
+    'next_audio_btn': _('Go to the next audio file in the queue'),
+    'play_selection_switch': _('When enabled, playback automatically plays only the marked segments, skipping unselected parts'),
+    'auto_advance_switch': _('When enabled, automatically plays the next track when current track finishes'),
+    'eq_toggle_btn': _('Show or hide the equalizer panel to adjust audio frequencies'),
+    'zoom_btn': _('Open zoom control to adjust the waveform view magnification'),
+    'volume_btn': _('Adjust the output volume level (0-1000%)'),
+    'speed_btn': _('Adjust the playback and conversion speed'),
+    'play_this_file': _('Preview this audio file'),
+    'remove_from_queue': _('Remove this file from the queue'),
+    'right_click_options': _('Right-click for more options'),
+    'normalize': _('Normalize to -16 LUFS with a -1.5 dBTP true-peak limit. This is not the EBU R128 broadcast target.'),
 }
 
 
 class TooltipHelper:
-    """
-    Manages custom tooltips using Widget-Anchored Gtk.Popover.
-    Portable version: Depends only on GTK4/Adwaita.
-    Adapted for Big Audio Converter.
-    """
-
+    """Use GTK's tooltip placement, theme and lifecycle instead of custom popovers."""
     def __init__(self, config_manager=None):
+        import weakref
         self.config_manager = config_manager
-        self.active_popover: Optional[Gtk.Popover] = None
-        self.active_widget = None
-        self.show_timer_id = None
-        self.hide_timer_id = None
-        self.closing_popover = (
-            None  # Keep track of popover that is currently fading out
-        )
-        self._color_css_provider = None
-        self._colors_initialized = False
-        self._tracked_windows: set = set()  # Windows we're monitoring for focus
-        self._widgets_with_tooltips: set = set()  # All widgets with tooltips
-
-        # Connect to Adwaita style manager for automatic theme updates
-        try:
-            style_manager = Adw.StyleManager.get_default()
-            style_manager.connect("notify::dark", self._on_theme_changed)
-            style_manager.connect("notify::color-scheme", self._on_theme_changed)
-        except Exception:
-            pass
+        self._widgets = weakref.WeakKeyDictionary()
 
     def is_enabled(self):
-        """Check if tooltips are enabled in config."""
-        if not self.config_manager:
-            return True
-        enabled_str = self.config_manager.get("show_mouseover_tips", "true")
-        return enabled_str.lower() == "true"
+        return self.config_manager is None or str(self.config_manager.get("show_mouseover_tips", "true")).lower() == "true"
 
-    def _on_theme_changed(self, style_manager, pspec):
-        """Auto-update colors when system theme changes."""
-        GLib.idle_add(self._apply_default_colors)
+    def add_tooltip(self, widget, tooltip_key, y_offset=0):
+        """Retain the legacy signature; native GTK controls tooltip placement."""
+        text = TOOLTIPS.get(tooltip_key)
+        if text:
+            self._widgets[widget] = text
+            widget.set_tooltip_text(text if self.is_enabled() else None)
 
-    def _apply_default_colors(self):
-        """Apply colors based on current Adwaita theme."""
-        try:
-            style_manager = Adw.StyleManager.get_default()
-            is_dark = style_manager.get_dark()
-            bg_color = "#1a1a1a" if is_dark else "#fafafa"
-            fg_color = "#ffffff" if is_dark else "#2e2e2e"
-        except Exception:
-            bg_color = "#2a2a2a"
-            fg_color = "#ffffff"
+    def refresh(self):
+        for widget, text in list(self._widgets.items()):
+            widget.set_tooltip_text(text if self.is_enabled() else None)
 
-        self._apply_css(bg_color, fg_color)
-        return GLib.SOURCE_REMOVE
-
-    def _ensure_colors_initialized(self):
-        """Ensure colors are set up before first tooltip display."""
-        if not self._colors_initialized:
-            self._apply_default_colors()
-            self._colors_initialized = True
-
-    def _apply_css(self, bg_color: str, fg_color: str):
-        """Generate and apply CSS for tooltip styling."""
-        tooltip_bg = self._adjust_tooltip_background(bg_color)
-        is_dark_theme = self._is_dark_color(bg_color)
-        border_color = "#707070" if is_dark_theme else "#a0a0a0"
-
-        css = f"""
-popover.custom-tooltip-static {{
-    background: transparent;
-    box-shadow: none;
-    padding: 12px;
-    opacity: 0;
-    transition: opacity 200ms ease-in-out;
-}}
-popover.custom-tooltip-static.visible {{
-    opacity: 1;
-}}
-popover.custom-tooltip-static > contents {{
-    background-color: {tooltip_bg};
-    color: {fg_color};
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid {border_color};
-}}
-popover.custom-tooltip-static label {{
-    color: {fg_color};
-}}
-"""
-        display = Gdk.Display.get_default()
-        if not display:
-            return
-
-        if self._color_css_provider:
-            try:
-                Gtk.StyleContext.remove_provider_for_display(
-                    display, self._color_css_provider
-                )
-            except Exception:
-                pass
-
-        provider = Gtk.CssProvider()
-        provider.load_from_data(css.encode("utf-8"))
-        try:
-            Gtk.StyleContext.add_provider_for_display(
-                display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 100
-            )
-            self._color_css_provider = provider
-        except Exception:
-            logger.exception("Failed to add CSS provider for tooltip colors")
-
-    def _adjust_tooltip_background(self, bg_color: str) -> str:
-        try:
-            hex_val = bg_color.lstrip("#")
-            r, g, b = (
-                int(hex_val[0:2], 16),
-                int(hex_val[2:4], 16),
-                int(hex_val[4:6], 16),
-            )
-            luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-            adj = 40 if luminance < 0.5 else -20
-            r, g, b = (
-                max(0, min(255, r + adj)),
-                max(0, min(255, g + adj)),
-                max(0, min(255, b + adj)),
-            )
-            return f"#{r:02x}{g:02x}{b:02x}"
-        except Exception:
-            return bg_color
-
-    def _is_dark_color(self, color: str) -> bool:
-        try:
-            hex_val = color.lstrip("#")
-            r, g, b = (
-                int(hex_val[0:2], 16),
-                int(hex_val[2:4], 16),
-                int(hex_val[4:6], 16),
-            )
-            return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5
-        except Exception:
-            return True
-
-    def add_tooltip(
-        self, widget: Gtk.Widget, tooltip_key: str, y_offset: int = 0
-    ) -> None:
-        """
-        Connects a widget to the tooltip management system.
-
-        Args:
-            widget: The Gtk widget to add tooltip to
-            tooltip_key: The key in TOOLTIPS dictionary to lookup text
-            y_offset: Extra vertical offset in pixels (negative = move up)
-        """
-        if not tooltip_key:
-            return
-
-        tooltip_text = TOOLTIPS.get(tooltip_key, None)
-        if not tooltip_text:
-            return
-
-        widget._custom_tooltip_text = tooltip_text
-        widget._custom_tooltip_y_offset = y_offset
-        widget.set_tooltip_text(None)
-        self._add_controller(widget)
-
-        # Track the widget for cleanup
-        self._widgets_with_tooltips.add(widget)
-
-        # Monitor the widget's window for focus changes
-        self._setup_window_focus_tracking(widget)
-
-    def _setup_window_focus_tracking(self, widget: Gtk.Widget) -> None:
-        """Setup focus tracking on the widget's root window."""
-
-        def on_realize(w):
-            root = w.get_root()
-            if root and isinstance(root, Gtk.Window):
-                if root not in self._tracked_windows:
-                    self._tracked_windows.add(root)
-                    root.connect("notify::is-active", self._on_window_active_changed)
-                    # Also track window state changes (maximize/fullscreen)
-                    # to hide tooltips immediately when window state changes
-                    root.connect("notify::maximized", self._on_window_state_changed)
-                    root.connect("notify::fullscreened", self._on_window_state_changed)
-
-        if widget.get_realized():
-            on_realize(widget)
-        else:
-            widget.connect("realize", on_realize)
-
-    def _on_window_state_changed(self, window, pspec):
-        """Hide all tooltips immediately when window state changes (maximize/fullscreen).
-
-        This prevents the tooltip popover from interfering with input events
-        during window state transitions.
-        """
-        self._clear_timer()
-        self.hide(immediate=True)
-        self.active_widget = None
-
-        # Force popdown all popovers to ensure they don't capture events
-        for widget in list(self._widgets_with_tooltips):
-            try:
-                if hasattr(widget, "_custom_tooltip_popover"):
-                    popover, _ = widget._custom_tooltip_popover
-                    popover.popdown()
-            except Exception:
-                pass
-
-    def _on_window_active_changed(self, window, pspec):
-        """Hide all tooltips when any tracked window loses focus."""
-        if not window.get_property("is-active"):
-            # Window lost focus - hide all tooltips immediately
-            self._clear_timer()
-            self.hide(immediate=True)
-            self.active_widget = None
-
-            # Also popdown any lingering popovers on widgets in this window
-            for widget in list(self._widgets_with_tooltips):
-                try:
-                    if hasattr(widget, "_custom_tooltip_popover"):
-                        popover, _ = widget._custom_tooltip_popover
-                        popover.popdown()
-                except Exception:
-                    pass
-
-    def _add_controller(self, widget):
-        if getattr(widget, "_has_custom_tooltip_controller", False):
-            return
-
-        # Motion controller for enter/leave
-        controller = Gtk.EventControllerMotion.new()
-        controller.connect("enter", self._on_enter, widget)
-        controller.connect("leave", self._on_leave)
-        widget.add_controller(controller)
-
-        # Click controller - hide tooltip when widget is clicked
-        click_controller = Gtk.GestureClick.new()
-        click_controller.connect("pressed", self._on_click)
-        widget.add_controller(click_controller)
-
-        widget._has_custom_tooltip_controller = True
-
-    def _on_click(self, gesture, n_press, x, y):
-        """Hide tooltip immediately when widget is clicked."""
-        self._clear_timer()
-        self.hide(immediate=True)
-        self.active_widget = None
-
-    def _clear_timer(self):
-        if self.show_timer_id:
-            GLib.source_remove(self.show_timer_id)
-            self.show_timer_id = None
-        if self.hide_timer_id:
-            GLib.source_remove(self.hide_timer_id)
-            self.hide_timer_id = None
-
-        # If we had a closing popover pending from a hide timer we just cancelled,
-        # we must force it to close immediately to prevent it from getting stuck
-        if self.closing_popover:
-            try:
-                self.closing_popover.popdown()
-                self.closing_popover.remove_css_class("visible")
-            except Exception:
-                pass
-            self.closing_popover = None
-
-    def _on_enter(self, controller, x, y, widget):
-        if not self.is_enabled():
-            return
-
-        # If we are entering a new widget while another is still active (even if fading),
-        # force close the previous one immediately
-        if self.active_widget and self.active_widget != widget:
-            self.hide(immediate=True)
-
-        self._clear_timer()
-        self.active_widget = widget
-        self.show_timer_id = GLib.timeout_add(150, self._show_tooltip_impl)
-
-    def _on_leave(self, controller):
-        # Only hide if we are leaving the currently active widget
-        # This prevents stale leave events from hiding a NEW tooltip we just entered
-        widget = controller.get_widget()
-        if self.active_widget == widget:
-            self._clear_timer()
-            if self.active_widget:
-                self.hide()
-                self.active_widget = None
-
-    def _get_widget_popover(self, widget: Gtk.Widget) -> tuple[Gtk.Popover, Gtk.Label]:
-        """Get or create a tooltip popover attached directly to the widget."""
-        if not hasattr(widget, "_custom_tooltip_popover"):
-            popover = Gtk.Popover()
-            popover.set_has_arrow(False)
-            popover.set_position(Gtk.PositionType.TOP)
-            popover.set_can_target(False)
-            popover.set_focusable(False)
-            popover.set_autohide(False)
-            popover.add_css_class("custom-tooltip-static")
-
-            label = Gtk.Label(wrap=True, max_width_chars=45)
-            label.set_halign(Gtk.Align.CENTER)
-            popover.set_child(label)
-
-            popover.set_parent(widget)
-
-            widget._custom_tooltip_popover = (popover, label)
-        return widget._custom_tooltip_popover
-
-    def _show_tooltip_impl(self) -> bool:
-        if not self.active_widget:
-            return GLib.SOURCE_REMOVE
-
-        # Ensure CSS is applied before showing
-        self._ensure_colors_initialized()
-
-        try:
-            text = getattr(self.active_widget, "_custom_tooltip_text", None)
-            if not text:
-                return GLib.SOURCE_REMOVE
-
-            # Check if the widget is actually visible and mapped
-            mapped = self.active_widget.get_mapped()
-            if not mapped:
-                self.show_timer_id = None
-                return GLib.SOURCE_REMOVE
-
-            # Check if the widget's window is the active/focused window
-            # Don't show tooltip if another window (like a dialog) is on top
-            root = self.active_widget.get_root()
-            if root and isinstance(root, Gtk.Window):
-                active = root.is_active()
-                if not active:
-                    # Window is not active, don't show tooltip
-                    self.show_timer_id = None
-                    return GLib.SOURCE_REMOVE
-
-            popover, label = self._get_widget_popover(self.active_widget)
-            label.set_text(text)
-
-            # Point to the entire widget (0,0 to width,height)
-            alloc = self.active_widget.get_allocation()
-            y_offset = getattr(self.active_widget, "_custom_tooltip_y_offset", 0)
-            rect = Gdk.Rectangle()
-            rect.x = 0
-            rect.y = y_offset
-            rect.width = alloc.width
-            rect.height = alloc.height
-
-            popover.set_pointing_to(rect)
-            popover.popup()
-            popover.set_visible(True)
-            popover.add_css_class("visible")
-
-            self.active_popover = popover
-
-        except Exception:
-            logger.error("Error showing tooltip", exc_info=True)
-
-        self.show_timer_id = None
-        return GLib.SOURCE_REMOVE
-
-    def hide(self, immediate: bool = False):
-        """Hide the current tooltip. If immediate=True, skip animation."""
-        if self.active_popover:
-            popover_to_hide = self.active_popover
-            self.active_popover = None
-
-            # Track this popover as closing
-            self.closing_popover = popover_to_hide
-
-            try:
-                popover_to_hide.remove_css_class("visible")
-            except Exception:
-                pass
-
-            if immediate:
-                # Hide immediately (no animation wait)
-                try:
-                    popover_to_hide.popdown()
-                except Exception:
-                    pass
-            else:
-                # Wait for animation then popdown
-                def do_popdown():
-                    try:
-                        popover_to_hide.popdown()
-                    except Exception:
-                        pass
-                    self.hide_timer_id = None
-                    self.closing_popover = None
-                    return GLib.SOURCE_REMOVE
-
-                if self.hide_timer_id:
-                    GLib.source_remove(self.hide_timer_id)
-                self.hide_timer_id = GLib.timeout_add(300, do_popdown)
+    def hide(self, immediate=False):
+        # Native tooltips are dismissed by GTK when focus/pointer context changes.
+        self.refresh()
 
     def hide_all(self):
-        """Hide all tooltips from all tracked widgets immediately.
-
-        Useful to call when opening dialogs or switching focus.
-        """
-        self._clear_timer()
-        self.hide(immediate=True)
-        self.active_widget = None
-
-        # Popdown all tooltip popovers
-        for widget in list(self._widgets_with_tooltips):
-            try:
-                if hasattr(widget, "_custom_tooltip_popover"):
-                    popover, _ = widget._custom_tooltip_popover
-                    popover.popdown()
-            except Exception:
-                pass
+        self.refresh()
 
     def cleanup(self):
-        """Call this when the application is shutting down."""
-        self._clear_timer()
-        self.hide(immediate=True)
+        for widget in list(self._widgets):
+            widget.set_tooltip_text(None)
+        self._widgets.clear()

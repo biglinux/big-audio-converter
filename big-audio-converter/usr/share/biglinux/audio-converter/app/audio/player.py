@@ -9,8 +9,14 @@ import os
 import time
 from pathlib import Path
 
-import mpv
+try:
+    import mpv
+except (ImportError, OSError):
+    mpv = None
 from gi.repository import GLib
+from app.utils.main_context import SourceGroup
+from .filters import build_audio_filters
+from .models import MediaSource, finite_number
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -23,7 +29,7 @@ class AudioPlayer:
     Audio player using MPV for robust audio playback functionality.
     """
 
-    def __init__(self, gtcrn_ladspa_path=None):
+    def __init__(self, gtcrn_ladspa_path=None, audio_output=None):
         """Initialize the audio player with MPV."""
         self.gtcrn_ladspa_path = gtcrn_ladspa_path
         if self.gtcrn_ladspa_path and not os.path.exists(self.gtcrn_ladspa_path):
@@ -83,524 +89,259 @@ class AudioPlayer:
         self.seek_timer_id = None
         self.is_seeking = False
 
+        self._sources = SourceGroup()
+        self._events = SourceGroup()
+        self._generation = 0
+        self._disposed = False
+        self._loaded = False
+        self._expected_entry = None
+        self._audio_output = audio_output
+        self.initialization_error = None
+        self.normalize_enabled = False
+        self.bypass_processing = False
+        self._last_filter_chain = None
         self._create_player()
 
     def _create_player(self):
-        """Create the MPV player instance."""
+        """Create an audio-only player without loading user scripts or network helpers."""
         try:
-            # Create MPV instance with audio-only configuration
-            self.mpv_instance = mpv.MPV(
-                # Audio output
-                vo="null",  # No video output
-                # Audio options
-                audio_display="no",  # Don't show audio visualization
-                # Performance
-                cache="yes",
-                demuxer_max_bytes="50M",
-                # Log level
-                log_handler=self._log_handler,
-                loglevel="info",
-            )
+            if mpv is None:
+                raise RuntimeError("The native mpv library or Python binding is missing")
+            options = dict(vo="null", vid="no", sid="no", audio_display="no",
+                           config=False, load_scripts=False, ytdl=False,
+                           input_default_bindings=False, demuxer="lavf", keep_open="yes",
+                           volume_max=1000, cache="yes", demuxer_max_bytes="50M",
+                           log_handler=self._log_handler, loglevel="warn")
+            if self._audio_output is not None:
+                options["ao"] = self._audio_output
+            self.mpv_instance = mpv.MPV(**options)
+            @self.mpv_instance.event_callback("file-loaded")
+            def loaded(event):
+                self._post_event(self._file_loaded)
+            @self.mpv_instance.event_callback("end-file")
+            def ended(event):
+                data = getattr(event, "data", None)
+                reason = getattr(data, "reason", -1)
+                identity = getattr(data, "playlist_entry_id", None)
+                if isinstance(event, dict):
+                    data = event.get("event", event)
+                    reason = data.get("reason", -1)
+                    identity = data.get("playlist_entry_id")
+                self._post_event(self._file_ended, reason, identity)
+            self._rebuild_audio_filters()
+        except Exception as error:
+            self.initialization_error = str(error)
+            logger.warning("Audio preview is unavailable: %s", error)
+            instance, self.mpv_instance = self.mpv_instance, None
+            if instance is not None:
+                instance.terminate()
 
-            # Set up event handlers
-            @self.mpv_instance.event_callback('end-file')
-            def on_end_file(event):
-                try:
-                    # python-mpv >= 1.0: event is MpvEvent object with .data attribute
-                    if hasattr(event, "data") and hasattr(event.data, "reason"):
-                        reason = event.data.reason
-                    elif hasattr(event, "event") and isinstance(event.event, dict):
-                        reason = event.event.get("reason", -1)
-                    elif isinstance(event, dict):
-                        reason = event.get("event", {}).get("reason", -1)
-                    else:
-                        reason = -1
-
-                    if reason == 0:  # EOF (not error or aborted)
-                        logger.info("Playback finished (EOF)")
-                        self.is_playing_flag = False
-                        self._position = 0
-                        self._eof_reached = True
-
-                        if self.state_callback:
-                            GLib.idle_add(self.state_callback, self, False)
-
-                        if self.eos_callback:
-                            GLib.idle_add(self.eos_callback, self)
-                except Exception as e:
-                    logger.error(f"Error handling end-file event: {e}")
-
-            @self.mpv_instance.event_callback('file-loaded')
-            def on_file_loaded(event):
-                # File loaded successfully, query duration
-                try:
-                    duration = self.mpv_instance.duration
-                    if duration and duration > 0:
-                        self.duration = duration
-                        logger.info(f"Duration: {self.duration:.3f} seconds")
-                        
-                        if self.duration_callback:
-                            GLib.idle_add(self.duration_callback, self, self.duration)
-                        
-                        if self.position_callback:
-                            GLib.idle_add(self.position_callback, self, 0, self.duration)
-
-                    # Ensure MPV is actually unpaused if we expect playback.
-                    # play() may have set pause=False before the file finished
-                    # loading; re-assert it now that the file is ready.
-                    if self.is_playing_flag:
-                        self.mpv_instance.pause = False
-                        logger.info(
-                            "on_file_loaded: re-asserted pause=False for pending playback"
-                        )
-                        if self.state_callback:
-                            GLib.idle_add(self.state_callback, self, True)
-                except Exception as e:
-                    logger.error(f"Error in on_file_loaded: {e}")
-
-            logger.info("MPV player created successfully")
-
-        except Exception as e:
-            logger.error(f"Error creating MPV player: {e}")
-            if self.error_callback:
-                self.error_callback(f"Failed to initialize MPV: {str(e)}")
-
-    def _log_handler(self, loglevel, component, message):
-        """Handle MPV log messages."""
-        if loglevel == "error":
-            logger.error(f"MPV [{component}]: {message}")
-            if self.error_callback and "Failed" in message:
-                GLib.idle_add(self.error_callback, f"MPV error: {message}")
-        elif loglevel == "warn":
-            logger.warning(f"MPV [{component}]: {message}")
-        elif loglevel == "info":
-            logger.info(f"MPV [{component}]: {message}")
-        else:
-            logger.debug(f"MPV [{component}]: {message}")
+    def _log_handler(self, level, component, message):
+        # Native decoder details are diagnostics, not untranslated GUI errors.
+        if level == "error":
+            logger.debug("mpv %s: %s", component, message.rstrip())
 
     def _position_update_callback(self):
-        """Timer callback for position updates."""
-        if not self.is_playing_flag or not self.mpv_instance:
-            return True  # Keep timer running
-
+        if self._disposed or not self.is_playing_flag or self.mpv_instance is None:
+            self.position_timer_id = None
+            return False
+        if not self._loaded:
+            return True
         try:
-            # Query current position
             position = self.mpv_instance.time_pos
             if position is not None:
                 self._position = position
-
-                # Emit position update
-                if self.position_callback:
-                    self.position_callback(self, self._position, self.duration)
-        except Exception as e:
-            logger.error(f"Position update callback error: {e}", exc_info=True)
-
-        return True  # Continue timer
+                self._emit("position", position, self.duration)
+            if self.mpv_instance.eof_reached:
+                self._reached_end()
+                return False
+        except Exception as error:
+            self.pause()
+            self._emit("error", str(error))
+            return False
+        return True
 
     def load(self, file_path, track_metadata=None):
-        """Load an audio file or specific track from a video.
-
-        Args:
-            file_path: Path to the file (may be virtual path for tracks)
-            track_metadata: Optional dict with track info for video files
-        """
-        # Extract actual file path if this is a track
-        actual_file_path = file_path
-        self.current_track_metadata = None
-        self.pending_track_index = None
-
-        # Check if this is a virtual track path (contains :: and file doesn't exist as-is)
-        if "::" in file_path and not os.path.exists(file_path):
-            # This is a virtual track path - need metadata
-            if track_metadata and file_path in track_metadata:
-                self.current_track_metadata = track_metadata[file_path]
-                actual_file_path = self.current_track_metadata["source_video"]
-                self.pending_track_index = self.current_track_metadata.get(
-                    "track_index"
-                )
-                logger.info(
-                    f"Loading track {self.pending_track_index} from {actual_file_path}"
-                )
-            else:
-                logger.error(f"No track metadata found for {file_path}")
-                if self.error_callback:
-                    self.error_callback(f"Track metadata not found for {file_path}")
-                return False
-        elif "::" in file_path and os.path.exists(file_path):
-            # File exists with :: in name (e.g., extracted/converted track)
-            logger.info(f"Loading extracted/converted file: {file_path}")
-            actual_file_path = file_path
-
-        if not os.path.exists(actual_file_path):
-            if self.error_callback:
-                self.error_callback(f"File not found: {actual_file_path}")
+        if self._disposed or self.mpv_instance is None:
+            self._emit("error", _("Audio preview is unavailable. Install mpv and its Python binding."))
             return False
-
-        # Stop any current playback (skip if already stopped to avoid redundant callbacks)
-        if self.is_playing_flag:
-            logger.info("load(): stopping current playback before loading new file")
-            self.stop()
-        else:
-            logger.info("load(): skipping stop (is_playing_flag=False)")
-
-        # Store the file paths
-        self.current_file = file_path
-        self.current_actual_file = actual_file_path
-        self._position = 0
-        self._eof_reached = False
-
         try:
-            # Pause before loading to prevent auto-play;
-            # play() will set pause=False when called explicitly
+            source = MediaSource.resolve(file_path, track_metadata)
+            if not os.path.isfile(source.path):
+                raise ValueError("Select a readable local media file")
+            self._generation += 1
+            self._events.close()
+            self._events = SourceGroup()
+            self._stop_position_timer()
+            self._sources.remove(self.seek_timer_id)
+            self.seek_timer_id = None
+            self.pending_seek_position = None
+            self.last_seek_time = 0
+            self._loaded = False
+            self._eof_reached = False
+            self.is_playing_flag = False
+            self._position = 0
+            self.duration = 0
+            self.current_file = file_path
+            self.current_actual_file = source.path
+            self.current_track_metadata = (track_metadata or {}).get(file_path)
+            self.pending_track_index = source.stream_index
             self.mpv_instance.pause = True
-
-            # Load file in MPV
-            self.mpv_instance.loadfile(actual_file_path)
-            
-            # If specific track index requested, select it
-            if self.pending_track_index is not None:
-                try:
-                    self.mpv_instance.aid = self.pending_track_index
-                    logger.info(f"Selected audio track: {self.pending_track_index}")
-                except Exception as e:
-                    logger.warning(f"Failed to select audio track {self.pending_track_index}: {e}")
-
-            # MPV loads asynchronously, duration will be available via file-loaded event
-            logger.info(f"Audio file loading: {actual_file_path}")
-
+            self.mpv_instance.loadfile(source.path, "replace")
+            entries = self.mpv_instance.playlist or []
+            self._expected_entry = entries[0].get("id") if entries else None
             return True
-            
-        except Exception as e:
-            logger.error(f"Failed to load audio file: {e}")
-            if self.error_callback:
-                self.error_callback(f"Failed to load audio file: {str(e)}")
+        except Exception as error:
+            self._emit("error", str(error))
             return False
 
     def play(self):
-        """Start or resume playback."""
-        if not self.current_file or self.is_playing_flag:
-            logger.debug(
-                f"play() skipped: current_file={self.current_file}, is_playing_flag={self.is_playing_flag}"
-            )
+        if self._disposed or self.mpv_instance is None or not self.current_file:
             return False
-
-        logger.info(
-            f"Starting playback: file={self.current_file}, timer_id={self.position_timer_id}"
-        )
-
-        try:
-            # Set MPV to play
-            self.mpv_instance.pause = False
-            
-            # Update state
-            self.is_playing_flag = True
-            if self.state_callback:
-                GLib.idle_add(self.state_callback, self, True)
-
-            # Start position update timer if not already running
-            if self.position_timer_id is None:
-                self.position_timer_id = GLib.timeout_add(
-                    100, self._position_update_callback
-                )
-
+        if self.is_playing_flag:
             return True
-            
-        except Exception as e:
-            logger.error(f"Failed to start playback: {e}")
-            if self.error_callback:
-                self.error_callback(f"Failed to start playback: {str(e)}")
+        try:
+            if self._eof_reached:
+                self._do_seek(0)
+            self.is_playing_flag = True
+            if self._loaded:
+                self.mpv_instance.pause = False
+            self._emit("state", True)
+            if self.position_timer_id is None:
+                self.position_timer_id = self._sources.timeout(50, self._position_update_callback)
+            return True
+        except Exception as error:
+            self.is_playing_flag = False
+            self._emit("error", str(error))
             return False
 
     def pause(self):
-        """Pause playback, maintaining current position."""
-        logger.debug("Pausing playback")
-
+        self.is_playing_flag = False
+        self._stop_position_timer()
+        if self._disposed or self.mpv_instance is None:
+            return False
         try:
-            # Set MPV to pause
             self.mpv_instance.pause = True
-
-            # Update state
-            self.is_playing_flag = False
-            if self.state_callback:
-                GLib.idle_add(self.state_callback, self, False)
-
+            self._emit("state", False)
             return True
-            
-        except Exception as e:
-            logger.error(f"Failed to pause: {e}")
+        except Exception as error:
+            logger.debug("Could not pause audio: %s", error)
             return False
 
     def stop(self):
-        """Stop playback."""
-        logger.info(
-            f"Stopping playback: is_playing={self.is_playing_flag}, file={self.current_file}"
-        )
-
-        try:
-            # Stop MPV
-            self.mpv_instance.command("stop")
-
-            # Update state
-            self.is_playing_flag = False
-            if self.state_callback:
-                GLib.idle_add(self.state_callback, self, False)
-
-            # Reset position
-            self._position = 0
-            if self.position_callback:
-                self.position_callback(self, 0, self.duration)
-
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to stop: {e}")
+        if self._disposed:
             return False
+        self.pause()
+        self._generation += 1
+        self._events.close()
+        self._events = SourceGroup()
+        self._sources.remove(self.seek_timer_id)
+        self.seek_timer_id = None
+        self.pending_seek_position = None
+        self._position = 0
+        self._eof_reached = False
+        self._loaded = False
+        self.current_file = None
+        self.current_actual_file = None
+        self._expected_entry = None
+        if self.mpv_instance is not None:
+            self.mpv_instance.command("stop")
+        self._emit("position", 0, self.duration)
+        return True
 
     def seek(self, position):
-        """Seek to a specific position in seconds with throttling for rapid seeks."""
-        # Clamp position to valid range immediately
+        if self._disposed or self.mpv_instance is None:
+            return False
+        position = finite_number(position, "Seek position", 0, max(self.duration, 1e10))
         if self.duration > 0:
-            max_position = max(0, self.duration - 0.1)
-            position = max(0, min(position, max_position))
-        else:
-            position = max(0, position)
-
-        # Check if we're being called too rapidly
-        current_time = time.time() * 1000  # milliseconds
-        time_since_last_seek = current_time - self.last_seek_time
-
-        if time_since_last_seek < self.seek_throttle_ms:
-            # Too soon - schedule a delayed seek instead
+            position = min(position, self.duration)
+        if not self._loaded:
             self.pending_seek_position = position
-
-            # Cancel existing timer if any
-            if self.seek_timer_id is not None:
-                GLib.source_remove(self.seek_timer_id)
-
-            # Schedule seek for later
-            delay_ms = int(self.seek_throttle_ms - time_since_last_seek)
-            self.seek_timer_id = GLib.timeout_add(delay_ms, self._execute_pending_seek)
-            logger.debug(f"Throttling seek to {position:.3f}s, delayed by {delay_ms}ms")
             return True
-
-        # Execute seek immediately
+        now = time.monotonic() * 1000
+        delay = self.seek_throttle_ms - (now - self.last_seek_time)
+        if delay > 0:
+            self.pending_seek_position = position
+            if self.seek_timer_id is None:
+                self.seek_timer_id = self._sources.timeout(max(1, int(delay)), self._execute_pending_seek)
+            return True
         return self._do_seek(position)
 
     def _execute_pending_seek(self):
-        """Execute a pending throttled seek."""
-        if self.pending_seek_position is not None:
-            position = self.pending_seek_position
-            self.pending_seek_position = None
-            self.seek_timer_id = None
+        self.seek_timer_id = None
+        position, self.pending_seek_position = self.pending_seek_position, None
+        if position is not None and not self._disposed:
             self._do_seek(position)
-        return False  # Don't repeat timer
+        return False
 
     def _do_seek(self, position):
-        """Internal method to perform actual seek operation."""
-        logger.debug(f"Executing seek to position={position:.6f}s")
-
-        # Update last seek time
-        self.last_seek_time = time.time() * 1000
-
-        # If EOF was reached, reload the file first before seeking
-        if self._eof_reached and self.current_actual_file:
-            logger.info(
-                f"Reloading file after EOF before seek: {self.current_actual_file}"
-            )
-            self._eof_reached = False
-            try:
-                self.mpv_instance.loadfile(self.current_actual_file)
-                if self.pending_track_index is not None:
-                    self.mpv_instance.aid = self.pending_track_index
-                self.mpv_instance.pause = True
-                # Delay seek to allow file loading
-                GLib.timeout_add(200, self._complete_seek, position, False)
-                return True
-            except Exception as e:
-                logger.error(f"Failed to reload file after EOF: {e}")
-                return False
-
-        # Remember if we were playing
-        was_playing = self.is_playing_flag
-
-        try:
-            # Mark that we're seeking
-            self.is_seeking = True
-
-            # For smoother segment transitions, pause briefly before seeking if playing
-            # This allows the audio buffer to drain, preventing stuttering/glitches
-            if was_playing:
-                self.mpv_instance.pause = True
-                # Small delay (20ms) to let audio buffer drain
-                GLib.timeout_add(20, lambda: self._complete_seek(position, True))
-            else:
-                self._complete_seek(position, False)
-            
+        if self._disposed or self.mpv_instance is None:
+            return False
+        self.last_seek_time = time.monotonic() * 1000
+        if not self._loaded:
+            self.pending_seek_position = position
             return True
-
-        except Exception as e:
-            logger.error(f"Exception during seek: {e}")
+        try:
+            self.is_seeking = True
+            self.mpv_instance.seek(position, reference="absolute", precision="exact")
+            self._position = position
+            self._eof_reached = False
+            self._emit("position", position, self.duration)
+            return True
+        except Exception as error:
+            self._emit("error", str(error))
             return False
         finally:
             self.is_seeking = False
     
     def _complete_seek(self, position, restore_playing):
-        """Complete the seek operation after audio buffer has been cleared."""
-        try:
-            # Perform seek with exact precision for smooth segment transitions
-            self.mpv_instance.seek(position, reference='absolute', precision='exact')
-            
-            self._position = position
-            logger.debug(f"Seek completed to {position:.3f}s")
-            
-            # Restore playing state if needed
-            if restore_playing:
-                self.mpv_instance.pause = False
-                
-        except Exception as e:
-            logger.error(f"Exception completing seek: {e}")
-            # After EOF, MPV unloads the file. Reload and retry seek once.
-            if self.current_actual_file:
-                try:
-                    logger.info(
-                        f"Reloading file after seek failure: {self.current_actual_file}"
-                    )
-                    self.mpv_instance.loadfile(self.current_actual_file)
-                    if self.pending_track_index is not None:
-                        self.mpv_instance.aid = self.pending_track_index
-                    self.mpv_instance.pause = True
-                    # Retry seek after file-loaded event via a short delay
-                    GLib.timeout_add(
-                        200, self._retry_seek_after_reload, position, restore_playing
-                    )
-                except Exception as reload_err:
-                    logger.error(f"Failed to reload file for seek retry: {reload_err}")
-        
-        return False  # Don't repeat timer
-
-    def _retry_seek_after_reload(self, position, restore_playing):
-        """Retry a seek after reloading the file (post-EOF recovery)."""
-        try:
-            self.mpv_instance.seek(position, reference="absolute", precision="exact")
-            self._position = position
-            if restore_playing:
-                self.mpv_instance.pause = False
-                self.is_playing_flag = True
-                if self.state_callback:
-                    GLib.idle_add(self.state_callback, self, True)
-            logger.info(f"Seek retry succeeded at {position:.3f}s")
-        except Exception as e:
-            logger.error(f"Seek retry also failed: {e}")
+        if self._do_seek(position) and restore_playing:
+            self.play()
         return False
 
-    def set_volume(self, volume):
-        """Set playback volume (0.0 to 5.0) - updates in real-time."""
-        volume = max(0.0, min(volume, 5.0))
-        logger.debug(f"Setting volume to: {volume}")
+    def _retry_seek_after_reload(self, position, restore_playing):
+        return self._complete_seek(position, restore_playing)
 
-        self.volume = volume
-        try:
-            # MPV volume is 0-100, but we support up to 5.0 (500%)
-            self.mpv_instance.volume = volume * 100
-        except Exception as e:
-            logger.error(f"Failed to set volume: {e}")
+    def set_volume(self, volume):
+        """Use the export's linear gain at the same position in the DSP chain."""
+        self.volume = finite_number(volume, "Volume", 0, 10)
+        self._rebuild_audio_filters()
 
     def set_playback_speed(self, speed):
-        """Set playback speed (0.5 to 5.0) - updates in real-time."""
-        speed = max(0.5, min(speed, 5.0))
-        logger.debug(f"Setting playback speed to: {speed}")
-
-        self.speed = speed
-        try:
-            self.mpv_instance.speed = speed
-        except Exception as e:
-            logger.error(f"Failed to set speed: {e}")
+        self.speed = finite_number(speed, "Playback speed", 0.1, 5)
+        if not self._disposed and self.mpv_instance is not None:
+            self.mpv_instance.speed = 1 if self.bypass_processing else self.speed
 
     def set_pitch_correction(self, enabled):
-        """Enable or disable pitch correction when changing speed."""
-        logger.debug(f"Setting pitch correction to: {enabled}")
-
-        self.pitch_correction = enabled
-        try:
-            # MPV audio-pitch-correction: yes (preserve pitch) or no (change pitch with speed)
-            self.mpv_instance['audio-pitch-correction'] = 'yes' if enabled else 'no'
-        except Exception as e:
-            logger.error(f"Failed to set pitch correction: {e}")
+        self.pitch_correction = bool(enabled)
+        if self.mpv_instance is not None:
+            self.mpv_instance["audio-pitch-correction"] = self.pitch_correction
+            self._rebuild_audio_filters()
 
     def _rebuild_audio_filters(self):
-        """Rebuild the complete audio filter chain from current settings.
-
-        Order: HPF → Transient → Compressor → GTCRN NR → Gate → EQ
-        """
-        filters = []
-
-        # 1. High-pass filter
-        if self.hpf_enabled:
-            filters.append(f"highpass=f={self.hpf_frequency}:poles=2")
-
-        # 2. Transient suppressor
-        if self.transient_enabled and self.gtcrn_ladspa_path:
-            ladspa_dir = str(Path(self.gtcrn_ladspa_path).parent)
-            filters.append(
-                f"ladspa=file={ladspa_dir}/transient_split.so:plugin=transient:controls=c0={self.transient_attack}"
-            )
-
-        # 3. Compressor (before NR to even out dynamics)
-        if self.compressor_enabled:
-            ci = self.compressor_intensity
-            threshold_db = -20.0 - ci * 20.0
-            ratio = 3.0 + ci * 7.0
-            makeup_db = 6.0 + ci * 12.0
-            knee_db = 12.0 + ci * 4.0
-            threshold_lin = 10 ** (threshold_db / 20.0)
-            makeup_lin = 10 ** (makeup_db / 20.0)
-            knee_lin = 10 ** (knee_db / 20.0)  # FFmpeg acompressor knee range: 1-8
-            filters.append(
-                f"acompressor=threshold={threshold_lin:.6f}:ratio={ratio:.1f}:attack=150:release=800"
-                f":makeup={makeup_lin:.4f}:knee={knee_lin:.4f}:detection=rms"
-            )
-
-        # 4. GTCRN LADSPA noise reduction
-        if self.noise_reduction and self.gtcrn_ladspa_path:
-            model_blend_val = 1 if self.noise_model_blend else 0
-            filters.append(
-                f"ladspa=file={self.gtcrn_ladspa_path}:plugin=gtcrn_mono:controls="
-                f"c0=1|c1={self.noise_strength}|c2={self.noise_model}|c3={self.noise_speech_strength}"
-                f"|c4={self.noise_lookahead}|c5={self.noise_voice_enhance}|c6={model_blend_val}"
-            )
-
-        # 5. Noise gate (intensity-based)
-        if self.gate_enabled:
-            threshold_db = -50.0 + math.sqrt(self.gate_intensity) * 35.0
-            range_db = -40.0 - math.sqrt(self.gate_intensity) * 50.0
-            threshold_lin = 10 ** (threshold_db / 20.0)
-            range_lin = 10 ** (range_db / 20.0)
-            filters.append(
-                f"agate=threshold={threshold_lin:.6f}:range={range_lin:.6f}:attack=10:release=10:detection=rms"
-            )
-
-        # 6. Equalizer
-        if self.equalizer_settings:
-            for freq, gain in self.equalizer_settings:
-                filters.append(f"equalizer=f={freq}:width_type=o:w=1.5:g={gain}")
-
-        # Apply the filter chain wrapped in lavfi for MPV
-        # Always clear first to force LADSPA plugin re-instantiation
+        if self._disposed or self.mpv_instance is None:
+            return
         try:
-            try:
-                del self.mpv_instance['af']
-            except Exception:
-                self.mpv_instance["af"] = ""
-
-            if filters:
-                graph = ",".join(filters)
-                filter_string = f"lavfi=[{graph}]"
-                self.mpv_instance['af'] = filter_string
-                logger.debug(f"Audio filters applied: {filter_string}")
-            else:
-                logger.debug("All audio filters cleared")
-        except Exception as e:
-            logger.error(f"Failed to apply audio filters: {e}")
+            chain = []
+            if not self.bypass_processing:
+                effects = build_audio_filters(self._preview_settings(), self.gtcrn_ladspa_path)
+                if effects:
+                    chain.append("lavfi=[" + ",".join(effects) + "]")
+                if self.pitch_correction:
+                    # mpv's default scaletempo2 mutes speeds below 0.25x.
+                    chain.append("scaletempo2=min-speed=0.1:max-speed=5")
+                if self.normalize_enabled:
+                    chain.append("lavfi=[loudnorm=I=-16:LRA=11:TP=-1.5]")
+            value = ",".join(chain)
+            if value != self._last_filter_chain:
+                self.mpv_instance["af"] = value
+                self._last_filter_chain = value
+            # Export gain is in the DSP chain, before speed and normalization.
+            self.mpv_instance.volume = 100
+            self.mpv_instance.speed = 1 if self.bypass_processing else self.speed
+        except Exception as error:
+            logger.warning("Audio preview processing failed: %s", error)
+            self._emit("error", str(error))
     
     def set_equalizer_bands(self, eq_bands):
         """
@@ -615,34 +356,13 @@ class AudioPlayer:
         self._rebuild_audio_filters()
 
     def set_noise_reduction(self, enabled):
-        """
-        Enable or disable noise reduction during playback using GTCRN LADSPA plugin.
-
-        This uses the ffmpeg ladspa audio filter via MPV for real-time noise reduction.
-        The GTCRN plugin processes audio using a trained neural network model.
-        """
-        logger.debug(f"Setting noise reduction to: {enabled}")
-
-        self.noise_reduction = enabled
-
-        if not self.gtcrn_ladspa_path:
-            if enabled:
-                logger.warning(
-                    "Noise reduction requested but GTCRN LADSPA plugin not available"
-                )
-            return
-
-        try:
-            # Rebuild the complete audio filter chain
-            self._rebuild_audio_filters()
-
-            if enabled:
-                logger.info("GTCRN LADSPA noise reduction enabled")
-
-        except Exception as e:
-            logger.error(f"Failed to set noise reduction: {e}")
-            if enabled:
-                logger.warning("GTCRN LADSPA filter may not be available")
+        if enabled and not self.gtcrn_ladspa_path:
+            self.noise_reduction = False
+            self._emit("error", _("Neural noise reduction is unavailable. Install the GTCRN plugin and models."))
+            return False
+        self.noise_reduction = bool(enabled)
+        self._rebuild_audio_filters()
+        return True
 
     def set_noise_strength(self, strength):
         """Set noise reduction strength (0.0 to 1.0) and rebuild filters."""
@@ -734,24 +454,110 @@ class AudioPlayer:
             self.eos_callback = callback
 
     def cleanup(self):
-        """Cleanup resources."""
-        # Stop position timer
-        if self.position_timer_id:
-            GLib.source_remove(self.position_timer_id)
-            self.position_timer_id = None
-
-        # Stop seek timer
-        if self.seek_timer_id:
-            GLib.source_remove(self.seek_timer_id)
-            self.seek_timer_id = None
-
-        # Stop MPV
-        if self.mpv_instance:
-            try:
-                self.mpv_instance.command("stop")
-            except Exception:
-                pass
+        """Idempotently stop callbacks before terminating and joining native mpv."""
+        if getattr(self, "_disposed", True):
+            return
+        self._disposed = True
+        self._generation += 1
+        self.is_playing_flag = False
+        self._events.close()
+        self._sources.close()
+        self.position_timer_id = None
+        self.seek_timer_id = None
+        self.pending_seek_position = None
+        for name in ("position", "state", "error", "duration", "eos"):
+            setattr(self, name + "_callback", None)
+        instance, self.mpv_instance = self.mpv_instance, None
+        if instance is not None:
+            instance.terminate()
 
     def __del__(self):
-        """Destructor to ensure cleanup."""
-        self.cleanup()
+        # Application shutdown explicitly calls cleanup on the main thread.
+        # Never join an mpv event thread from an arbitrary finalizer thread.
+        pass
+
+    def _post_event(self, callback, *args):
+        generation = self._generation
+        def deliver():
+            if not self._disposed and generation == self._generation:
+                callback(*args)
+            return False
+        self._events.idle(deliver)
+
+    def _emit(self, name, *args):
+        if self._disposed:
+            return
+        callback = getattr(self, name + "_callback", None)
+        if callback is not None:
+            callback(self, *args)
+
+    def _file_loaded(self):
+        if self._disposed or self.mpv_instance is None or not self.current_actual_file:
+            return
+        try:
+            if self.mpv_instance.path != self.current_actual_file:
+                return
+            tracks = [track for track in self.mpv_instance.track_list if track.get("type") == "audio"]
+            if self.pending_track_index is not None:
+                tracks = [track for track in tracks if track.get("ff-index") == self.pending_track_index]
+            if not tracks:
+                raise ValueError("The selected audio stream is unavailable")
+            selected = min(tracks, key=lambda track: track.get("ff-index", track["id"]))
+            self.mpv_instance.aid = selected["id"]
+            self._loaded = True
+            self.duration = float(self.mpv_instance.duration or 0)
+            self._emit("duration", self.duration)
+            self._emit("position", self._position, self.duration)
+            if self.pending_seek_position is not None:
+                position = self.pending_seek_position
+                self.pending_seek_position = None
+                self._do_seek(position)
+            self.mpv_instance.pause = not self.is_playing_flag
+        except Exception as error:
+            self.pause()
+            self._emit("error", str(error))
+
+    def _file_ended(self, reason, identity):
+        if identity is not None and self._expected_entry is not None and identity != self._expected_entry:
+            return
+        if reason in (0, "eof"):
+            self._reached_end()
+        elif reason in (4, "error"):
+            self.pause()
+            self._emit("error", _("Audio playback failed. Check the file and audio output device."))
+
+    def _reached_end(self):
+        if self._eof_reached or not self._loaded:
+            return
+        self._eof_reached = True
+        self.is_playing_flag = False
+        self._stop_position_timer()
+        self._emit("state", False)
+        self._emit("eos")
+
+    def _stop_position_timer(self):
+        self._sources.remove(self.position_timer_id)
+        self.position_timer_id = None
+
+    def _preview_settings(self):
+        frequencies = (31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
+        equalizer = dict(self.equalizer_settings)
+        return dict(volume=self.volume, speed=1.0,
+                    eq_enabled=bool(equalizer), eq_bands=",".join(str(equalizer.get(f, 0)) for f in frequencies),
+                    noise_reduction=self.noise_reduction, noise_strength=self.noise_strength,
+                    noise_model=self.noise_model, noise_speech_strength=self.noise_speech_strength,
+                    noise_lookahead=self.noise_lookahead, noise_voice_enhance=self.noise_voice_enhance,
+                    noise_model_blend=self.noise_model_blend,
+                    hpf_enabled=self.hpf_enabled, hpf_frequency=self.hpf_frequency,
+                    transient_enabled=self.transient_enabled, transient_attack=self.transient_attack,
+                    gate_enabled=self.gate_enabled, gate_intensity=self.gate_intensity,
+                    compressor_enabled=self.compressor_enabled, compressor_intensity=self.compressor_intensity)
+
+    def set_normalize_enabled(self, enabled):
+        self.normalize_enabled = bool(enabled)
+        self._rebuild_audio_filters()
+
+    def set_bypass_processing(self, enabled):
+        """Preview copy mode without destroying saved effect settings."""
+        self.bypass_processing = bool(enabled)
+        self._rebuild_audio_filters()

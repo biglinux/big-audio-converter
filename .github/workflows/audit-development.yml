@@ -1,0 +1,77 @@
+name: Native audit verification
+
+on:
+  push:
+    branches: [audit/product-quality-20260908]
+    paths: ['.github/workflows/audit-development.yml', 'big-audio-converter/**', 'tests/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export immutable inputs for offline review
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bac-source /tmp/bac-evidence
+          git rev-parse HEAD > /tmp/bac-source/head.txt
+          git ls-tree -r HEAD > /tmp/bac-source/head-tree.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/bac-source/pr4-source.tar.gz
+          git archive --format=tar ce5facaa72e846d033f84fdec995d28f66ca476a | gzip -n > /tmp/bac-source/pr3-source.tar.gz
+          git ls-tree -r ce5facaa72e846d033f84fdec995d28f66ca476a > /tmp/bac-source/pr3-tree.txt
+          cd /tmp/bac-source
+          sha256sum *.tar.gz > SHA256SUMS
+      - name: Preserve review inputs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: review-source-${{ github.run_number }}
+          path: /tmp/bac-source/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Install the native Linux test runtime
+        id: runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y -qq python3-gi python3-gi-cairo \
+            python3-numpy python3-mpv python3-pytest python3-pytest-cov python3-hypothesis \
+            python3-polib gir1.2-gtk-4.0 gir1.2-adw-1 libmpv2 ffmpeg gettext \
+            at-spi2-core python3-pyatspi desktop-file-utils xvfb xauth dbus-x11 xdotool \
+            x11-utils imagemagick
+      - name: Run native audio and lifecycle regressions
+        run: |
+          git rev-parse HEAD > /tmp/bac-evidence/commit.txt
+          /usr/bin/python3 -m pytest -q tests --ignore=tests/gui --junitxml=/tmp/bac-evidence/tests.xml
+      - name: Exercise the real GTK window
+        if: ${{ !cancelled() && steps.runtime.outcome == 'success' }}
+        env:
+          GDK_BACKEND: x11
+          GSK_RENDERER: cairo
+          BAC_EVIDENCE_DIR: /tmp/bac-evidence
+        run: |
+          set -o pipefail
+          xvfb-run -a -s '-screen 0 1600x1000x24' dbus-run-session -- \
+            /usr/bin/python3 -X faulthandler -m pytest -q -s tests/gui --junitxml=/tmp/bac-evidence/gui.xml 2>&1 | tee /tmp/bac-evidence/gui.log
+      - name: Ensure verification never rewrites production sources
+        if: ${{ !cancelled() }}
+        run: git diff --exit-code
+      - name: Preserve verification evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-audit-${{ github.run_number }}
+          path: /tmp/bac-evidence/
+          retention-days: 14
+          if-no-files-found: warn
