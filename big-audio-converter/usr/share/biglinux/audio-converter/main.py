@@ -55,26 +55,9 @@ class Application(Adw.Application):
         self.logger = logging.getLogger(__name__)
         self._create_actions()
 
-    def _present_window_and_request_focus(self, window: Gtk.Window):
-        """Present the window and use a modal dialog hack to request focus if needed."""
+    def _present_window_and_request_focus(self, window):
+        """Respect the window manager's focus policy without transient-window tricks."""
         window.present()
-
-        def check_and_apply_hack():
-            if not window.is_active():
-                self.logger.info(
-                    "Window not active after present(), applying modal window hack."
-                )
-                hack_window = Gtk.Window(transient_for=window, modal=True)
-
-                hack_window.set_default_size(1, 1)
-                hack_window.set_decorated(False)
-
-                hack_window.present()
-                GLib.idle_add(hack_window.destroy)
-
-            return GLib.SOURCE_REMOVE
-
-        GLib.idle_add(check_and_apply_hack)
 
     def do_open(self, files, n_files, hint):
         """Handle files opened from command line or file manager."""
@@ -128,8 +111,11 @@ class Application(Adw.Application):
         welcome.present()
 
     def on_quit_action(self, *args):
-        """Handle the app.quit action."""
-        self.quit()
+        window = getattr(self, "_main_window", None)
+        if window is not None:
+            window.close()
+        else:
+            self.quit()
 
     def on_about_action(self, *args):
         """Show the about dialog with the system 'big-audio-converter' icon."""
@@ -147,6 +133,17 @@ class Application(Adw.Application):
     def on_show_welcome_action(self, *args):
         """Show the welcome dialog."""
         self.show_welcome_dialog()
+
+    def do_shutdown(self):
+        window = getattr(self, "_main_window", None)
+        if window is not None:
+            window.shutdown()
+        from app.audio import waveform
+        waveform.shutdown()
+        self.player.cleanup()
+        self.converter.cleanup()
+        self.config.close()
+        Adw.Application.do_shutdown(self)
 
 
 def main():

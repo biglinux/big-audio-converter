@@ -48,7 +48,7 @@ class ConversionSession:
         self.dialog.add_response("cancel", _("Cancel"))
         self.dialog.connect("response", lambda dialog, response: self.cancel() if not self.finished else None)
         self.dialog.present(window)
-        window.header_bar.convert_button.set_sensitive(False)
+        window.convert_button.set_sensitive(False)
         self.worker = threading.Thread(target=self._run, name="bac-conversion", daemon=False)
         self.worker.start()
         self.sources.timeout(40, self._poll)
@@ -84,7 +84,7 @@ class ConversionSession:
             self.dialog = None
         if self.disposed or window is None:
             return False
-        window.header_bar.convert_button.set_sensitive(True)
+        window.convert_button.set_sensitive(True)
         if self.closing:
             window.close()
             return False

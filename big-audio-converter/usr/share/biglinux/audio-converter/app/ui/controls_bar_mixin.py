@@ -120,8 +120,8 @@ class ControlsBarMixin:
 
         # Schedule auto-close of popover after user finishes adjusting
         if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            GLib.source_remove(self._zoom_close_timer)
-        self._zoom_close_timer = GLib.timeout_add(1500, self._auto_close_zoom_popover)
+            self._sources.remove(self._zoom_close_timer)
+        self._zoom_close_timer = self._sources.timeout(1500, self._auto_close_zoom_popover)
 
     def _on_zoom_btn_clicked(self, button):
         """Open the zoom popover."""
@@ -138,7 +138,7 @@ class ControlsBarMixin:
     def _cancel_zoom_hover_close(self):
         """Cancel pending hover close timer."""
         if hasattr(self, "_zoom_hover_close_timer") and self._zoom_hover_close_timer:
-            GLib.source_remove(self._zoom_hover_close_timer)
+            self._sources.remove(self._zoom_hover_close_timer)
             self._zoom_hover_close_timer = None
 
     def _on_zoom_btn_hover_enter(self, controller, x, y):
@@ -151,7 +151,7 @@ class ControlsBarMixin:
     def _on_zoom_btn_hover_leave(self, controller):
         """Schedule close when mouse leaves zoom button."""
         self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = GLib.timeout_add(
+        self._zoom_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_zoom_popover
         )
 
@@ -160,13 +160,13 @@ class ControlsBarMixin:
         self._cancel_zoom_hover_close()
         # Also cancel the scale-change auto-close timer
         if hasattr(self, "_zoom_close_timer") and self._zoom_close_timer:
-            GLib.source_remove(self._zoom_close_timer)
+            self._sources.remove(self._zoom_close_timer)
             self._zoom_close_timer = None
 
     def _on_zoom_popover_hover_leave(self, controller):
         """Schedule close when mouse leaves the popover."""
         self._cancel_zoom_hover_close()
-        self._zoom_hover_close_timer = GLib.timeout_add(
+        self._zoom_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_zoom_popover
         )
 
@@ -191,7 +191,7 @@ class ControlsBarMixin:
                 continue
             timer = getattr(self, timer_attr, None)
             if timer:
-                GLib.source_remove(timer)
+                self._sources.remove(timer)
                 setattr(self, timer_attr, None)
             popover = getattr(self, pop_attr, None)
             if popover and popover.is_visible():
@@ -202,7 +202,7 @@ class ControlsBarMixin:
             hasattr(self, "_volume_hover_close_timer")
             and self._volume_hover_close_timer
         ):
-            GLib.source_remove(self._volume_hover_close_timer)
+            self._sources.remove(self._volume_hover_close_timer)
             self._volume_hover_close_timer = None
 
     def _on_volume_btn_hover_enter(self, controller, x, y):
@@ -215,7 +215,7 @@ class ControlsBarMixin:
 
     def _on_volume_btn_hover_leave(self, controller):
         self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = GLib.timeout_add(
+        self._volume_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_volume_popover
         )
 
@@ -224,7 +224,7 @@ class ControlsBarMixin:
 
     def _on_volume_popover_hover_leave(self, controller):
         self._cancel_volume_hover_close()
-        self._volume_hover_close_timer = GLib.timeout_add(
+        self._volume_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_volume_popover
         )
 
@@ -269,7 +269,7 @@ class ControlsBarMixin:
 
     def _cancel_speed_hover_close(self):
         if hasattr(self, "_speed_hover_close_timer") and self._speed_hover_close_timer:
-            GLib.source_remove(self._speed_hover_close_timer)
+            self._sources.remove(self._speed_hover_close_timer)
             self._speed_hover_close_timer = None
 
     def _on_speed_btn_hover_enter(self, controller, x, y):
@@ -282,7 +282,7 @@ class ControlsBarMixin:
 
     def _on_speed_btn_hover_leave(self, controller):
         self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = GLib.timeout_add(
+        self._speed_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_speed_popover
         )
 
@@ -291,7 +291,7 @@ class ControlsBarMixin:
 
     def _on_speed_popover_hover_leave(self, controller):
         self._cancel_speed_hover_close()
-        self._speed_hover_close_timer = GLib.timeout_add(
+        self._speed_hover_close_timer = self._sources.timeout(
             1000, self._hover_close_speed_popover
         )
 

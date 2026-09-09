@@ -38,7 +38,7 @@ class PlaybackControllerMixin:
         )
         if not auto_advance_enabled:
             logger.info("Auto-advance disabled, stopping playback")
-            GLib.idle_add(self.file_queue.update_playing_state, False)
+            self._sources.idle(self.file_queue.update_playing_state, False)
             return
 
         current_index = self.file_queue.get_current_playing_index()
@@ -55,10 +55,10 @@ class PlaybackControllerMixin:
         if next_index < len(files):
             logger.info(f"Auto-playing next file (index {next_index})")
             next_file = files[next_index]
-            GLib.timeout_add(300, self._play_next_file, next_file, next_index)
+            self._sources.timeout(300, self._play_next_file, next_file, next_index)
         else:
             logger.info("Reached end of queue, stopping playback")
-            GLib.idle_add(self.file_queue.update_playing_state, False)
+            self._sources.idle(self.file_queue.update_playing_state, False)
 
     def _play_next_file(self, file_path, index):
         """Helper to play the next file with proper UI updates."""
@@ -223,8 +223,8 @@ class PlaybackControllerMixin:
             self.visualizer.zoom_level, self.visualizer.viewport_offset
         )
 
-        GLib.idle_add(self._update_time_display, position, duration)
-        GLib.idle_add(self._update_play_selection_button)
+        self._sources.idle(self._update_time_display, position, duration)
+        self._sources.idle(self._update_play_selection_button)
 
         # Handle segment transitions in Play Selection Only mode
         if self._playing_selection and self._selection_segments:
@@ -246,7 +246,7 @@ class PlaybackControllerMixin:
                 )
                 self._is_transitioning_segment = True
                 self._current_segment_index += 1
-                GLib.idle_add(self._do_segment_transition_with_retry)
+                self._sources.idle(self._do_segment_transition_with_retry)
                 return
 
             if position < start - TOLERANCE:
@@ -263,7 +263,7 @@ class PlaybackControllerMixin:
                 or not self._end_of_track_handled
             ):
                 self._end_of_track_handled = True
-                GLib.idle_add(self.on_playback_finished, player)
+                self._sources.idle(self.on_playback_finished, player)
         elif hasattr(self, "_end_of_track_handled") and self._end_of_track_handled:
             self._end_of_track_handled = False
 
@@ -299,7 +299,7 @@ class PlaybackControllerMixin:
                     logger.warning(
                         f"Segment transition seek failed, retry {retry_count + 1}/{max_retries}"
                     )
-                    GLib.timeout_add(
+                    self._sources.timeout(
                         100,
                         lambda: self._do_segment_transition_with_retry(retry_count + 1),
                     )
@@ -318,7 +318,7 @@ class PlaybackControllerMixin:
                         self.player.play()
                     return False
 
-                GLib.timeout_add(50, ensure_playing)
+                self._sources.timeout(50, ensure_playing)
                 self._is_transitioning_segment = False
                 logger.debug("Transition lock released after successful seek.")
 
@@ -510,7 +510,7 @@ class PlaybackControllerMixin:
                         self._current_segment_index = 0
                         start, _ = self._selection_segments[0]
                         self._marker_dragging = True
-                        GLib.idle_add(
+                        self._sources.idle(
                             lambda: (
                                 self.player.seek(start)
                                 if self.player.is_playing()
@@ -523,7 +523,7 @@ class PlaybackControllerMixin:
                             f"Position {current_position:.3f}s is after all segments, stopping"
                         )
                         self._playing_selection = False
-                        GLib.idle_add(
+                        self._sources.idle(
                             lambda: (
                                 self.player.stop() if self.player.is_playing() else None
                             )
@@ -540,7 +540,7 @@ class PlaybackControllerMixin:
                                 def do_seek_and_reenable():
                                     if self.player.is_playing():
                                         self.player.seek(start)
-                                    GLib.timeout_add(
+                                    self._sources.timeout(
                                         150,
                                         lambda: (
                                             setattr(self, "_marker_dragging", False),
@@ -549,7 +549,7 @@ class PlaybackControllerMixin:
                                     )
                                     return False
 
-                                GLib.idle_add(do_seek_and_reenable)
+                                self._sources.idle(do_seek_and_reenable)
                                 break
 
     # --- Player state ---

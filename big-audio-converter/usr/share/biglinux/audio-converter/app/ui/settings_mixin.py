@@ -396,7 +396,7 @@ class SettingsManagerMixin:
 
         self.noise_expander.set_enable_expansion(state)
         # Prevent auto-expansion from click propagation on the ExpanderRow
-        GLib.idle_add(self.noise_expander.set_expanded, False)
+        self._sources.idle(self.noise_expander.set_expanded, False)
         if not state:
             self.gate_switch.set_active(False)
             self.compressor_switch.set_active(False)

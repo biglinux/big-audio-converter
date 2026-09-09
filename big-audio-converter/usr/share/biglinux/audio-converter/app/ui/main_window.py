@@ -18,6 +18,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+from app.ui.conversion_session import ConversionSession
+from app.utils.main_context import SourceGroup
 from app.ui.controls_bar_mixin import ControlsBarMixin
 from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
@@ -168,30 +170,13 @@ class MainWindow(
     Adw.ApplicationWindow,
 ):
     def _window_buttons_on_left(self):
-        """Detect if window buttons (close/min/max) are on the left side."""
-        try:
-            settings = Gio.Settings.new("org.gnome.desktop.wm.preferences")
-            layout = settings.get_string("button-layout")
-            logger.info(f"Detected button-layout: {layout}")
-            if layout and ":" in layout:
-                left, right = layout.split(":", 1)
-                # Check for 'close' on the left side
-                if "close" in left:
-                    return True
-                # Check for 'close' on the right side
-                if "close" in right:
-                    return False
-            elif layout:
-                # If no colon, treat as right side (default GNOME)
-                if "close" in layout:
-                    return False
-            logger.warning(
-                f"Unusual button-layout format: {layout}, defaulting to right"
-            )
-        except Exception as e:
-            logger.warning(f"Could not detect window button layout: {e}")
-        # Default: right side
-        return False
+        """An optional desktop preference must never abort application startup."""
+        source = Gio.SettingsSchemaSource.get_default()
+        schema = source.lookup("org.gnome.desktop.wm.preferences", True) if source else None
+        if schema is None:
+            return False
+        settings = Gio.Settings.new_full(schema, None, None)
+        return "close" in settings.get_string("button-layout").split(":", 1)[0]
 
     """Main application window."""
 
@@ -247,6 +232,10 @@ class MainWindow(
         self._size_save_timeout_id = None
 
         self.app = kwargs.get("application")
+        self.app._main_window = self
+        self._disposed = False
+        self._sources = SourceGroup()
+        self.conversion_session = None
 
         # Initialize tooltip helper
         if hasattr(self.app, "config") and self.app.config:
@@ -328,7 +317,7 @@ class MainWindow(
 
         # Setup visualizer tooltip after UI is fully created
         if self.tooltip_helper and hasattr(self, "visualizer"):
-            GLib.idle_add(self._setup_visualizer_tooltip)
+            self._sources.idle(self._setup_visualizer_tooltip)
 
         # Connect to map event for visualizer height restoration
         self.connect("map", self.on_window_mapped)
@@ -344,7 +333,7 @@ class MainWindow(
 
         # Restore maximized state after window is fully initialized
         if self._should_maximize:
-            GLib.timeout_add(100, self.maximize)
+            self._sources.timeout(100, self.maximize)
 
         # Connect file removal signal
         self.file_queue.connect_file_removed_signal(self._on_file_removed)
@@ -1125,7 +1114,7 @@ class MainWindow(
             if not has_files or (
                 hasattr(self, "cut_row") and self.cut_row.get_selected() == 0
             ):
-                GLib.idle_add(self._update_paned_for_cut_mode, False)
+                self._sources.idle(self._update_paned_for_cut_mode, False)
 
         # Queue size label only shows when there are 2 or more files (matching clear button)
         self.header_queue_size_label.set_visible(has_multiple_files)
@@ -1240,7 +1229,7 @@ class MainWindow(
             self._apply_tooltips()
             # Also setup visualizer tooltip
             if hasattr(self, "visualizer"):
-                GLib.idle_add(self._setup_visualizer_tooltip)
+                self._sources.idle(self._setup_visualizer_tooltip)
         else:
             # When disabling tooltips, hide current
             if self.tooltip_helper:
@@ -1272,6 +1261,8 @@ class MainWindow(
             self.tooltip_helper.hide(immediate=True)
 
     def on_convert(self, button):
+        if self._disposed or (self.conversion_session and self.conversion_session.running):
+            return
         """Start conversion process."""
         if not self.file_queue.has_files():
             self._show_error_dialog(
@@ -1336,7 +1327,7 @@ class MainWindow(
                 current_markers = self.visualizer.get_ordered_marker_pairs(
                     order_by_number
                 )
-                if current_markers:
+                if current_markers is not None:
                     logger.debug(
                         f"Storing {len(current_markers)} ordered segments for current file"
                     )
@@ -1378,48 +1369,9 @@ class MainWindow(
                         f"Final segments order for conversion: {[(s.get('segment_index', '?'), s['start_str']) for s in current_file_segments]}"
                     )
 
-        # Create a progress dialog
-        files = self.file_queue.get_files()
-        total_files = len(files)
-
-        # Create a box for the progress bar
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        content_box.set_margin_start(20)
-        content_box.set_margin_end(20)
-
-        # Create progress bar
-        self.progress_bar = Gtk.ProgressBar()
-        self.progress_bar.set_fraction(0.0)
-        content_box.append(self.progress_bar)
-
-        # Create the dialog with our custom content
-        self.progress_dialog = Adw.MessageDialog(
-            transient_for=self,
-            title=_("Converting Files"),
-            body=_("Converting file 1 of {0}").format(total_files),
-        )
-
-        # Set the extra child (content area)
-        self.progress_dialog.set_extra_child(content_box)
-
-        # Add a cancel button
-        self.progress_dialog.add_response("cancel", _("Cancel"))
-        self.progress_dialog.connect("response", self._on_conversion_cancel)
-
-        # Show the dialog
-        self.progress_dialog.present()
-
-        # Start conversion in a separate thread
-        threading.Thread(
-            target=self.converter.convert_all_files,
-            args=(
-                files,
-                settings,
-                self.on_conversion_progress,
-                self.on_conversion_finished,
-            ),
-            daemon=True,
-        ).start()
+        if self.conversion_session is None:
+            self.conversion_session = ConversionSession(self)
+        self.conversion_session.start(self.file_queue.get_files(), settings)
 
     def _on_conversion_cancel(self, dialog, response):
         """Handle cancel button in the conversion dialog."""
@@ -1432,7 +1384,7 @@ class MainWindow(
     def on_conversion_progress(self, file_index, file_path, progress):
         """Update conversion progress."""
         # Update queue item progress
-        GLib.idle_add(self.file_queue.update_progress, file_index, progress)
+        self._sources.idle(self.file_queue.update_progress, file_index, progress)
 
         # Update progress dialog
         total_files = len(self.file_queue.get_files())
@@ -1463,7 +1415,7 @@ class MainWindow(
                 logger.error(f"Error updating progress UI: {e}")
             return False  # Run once, don't repeat
 
-        GLib.idle_add(update_progress_ui)
+        self._sources.idle(update_progress_ui)
 
     def on_conversion_finished(self, success, error_message=None, converted_files=None):
         """Handle conversion completion."""
@@ -1477,13 +1429,13 @@ class MainWindow(
                 self._remove_converted_files(converted_files)
 
             # Show improved success dialog
-            GLib.idle_add(
+            self._sources.idle(
                 self._show_conversion_success_dialog,
                 len(converted_files) if converted_files else 0,
                 converted_files,
             )
         else:
-            GLib.idle_add(
+            self._sources.idle(
                 self._show_error_dialog,
                 _("Conversion Error"),
                 error_message or _("An error occurred during conversion."),
@@ -1512,7 +1464,7 @@ class MainWindow(
 
         # Remove each file
         for idx in to_remove:
-            GLib.idle_add(self.file_queue.remove_file, idx)
+            self._sources.idle(self.file_queue.remove_file, idx)
 
     def _show_conversion_success_dialog(self, file_count, converted_files=None):
         """Show an improved success dialog after conversion."""
@@ -1593,21 +1545,11 @@ class MainWindow(
         dialog.add_response("ok", _("OK"))
         dialog.present()
 
-    def on_close_request(self, window):
-        """Handle window close event."""
-        # Save current window state before closing
-        if not self.is_maximized() and hasattr(self.app, "config") and self.app.config:
-            # Save the size if not maximized
-            self._save_window_size()
-
-        # Flush pending config changes to disk
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.flush()
-
-        # Stop any playing audio
-        self.player.stop()
-        # Clean up resources
-        self.converter.cleanup()
+    def on_close_request(self, *args):
+        """Keep the main loop alive until cancellation has been acknowledged."""
+        if self.conversion_session is not None and self.conversion_session.request_close():
+            return True
+        self.shutdown()
         return False
 
     def _on_sidebar_width_changed(self, paned, param):
@@ -1640,13 +1582,13 @@ class MainWindow(
         # Cancel any existing save timeout
         if self._sidebar_save_timeout_id:
             try:
-                GLib.source_remove(self._sidebar_save_timeout_id)
+                self._sources.remove(self._sidebar_save_timeout_id)
             except Exception:
                 pass  # Source was already removed
             self._sidebar_save_timeout_id = None
 
         # Set new timeout to save after resize is completed (500ms of inactivity)
-        self._sidebar_save_timeout_id = GLib.timeout_add(
+        self._sidebar_save_timeout_id = self._sources.timeout(
             500, self._save_sidebar_width, width
         )
 
@@ -1669,11 +1611,11 @@ class MainWindow(
             # Debounce to avoid saving while resizing
             if hasattr(self, "_size_save_timeout_id") and self._size_save_timeout_id:
                 try:
-                    GLib.source_remove(self._size_save_timeout_id)
+                    self._sources.remove(self._size_save_timeout_id)
                 except Exception:
                     pass  # Source was already removed
 
-            self._size_save_timeout_id = GLib.timeout_add(500, self._save_window_size)
+            self._size_save_timeout_id = self._sources.timeout(500, self._save_window_size)
 
     def _on_window_state_changed(self, window, param):
         """Handle window state changes (maximized)."""
@@ -1687,7 +1629,7 @@ class MainWindow(
         # When window is unmaximized, make a single adjustment to fix the layout
         if not is_maximized:
             # Single adjustment with a small delay to allow window to settle
-            GLib.timeout_add(200, self._fix_layout_after_unmaximize)
+            self._sources.timeout(200, self._fix_layout_after_unmaximize)
 
     def _save_window_size(self):
         """Save the current window size to config."""
@@ -1714,7 +1656,7 @@ class MainWindow(
     def on_window_mapped(self, widget):
         """Called when the window is mapped. Restore geometry."""
         # Use a short delay to ensure all allocations are done
-        GLib.idle_add(self._restore_geometry)
+        self._sources.idle(self._restore_geometry)
         return False
 
     def _restore_geometry(self):
@@ -1738,7 +1680,7 @@ class MainWindow(
 
         # If cut is off, collapse the waveform area
         if hasattr(self, "cut_row") and self.cut_row.get_selected() == 0:
-            GLib.idle_add(self._update_paned_for_cut_mode, False)
+            self._sources.idle(self._update_paned_for_cut_mode, False)
 
         # Visualizer height is managed by GTK Box layout, no need to set content_height here
 
@@ -1954,3 +1896,24 @@ class MainWindow(
             logger.info(f"Waveform is not empty, skipping generation for {file_path}")
 
         return False  # For GLib.idle_add
+
+    def shutdown(self):
+        if self._disposed:
+            return
+        self._disposed = True
+        if not self.is_maximized():
+            self._save_window_size()
+        if self.conversion_session is not None:
+            self.conversion_session.close()
+        jobs = getattr(self.visualizer, "_waveform_jobs", None)
+        if jobs is not None:
+            jobs.close()
+        self.converter.cleanup()
+        self.player.cleanup()
+        close_queue = getattr(self.file_queue, "cleanup", None)
+        if close_queue is not None:
+            close_queue()
+        if self.tooltip_helper:
+            self.tooltip_helper.cleanup()
+        self._sources.close()
+        self.app.config.close()

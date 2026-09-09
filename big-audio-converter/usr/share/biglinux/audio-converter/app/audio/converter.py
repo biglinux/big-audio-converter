@@ -61,13 +61,14 @@ class AudioConverter:
                 return candidate
         return None
 
-    def convert_all_files(self, files, settings, progress_callback, finish_callback):
+    def convert_all_files(self, files, settings, progress_callback, finish_callback, *, reset=True):
         """Process a stable request snapshot and report every input's final state."""
         import copy
         files = list(files)
         self.last_batch = BatchResult()
         try:
-            self.reset_cancellation()
+            if reset:
+                self.reset_cancellation()
             snapshot = copy.deepcopy(settings)
             for index, identifier in enumerate(files):
                 if self.cancel_flag:
