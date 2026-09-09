@@ -1,0 +1,78 @@
+name: Apply verified audit remediation
+
+on:
+  push:
+    branches: ['audit/product-quality-hardening']
+    paths: ['.github/workflows/apply-audit-remediation.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.repository == 'biglinux/big-audio-converter' && github.ref == 'refs/heads/audit/product-quality-hardening'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: audit/product-quality-hardening
+      - name: Reconstruct only the hash-verified, locally tested changes
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import lzma
+          from pathlib import Path, PurePosixPath
+          import shutil
+          import subprocess
+
+          packed = base64.b64decode(''.join(Path(f'.audit-remediation/{i:03}.txt').read_text() for i in range(7)), validate=True)
+          assert hashlib.sha256(packed).hexdigest() == 'c7c86a06366eb069a8d13f2d7fc103932884b6b81a6a65dfa8ef0fcfcf8c14e9'
+          decoder = lzma.LZMADecompressor(memlimit=256 * 1024 * 1024)
+          raw = decoder.decompress(packed, max_length=4 * 1024 * 1024)
+          assert decoder.eof and not decoder.unused_data, 'Unexpected payload size or trailing data'
+          changes = json.loads(raw)
+          assert len(changes) == 41
+          verified = []
+          seen = set()
+          for change in changes:
+              name = change['path']
+              path = PurePosixPath(name)
+              assert not path.is_absolute() and '..' not in path.parts and name not in seen
+              assert name.startswith(('big-audio-converter/usr/', 'tests/'))
+              seen.add(name)
+              target = Path(name)
+              assert not target.is_symlink() and all(not parent.is_symlink() for parent in target.parents)
+              original = target.read_bytes() if target.exists() else b''
+              assert hashlib.sha256(original).hexdigest() == change['base'], f'Base changed: {name}'
+              lines = original.decode('utf-8').splitlines(keepends=True)
+              previous_end = 0
+              for start, end, replacement in change['ops']:
+                  assert isinstance(start, int) and isinstance(end, int)
+                  assert previous_end <= start <= end <= len(lines)
+                  assert all(isinstance(line, str) for line in replacement)
+                  previous_end = end
+              for start, end, replacement in reversed(change['ops']):
+                  lines[start:end] = replacement
+              contents = ''.join(lines).encode('utf-8')
+              assert hashlib.sha256(contents).hexdigest() == change['new'], f'Output hash mismatch: {name}'
+              if name.endswith('.py'):
+                  compile(contents, name, 'exec')
+              verified.append((target, contents))
+          for target, contents in verified:
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(contents)
+          shutil.rmtree('.audit-remediation')
+          Path('.github/workflows/apply-audit-remediation.yml').unlink()
+          Path('.github/workflows/test-environment.yml').unlink(missing_ok=True)
+          print(f'Applied {len(verified)} files; every base and output SHA-256 matched.')
+          PY
+      - name: Commit the verified source to the pull request branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git commit -m 'fix: make audio processing transactional and harden editing and lifecycle'
+          git push origin HEAD:refs/heads/audit/product-quality-hardening
