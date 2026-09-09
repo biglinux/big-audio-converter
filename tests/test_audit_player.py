@@ -32,9 +32,9 @@ def test_native_play_pause_seek_and_cleanup(player, tone):
     instance.connect("position-updated", position)
     assert instance.load(str(tone))
     assert instance.play()
-    pump(lambda: instance._loaded and instance.get_position() > 0.1)
+    pump(lambda: instance._loaded and instance._position > 0.1)
     assert instance.seek(1.5)
-    pump(lambda: instance.get_position() >= 1.5)
+    pump(lambda: instance._position >= 1.5)
     assert instance.pause()
     assert instance.position_timer_id is None
     assert not instance.is_playing()
@@ -87,7 +87,7 @@ def test_preview_controls_preserve_linear_gain_and_low_speed(player, tone):
     assert instance.mpv_instance.speed == pytest.approx(0.1)
     assert instance.load(str(tone))
     instance.play()
-    pump(lambda: instance.get_position() > 0.025)
+    pump(lambda: instance._position > 0.025)
     assert not errors
 
 

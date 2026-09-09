@@ -144,7 +144,7 @@ class WaveformJobs:
                             self._cache[key] = result
                             self._cache_bytes += result[0].nbytes
                             while len(self._cache) > 8 or self._cache_bytes > 8 * 1024 * 1024:
-                                _, removed = self._cache.popitem(last=False)
+                                removed_key, removed = self._cache.popitem(last=False)
                                 self._cache_bytes -= removed[0].nbytes
                 else:
                     info = probe_media(source.path, task.ffmpeg, runner)
