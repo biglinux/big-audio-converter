@@ -1,10 +1,12 @@
-"""Wire owned conversion sessions into the real desktop application."""
+"""Apply accessible editing and native adaptive presentation."""
 
 from pathlib import Path
 import subprocess
-import gui_ownership
+import ui_access
+import presentation
 
-subprocess.run(["git", "merge-base", "--is-ancestor", "a02fb57a4eb879cc0b8d50c2ed9d97d43bf29035", "HEAD"], check=True)
+subprocess.run(["git", "merge-base", "--is-ancestor", "9def7affa4806eaca0ddeb29edeed67032006ef1", "HEAD"], check=True)
 Path("scripts").mkdir(exist_ok=True)
-gui_ownership.apply()
-print("Applied UI ownership changes; native and graphical tests follow.")
+ui_access.apply()
+presentation.apply()
+print("Applied accessible editing and presentation changes; runtime tests follow.")
