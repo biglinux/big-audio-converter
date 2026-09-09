@@ -8,12 +8,12 @@ on:
         description: 'With TMATE'
         required: false
         default: false
-
   push:
-    branches: [ "*" ]
+    branches: [main]
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,20 +21,13 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install \
-          git \
-          gettext \
-          npm
-          # Install attranslator
+          sudo apt-get install git gettext npm
           sudo npm install --location=global attranslate
-
-      ## Tmate ##
       - name: Setup TMATE Session
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-
       - name: Translate Package
-        shell: bash #-O extglob {0}
+        shell: bash
         env:
           AZURE_KEY: ${{ secrets.AZURE_KEY }}
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
@@ -45,28 +38,17 @@ jobs:
           sudo cp -f big-auto-translator/openai-translate.js /usr/local/lib/node_modules/attranslate/dist/services/openai-translate.js
           gitfolder=$(echo ${{ github.repository }} | rev | cut -d "/" -f1 | rev)
           bash gettext_po_generator_github.sh $gitfolder
-
-      # - name: DeepL Translate Github Action
-      #   uses: lyqht/deepl-translate-github-action@v2.1.0
-      #   with:
-      #     target_languages: fr,ja,pt-BR
-      #     input_file_path: locale/en.json
-      #     output_file_name_pattern: deepl/{language}.json
-      #     deepl_api_key: ${{ secrets.DEEPL_API_KEY }}
-
       - name: Update github
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add --all
-          if [ -n "$(git commit -m "translate $(date +%y-%m-%d_%H:%M)" -a | grep "nothing to commit")" ];then exit 0; fi
-
+          if [ -n "$(git commit -m "translate $(date +%y-%m-%d_%H:%M)" -a | grep "nothing to commit")" ]; then exit 0; fi
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
-
       - name: Send Hooks BigLinux Build Package
         shell: bash
         run: |

@@ -1,0 +1,50 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'audit/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Preserve the exact source used for validation
+        run: |
+          mkdir -p evidence
+          git rev-parse HEAD > evidence/commit.txt
+          git archive --format=tar.gz --output=evidence/source.tar.gz HEAD
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-${{ github.sha }}
+          path: evidence/
+          retention-days: 7
+      - name: Install native test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg python3-pytest python3-gi python3-gi-cairo python3-cairo python3-numpy python3-mpv gir1.2-gtk-4.0 gir1.2-adw-1 xvfb xauth dbus-x11 gettext desktop-file-utils
+      - name: Record native versions
+        run: |
+          /usr/bin/python3 --version | tee evidence/python.txt
+          ffmpeg -version > evidence/ffmpeg.txt
+          dpkg-query -W > evidence/packages.txt
+      - name: Run the existing test suite with native GLib
+        run: xvfb-run -a /usr/bin/python3 -m pytest -q --junitxml=evidence/tests.xml
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: validation-${{ github.sha }}
+          path: evidence/
+          retention-days: 14
