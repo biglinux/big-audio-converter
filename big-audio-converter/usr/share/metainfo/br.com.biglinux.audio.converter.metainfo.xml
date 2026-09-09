@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>br.com.biglinux.audio.converter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <!-- The existing MIT package declaration and GPL About dialog conflict.
+       Do not assert a project license until the maintainers resolve BAC-029. -->
+  <name>Big Audio Converter</name>
+  <summary>Convert audio and export selected segments</summary>
+  <developer id="br.com.biglinux">
+    <name>BigLinux Team</name>
+  </developer>
+  <description>
+    <p>Convert local audio to MP3, FLAC, Vorbis, WAV, AAC or Opus, or extract a selected audio track from video. Preview effects and edit segments using a waveform or numeric keyboard controls.</p>
+    <p>Fast Copy avoids audio re-encoding, with cut precision limited by the codec and container. Optional speech noise reduction requires the GTCRN plugin. Tags and cover art are preserved where the destination supports them.</p>
+  </description>
+  <launchable type="desktop-id">br.com.biglinux.audio.converter.desktop</launchable>
+  <url type="homepage">https://github.com/biglinux/big-audio-converter</url>
+  <url type="bugtracker">https://github.com/biglinux/big-audio-converter/issues</url>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+</component>

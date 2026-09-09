@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 """
 Inline equalizer panel with vertical sliders for audio frequency adjustment.
 Designed to slide in/out using Gtk.Revealer at the bottom of the playlist area.
@@ -52,7 +54,7 @@ def _ensure_css():
     if _css_loaded:
         return
     provider = Gtk.CssProvider()
-    provider.load_from_data(_CSS.encode())
+    provider.load_from_string(_CSS)
     Gtk.StyleContext.add_provider_for_display(
         Gdk.Display.get_default(),
         provider,
@@ -64,7 +66,7 @@ def _ensure_css():
 class EqualizerPanel(Gtk.Box):
     """Inline equalizer panel with vertical sliders and preset selector."""
 
-    BANDS = [
+    BANDS: ClassVar = [
         ("31", 31),
         ("63", 63),
         ("125", 125),
@@ -77,12 +79,12 @@ class EqualizerPanel(Gtk.Box):
         ("16k", 16000),
     ]
 
-    PRESET_KEYS = [
+    PRESET_KEYS: ClassVar = [
         "default_voice", "flat", "voice_boost", "podcast", "warm",
         "bright", "de_esser", "bass_cut", "presence", "custom",
     ]
 
-    PRESETS = {
+    PRESETS: ClassVar = {
         "default_voice": {
             "name": _("Default Voice"),
             "bands": [0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 2.0, 3.0, 1.0, 0.0],
@@ -269,3 +271,6 @@ class EqualizerPanel(Gtk.Box):
                 eq_bands.append((freq, gain))
         if hasattr(self.player, "set_equalizer_bands"):
             self.player.set_equalizer_bands(eq_bands)
+        window = self.get_root()
+        if window is not None and hasattr(window, "_update_gain_notice"):
+            window._update_gain_notice()

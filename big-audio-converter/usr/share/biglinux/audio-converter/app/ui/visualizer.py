@@ -6,19 +6,18 @@ Audio visualization component for displaying waveforms.
 
 import gettext
 import logging
-import math
-import time
 from threading import Lock
 
 import cairo
 import gi
 import numpy as np
 
+from app.ui.cairo_text import show_text, text_extents
 from app.ui.marker_manager import MarkerManagerMixin, MarkerMode
 from app.utils.time_formatter import format_time_ruler, format_time_short
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, Gtk
 
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
@@ -159,16 +158,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             # Important: Do NOT clear markers here, as it interferes with the
             # marker restoration process. Markers will be handled by MainWindow.
 
-            # Clear old waveform data explicitly to release memory
-            if self.waveform_data is not None:
-                if isinstance(self.waveform_data, dict):
-                    # Clear multi-level format
-                    if "levels" in self.waveform_data:
-                        for level in self.waveform_data["levels"]:
-                            del level
-                    self.waveform_data.clear()
-                del self.waveform_data
-                self.waveform_data = None
+            # Cached payloads are immutable and may be shared by another view.
+            self.waveform_data = None
+
+            self.waveform_data = None
 
             # Clear cached surfaces explicitly to release memory
             if self.cached_waveform_surface is not None:
@@ -282,15 +275,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.is_loading = False
 
         with self.waveform_data_lock:
-            # Explicitly delete waveform data to release memory
-            if self.waveform_data is not None:
-                if isinstance(self.waveform_data, dict):
-                    # Clear multi-level format
-                    if "levels" in self.waveform_data:
-                        for level in self.waveform_data["levels"]:
-                            del level
-                    self.waveform_data.clear()
-                del self.waveform_data
+            # Cached payloads are immutable and may be shared by another view.
+            self.waveform_data = None
 
             self.waveform_data = None
             self.position = 0
@@ -356,28 +342,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         position = start_time + (x / width) * visible_duration
         position = round(position, 3)
         logger.info(
-            f"🔍 CLICK: x={x:.1f}, width={width}, duration={self.duration:.6f}, visible_dur={visible_duration:.6f}, start={start_time:.6f}, position={position:.6f}"
+            f"CLICK: x={x:.1f}, width={width}, duration={self.duration:.6f}, visible_dur={visible_duration:.6f}, start={start_time:.6f}, position={position:.6f}"
         )
-
-        # HIGHEST PRIORITY: Always check confirm/cancel buttons first when in dialog modes
-        if self.marker_mode == MarkerMode.CONFIRM:
-            if self._check_confirm_buttons(x, y):
-                return
-
-        elif (
-            self.marker_mode == MarkerMode.DELETE_PROMPT
-            or self.marker_mode == MarkerMode.DELETE_ALL_CONFIRM
-        ):
-            if self._check_delete_buttons(x, y):
-                return
-
-            if self.marker_mode == MarkerMode.DELETE_PROMPT:
-                self._cancel_delete_prompt()
-                return
-            elif self.marker_mode == MarkerMode.DELETE_ALL_CONFIRM:
-                self.marker_mode = MarkerMode.DELETE_PROMPT
-                self.queue_draw()
-                return
 
         # Marker/segment interactions (only when markers are enabled)
         if self.markers_enabled:
@@ -398,7 +364,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
             # Check segment body for drag
             segment_body_index = self._find_segment_body_at_position(x, y)
-            if segment_body_index is not None:
+            if segment_body_index >= 0:
                 self.potential_drag_segment = {
                     "index": segment_body_index,
                     "start_x": x,
@@ -465,7 +431,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # If we have a potential segment drag, start tracking for REAL drag
         # We don't want to immediately enter drag mode - that happens in update
-        pass
 
     def _drag_update_single_marker(self, pair, current_x, width, marker_type):
         """Update a single start/stop marker position during drag."""
@@ -582,30 +547,27 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             return
 
         # Check if we need to activate a potential segment drag
-        if not self.is_dragging_marker and self.potential_drag_segment is not None:
-            # Only start dragging if movement exceeds threshold
-            if abs(offset_x) > self.drag_threshold:
-                # Activate the drag
-                self.is_dragging_marker = True
-                self.dragging_pair_index = self.potential_drag_segment["index"]
-                self.dragging_marker_type = "segment"
-                ok, start_x, _ = gesture.get_start_point()
-                if ok:
-                    self.drag_start_x = start_x
-                    # Record the starting segment position for more accurate movement
-                    pair = self.marker_pairs[self.dragging_pair_index]
-                    self.drag_start_pos = {"start": pair["start"], "stop": pair["stop"]}
+        if (not self.is_dragging_marker and self.potential_drag_segment is not None) and (abs(offset_x) > self.drag_threshold):
+            self.is_dragging_marker = True
+            self.dragging_pair_index = self.potential_drag_segment["index"]
+            self.dragging_marker_type = "segment"
+            ok, start_x, _ = gesture.get_start_point()
+            if ok:
+                self.drag_start_x = start_x
+                # Record the starting segment position for more accurate movement
+                pair = self.marker_pairs[self.dragging_pair_index]
+                self.drag_start_pos = {"start": pair["start"], "stop": pair["stop"]}
 
-                # Notify that marker dragging started (whole segment drag)
-                if self.marker_drag_callback:
-                    self.marker_drag_callback(True)
+            # Notify that marker dragging started (whole segment drag)
+            if self.marker_drag_callback:
+                self.marker_drag_callback(True)
 
         # Continue with normal drag handling if active
         if not self.is_dragging_marker or self.dragging_pair_index < 0:
             return
 
         # Get the start point properly - this returns (success, x, y)
-        ok, start_x, start_y = gesture.get_start_point()
+        ok, start_x, _start_y = gesture.get_start_point()
         if not ok:
             return
 
@@ -653,7 +615,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if event:
             result = event.get_position()
             if result and len(result) == 3:
-                success, mouse_x, mouse_y = result
+                success, mouse_x, _mouse_y = result
                 if success:
                     self.hover_x = mouse_x
 
@@ -739,10 +701,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 return True
 
         # Delete/Backspace key - delete hovered segment
-        if self.markers_enabled and self.hovered_segment_index >= 0:
-            if keyval == Gdk.KEY_Delete or keyval == Gdk.KEY_BackSpace:
-                self._prompt_delete_segment(self.hovered_segment_index)
-                return True
+        if (self.markers_enabled and self.hovered_segment_index >= 0) and (keyval == Gdk.KEY_Delete or keyval == Gdk.KEY_BackSpace):
+            self._prompt_delete_segment(self.hovered_segment_index)
+            return True
 
         return False
 
@@ -937,21 +898,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.set_cursor(None)
             return
 
-        # If in delete prompt or confirm mode, only check for button hover
-        if self.marker_mode in [MarkerMode.DELETE_PROMPT, MarkerMode.CONFIRM]:
-            if (
-                self.marker_mode == MarkerMode.DELETE_PROMPT
-                and self._check_delete_buttons(x, y, just_check=True)
-            ) or (
-                self.marker_mode == MarkerMode.CONFIRM
-                and self._check_confirm_buttons(x, y, just_check=True)
-            ):
-                self.set_cursor(Gdk.Cursor.new_from_name("pointer"))
-                return
-            else:
-                self.set_cursor(None)
-                return
-
         # Marker interactions work across full waveform height (no more manipulation zones)
         if not self.is_dragging_marker:
             # Check delete button hover
@@ -970,7 +916,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
             # Check segment body for move cursor
             segment_body_index = self._find_segment_body_at_position(x, y)
-            if segment_body_index is not None:
+            if segment_body_index >= 0:
                 self.set_cursor(Gdk.Cursor.new_from_name("move"))
                 return
 
@@ -1056,11 +1002,11 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 # Time label for major marks
                 if is_major:
                     label = format_time_ruler(t, time_per_mark)
-                    ext = cr.text_extents(label)
+                    ext = text_extents(cr, label)
                     lx = max(2, min(width - ext.width - 2, x - ext.width / 2))
                     cr.set_source_rgba(0.55, 0.55, 0.60, 0.65)
                     cr.move_to(lx, tick_base_y - tick_h - 3)
-                    cr.show_text(label)
+                    show_text(cr, label)
             t += time_per_mark
 
     def _draw_rounded_rect(self, cr, x, y, width, height, radius):
@@ -1205,54 +1151,27 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
 
     def _draw_loading_indicator(self, cr, width, height):
-        """Draw a loading indicator with spinner and message."""
-        # Draw semi-transparent overlay
-        cr.set_source_rgba(0.05, 0.05, 0.05, 0.95)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
+        """A static status avoids redraw polling and respects reduced motion."""
+        cr.set_font_size(14)
+        cr.set_source_rgb(.9, .9, .9)
+        extents = text_extents(cr, self.loading_message)
+        cr.move_to(max(12, (width - extents.width) / 2), height / 2)
+        show_text(cr, self.loading_message)
 
-        # Calculate center position
-        center_x = width / 2
-        center_y = height / 2
-
-        # Draw animated spinner
-        spinner_radius = 30
-        num_dots = 8
-        current_time = time.time()
-        rotation = (current_time * 2) % (2 * math.pi)  # Rotate at 2 rad/s
-
-        for i in range(num_dots):
-            angle = rotation + (i * 2 * math.pi / num_dots)
-            x = center_x + spinner_radius * math.cos(angle)
-            y = center_y + spinner_radius * math.sin(angle)
-
-            # Fade dots based on position
-            alpha = 0.3 + 0.7 * (i / num_dots)
-            dot_radius = 4
-
-            cr.set_source_rgba(0.2, 0.7, 1.0, alpha)  # Blue dots with varying opacity
-            cr.arc(x, y, dot_radius, 0, 2 * math.pi)
-            cr.fill()
-
-        # Draw loading message
-        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-        cr.set_font_size(16)
-        text_extents = cr.text_extents(self.loading_message)
-
-        # Draw text shadow for depth
-        cr.set_source_rgba(0, 0, 0, 0.5)
-        cr.move_to(
-            center_x - text_extents.width / 2 + 1, center_y + spinner_radius + 35 + 1
-        )
-        cr.show_text(self.loading_message)
-
-        # Draw actual text
-        cr.set_source_rgba(0.8, 0.8, 0.8, 1.0)
-        cr.move_to(center_x - text_extents.width / 2, center_y + spinner_radius + 35)
-        cr.show_text(self.loading_message)
-
-        # Queue another redraw to animate the spinner
-        GLib.timeout_add(50, self.queue_draw)  # Update at ~20 FPS
+    def cleanup(self):
+        self._close_marker_dialog()
+        self.is_loading = False
+        self.player = None
+        for name in ("seek_position_callback", "hover_time_callback", "marker_updated_callback",
+                     "marker_drag_callback", "zoom_changed_callback"):
+            setattr(self, name, None)
+        with self.waveform_data_lock:
+            self.waveform_data = None
+            self.cached_peaks = None
+            if self.cached_waveform_surface is not None:
+                self.cached_waveform_surface.finish()
+                self.cached_waveform_surface = None
+        self.set_draw_func(lambda *args: None)
 
     def _select_waveform_level(self):
         """Select the appropriate waveform LOD level for current zoom.
@@ -1291,7 +1210,11 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 break
             pixel_samples = visible_waveform[s_start:s_end]
             if len(pixel_samples) > 0:
-                peaks.append((bar_idx, bar_width, float(np.min(pixel_samples)), float(np.max(pixel_samples))))
+                if isinstance(self.waveform_data, dict) and self.waveform_data.get("envelope"):
+                    peak = float(np.max(pixel_samples))
+                    peaks.append((bar_idx, bar_width, -peak, peak))
+                else:
+                    peaks.append((bar_idx, bar_width, float(np.min(pixel_samples)), float(np.max(pixel_samples))))
             else:
                 peaks.append((bar_idx, bar_width, 0.0, 0.0))
 
@@ -1342,24 +1265,27 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(16)
 
-        if self.duration > 0:
+        if getattr(self, "waveform_error", None):
+            text = _("Waveform could not be generated")
+            subtitle = _("Numeric segment editing is still available.")
+        elif self.duration > 0:
             text = _("Waveform visualization disabled")
             subtitle = _("Enable in settings to see waveform")
         else:
             text = _("No audio loaded")
             subtitle = None
 
-        extents = cr.text_extents(text)
+        extents = text_extents(cr, text)
         text_y = (height + extents.height) / 2 if subtitle is None else (height - extents.height) / 2 - 5
         cr.move_to((width - extents.width) / 2, text_y)
-        cr.show_text(text)
+        show_text(cr, text)
 
         if subtitle:
             cr.set_font_size(12)
             cr.set_source_rgb(0.5, 0.5, 0.5)
-            sub_ext = cr.text_extents(subtitle)
+            sub_ext = text_extents(cr, subtitle)
             cr.move_to((width - sub_ext.width) / 2, (height + sub_ext.height) / 2 + 10)
-            cr.show_text(subtitle)
+            show_text(cr, subtitle)
 
         # Position marker even without waveform
         if self.duration > 0 and self.position > 0:
@@ -1450,6 +1376,12 @@ class SeekBar(Gtk.DrawingArea):
             [_("Audio position seekbar")],
         )
 
+        self.set_focusable(True)
+        self.set_accessible_role(Gtk.AccessibleRole.SLIDER)
+        keys = Gtk.EventControllerKey()
+        keys.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(keys)
+        self.connect("notify::has-focus", lambda *args: self.queue_draw())
         self.duration = 0.0
         self._position = 0.0
         self._zoom_level = 1.0
@@ -1484,10 +1416,13 @@ class SeekBar(Gtk.DrawingArea):
 
     def set_duration(self, duration):
         self.duration = max(0.0, duration)
+        self.update_property([Gtk.AccessibleProperty.VALUE_MIN, Gtk.AccessibleProperty.VALUE_MAX], [0.0, self.duration])
         self.queue_draw()
 
     def set_position(self, position):
         self._position = max(0.0, position)
+        self.update_property([Gtk.AccessibleProperty.VALUE_NOW, Gtk.AccessibleProperty.VALUE_TEXT],
+                             [self._position, format_time_short(self._position)])
         self.queue_draw()
 
     def set_zoom_viewport(self, zoom_level, viewport_offset):
@@ -1514,6 +1449,7 @@ class SeekBar(Gtk.DrawingArea):
     def _on_pressed(self, gesture, n_press, x, y):
         if self.duration <= 0:
             return
+        self.grab_focus()
         self._is_dragging = True
         pos = self._x_to_position(x)
         if self._seek_callback:
@@ -1542,6 +1478,23 @@ class SeekBar(Gtk.DrawingArea):
         self._hover_x = -1
         self.queue_draw()
 
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        if self.duration <= 0 or not self._seek_callback:
+            return False
+        step = .1 if state & Gdk.ModifierType.SHIFT_MASK else 5.0
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_Down):
+            target = max(0.0, self._position - step)
+        elif keyval in (Gdk.KEY_Right, Gdk.KEY_Up):
+            target = min(self.duration, self._position + step)
+        elif keyval == Gdk.KEY_Home:
+            target = 0.0
+        elif keyval == Gdk.KEY_End:
+            target = self.duration
+        else:
+            return False
+        self._seek_callback(target, False)
+        return True
+
     # --- Drawing helpers ---
 
     def _draw_rounded_rect(self, cr, x, y, w, h, r):
@@ -1557,6 +1510,14 @@ class SeekBar(Gtk.DrawingArea):
     # --- Drawing ---
 
     def _draw(self, area, cr, width, height):
+        color = self.get_color()
+        fg = (color.red, color.green, color.blue)
+        bg = (.15, .15, .17) if sum(fg) > 1.5 else (.97, .97, .98)
+        if self.has_focus():
+            cr.set_source_rgb(*fg)
+            cr.set_line_width(2)
+            cr.rectangle(1, 1, width - 2, height - 2)
+            cr.stroke()
 
         # Full transparent background (blends with parent)
         cr.set_source_rgba(0, 0, 0, 0)
@@ -1600,15 +1561,15 @@ class SeekBar(Gtk.DrawingArea):
         label_y = track_y - 6
 
         # Elapsed (left)
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.80)
+        cr.set_source_rgba(*fg, 1)
         cr.move_to(pad, label_y)
-        cr.show_text(elapsed_str)
+        show_text(cr, elapsed_str)
 
         # Remaining (right)
-        ext_r = cr.text_extents(remaining_str)
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.55)
+        ext_r = text_extents(cr, remaining_str)
+        cr.set_source_rgba(*fg, 1)
         cr.move_to(width - pad - ext_r.width, label_y)
-        cr.show_text(remaining_str)
+        show_text(cr, remaining_str)
 
         # Waveform hover time (at corresponding position, with opaque bg over labels)
         if self._waveform_hover_time is not None and self.duration > 0:
@@ -1617,12 +1578,12 @@ class SeekBar(Gtk.DrawingArea):
                 0.0, min(1.0, self._waveform_hover_time / self.duration)
             )
             hover_x = pad + hover_progress * track_w
-            ext_h = cr.text_extents(hover_str)
+            ext_h = text_extents(cr, hover_str)
             # Clamp label position within bounds
             lx = max(pad, min(width - pad - ext_h.width, hover_x - ext_h.width / 2))
             # Opaque background so it covers elapsed/remaining labels beneath
             bg_px, bg_py = 3, 2
-            cr.set_source_rgba(0.12, 0.12, 0.14, 0.95)
+            cr.set_source_rgba(*bg, .98)
             cr.rectangle(
                 lx - bg_px,
                 label_y - ext_h.height - bg_py,
@@ -1630,11 +1591,11 @@ class SeekBar(Gtk.DrawingArea):
                 ext_h.height + bg_py * 2,
             )
             cr.fill()
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.85)
+            cr.set_source_rgba(*fg, 0.85)
             cr.move_to(lx, label_y)
-            cr.show_text(hover_str)
+            show_text(cr, hover_str)
             # Small indicator line on track at hover position
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.35)
+            cr.set_source_rgba(*fg, 0.35)
             cr.set_line_width(1)
             cr.move_to(hover_x, track_y - 2)
             cr.line_to(hover_x, track_y + track_h + 2)
@@ -1645,12 +1606,12 @@ class SeekBar(Gtk.DrawingArea):
             vp_frac = 1.0 / self._zoom_level
             vp_x = pad + self._viewport_offset * (1.0 - vp_frac) * track_w
             vp_w = vp_frac * track_w
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.06)
+            cr.set_source_rgba(*fg, 0.06)
             self._draw_rounded_rect(
                 cr, vp_x, track_y - 4, vp_w, track_h + 8, track_r + 2
             )
             cr.fill()
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.12)
+            cr.set_source_rgba(*fg, 0.12)
             cr.set_line_width(1)
             self._draw_rounded_rect(
                 cr, vp_x + 0.5, track_y - 3.5, vp_w - 1, track_h + 7, track_r + 2
@@ -1658,7 +1619,7 @@ class SeekBar(Gtk.DrawingArea):
             cr.stroke()
 
         # --- Track background ---
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.15)
+        cr.set_source_rgba(*fg, 0.15)
         self._draw_rounded_rect(cr, pad, track_y, track_w, track_h, track_r)
         cr.fill()
 
@@ -1680,7 +1641,7 @@ class SeekBar(Gtk.DrawingArea):
         ):
             hover_prog = max(0.0, min(1.0, (self._hover_x - pad) / track_w))
             hx = pad + hover_prog * track_w
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.25)
+            cr.set_source_rgba(*fg, 0.25)
             cr.set_line_width(1)
             cr.move_to(hx, track_y - 3)
             cr.line_to(hx, track_y + track_h + 3)
@@ -1689,19 +1650,19 @@ class SeekBar(Gtk.DrawingArea):
             # Hover time tooltip
             hover_str = format_time_short(self._hover_time)
             cr.set_font_size(9)
-            ext = cr.text_extents(hover_str)
+            ext = text_extents(cr, hover_str)
             tip_x = hx - ext.width / 2
             tip_x = max(pad, min(width - pad - ext.width, tip_x))
             tip_y = track_y - 8
 
-            cr.set_source_rgba(0, 0, 0, 0.7)
+            cr.set_source_rgba(*bg, .98)
             self._draw_rounded_rect(
                 cr, tip_x - 4, tip_y - ext.height - 2, ext.width + 8, ext.height + 4, 3
             )
             cr.fill()
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.9)
+            cr.set_source_rgba(*fg, 0.9)
             cr.move_to(tip_x, tip_y)
-            cr.show_text(hover_str)
+            show_text(cr, hover_str)
 
         # --- Thumb ---
         thumb_x = pad + progress * track_w
@@ -1713,7 +1674,7 @@ class SeekBar(Gtk.DrawingArea):
             cr.arc(thumb_x, thumb_cy, thumb_r + 4, 0, 2 * 3.14159)
             cr.fill()
 
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+        cr.set_source_rgba(*fg, 0.95)
         cr.arc(thumb_x, thumb_cy, thumb_r if show_thumb else 4, 0, 2 * 3.14159)
         cr.fill()
 

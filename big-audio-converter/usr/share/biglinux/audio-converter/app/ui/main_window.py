@@ -12,18 +12,22 @@ gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 import logging
 import os
-import threading
+from copy import deepcopy
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
+from app.audio.waveform import WaveformGenerator
 from app.ui.controls_bar_mixin import ControlsBarMixin
+from app.ui.conversion_controller import ConversionController
 from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
 from app.ui.playback_controller import PlaybackControllerMixin
+from app.ui.segment_editor import SegmentEditor
 from app.ui.settings_mixin import SettingsManagerMixin
 from app.ui.visualizer import AudioVisualizer, SeekBar
+from app.utils.main_loop import MainLoopSources
 from app.utils.tooltip_helper import TooltipHelper
 
 logger = logging.getLogger(__name__)
@@ -99,7 +103,7 @@ class HeaderBar(Gtk.Box):
         app = self.main_window.app
         if hasattr(app, "config") and app.config:
             tips_enabled = (
-                app.config.get("show_mouseover_tips", "true").lower() == "true"
+                str(app.config.get("show_mouseover_tips", "true")).lower() == "true"
             )
         tips_action = Gio.SimpleAction.new_stateful(
             "toggle-tips", None, GLib.Variant.new_boolean(tips_enabled)
@@ -124,7 +128,7 @@ class HeaderBar(Gtk.Box):
 
         # Left section for queue controls
         left_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        left_controls.set_margin_start(20)
+        left_controls.set_margin_start(0)
         left_controls.set_halign(Gtk.Align.START)
         left_controls.append(self.clear_queue_button)
         left_controls.append(self.queue_size_label)
@@ -138,7 +142,7 @@ class HeaderBar(Gtk.Box):
         # Add Files button
         add_files_button = Gtk.Button(label=_("Add Files"))
         add_files_button.connect("clicked", self.main_window.on_add_files)
-        add_files_button.add_css_class("suggested-action")
+        # Keep Convert as the single primary action once files are ready.
         center_box.append(add_files_button)
 
         # Convert button
@@ -168,30 +172,10 @@ class MainWindow(
     Adw.ApplicationWindow,
 ):
     def _window_buttons_on_left(self):
-        """Detect if window buttons (close/min/max) are on the left side."""
-        try:
-            settings = Gio.Settings.new("org.gnome.desktop.wm.preferences")
-            layout = settings.get_string("button-layout")
-            logger.info(f"Detected button-layout: {layout}")
-            if layout and ":" in layout:
-                left, right = layout.split(":", 1)
-                # Check for 'close' on the left side
-                if "close" in left:
-                    return True
-                # Check for 'close' on the right side
-                if "close" in right:
-                    return False
-            elif layout:
-                # If no colon, treat as right side (default GNOME)
-                if "close" in layout:
-                    return False
-            logger.warning(
-                f"Unusual button-layout format: {layout}, defaulting to right"
-            )
-        except Exception as e:
-            logger.warning(f"Could not detect window button layout: {e}")
-        # Default: right side
-        return False
+        """Respect GTK decoration preferences without requiring a GNOME schema."""
+        settings = Gtk.Settings.get_default()
+        layout = settings.get_property("gtk-decoration-layout") if settings else ""
+        return "close" in (layout or "").split(":", 1)[0] if ":" in (layout or "") else False
 
     """Main application window."""
 
@@ -227,7 +211,7 @@ class MainWindow(
                 # Load window maximized state from config
                 saved_maximized = config.get("window_maximized")
                 if saved_maximized:
-                    is_maximized = saved_maximized.lower() == "true"
+                    is_maximized = str(saved_maximized).lower() == "true"
 
         # Initialize with loaded or default size
         super().__init__(
@@ -242,11 +226,18 @@ class MainWindow(
 
         # Set minimum window size to prevent controls from being cut off
         # Left sidebar (300px) + right content (620px) = 920px minimum width
-        self.set_size_request(920, 600)
+        self.set_size_request(360, 480)
         # For debouncing window size save
         self._size_save_timeout_id = None
 
         self.app = kwargs.get("application")
+        self._closed = False
+        self._dialog_cancellable = Gio.Cancellable()
+        self._probe_errors = []
+        self._probe_error_dialog = None
+        self._sources = MainLoopSources()
+        self._playback_sources = MainLoopSources()
+        self.waveform_generator = WaveformGenerator()
 
         # Initialize tooltip helper
         if hasattr(self.app, "config") and self.app.config:
@@ -293,9 +284,7 @@ class MainWindow(
             saved_width = self.app.config.get("sidebar_width")
             if saved_width:
                 try:
-                    self.sidebar_width = int(saved_width)
-                    if self.sidebar_width < 150:  # Ensure minimum width
-                        self.sidebar_width = 150
+                    self.sidebar_width = max(150, int(saved_width))
                 except (ValueError, TypeError):
                     pass  # Use default if conversion fails
 
@@ -303,32 +292,24 @@ class MainWindow(
             saved_height = self.app.config.get("visualizer_height")
             if saved_height:
                 try:
-                    self.visualizer_height = int(saved_height)
-                    if self.visualizer_height < 100:  # Ensure minimum height
-                        self.visualizer_height = 100
+                    self.visualizer_height = max(100, int(saved_height))
                 except (ValueError, TypeError):
                     pass  # Use default if conversion fails
 
-        # Ensure sidebar width doesn't violate right pane minimum (620px)
-        # We use default_width (which is at least 920) to calculate safe sidebar width
-        max_sidebar_width = default_width - 620
-        if self.sidebar_width > max_sidebar_width:
-            self.sidebar_width = max_sidebar_width
-
-        # Ensure it's not smaller than sidebar minimum (300)
-        self.sidebar_width = max(self.sidebar_width, 300)
-
-        # Add property to track the last manually set sidebar width
-        self._manual_sidebar_width = self.sidebar_width
+        # Reuse the preferred width as a bound, not as a minimum window width.
+        self.sidebar_width = min(420, max(280, self.sidebar_width))
 
         # Set up GUI first, creating the visualizer
         self.setup_ui()
+        self.conversion = ConversionController(self)
+        self.file_queue.on_probe_error = self._on_probe_error
+        self.file_queue.on_pending_changed = self._on_pending_changed
         self.setup_drop_target()
         self.connect("close-request", self.on_close_request)
 
         # Setup visualizer tooltip after UI is fully created
         if self.tooltip_helper and hasattr(self, "visualizer"):
-            GLib.idle_add(self._setup_visualizer_tooltip)
+            self._sources.idle(self._setup_visualizer_tooltip)
 
         # Connect to map event for visualizer height restoration
         self.connect("map", self.on_window_mapped)
@@ -341,10 +322,11 @@ class MainWindow(
         self.player.connect("duration-changed", self.on_player_duration_changed)
         self.player.connect("state-changed", self.on_player_state_changed)
         self.player.connect("eos", self.on_playback_finished)
+        self.player.connect("error", self._on_player_error)
 
         # Restore maximized state after window is fully initialized
         if self._should_maximize:
-            GLib.timeout_add(100, self.maximize)
+            self._sources.later(100, self.maximize)
 
         # Connect file removal signal
         self.file_queue.connect_file_removed_signal(self._on_file_removed)
@@ -370,11 +352,16 @@ class MainWindow(
         play_pause_action.connect("activate", lambda *_: self._on_pause_play_clicked(None))
         self.add_action(play_pause_action)
 
+        edit = Gio.SimpleAction.new("edit-segments", None)
+        edit.connect("activate", lambda *_: self.on_edit_segments())
+        self.add_action(edit)
+
         # Set accelerators at application level
         app = self.get_application()
         app.set_accels_for_action("win.add-files", ["<Control>o"])
         app.set_accels_for_action("win.convert", ["<Control>Return"])
-        app.set_accels_for_action("win.play-pause", ["space"])
+        app.set_accels_for_action("win.play-pause", ["<Control>space"])
+        app.set_accels_for_action("win.edit-segments", ["<Control>e"])
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -388,109 +375,24 @@ class MainWindow(
         self.vertical_paned.set_resize_start_child(True)
         self.vertical_paned.set_resize_end_child(False)
 
-        # Create a split view that allows resizing with the mouse (for sidebar and content)
-        self.split_view = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        self.split_view.set_position(self.sidebar_width)
-        self.split_view.set_vexpand(True)
-
-        # Prevent panes from shrinking below their minimum size
-        self.split_view.set_shrink_start_child(False)
-        self.split_view.set_shrink_end_child(False)
-
+        self.split_view = Adw.OverlaySplitView(vexpand=True)
+        self.split_view.set_sidebar_position(Gtk.PackType.START)
+        self.split_view.set_min_sidebar_width(280)
+        self.split_view.set_max_sidebar_width(self.sidebar_width)
+        self.split_view.set_sidebar_width_fraction(.34)
+        compact = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 850sp"))
+        compact.add_setter(self.split_view, "collapsed", True)
+        self.add_breakpoint(compact)
         # Add split_view directly to vertical_paned (top part)
         self.vertical_paned.set_start_child(self.split_view)
 
         # Create CSS for sidebar styling
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(
-            b"""
-        .sidebar {
-            background-color: @sidebar_bg_color;
-        }
-        .dark-bottom-panel {
-            background-color: #1a1a1e;
-        }
-        .dark-controls-bar {
-            background-color: #2a2a30;
-            padding: 6px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .dark-controls-bar label {
-            color: rgba(255, 255, 255, 0.75);
-        }
-        .dark-controls-bar button {
-            color: rgba(255, 255, 255, 0.85);
-            background: none;
-            box-shadow: none;
-            border: none;
-        }
-        .dark-controls-bar button:hover {
-            color: #ffffff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .dark-controls-bar button:active,
-        .dark-controls-bar button:checked {
-            color: rgba(255, 255, 255, 0.95);
-            background-color: alpha(@accent_bg_color, 0.5);
-        }
-        .dark-controls-bar scale trough {
-            background-color: rgba(255, 255, 255, 0.12);
-        }
-        .dark-controls-bar scale highlight {
-            background-color: @accent_bg_color;
-        }
-        .dark-controls-bar scale slider {
-            background-color: rgba(255, 255, 255, 0.85);
-        }
-        .dark-controls-bar scale value {
-            color: rgba(255, 255, 255, 0.75);
-        }
-        popover.dark-popover {
-            background: none;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-        }
-        popover.dark-popover > contents {
-            background-color: #2a2a30;
-            color: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        popover.dark-popover > arrow {
-            background-color: #2a2a30;
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        popover.dark-popover label {
-            color: rgba(255, 255, 255, 0.85);
-        }
-        popover.dark-popover scale trough {
-            background-color: rgba(255, 255, 255, 0.25);
-            min-width: 10px;
-            min-height: 10px;
-            border-radius: 5px;
-        }
-        popover.dark-popover scale highlight {
-            background-color: @accent_bg_color;
-            min-width: 10px;
-            min-height: 10px;
-            border-radius: 5px;
-        }
-        popover.dark-popover scale slider {
-            background-color: rgba(255, 255, 255, 0.9);
-            min-width: 20px;
-            min-height: 20px;
-            border-radius: 10px;
-        }
-        popover.dark-popover scale indicator {
-            background-color: rgba(255, 255, 255, 0.3);
-            min-width: 6px;
-            min-height: 1px;
-        }
-        """,
-            -1,
-        )
+        css_provider.load_from_string("""
+        .sidebar { background-color: @sidebar_bg_color; }
+        .playback-controls { padding: 6px 10px; }
+        .playback-panel { background-color: @window_bg_color; color: @window_fg_color; }
+        """)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
             css_provider,
@@ -520,16 +422,15 @@ class MainWindow(
         left_box = Adw.ToolbarView()
         left_box.add_css_class("sidebar")
         # Set minimum width for left sidebar
-        left_box.set_size_request(300, -1)
+        left_box.set_size_request(-1, -1)
 
         # Create header bar for left side
         left_header = Adw.HeaderBar()
         left_header.add_css_class("sidebar")
         left_header.set_show_title(True)
         # Configure left header bar based on window button layout
-        left_header.set_decoration_layout(
-            "close,maximize,minimize:menu" if window_buttons_left else ""
-        )
+        left_header.set_show_start_title_buttons(False)
+        left_header.set_show_end_title_buttons(False)
 
         # Create title box with label and (optionally) app icon
         if not window_buttons_left:
@@ -585,11 +486,11 @@ class MainWindow(
         # RIGHT SIDE - Now contains file queue (previously on left)
         right_box = Adw.ToolbarView()
         # Set minimum width for right content area
-        right_box.set_size_request(620, -1)
+        right_box.set_size_request(320, -1)
 
         # Create header bar for right side using the dedicated class
         # This handles proper layout behavior and resizing
-        self.right_header = HeaderBar(self, window_buttons_left)
+        self.right_header = HeaderBar(self, False)
         right_box.add_top_bar(self.right_header)
 
         # Compatibility aliases for existing code references
@@ -649,11 +550,21 @@ class MainWindow(
         right_box.add_bottom_bar(self.eq_revealer)
 
         # Add the two views to the paned container (swapped order)
-        self.split_view.set_start_child(left_box)
-        self.split_view.set_end_child(right_box)
+        self.split_view.set_sidebar(left_box)
+        self.split_view.set_content(right_box)
 
-        # Connect to position changes to save sidebar width
-        self.split_view.connect("notify::position", self._on_sidebar_width_changed)
+        settings_button = Gtk.ToggleButton(icon_name="emblem-system-symbolic", active=True)
+        settings_button.update_property([Gtk.AccessibleProperty.LABEL], [_("Conversion Settings")])
+        settings_button.set_tooltip_text(_("Show conversion settings"))
+        self.settings_button = settings_button
+        self.split_view.bind_property("show-sidebar", settings_button, "active", GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE)
+        self.right_header.header_bar.pack_start(settings_button)
+        close_sidebar = Gtk.Button(icon_name="go-previous-symbolic")
+        close_sidebar.update_property([Gtk.AccessibleProperty.LABEL], [_("Close conversion settings")])
+        close_sidebar.connect("clicked", lambda *_: self.split_view.set_show_sidebar(False))
+        self.split_view.bind_property("collapsed", close_sidebar, "visible", GObject.BindingFlags.SYNC_CREATE)
+        left_header.pack_start(close_sidebar)
+
 
         # Add visualizer at the bottom spanning full width
         # Create the visualizer instance
@@ -664,13 +575,13 @@ class MainWindow(
 
         # Create container for visualizer and zoom controls
         visualizer_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        visualizer_container.add_css_class("dark-bottom-panel")
+        visualizer_container.add_css_class("playback-panel")
 
         # Create zoom control bar
         zoom_control_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         zoom_control_box.set_margin_start(0)
         zoom_control_box.set_margin_end(0)
-        zoom_control_box.add_css_class("dark-controls-bar")
+        zoom_control_box.add_css_class("playback-controls")
 
         # Add "Only the Selected Area" toggle button — icon-only, like play controls
         self.play_selection_switch = Gtk.ToggleButton()
@@ -813,7 +724,6 @@ class MainWindow(
         self.volume_popover = Gtk.Popover()
         self.volume_popover.set_parent(self.volume_btn)
         self.volume_popover.set_position(Gtk.PositionType.TOP)
-        self.volume_popover.add_css_class("dark-popover")
 
         vol_popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         vol_popover_box.set_margin_start(8)
@@ -843,16 +753,7 @@ class MainWindow(
 
         self.volume_popover.set_child(vol_popover_box)
 
-        self._volume_hover_close_timer = None
-        vol_hover_ctrl = Gtk.EventControllerMotion()
-        vol_hover_ctrl.connect("enter", self._on_volume_btn_hover_enter)
-        vol_hover_ctrl.connect("leave", self._on_volume_btn_hover_leave)
-        vol_box.add_controller(vol_hover_ctrl)
 
-        vol_pop_hover_ctrl = Gtk.EventControllerMotion()
-        vol_pop_hover_ctrl.connect("enter", self._on_volume_popover_hover_enter)
-        vol_pop_hover_ctrl.connect("leave", self._on_volume_popover_hover_leave)
-        self.volume_popover.add_controller(vol_pop_hover_ctrl)
 
         self.volume_btn.connect("clicked", self._on_volume_btn_clicked)
 
@@ -866,7 +767,7 @@ class MainWindow(
         self.speed_value_label.add_css_class("caption")
 
         self.speed_btn = Gtk.Button()
-        self.speed_btn.set_icon_name("speedometer-symbolic")
+        self.speed_btn.set_icon_name("preferences-system-time-symbolic")
         self.speed_btn.add_css_class("flat")
         self.speed_btn.add_css_class("circular")
         self.speed_btn.update_property(
@@ -876,7 +777,6 @@ class MainWindow(
         self.speed_popover = Gtk.Popover()
         self.speed_popover.set_parent(self.speed_btn)
         self.speed_popover.set_position(Gtk.PositionType.TOP)
-        self.speed_popover.add_css_class("dark-popover")
 
         spd_popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         spd_popover_box.set_margin_start(8)
@@ -906,16 +806,7 @@ class MainWindow(
 
         self.speed_popover.set_child(spd_popover_box)
 
-        self._speed_hover_close_timer = None
-        spd_hover_ctrl = Gtk.EventControllerMotion()
-        spd_hover_ctrl.connect("enter", self._on_speed_btn_hover_enter)
-        spd_hover_ctrl.connect("leave", self._on_speed_btn_hover_leave)
-        speed_box.add_controller(spd_hover_ctrl)
 
-        spd_pop_hover_ctrl = Gtk.EventControllerMotion()
-        spd_pop_hover_ctrl.connect("enter", self._on_speed_popover_hover_enter)
-        spd_pop_hover_ctrl.connect("leave", self._on_speed_popover_hover_leave)
-        self.speed_popover.add_controller(spd_pop_hover_ctrl)
 
         self.speed_btn.connect("clicked", self._on_speed_btn_clicked)
 
@@ -943,7 +834,6 @@ class MainWindow(
         self.zoom_popover = Gtk.Popover()
         self.zoom_popover.set_parent(self.zoom_btn)
         self.zoom_popover.set_position(Gtk.PositionType.TOP)
-        self.zoom_popover.add_css_class("dark-popover")
 
         # Vertical slider inside popover
         popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -973,23 +863,9 @@ class MainWindow(
 
         self.zoom_popover.set_child(popover_box)
 
-        # Auto-close popover after a delay when value changes
-        self._zoom_close_timer = None
-        self._zoom_hover_close_timer = None
 
-        # Hover behavior: show on mouse enter, auto-close on mouse leave
-        zoom_hover_ctrl = Gtk.EventControllerMotion()
-        zoom_hover_ctrl.connect("enter", self._on_zoom_btn_hover_enter)
-        zoom_hover_ctrl.connect("leave", self._on_zoom_btn_hover_leave)
-        self.zoom_btn.add_controller(zoom_hover_ctrl)
 
-        # Also track hover on the popover itself to keep it open
-        popover_hover_ctrl = Gtk.EventControllerMotion()
-        popover_hover_ctrl.connect("enter", self._on_zoom_popover_hover_enter)
-        popover_hover_ctrl.connect("leave", self._on_zoom_popover_hover_leave)
-        self.zoom_popover.add_controller(popover_hover_ctrl)
 
-        # Click still works for touchscreen
         self.zoom_btn.connect("clicked", self._on_zoom_btn_clicked)
 
         self.zoom_box.append(self.zoom_btn)
@@ -1049,6 +925,7 @@ class MainWindow(
         self.seekbar.set_margin_bottom(0)
         self.seekbar.set_margin_top(0)
         self.seekbar.connect_seek_handler(self.on_visualizer_seek)
+        self._set_copy_mode_ui(self._format_list[self.format_row.get_selected()] == "copy")
 
         # Connect waveform hover to seekbar display
         self.visualizer.hover_time_callback = self.seekbar.set_waveform_hover_time
@@ -1125,7 +1002,7 @@ class MainWindow(
             if not has_files or (
                 hasattr(self, "cut_row") and self.cut_row.get_selected() == 0
             ):
-                GLib.idle_add(self._update_paned_for_cut_mode, False)
+                self._sources.idle(self._update_paned_for_cut_mode, False)
 
         # Queue size label only shows when there are 2 or more files (matching clear button)
         self.header_queue_size_label.set_visible(has_multiple_files)
@@ -1240,7 +1117,7 @@ class MainWindow(
             self._apply_tooltips()
             # Also setup visualizer tooltip
             if hasattr(self, "visualizer"):
-                GLib.idle_add(self._setup_visualizer_tooltip)
+                self._sources.idle(self._setup_visualizer_tooltip)
         else:
             # When disabling tooltips, hide current
             if self.tooltip_helper:
@@ -1272,14 +1149,12 @@ class MainWindow(
             self.tooltip_helper.hide(immediate=True)
 
     def on_convert(self, button):
-        """Start conversion process."""
-        if not self.file_queue.has_files():
-            self._show_error_dialog(
-                _("No files to convert"), _("Please add at least one file to convert.")
-            )
-            return
+        """Delegate job presentation to the conversion controller."""
+        self.conversion.start()
 
-        # Collect settings
+    def _collect_conversion_settings(self):
+        self._save_current_file_state()
+        # Collect an immutable request before the worker starts.
         # Channels: 0=original, 1=mono, 2=stereo
         channels_sel = (
             self.channels_row.get_selected() if hasattr(self, "channels_row") else 0
@@ -1292,6 +1167,10 @@ class MainWindow(
             "volume": self.volume_spin.get_value() / 100,
             "speed": self.speed_spin.get_value(),
             "channels": channels_map.get(channels_sel),
+            "sample_rate": self._sample_rate_list[self.sample_rate_row.get_selected()],
+            "prevent_clipping": self.clipping_row.get_active(),
+            "allow_precision_reduction": self.precision_row.get_active(),
+            "output_directory": self.output_directory,
             "noise_reduction": self.noise_switch.get_active(),
             "noise_strength": self.noise_strength_scale.get_value(),
             "noise_model": 0 if self.noise_model_row.get_selected() != 1 else 1,
@@ -1346,18 +1225,15 @@ class MainWindow(
             ordered_file_markers = {}
             for file_path, markers in self.file_markers.items():
                 # Sort markers if needed (for files we didn't just process)
-                if file_path != self.active_audio_id:
-                    if order_by_number and markers:
-                        # Sort by segment number if that option is selected
-                        if "segment_index" in markers[0]:
-                            logger.debug(
-                                f"Reordering {len(markers)} segments for {os.path.basename(file_path)}"
-                            )
-                            ordered_markers = sorted(
-                                markers, key=lambda x: x.get("segment_index", 1)
-                            )
-                            ordered_file_markers[file_path] = ordered_markers
-                            continue
+                if ((file_path != self.active_audio_id) and (order_by_number and markers)) and ("segment_index" in markers[0]):
+                    logger.debug(
+                        f"Reordering {len(markers)} segments for {os.path.basename(file_path)}"
+                    )
+                    ordered_markers = sorted(
+                        markers, key=lambda x: x.get("segment_index", 1)
+                    )
+                    ordered_file_markers[file_path] = ordered_markers
+                    continue
 
                 # Default: keep existing order (either original or already sorted)
                 ordered_file_markers[file_path] = markers
@@ -1378,302 +1254,127 @@ class MainWindow(
                         f"Final segments order for conversion: {[(s.get('segment_index', '?'), s['start_str']) for s in current_file_segments]}"
                     )
 
-        # Create a progress dialog
-        files = self.file_queue.get_files()
-        total_files = len(files)
+        if settings["format"] == "copy":
+            for key in ("noise_reduction", "transient_enabled", "hpf_enabled", "gate_enabled", "compressor_enabled", "eq_enabled", "normalize", "prevent_clipping"):
+                settings[key] = False
+            settings.update(volume=1.0, speed=1.0, channels=None, sample_rate="original")
+        return deepcopy(settings)
 
-        # Create a box for the progress bar
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        content_box.set_margin_start(20)
-        content_box.set_margin_end(20)
 
-        # Create progress bar
-        self.progress_bar = Gtk.ProgressBar()
-        self.progress_bar.set_fraction(0.0)
-        content_box.append(self.progress_bar)
 
-        # Create the dialog with our custom content
-        self.progress_dialog = Adw.MessageDialog(
-            transient_for=self,
-            title=_("Converting Files"),
-            body=_("Converting file 1 of {0}").format(total_files),
-        )
 
-        # Set the extra child (content area)
-        self.progress_dialog.set_extra_child(content_box)
 
-        # Add a cancel button
-        self.progress_dialog.add_response("cancel", _("Cancel"))
-        self.progress_dialog.connect("response", self._on_conversion_cancel)
-
-        # Show the dialog
-        self.progress_dialog.present()
-
-        # Start conversion in a separate thread
-        threading.Thread(
-            target=self.converter.convert_all_files,
-            args=(
-                files,
-                settings,
-                self.on_conversion_progress,
-                self.on_conversion_finished,
-            ),
-            daemon=True,
-        ).start()
-
-    def _on_conversion_cancel(self, dialog, response):
-        """Handle cancel button in the conversion dialog."""
-        if response == "cancel":
-            # Cancel the conversion
-            self.converter.cancel_conversion()
-            # Close the dialog
-            self.progress_dialog.close()
-
-    def on_conversion_progress(self, file_index, file_path, progress):
-        """Update conversion progress."""
-        # Update queue item progress
-        GLib.idle_add(self.file_queue.update_progress, file_index, progress)
-
-        # Update progress dialog
-        total_files = len(self.file_queue.get_files())
-        filename = os.path.basename(file_path)
-
-        # Calculate overall progress (current file index + progress within current file)
-        overall_progress = (file_index + progress) / total_files
-
-        # Format percentage for display
-        percent = int(overall_progress * 100)
-
-        def update_progress_ui():
-            try:
-                if hasattr(self, "progress_dialog") and self.progress_dialog:
-                    # Check if dialog still exists and is valid
-                    if hasattr(self.progress_bar, "set_fraction"):
-                        # Ensure progress is between 0 and 1
-                        safe_progress = max(0, min(1, overall_progress))
-                        self.progress_bar.set_fraction(safe_progress)
-
-                        # Update dialog message with percentage
-                        self.progress_dialog.set_body(
-                            _(
-                                "Converting file {0} of {1} ({2}%)\nCurrent file: {3}"
-                            ).format(file_index + 1, total_files, percent, filename)
-                        )
-            except Exception as e:
-                logger.error(f"Error updating progress UI: {e}")
-            return False  # Run once, don't repeat
-
-        GLib.idle_add(update_progress_ui)
-
-    def on_conversion_finished(self, success, error_message=None, converted_files=None):
-        """Handle conversion completion."""
-        # Close the progress dialog
-        if hasattr(self, "progress_dialog"):
-            self.progress_dialog.close()
-
-        if success:
-            # Remove successfully converted files from the queue
-            if converted_files:
-                self._remove_converted_files(converted_files)
-
-            # Show improved success dialog
-            GLib.idle_add(
-                self._show_conversion_success_dialog,
-                len(converted_files) if converted_files else 0,
-                converted_files,
-            )
-        else:
-            GLib.idle_add(
-                self._show_error_dialog,
-                _("Conversion Error"),
-                error_message or _("An error occurred during conversion."),
-            )
-
-    def _remove_converted_files(self, converted_files):
-        """Remove successfully converted files from the queue."""
-        if not converted_files or not hasattr(self.file_queue, "get_files"):
-            return
-
-        # Get all files in the queue
-        queue_files = self.file_queue.get_files()
-
-        # Find file indexes to remove (in reverse order to avoid index shifting)
-        to_remove = []
-        for file_path in converted_files:
-            try:
-                idx = queue_files.index(file_path)
-                to_remove.append(idx)
-            except ValueError:
-                # File not in queue
-                pass
-
-        # Sort in reverse order to remove from end first
-        to_remove.sort(reverse=True)
-
-        # Remove each file
-        for idx in to_remove:
-            GLib.idle_add(self.file_queue.remove_file, idx)
-
-    def _show_conversion_success_dialog(self, file_count, converted_files=None):
-        """Show an improved success dialog after conversion."""
-        # Create content box
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        content_box.set_margin_start(20)
-        content_box.set_margin_end(20)
-        content_box.set_margin_top(20)
-        content_box.set_margin_bottom(20)
-
-        # Success icon
-        icon = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
-        icon.set_pixel_size(48)
-        icon.add_css_class("success")
-        icon.set_halign(Gtk.Align.CENTER)
-        content_box.append(icon)
-
-        # Success message
-        if file_count > 1:
-            message = _("Successfully converted {} files").format(file_count)
-        else:
-            message = _("Successfully converted 1 file")
-
-        message_label = Gtk.Label()
-        message_label.set_markup(f"<span size='large' weight='bold'>{message}</span>")
-        message_label.set_halign(Gtk.Align.CENTER)
-        message_label.set_margin_top(12)
-        content_box.append(message_label)
-
-        # Get output folder path from first converted file
-        output_folder = None
-        if converted_files and len(converted_files) > 0:
-            # Assuming converted files are in the same folder or we use the first one's folder
-            first_file = converted_files[0]
-            output_folder = os.path.dirname(first_file)
-
-        # Create dialog
-        dialog = Adw.AlertDialog()
-        dialog.set_heading(_("Conversion Complete"))
-        dialog.set_extra_child(content_box)
-
-        # Add buttons
-        if output_folder:
-            dialog.add_response("open_folder", _("Open Folder"))
-            dialog.set_response_appearance(
-                "open_folder", Adw.ResponseAppearance.SUGGESTED
-            )
-            dialog.add_response("close", _("Close"))
-            dialog.set_default_response("open_folder")
-        else:
-            dialog.add_response("close", _("Close"))
-            dialog.set_response_appearance("close", Adw.ResponseAppearance.SUGGESTED)
-            dialog.set_default_response("close")
-
-        dialog.set_close_response("close")
-
-        # Connect response handler
-        def on_response(dlg, response):
-            if response == "open_folder" and output_folder:
-                # Open the output folder in file manager
-                try:
-                    Gio.AppInfo.launch_default_for_uri(f"file://{output_folder}", None)
-                except Exception as e:
-                    logger.error(f"Failed to open folder: {e}")
-
-        dialog.connect("response", on_response)
-        dialog.present(self)
 
     def _show_error_dialog(self, title, message):
-        """Show an error dialog."""
-        dialog = Adw.MessageDialog(transient_for=self, title=title, body=message)
+        if self._closed:
+            return
+        dialog = Adw.AlertDialog(heading=title, body=message)
         dialog.add_response("ok", _("OK"))
-        dialog.present()
+        dialog.set_default_response("ok")
+        dialog.set_close_response("ok")
+        dialog.present(self)
 
     def _show_info_dialog(self, title, message):
-        """Show an information dialog."""
-        dialog = Adw.MessageDialog(transient_for=self, title=title, body=message)
+        if self._closed:
+            return
+        dialog = Adw.AlertDialog(heading=title, body=message)
         dialog.add_response("ok", _("OK"))
-        dialog.present()
+        dialog.set_default_response("ok")
+        dialog.set_close_response("ok")
+        dialog.present(self)
 
     def on_close_request(self, window):
-        """Handle window close event."""
-        # Save current window state before closing
-        if not self.is_maximized() and hasattr(self.app, "config") and self.app.config:
-            # Save the size if not maximized
-            self._save_window_size()
-
-        # Flush pending config changes to disk
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.flush()
-
-        # Stop any playing audio
-        self.player.stop()
-        # Clean up resources
-        self.converter.cleanup()
+        self.cleanup()
         return False
 
-    def _on_sidebar_width_changed(self, paned, param):
-        """Handle sidebar width changes and save to config."""
-        width = paned.get_position()
+    def cleanup(self):
+        """The same shutdown path is used by window close, Ctrl+Q, and app quit."""
+        if self._closed:
+            return
+        self._closed = True
+        self._dialog_cancellable.cancel()
+        if not self.is_maximized():
+            self._save_window_size()
+        self._sources.close()
+        self._playback_sources.close()
+        self.conversion.cleanup()
+        self.waveform_generator.cancel()
+        self.converter.cancel_conversion()
+        self.file_queue.cleanup()
+        self.waveform_generator.cleanup()
+        self.converter.cleanup()
+        self.player.cleanup()
+        self.visualizer.cleanup()
+        if self.tooltip_helper:
+            self.tooltip_helper.cleanup()
+        self.app.config.flush()
 
-        # Store this as a manually set width
-        self._manual_sidebar_width = width
+    def on_edit_segments(self, *_args):
+        if not self.active_audio_id:
+            self._show_info_dialog(_("No audio selected"), _("Add a file and select it before editing segments."))
+            return
+        if (self.visualizer.duration or self.player.duration) <= 0:
+            self._show_info_dialog(_("Audio duration unavailable"), _("Enable cutting and wait for the waveform to finish before editing this file."))
+            return
+        editor = SegmentEditor(self)
+        self.segment_editor = editor
+        editor.present(self)
 
-        # Get the total width of the window
-        total_width = self.get_width()
+    def _request_waveform(self, file_path, enabled=None):
+        if self._closed or file_path not in self.file_queue.files:
+            return
+        if enabled is None:
+            enabled = self.cut_row.get_selected() > 0 and self.waveform_row.get_active()
+        self.waveform_generator.request(file_path, self.converter, self.visualizer,
+                                        self.file_markers, track_metadata=self.file_queue.track_metadata,
+                                        enabled=enabled)
 
-        # Calculate the minimum width for right side (400px)
-        right_min_width = 400
+    def _on_pending_changed(self, pending):
+        if not self._closed:
+            self.convert_button.set_sensitive(not pending and not self.converter.busy)
 
-        # Calculate maximum allowed position to ensure right side has enough space
-        max_position = total_width - right_min_width
+    def _on_probe_error(self, path, message):
+        if self._closed:
+            return
+        self._probe_errors.append((os.path.basename(path), message))
+        if len(self._probe_errors) > 100:
+            self._probe_errors.pop(0)
+        self._sources.later(150, self._show_probe_errors, key="probe-errors")
 
-        # If the position exceeds the maximum, adjust it
-        if width > max_position and max_position > 350:
-            # Only adjust if max_position is reasonable (above minimum sidebar width)
-            paned.set_position(max_position)
-            width = max_position
-        # If position is below minimum sidebar width, adjust it
-        elif width < 350:
-            paned.set_position(350)
-            width = 350
 
-        # Proceed with debouncing for saving settings
-        # Cancel any existing save timeout
-        if self._sidebar_save_timeout_id:
-            try:
-                GLib.source_remove(self._sidebar_save_timeout_id)
-            except Exception:
-                pass  # Source was already removed
-            self._sidebar_save_timeout_id = None
+    def _show_probe_errors(self):
+        if self._closed or not self._probe_errors:
+            return
+        body = "\n\n".join(name + "\n" + message for name, message in self._probe_errors[-5:])
+        body += "\n\n" + _("Other valid files remain in the queue. Check these files and add them again.")
+        if self._probe_error_dialog is None:
+            self._probe_error_dialog = Adw.AlertDialog(heading=_("Some files could not be added"), body=body)
+            self._probe_error_dialog.add_response("ok", _("OK"))
+            self._probe_error_dialog.connect("closed", self._probe_errors_closed)
+            self._probe_error_dialog.present(self)
+        else:
+            self._probe_error_dialog.set_body(body)
 
-        # Set new timeout to save after resize is completed (500ms of inactivity)
-        self._sidebar_save_timeout_id = GLib.timeout_add(
-            500, self._save_sidebar_width, width
-        )
 
-    def _save_sidebar_width(self, width):
-        """Save the sidebar width to config after resize is completed."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("sidebar_width", str(width))
-        self._sidebar_save_timeout_id = None
-        return False  # Don't repeat the timeout
+    def _probe_errors_closed(self, _dialog):
+        self._probe_error_dialog = None
+        self._probe_errors.clear()
+
+    def _on_player_error(self, message):
+        if not self._closed:
+            self._show_error_dialog(_("Audio preview"), message)
+
+
 
     def _on_window_size_changed(self, window, param):
         """Handle window size changes."""
         # Only save size if the window is not maximized
         if not self.is_maximized():
-            # Preserve the sidebar width by updating the split_view position
-            if hasattr(self, "split_view") and hasattr(self, "_manual_sidebar_width"):
-                # Set the position to maintain the sidebar width
-                self.split_view.set_position(self._manual_sidebar_width)
-
             # Debounce to avoid saving while resizing
             if hasattr(self, "_size_save_timeout_id") and self._size_save_timeout_id:
-                try:
-                    GLib.source_remove(self._size_save_timeout_id)
-                except Exception:
-                    pass  # Source was already removed
+                self._sources.cancel(self._size_save_timeout_id)
 
-            self._size_save_timeout_id = GLib.timeout_add(500, self._save_window_size)
+            self._size_save_timeout_id = self._sources.later(500, self._save_window_size)
 
     def _on_window_state_changed(self, window, param):
         """Handle window state changes (maximized)."""
@@ -1687,7 +1388,7 @@ class MainWindow(
         # When window is unmaximized, make a single adjustment to fix the layout
         if not is_maximized:
             # Single adjustment with a small delay to allow window to settle
-            GLib.timeout_add(200, self._fix_layout_after_unmaximize)
+            self._sources.later(200, self._fix_layout_after_unmaximize)
 
     def _save_window_size(self):
         """Save the current window size to config."""
@@ -1714,14 +1415,11 @@ class MainWindow(
     def on_window_mapped(self, widget):
         """Called when the window is mapped. Restore geometry."""
         # Use a short delay to ensure all allocations are done
-        GLib.idle_add(self._restore_geometry)
+        self._sources.idle(self._restore_geometry)
         return False
 
     def _restore_geometry(self):
         """Restore sidebar width and visualizer height after window is shown."""
-        # Restore manual sidebar width
-        if hasattr(self, "_manual_sidebar_width") and hasattr(self, "split_view"):
-            self.split_view.set_position(self._manual_sidebar_width)
 
         # Apply saved cut audio state to visualizer now that it exists
         if hasattr(self, "visualizer") and hasattr(self, "cut_row"):
@@ -1738,28 +1436,25 @@ class MainWindow(
 
         # If cut is off, collapse the waveform area
         if hasattr(self, "cut_row") and self.cut_row.get_selected() == 0:
-            GLib.idle_add(self._update_paned_for_cut_mode, False)
+            self._sources.idle(self._update_paned_for_cut_mode, False)
 
         # Visualizer height is managed by GTK Box layout, no need to set content_height here
 
         return False  # Don't repeat
 
     def on_clear_queue(self, button):
-        """Show confirmation dialog before clearing the queue."""
-        dialog = Adw.MessageDialog(
-            transient_for=self,
-            title=_("Clear Queue"),
-            body=_("Are you sure you want to clear the queue?"),
-        )
+        dialog = Adw.AlertDialog(heading=_("Clear Queue"), body=_("Remove the queue entries and their edits? Source files will not be deleted."))
         dialog.add_response("cancel", _("Cancel"))
-        dialog.add_response("clear", _("Clear"))
+        dialog.add_response("clear", _("Clear Queue"))
         dialog.set_response_appearance("clear", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
         dialog.connect("response", self._on_clear_queue_response)
-        dialog.present()
+        dialog.present(self)
 
     def _on_clear_queue_response(self, dialog, response):
         """Handle clear queue dialog response."""
-        if response == "clear":
+        if not self._closed and response == "clear":
             # Stop playback if currently playing
             if self.player and self.player.is_playing():
                 logger.info("Stopping playback before clearing queue")
@@ -1860,77 +1555,21 @@ class MainWindow(
 
         # Open the dialog with multiple file selection
         dialog.open_multiple(
-            parent=self, cancellable=None, callback=self._on_open_files_complete
+            parent=self, cancellable=self._dialog_cancellable, callback=self._on_open_files_complete
         )
 
     def _on_open_files_complete(self, dialog, result):
-        """Handle completion of file open dialog."""
         try:
             files = dialog.open_multiple_finish(result)
-            if files and files.get_n_items() > 0:
-                # Show busy cursor
-                self._set_busy_cursor(True)
-
-                # Collect file paths first
-                file_paths = []
-                for i in range(files.get_n_items()):
-                    file = files.get_item(i)
-                    if isinstance(file, Gio.File):
-                        file_paths.append(file.get_path())
-
-                # Add diagnostic timing information
-                total_files = len(file_paths)
-                logger.info(f"Starting import of {total_files} files")
-
-                # First, try to suspend UI updates in file queue if possible
-                has_suspend_method = hasattr(self.file_queue, "suspend_updates")
-                has_resume_method = hasattr(self.file_queue, "resume_updates")
-
-                if has_suspend_method:
-                    self.file_queue.suspend_updates()
-
-                # Process files with timing
-                import time
-
-                start_time = time.time()
-
-                try:
-                    # Add files to queue
-                    for i, path in enumerate(file_paths):
-                        file_start = time.time()
-                        self.file_queue.add_file(path)
-                        file_time = time.time() - file_start
-
-                        # Log slow file additions (taking more than 100ms)
-                        if file_time > 0.1:
-                            logger.warning(
-                                f"Slow file addition: {path} took {file_time:.2f}s"
-                            )
-
-                        # Log progress periodically
-                        if i > 0 and (i % 10 == 0 or i == total_files - 1):
-                            elapsed = time.time() - start_time
-                            rate = (i + 1) / elapsed if elapsed > 0 else 0
-                            logger.info(
-                                f"Added {i + 1}/{total_files} files, {rate:.1f} files/sec"
-                            )
-                finally:
-                    # Resume UI updates
-                    if has_resume_method:
-                        self.file_queue.resume_updates()
-
-                    # Total time
-                    total_time = time.time() - start_time
-                    logger.info(
-                        f"Total import time: {total_time:.2f}s for {total_files} files ({total_files / total_time:.1f} files/sec)"
-                    )
-
-                    # Restore cursor
-                    self._set_busy_cursor(False)
-
+            if self._closed or files is None:
+                return
+            paths = [file.get_path() for file in files if file.get_path()]
+            self.file_queue.add_files(paths)
+            if len(paths) != files.get_n_items():
+                self._show_info_dialog(_("Local files only"), _("Some selected files are remote. Download them before adding them."))
         except GLib.Error as error:
-            if not error.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED):
-                logger.error(f"Error opening files: {error.message}")
+            if not self._closed and not error.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED) and not error.matches(Gio.io_error_quark(), Gio.IOErrorEnum.CANCELLED):
+                self._show_error_dialog(_("Files could not be selected"), error.message)
 
     def _set_busy_cursor(self, is_busy):
         """Set busy cursor while processing."""

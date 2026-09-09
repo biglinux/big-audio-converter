@@ -5,25 +5,33 @@ This script should be run from the project root directory.
 """
 
 
+import gettext
+import locale
+import logging
 import os
 import sys
-import logging
-import gettext
+from pathlib import Path
+
 import gi
+
+try:
+    locale.setlocale(locale.LC_ALL, "")
+except locale.Error:
+    pass
+gettext.bindtextdomain("big-audio-converter", str(Path(__file__).resolve().parents[2] / "locale"))
 gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, Gio, GLib
+from app.audio.converter import AudioConverter
+from app.audio.player import AudioPlayer
 
 # Application imports
 from app.ui.main_window import MainWindow
 from app.ui.welcome_dialog import WelcomeDialog
 from app.utils.config import AppConfig
-from app.audio.player import AudioPlayer
-from app.audio.converter import AudioConverter
-
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 # Add the project root directory to the Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +52,7 @@ class Application(Adw.Application):
         # Check if GTCRN LADSPA plugin is available for noise reduction
         self.gtcrn_ladspa_path = "/usr/lib/ladspa/libgtcrn_ladspa.so"
         if not os.path.exists(self.gtcrn_ladspa_path):
-            logging.debug(
+            logging.getLogger(__name__).debug(
                 f"GTCRN LADSPA plugin not found at {self.gtcrn_ladspa_path}. "
                 "Noise reduction will not be available."
             )
@@ -52,48 +60,38 @@ class Application(Adw.Application):
 
         self.player = AudioPlayer(gtcrn_ladspa_path=self.gtcrn_ladspa_path)
         self.converter = AudioConverter(gtcrn_ladspa_path=self.gtcrn_ladspa_path)
+        self._main_window = None
         self.logger = logging.getLogger(__name__)
         self._create_actions()
 
     def _present_window_and_request_focus(self, window: Gtk.Window):
-        """Present the window and use a modal dialog hack to request focus if needed."""
+        """Let the desktop handle activation; never steal focus with a fake dialog."""
         window.present()
-
-        def check_and_apply_hack():
-            if not window.is_active():
-                self.logger.info(
-                    "Window not active after present(), applying modal window hack."
-                )
-                hack_window = Gtk.Window(transient_for=window, modal=True)
-
-                hack_window.set_default_size(1, 1)
-                hack_window.set_decorated(False)
-
-                hack_window.present()
-                GLib.idle_add(hack_window.destroy)
-
-            return GLib.SOURCE_REMOVE
-
-        GLib.idle_add(check_and_apply_hack)
 
     def do_open(self, files, n_files, hint):
         """Handle files opened from command line or file manager."""
         # Get the active window (MainWindow)
-        win = self.props.active_window
-        if not win:
+        win = self._main_window
+        if win is None or win._closed:
             # If no window exists yet, create one
             win = MainWindow(application=self)
+            self._main_window = win
 
         # Always present and request focus for the window
         self._present_window_and_request_focus(win)
 
-        # Add each file to the queue
+        # Add each file to the queue in bounded GTK work slices.
+        paths = []
         for i in range(n_files):
             file = files[i]
             if isinstance(file, Gio.File):
                 path = file.get_path()
                 if path:
-                    win.file_queue.add_file(path)
+                    paths.append(path)
+                else:
+                    win._show_error_dialog(_("Local files only"), _("Download this file to a local folder before adding it."))
+
+        win.file_queue.add_files(paths)
 
     def _create_actions(self):
         """Create application actions."""
@@ -110,26 +108,40 @@ class Application(Adw.Application):
         # Keyboard accelerators
         self.set_accels_for_action("app.quit", ["<Control>q"])
 
+    def do_startup(self):
+        Adw.Application.do_startup(self)
+        icon_theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        icon_theme.add_search_path(str(Path(__file__).resolve().parents[2] / "icons"))
+
     def do_activate(self):
         """Called when the application is activated."""
-        win = self.props.active_window
-        if not win:
+        win = self._main_window
+        if win is None or win._closed:
             win = MainWindow(application=self)
+            self._main_window = win
             # Show welcome dialog on first run
-            if WelcomeDialog.should_show_welcome():
+            if str(self.config.get("show_welcome_dialog", True)).lower() == "true":
                 self.show_welcome_dialog(win)
         self._present_window_and_request_focus(win)
 
     def show_welcome_dialog(self, parent_window=None):
         """Show the welcome dialog"""
         if parent_window is None:
-            parent_window = self.props.active_window
+            parent_window = self._main_window
         welcome = WelcomeDialog(parent_window)
         welcome.present()
 
     def on_quit_action(self, *args):
-        """Handle the app.quit action."""
         self.quit()
+
+    def do_shutdown(self):
+        if self._main_window is not None:
+            self._main_window.cleanup()
+        else:
+            self.player.cleanup()
+            self.converter.cleanup()
+        self.config.close()
+        Adw.Application.do_shutdown(self)
 
     def on_about_action(self, *args):
         """Show the about dialog with the system 'big-audio-converter' icon."""
@@ -142,7 +154,7 @@ class Application(Adw.Application):
             website="https://github.com/biglinux/big-audio-converter",
             license_type=Gtk.License.GPL_3_0,
         )
-        about.present(self.props.active_window)
+        about.present(self._main_window)
 
     def on_show_welcome_action(self, *args):
         """Show the welcome dialog."""
@@ -153,10 +165,12 @@ def main():
     """Run the application."""
     # Setup basic logging
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if os.environ.get("BAC_DEBUG") == "1" else logging.WARNING,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
+    GLib.set_prgname("big-audio-converter")
+    GLib.set_application_name(_("Audio Converter"))
     app = Application()
     return app.run(sys.argv)
 
