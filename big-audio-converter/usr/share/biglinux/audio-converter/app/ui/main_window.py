@@ -223,6 +223,8 @@ class MainWindow(
             **kwargs,
         )
 
+        self.add_css_class("big-audio-converter")
+
         # Store whether window should be maximized
         self._should_maximize = is_maximized
 
