@@ -1,3 +1,2 @@
 #!/bin/sh
-
-python3 /usr/share/biglinux/audio-converter/main.py "$@"
+exec /usr/bin/python3 /usr/share/biglinux/audio-converter/main.py "$@"

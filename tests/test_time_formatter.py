@@ -16,7 +16,11 @@ sys.path.insert(
     ),
 )
 
-from app.utils.time_formatter import format_time_display, format_time_ruler, format_time_short
+from app.utils.time_formatter import (
+    format_time_display,
+    format_time_ruler,
+    format_time_short,
+)
 
 
 class TestFormatTimeShort:

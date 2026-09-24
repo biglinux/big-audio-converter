@@ -2,14 +2,15 @@
 
 pkgname=big-audio-converter
 pkgdesc="audio converter and simple editor"
-# Uncomment and edit the following lines as needed
-depends=('python' 'python-gobject' 'gtk4' 'ffmpeg' 'python-cairo' 'libadwaita' 'python-mpv')
-#makedepends=('')
-#optdepends=('')
+depends=('python>=3.10' 'python-gobject' 'gtk4>=4.12' 'ffmpeg' 'python-cairo' 'python-numpy' 'libadwaita>=1.5' 'python-mpv')
+optdepends=('deepfilternet-quantized-ladspa: light speech noise reduction (standard DFN3, without LL)'
+    'dpdfnet-native: higher-quality speech noise reduction with DPDFNet-2 48 kHz HR')
+makedepends=('git' 'gettext')
+checkdepends=('python-pytest' 'python-hypothesis' 'python-polib')
 pkgver=$(date +%y.%m.%d)
 pkgrel=$(date +%H%M)
 arch=('any')
-license=('MIT')
+license=('GPL-3.0-only')
 url="https://github.com/biglinux/$pkgname"
 source=("git+${url}.git")
 md5sums=('SKIP')
@@ -21,49 +22,29 @@ elif [ -e "pkgbuild.install" ]; then
     install=pkgbuild.install
 fi
 
-prepare() {
-    cd "${srcdir}/${pkgname}"
-    # Add any preparation steps here, if needed
-    # For example: patch -p1 < "${srcdir}/patch-file.patch"
-}
-
 build() {
-    cd "${srcdir}/${pkgname}"
-    # Add build steps here, if needed
-    # For example: make
+    cd "${srcdir}/${pkgname}" || return
+    local catalog language
+    for catalog in big-audio-converter/locale/*.po; do
+        language=${catalog##*/}
+        language=${language%.po}
+        mkdir -p "big-audio-converter/usr/share/locale/${language}/LC_MESSAGES"
+        msgfmt --check -o "big-audio-converter/usr/share/locale/${language}/LC_MESSAGES/big-audio-converter.mo" "$catalog"
+    done
 }
 
 check() {
-    cd "${srcdir}/${pkgname}"
-    # Add check/test steps here, if needed
-    # For example: make check
+    cd "${srcdir}/${pkgname}" || return
+    mkdir -p "${srcdir}/test-tmp"
+    TMPDIR="${srcdir}/test-tmp" python -m pytest -q -m "not extended" tests --ignore=tests/test_gui.py
 }
 
 package() {
-    cd "${srcdir}/${pkgname}"
+    cd "${srcdir}/${pkgname}" || return
 
-    # Determine the correct source directory
-    if [ -d "${pkgname}" ]; then
-        srcdir="${srcdir}/${pkgname}/${pkgname}"
-    else
-        srcdir="${srcdir}/${pkgname}"
-    fi
+    cp -a big-audio-converter/usr "${pkgdir}/"
+    find "${pkgdir}/usr" -type d -name __pycache__ -prune -exec rm -r {} +
 
-    # Install files
-    local dirs=("usr" "etc" "opt")
-    for dir in "${dirs[@]}"; do
-        if [ -d "${srcdir}/${dir}" ]; then
-            cp -a "${srcdir}/${dir}" "${pkgdir}/"
-        fi
-    done
-
-    # Install license file if present
-    if [ -f "LICENSE" ]; then
-        install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-    fi
-
-    # Install documentation if present
-    if [ -f "README.md" ]; then
-        install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
-    fi
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    install -Dm644 -t "${pkgdir}/usr/share/doc/${pkgname}" README.md screenshot.png
 }

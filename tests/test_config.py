@@ -24,28 +24,12 @@ from app.utils.config import AppConfig
 
 
 @pytest.fixture
-def config(tmp_path, monkeypatch):
-    """Create an AppConfig that writes to a temp directory."""
-    config_dir = str(tmp_path / "config")
-    monkeypatch.setattr(
-        "app.utils.config.AppConfig.__init__",
-        lambda self: None,
-    )
-    cfg = AppConfig.__new__(AppConfig)
-    cfg.config_dir = config_dir
-    os.makedirs(config_dir, mode=0o700, exist_ok=True)
-    cfg.config_file = os.path.join(config_dir, "config.json")
-    cfg.defaults = {
-        "last_directory": "/home",
-        "default_format": "mp3",
-        "auto_play_preview": True,
-        "confirm_overwrite": True,
-    }
-    cfg.config = cfg.defaults.copy()
-    cfg.modified_keys = set()
-    cfg._save_timer = None
-    cfg._save_delay = 0.01  # Fast saves for tests
-    return cfg
+def config(tmp_path):
+    """Exercise the real configuration lifecycle in an isolated directory."""
+    cfg = AppConfig(config_dir=tmp_path / "config")
+    cfg._save_delay = 0.01
+    yield cfg
+    cfg.close()
 
 
 class TestAppConfigGetSet:
@@ -113,3 +97,30 @@ class TestAppConfigDebounce:
             with open(config.config_file, "r") as f:
                 data = json.load(f)
             assert data["default_format"] == "flac"
+
+
+def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):
+    path = tmp_path / "config.json"
+    legacy = {
+        "conversion_noise_reduction": "true",
+        "noise_model": "1",
+        "noise_reduction_strength": "0.7",
+    }
+    path.write_text(json.dumps(legacy))
+    config = AppConfig(config_dir=tmp_path)
+    try:
+        assert config.get("noise_reduction_enabled") == "false"
+        config.set("noise_engine", "dpdfnet")
+        config.set("noise_attenuation_db", 35)
+        config.set("noise_reduction_enabled", True)
+        assert config.flush()
+        saved = json.loads(path.read_text())
+        assert all(saved[k] == value for k, value in legacy.items())
+        loaded = config.load_config()
+        assert loaded["noise_engine"] == "dpdfnet"
+        assert loaded["noise_attenuation_db"] == 35
+        assert loaded["noise_reduction_enabled"] is True
+        with pytest.raises(ValueError):
+            config.set("noise_engine", "dfn3ll")
+    finally:
+        config.close()

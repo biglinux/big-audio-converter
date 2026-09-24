@@ -4,6 +4,7 @@
 Utility functions for formatting time values.
 """
 
+
 def format_time_short(seconds):
     """Format time for timeline display (compact format with hundredths)."""
     # Round to 2 decimal places for hundredths precision

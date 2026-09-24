@@ -1,165 +1,80 @@
-# 🎵 Big Audio Converter
+# Big Audio Converter
 
-**A powerful, intuitive audio converter and editor for Linux**
+Convert audio files, extract audio tracks from videos and save selected sections on Linux. The interface uses GTK4 and libadwaita.
 
-Big Audio Converter is a modern, feature-rich audio application that makes it easy to convert, edit, and enhance your audio files. Built with GTK4 and Libadwaita, it offers a beautiful, native Linux experience.
+![Big Audio Converter](screenshot.png)
 
-![Big Audio Converter](https://raw.githubusercontent.com/biglinux/big-audio-converter/main/screenshot.png)
+## Install and open
 
----
+On BigLinux, install **Big Audio Converter** from the software manager and open it from the applications menu. The package command is `big-audio-converter-gui`.
 
-## ✨ Features
+Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv and python-mpv. Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
 
-### 🎵 **Audio Conversion**
-Convert between multiple audio formats with high quality:
-- **MP3** - The universal format
-- **FLAC** - Lossless quality
-- **OGG/Vorbis** - Open source excellence
-- **WAV** - Uncompressed audio
-- **AAC** - Modern and efficient
-- **Opus** - Perfect for voice and music
-- **WMA** - Windows Media Audio
+## Convert files
 
-### 🎬 **Extract Audio from Video**
-Pull audio tracks from video files and save them in any audio format. Perfect for creating music files from concert videos or extracting podcasts from video content.
+1. Select **Add Files**, or drag local audio or video files into the window. Videos with multiple audio tracks get a separate entry for each track.
+2. Choose **Format** and **Quality**. MP3 is widely compatible. FLAC preserves decoded audio without loss, while WAV stores uncompressed audio. Ogg Vorbis, AAC and Opus are also available.
+3. Check **Save to**. By default, each result goes beside its original; you can choose another folder.
+4. Select **Convert**. The results show what succeeded, what failed and which files can be retried. Use each result's folder button to find its output.
 
-### ✂️ **Visual Waveform Editor**
-- **Interactive waveform visualization** - See your audio in detail
-- **Mark and cut sections** - Select exactly what you want to keep
-- **Multiple segment support** - Cut multiple sections from the same file
-- **Merge segments** - Combine parts into a single file
+The inputs stay in the list. Existing files are never overwritten: conflicting output names receive a numeric suffix. Cancel waits for the worker to stop and removes unfinished output. Removing an entry from the list does not delete its source; **Move to Trash** is a separate, confirmed action.
 
-### ⚡ **Fast Copy Mode**
-Use our intelligent copy mode to cut audio segments without re-encoding:
-- **Zero quality loss** - Original quality preserved perfectly
-- **Ultra-fast processing** - No conversion needed
-- **Instant results** - Split files in seconds, not minutes
+**Advanced encoding** exposes bitrate, channels and sample rate. Original properties are preserved where the selected format supports them. If conversion requires resampling or a precision change, the result identifies it. WAV preserves the source PCM representation; exporting floating-point audio to FLAC requires explicitly allowing 24-bit conversion.
 
-### 🎚️ **Audio Enhancement**
-Fine-tune your audio with powerful tools:
-- **Volume control** - Adjust audio levels from 0% to 200%
-- **10-band equalizer** - Shape your sound with precision
-- **Noise reduction** - Remove background noise with AI-powered filtering
-- **Speed control** - Adjust playback and conversion speed
+## Cut audio
 
-### 📁 **Batch Processing**
-Convert multiple files at once:
-- **Queue management** - Add files, preview, and organize
-- **Progress tracking** - See real-time conversion progress
-- **Smart organization** - Keep your workflow efficient
+Select a file and change **Cut audio** from **Keep the whole audio** to the desired ordering. Use **Mark start** and **Mark end** at the current playback position, or open **Edit Segments** to enter times in seconds. The editor supports keyboard navigation, reordering and removal. Its changes take effect when you select **Apply**.
 
-### 🎼 **Built-in Player**
-Preview your audio before and after conversion with an integrated player that supports all features.
+Save each segment separately or merge the marked segments into one file. Files without marked segments are converted in full. The waveform shows peaks from all channels; numeric editing remains available if waveform decoding fails after the duration has been read.
 
----
+**Copy without changing quality** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an encoding format when you need precise cuts or effects.
 
-## 🎯 Quick Start Guide
+## Listen and adjust
 
-### Converting Audio Files
+The bottom controls play the selected file. **Audio output** lists available playback devices; **System default** uses the default selected by the audio system. Use **Refresh audio outputs** if a newly connected output is missing. If a specifically selected output disappears, playback pauses and returns to the default selection so that resuming is your choice.
 
-1. **Launch Big Audio Converter** from your applications menu
-2. **Click "Add Files"** and select your audio or video files
-3. **Choose output format** from the dropdown (MP3, FLAC, OGG, etc.)
-4. **Adjust settings** if needed (bitrate, volume, noise reduction)
-5. **Click "Convert"** and wait for the process to complete
-6. **Open the output folder** directly from the success dialog
+Volume, speed, equalizer, normalization and other enabled effects affect both preview and exported audio. **Listen to original** temporarily bypasses processing without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or enable clipping protection.
 
-### Cutting Audio
+Speech noise reduction offers exactly two modes:
 
-1. **Add an audio file** to the queue
-2. **Click on the file** to load it in the player
-3. **Play the audio** and listen to find the sections you want
-4. **Click on the waveform** to mark start and end points
-5. **Add multiple segments** if needed by marking additional sections
-6. **Enable "Cut Audio"** in the settings (Chronological or Segment Number)
-7. **Click "Convert"** to create new files with only the marked sections
+| Mode | Installation | Plugin |
+|---|---|---|
+| Light — DeepFilterNet3 | `deepfilternet-quantized-ladspa` | `libdfn3_ladspa.so`, the standard model without LL |
+| Higher quality — DPDFNet-2 48 kHz | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
-**Pro Tip:** Use **Fast Copy Mode** (checkbox in cut settings) for instant cutting without quality loss!
+The light mode is selected initially; noise reduction starts disabled. It is intended for speech, not music. Lower attenuation retains more background sound; 0 dB leaves it unchanged. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
 
-### Using the Equalizer
+Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`. The plugin supports a `DPDFNET_NATIVE_MODEL` environment override; keep it unset to use the intended DPDFNet-2 model.
 
-1. **Load an audio file** in the player
-2. **Click the equalizer icon** in the header bar
-3. **Adjust the 10 frequency bands** to shape your sound
-4. **Use presets** or create your own custom settings
-5. **Hear changes in real-time** while playing
+GTCRN and its transient suppressor are no longer used. Their saved settings remain on disk but do not activate a new model automatically. Installing the DeepFilterNet package may also install its LL library; the converter never selects that library.
 
----
+Keyboard shortcuts: **Ctrl+O** adds files, **Ctrl+Enter** converts, **Ctrl+Space** plays or pauses, **Ctrl+E** opens the segment editor and **Ctrl+Q** quits.
 
-## 🛠️ Technical Details
+## Development and validation
 
-### Supported Input Formats
-- **Audio:** MP3, FLAC, OGG, WAV, AAC, Opus, WMA, M4A, AIFF, APE, and more
-- **Video:** MP4, MKV, AVI, MOV, WMV, FLV, WEBM, and more (for audio extraction)
+From the repository root, run the application with:
 
-### Conversion Features
-- **Bitrate selection:** From 64kbps to 320kbps
-- **Sample rate preservation:** Maintains original quality
-- **Metadata preservation:** Keeps tags and artwork when possible
-- **Multi-threaded processing:** Fast and efficient
+```sh
+python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
+```
 
-### System Requirements
-- **Operating System:** Linux (developed for BigLinux)
-- **Desktop Environment:** GNOME, KDE, or any GTK-compatible environment
-- **Dependencies:** Python 3, GTK4, Libadwaita, FFmpeg
+The test suite uses real FFmpeg and libmpv in addition to Python assertions. Install `pytest`, `hypothesis` and `polib` for tests; graphical tests also require Xvfb, a session bus and the native GTK dependencies above. Use an executable temporary directory if `/tmp` is mounted `noexec`:
 
----
+```sh
+mkdir -p "$HOME/.cache/bac-tests"
+TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q -m "not extended" tests --ignore=tests/test_gui.py
+TMPDIR="$HOME/.cache/bac-tests" xvfb-run -a dbus-run-session -- python3 -m pytest -q tests/test_gui.py
+TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q -m extended tests
+ruff check big-audio-converter/usr/share/biglinux/audio-converter tests
+ruff format --check big-audio-converter/usr/share/biglinux/audio-converter tests
+```
 
-## 🎨 File Manager Integration
+The conversion backend owns subprocess cancellation and validates staged outputs before publishing them. The queue probes metadata on bounded workers; stable source identities prevent delayed results from updating a different row. Waveform decoding uses a single cancellable worker and a bounded peak cache. Native player callbacks return to the GTK main loop before updating interface state.
 
-Big Audio Converter integrates seamlessly with your file manager:
+The [package recipe](pkgbuild/PKGBUILD) compiles translation catalogs and runs backend tests. The [quality workflow](.github/workflows/quality.yml) also runs GTK tests. Real device and file-manager activation journeys still require testing in an installed desktop session; a headless test is not evidence of physical USB or Bluetooth behavior.
 
-### **Dolphin** (KDE)
-Right-click audio/video files → **Services** → **Convert with Big Audio Converter**
+## License and support
 
-### **Nautilus** (GNOME)
-Right-click audio/video files → **Convert with Big Audio Converter**
+Licensed under the [GNU General Public License, version 3](LICENSE), GPL-3.0-only.
 
-### **Nemo** (Cinnamon)
-Right-click audio/video files → **Actions** → **Convert with Big Audio Converter**
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
-
-### How to Contribute
-
-1. **Fork** the repository
-2. **Create a branch** for your feature (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-4. **Push to the branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
-
----
-
-### Special Thanks
-- All contributors who have helped improve this project
-- The BigLinux community for feedback and support
-- The open-source community for the amazing tools we build upon
-
----
-
-## 📞 Support
-
-### Community Support
-- **Website:** [BigLinux Official](https://www.biglinux.com.br/)
-- **Forum:** [BigLinux Community Forum](https://forum.biglinux.com.br/)
-- **GitHub Issues:** [Report bugs or request features](https://github.com/biglinux/big-audio-converter/issues)
-
----
-
-## 🎉 Star This Project!
-
-If you find Big Audio Converter useful, please consider giving it a ⭐ on GitHub. It helps others discover this project!
-
----
-
-<div align="center">
-
-**Made with ❤️ by the BigLinux Team**
-
-[Website](https://www.biglinux.com.br/) • [GitHub](https://github.com/biglinux) • [Forum](https://forum.biglinux.com.br/)
-
-</div>
+Report reproducible problems in [GitHub issues](https://github.com/biglinux/big-audio-converter/issues). Include the operation, input/output formats, application version and any error shown. Community support is available in the [BigLinux forum](https://forum.biglinux.com.br/).
