@@ -83,17 +83,16 @@ class WelcomeDialog:
         self.show_switch.set_active(
             str(self.config.get("show_welcome_dialog", True)).lower() == "true"
         )
+        config = self.config
         self.show_switch.connect(
             "notify::active",
-            lambda row, _pspec: self.config.set(
-                "show_welcome_dialog", row.get_active()
-            ),
+            lambda row, _pspec: config.set("show_welcome_dialog", row.get_active()),
         )
         preferences.add(self.show_switch)
         content.append(preferences)
         start = Gtk.Button(label=_("Let's Start"), halign=Gtk.Align.END)
         start.add_css_class("suggested-action")
-        start.connect("clicked", lambda *_: self.dialog.close())
+        start.connect("clicked", lambda button: button.get_ancestor(Adw.Dialog).close())
         content.append(start)
         scrolled.set_child(content)
         toolbar.set_content(scrolled)
