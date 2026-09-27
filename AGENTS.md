@@ -28,3 +28,7 @@ ID when a control temporarily blocks that connection.
 A closed main window must release application actions, the active-window slot,
 queue parent references and manually parented popovers. Test window finalization
 while the application remains alive so process exit cannot hide survivors.
+
+Persistent worker loops must drop the completed request and its payload before
+waiting for another job. Otherwise the thread retains the last callback owner,
+metadata or marker snapshot even after main-loop delivery and cancellation.

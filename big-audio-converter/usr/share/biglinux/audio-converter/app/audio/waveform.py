@@ -178,6 +178,7 @@ class WaveformGenerator:
                 job, self._pending = self._pending, None
             if job is not None:
                 self._execute(*job)
+            del job
 
     def generate(
         self,

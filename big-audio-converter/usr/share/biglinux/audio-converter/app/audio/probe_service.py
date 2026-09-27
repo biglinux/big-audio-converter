@@ -137,6 +137,7 @@ class ProbeService:
                     self._current = None
                     self._runner = None
             self._sources.idle(self._deliver, request, info, error)
+            del request, info, error
 
     def _deliver(self, request, info, error):
         with self._condition:
