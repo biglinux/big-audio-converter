@@ -6,6 +6,7 @@ import gettext
 import logging
 import os
 import time
+import weakref
 from collections import deque
 from pathlib import Path
 
@@ -44,6 +45,7 @@ class FileQueueRow(Adw.ActionRow):
     ):
         super().__init__()
 
+        owner = weakref.proxy(self)
         self.file_path = file_path
         self.source_path = file_path
         self.stream_index = None
@@ -69,7 +71,7 @@ class FileQueueRow(Adw.ActionRow):
         if on_activate_callback:
             self.connect(
                 "activated",
-                lambda row: self.on_activate_callback(self.file_path, self.index),
+                lambda row: row.on_activate_callback(row.file_path, row.index),
             )
 
         # Play button (left side)
@@ -83,7 +85,7 @@ class FileQueueRow(Adw.ActionRow):
             [_("Play file")],
         )
         self.play_button.connect(
-            "clicked", lambda btn: self.on_play_callback(self.file_path, self.index)
+            "clicked", lambda btn: owner.on_play_callback(owner.file_path, owner.index)
         )
         self.add_prefix(self.play_button)
 
@@ -96,7 +98,7 @@ class FileQueueRow(Adw.ActionRow):
             [_("Remove from queue")],
         )
         remove_button.connect(
-            "clicked", lambda btn: self.on_remove_callback(self.index)
+            "clicked", lambda btn: owner.on_remove_callback(owner.index)
         )
         self.add_prefix(remove_button)
 
@@ -113,11 +115,15 @@ class FileQueueRow(Adw.ActionRow):
         self.more_button.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("File actions")]
         )
-        self.more_button.set_create_popup_func(self._setup_context_menu)
+        self.more_button.set_create_popup_func(
+            lambda button: owner._setup_context_menu(button)
+        )
         self.add_suffix(self.more_button)
         right_click = Gtk.GestureClick.new()
         right_click.set_button(3)
-        right_click.connect("pressed", lambda *_: self.more_button.popup())
+        right_click.connect(
+            "pressed", lambda gesture, *_: gesture.get_widget().more_button.popup()
+        )
         self.add_controller(right_click)
 
         # Connect to realize signal to add tooltip to title widget after it's created
@@ -129,6 +135,7 @@ class FileQueueRow(Adw.ActionRow):
 
     def _setup_context_menu(self, button, *_args):
         """Allocate a row's menu only when it is opened, including by keyboard."""
+        owner = weakref.proxy(self)
         # Create popup menu
         menu = Gtk.PopoverMenu()
         menu_model = Gio.Menu()
@@ -150,18 +157,23 @@ class FileQueueRow(Adw.ActionRow):
         # Delete action (with confirmation)
         delete_action = Gio.SimpleAction.new("delete", None)
         delete_action.connect(
-            "activate", lambda a, p: self.on_delete_callback(self.index, self.file_path)
+            "activate",
+            lambda a, p: owner.on_delete_callback(owner.index, owner.file_path),
         )
         action_group.add_action(delete_action)
 
         # Open folder action
         open_folder_action = Gio.SimpleAction.new("open_folder", None)
-        open_folder_action.connect("activate", self._on_open_folder)
+        open_folder_action.connect(
+            "activate", lambda action, param: owner._on_open_folder(action, param)
+        )
         action_group.add_action(open_folder_action)
 
         # Info action
         info_action = Gio.SimpleAction.new("info", None)
-        info_action.connect("activate", self._on_show_info)
+        info_action.connect(
+            "activate", lambda action, param: owner._on_show_info(action, param)
+        )
         action_group.add_action(info_action)
 
         self.insert_action_group("row", action_group)

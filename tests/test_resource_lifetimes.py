@@ -136,3 +136,26 @@ def test_segment_editor_and_removed_rows_finalize(parent, census):
         del editor
         settle()
     assert counts["new"] == counts["fin"] == 10
+
+
+@pytest.mark.parametrize("with_menu", [False, True])
+def test_queue_rows_finalize(parent, census, with_menu):
+    from app.ui.file_queue import FileQueueRow
+    from gi.repository import Gtk
+
+    box = Gtk.Box()
+    parent.set_content(box)
+    track, counts = census
+    for index in range(5):
+        row = FileQueueRow("/sample.wav", index, None, None, None)
+        track(row)
+        box.append(row)
+        if with_menu:
+            row.more_button.popup()
+            settle()
+            row.more_button.popdown()
+        row.cleanup()
+        box.remove(row)
+        del row
+        settle()
+    assert counts["new"] == counts["fin"] == 5
