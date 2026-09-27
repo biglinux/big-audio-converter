@@ -159,3 +159,21 @@ def test_queue_rows_finalize(parent, census, with_menu):
         del row
         settle()
     assert counts["new"] == counts["fin"] == 5
+
+
+@pytest.mark.parametrize("kind", ["SeekBar", "AudioVisualizer"])
+def test_drawing_widgets_finalize(parent, census, kind):
+    from app.ui import visualizer
+
+    track, counts = census
+    for _ in range(5):
+        widget = getattr(visualizer, kind)()
+        track(widget)
+        parent.set_content(widget)
+        settle()
+        if kind == "AudioVisualizer":
+            widget.cleanup()
+        parent.set_content(None)
+        del widget
+        settle()
+    assert counts["new"] == counts["fin"] == 5

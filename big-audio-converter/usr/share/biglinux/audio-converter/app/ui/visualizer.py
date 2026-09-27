@@ -30,7 +30,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def __init__(self):
         super().__init__()
-        self.set_draw_func(self.on_draw)
+        self.set_draw_func(lambda area, *args: area.on_draw(area, *args))
 
         # Accessibility
         self.update_property(
@@ -72,21 +72,56 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Setup click handler for both seeking and marking
         click_controller = Gtk.GestureClick()
-        click_controller.connect("pressed", self.on_click_handler)
-        click_controller.connect("released", self.on_release_handler)
+        click_controller.connect(
+            "pressed",
+            lambda controller, *args: controller.get_widget().on_click_handler(
+                controller, *args
+            ),
+        )
+        click_controller.connect(
+            "released",
+            lambda controller, *args: controller.get_widget().on_release_handler(
+                controller, *args
+            ),
+        )
         self.add_controller(click_controller)
 
         # Add drag controller for marker movement
         drag_controller = Gtk.GestureDrag()
-        drag_controller.connect("drag-begin", self.on_drag_begin)
-        drag_controller.connect("drag-update", self.on_drag_update)
-        drag_controller.connect("drag-end", self.on_drag_end)
+        drag_controller.connect(
+            "drag-begin",
+            lambda controller, *args: controller.get_widget().on_drag_begin(
+                controller, *args
+            ),
+        )
+        drag_controller.connect(
+            "drag-update",
+            lambda controller, *args: controller.get_widget().on_drag_update(
+                controller, *args
+            ),
+        )
+        drag_controller.connect(
+            "drag-end",
+            lambda controller, *args: controller.get_widget().on_drag_end(
+                controller, *args
+            ),
+        )
         self.add_controller(drag_controller)
 
         # Setup motion controller for hover effects
         motion_controller = Gtk.EventControllerMotion()
-        motion_controller.connect("motion", self.on_motion)
-        motion_controller.connect("leave", self._on_waveform_leave)
+        motion_controller.connect(
+            "motion",
+            lambda controller, *args: controller.get_widget().on_motion(
+                controller, *args
+            ),
+        )
+        motion_controller.connect(
+            "leave",
+            lambda controller, *args: controller.get_widget()._on_waveform_leave(
+                controller, *args
+            ),
+        )
         self.add_controller(motion_controller)
 
         # Zoom and pan functionality
@@ -121,18 +156,33 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Add scroll controller for zoom and horizontal panning with Shift
         scroll_controller = Gtk.EventControllerScroll()
         scroll_controller.set_flags(Gtk.EventControllerScrollFlags.BOTH_AXES)
-        scroll_controller.connect("scroll", self.on_scroll)
+        scroll_controller.connect(
+            "scroll",
+            lambda controller, *args: controller.get_widget().on_scroll(
+                controller, *args
+            ),
+        )
         self.add_controller(scroll_controller)
 
         # Add key controller for keyboard shortcuts
         key_controller = Gtk.EventControllerKey()
-        key_controller.connect("key-pressed", self.on_key_pressed)
+        key_controller.connect(
+            "key-pressed",
+            lambda controller, *args: controller.get_widget().on_key_pressed(
+                controller, *args
+            ),
+        )
         self.add_controller(key_controller)
 
         # Add right-click context menu support
         right_click_controller = Gtk.GestureClick()
         right_click_controller.set_button(3)  # Right mouse button
-        right_click_controller.connect("pressed", self.on_right_click)
+        right_click_controller.connect(
+            "pressed",
+            lambda controller, *args: controller.get_widget().on_right_click(
+                controller, *args
+            ),
+        )
         self.add_controller(right_click_controller)
 
     def set_loading(self, is_loading, message=None):
@@ -1168,6 +1218,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.is_loading = False
         self.player = None
         for name in (
+            "duration_changed_callback",
             "seek_position_callback",
             "hover_time_callback",
             "marker_updated_callback",
@@ -1424,7 +1475,7 @@ class SeekBar(Gtk.DrawingArea):
     def __init__(self):
         super().__init__()
         self.set_content_height(self.HEIGHT)
-        self.set_draw_func(self._draw)
+        self.set_draw_func(lambda area, *args: area._draw(area, *args))
 
         # Accessibility
         self.update_property(
@@ -1435,9 +1486,14 @@ class SeekBar(Gtk.DrawingArea):
         self.set_focusable(True)
         self.set_accessible_role(Gtk.AccessibleRole.SLIDER)
         keys = Gtk.EventControllerKey()
-        keys.connect("key-pressed", self._on_key_pressed)
+        keys.connect(
+            "key-pressed",
+            lambda controller, *args: controller.get_widget()._on_key_pressed(
+                controller, *args
+            ),
+        )
         self.add_controller(keys)
-        self.connect("notify::has-focus", lambda *args: self.queue_draw())
+        self.connect("notify::has-focus", lambda widget, _pspec: widget.queue_draw())
         self.duration = 0.0
         self._position = 0.0
         self._zoom_level = 1.0
@@ -1450,19 +1506,44 @@ class SeekBar(Gtk.DrawingArea):
 
         # Click handler for seeking
         click = Gtk.GestureClick()
-        click.connect("pressed", self._on_pressed)
-        click.connect("released", self._on_released)
+        click.connect(
+            "pressed",
+            lambda controller, *args: controller.get_widget()._on_pressed(
+                controller, *args
+            ),
+        )
+        click.connect(
+            "released",
+            lambda controller, *args: controller.get_widget()._on_released(
+                controller, *args
+            ),
+        )
         self.add_controller(click)
 
         # Drag handler for scrubbing
         drag = Gtk.GestureDrag()
-        drag.connect("drag-update", self._on_drag_update)
+        drag.connect(
+            "drag-update",
+            lambda controller, *args: controller.get_widget()._on_drag_update(
+                controller, *args
+            ),
+        )
         self.add_controller(drag)
 
         # Motion handler for hover preview
         motion = Gtk.EventControllerMotion()
-        motion.connect("motion", self._on_motion)
-        motion.connect("leave", self._on_leave)
+        motion.connect(
+            "motion",
+            lambda controller, *args: controller.get_widget()._on_motion(
+                controller, *args
+            ),
+        )
+        motion.connect(
+            "leave",
+            lambda controller, *args: controller.get_widget()._on_leave(
+                controller, *args
+            ),
+        )
         self.add_controller(motion)
 
     # --- Public API ---

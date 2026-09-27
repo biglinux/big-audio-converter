@@ -17,3 +17,6 @@ that own the callbacks. Resolve the current row from the emitting button.
 
 Queue row menus and popup factories follow the row lifetime. Their callbacks
 must hold the row weakly, including lazy menus created after construction.
+
+Drawing functions receive their area; controllers expose their widget. Use
+those arguments rather than bound methods that keep the drawing area alive.
