@@ -414,7 +414,7 @@ class MainWindow(
         self.vertical_paned.set_start_child(self.split_view)
 
         # Create CSS for sidebar styling
-        css_provider = Gtk.CssProvider()
+        css_provider = self._css_provider = Gtk.CssProvider()
         css_provider.load_from_string("""
         .sidebar { background-color: @sidebar_bg_color; }
         .playback-controls { padding: 6px 10px; }
@@ -1436,6 +1436,9 @@ class MainWindow(
         self.visualizer.cleanup()
         if self.tooltip_helper:
             self.tooltip_helper.cleanup()
+        Gtk.StyleContext.remove_provider_for_display(
+            self.get_display(), self._css_provider
+        )
         for popover in (self.volume_popover, self.speed_popover, self.zoom_popover):
             popover.unparent()
         self.seekbar.connect_seek_handler(None)

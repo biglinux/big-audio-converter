@@ -216,6 +216,7 @@ def test_main_windows_finalize_while_application_lives(tmp_path, census):
         track(window.volume_popover)
         track(window.speed_popover)
         track(window.zoom_popover)
+        track(window._css_provider)
         window.present()
         settle()
         window.close()
@@ -224,4 +225,4 @@ def test_main_windows_finalize_while_application_lives(tmp_path, census):
         assert app._main_window is None
     app.config.close()
     app.quit()
-    assert counts["new"] == counts["fin"] == 20
+    assert counts["new"] == counts["fin"] == 25

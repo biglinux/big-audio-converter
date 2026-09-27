@@ -37,3 +37,7 @@ Remembered preferences use a same-directory temporary file and atomic replace,
 without forcing file or directory fsync. A power loss may lose the latest UI
 preferences; it must not expose a partially written JSON file. Media outputs keep
 their separate durability contract.
+
+A display CSS provider registered per window must be removed during window
+cleanup. Track providers and other process-owned objects as well as the toplevel:
+a finalized window alone does not prove that its registrations were released.
