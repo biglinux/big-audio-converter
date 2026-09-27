@@ -16,6 +16,7 @@ class SegmentEditor(Adw.Dialog):
         super().__init__(
             title=_("Edit Segments"), content_width=580, content_height=580
         )
+        owner = weakref.proxy(self)
         self.window = weakref.ref(window)
         self.source = window.active_audio_id
         self.duration = window.visualizer.duration or window.player.duration
@@ -46,7 +47,7 @@ class SegmentEditor(Adw.Dialog):
             [Gtk.AccessibleProperty.LABEL], [_("Playback position in seconds")]
         )
         seek = Gtk.Button.new_with_mnemonic(_("_Seek"))
-        seek.connect("clicked", self._seek)
+        seek.connect("clicked", lambda button: owner._seek(button))
         position_row.append(label)
         position_row.append(self.position)
         position_row.append(seek)
@@ -63,7 +64,7 @@ class SegmentEditor(Adw.Dialog):
         add = Gtk.Button.new_with_mnemonic(_("_Add Segment"))
         add.set_halign(Gtk.Align.START)
         add.connect(
-            "clicked", lambda button: self.add_segment(0, min(self.duration, 1))
+            "clicked", lambda button: owner.add_segment(0, min(owner.duration, 1))
         )
         box.append(add)
         self.add_button = add
@@ -71,10 +72,10 @@ class SegmentEditor(Adw.Dialog):
             self.add_segment(segment["start"], segment["stop"])
         buttons = Gtk.Box(spacing=8, homogeneous=True)
         cancel = Gtk.Button.new_with_mnemonic(_("_Cancel"))
-        cancel.connect("clicked", lambda button: self.close())
+        cancel.connect("clicked", lambda button: owner.close())
         self.apply_button = Gtk.Button.new_with_mnemonic(_("_Apply"))
         self.apply_button.add_css_class("suggested-action")
-        self.apply_button.connect("clicked", self.apply)
+        self.apply_button.connect("clicked", lambda button: owner.apply(button))
         buttons.append(cancel)
         buttons.append(self.apply_button)
         box.append(buttons)
@@ -99,24 +100,31 @@ class SegmentEditor(Adw.Dialog):
         fields.attach(stop_spin, 1, 1, 1, 1)
         actions = Gtk.Box(spacing=6)
         row = {"group": group, "start": start_spin, "stop": stop_spin}
+        owner = weakref.proxy(self)
         for name, label, icon, callback in (
             (
                 "up",
                 _("Move segment up"),
                 "go-up-symbolic",
-                lambda button: self.move(row, -1),
+                lambda button: owner.move(
+                    next(row for row in owner.rows if row["up"] == button), -1
+                ),
             ),
             (
                 "down",
                 _("Move segment down"),
                 "go-down-symbolic",
-                lambda button: self.move(row, 1),
+                lambda button: owner.move(
+                    next(row for row in owner.rows if row["down"] == button), 1
+                ),
             ),
             (
                 "remove",
                 _("Remove segment"),
                 "list-remove-symbolic",
-                lambda button: self.remove(row),
+                lambda button: owner.remove(
+                    next(row for row in owner.rows if row["remove"] == button)
+                ),
             ),
         ):
             button = Gtk.Button(icon_name=icon, tooltip_text=label)

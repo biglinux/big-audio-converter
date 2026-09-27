@@ -11,3 +11,6 @@ Use the signal's widget to find its ancestor at invocation, or weak references
 when the owner is retained independently. Capture configuration directly instead
 of capturing a wrapper that owns the entire dialog. Qdata destructors, rather
 than weak notifications at dispose, prove that native widgets finalized.
+
+Segment-row callbacks must not capture the row dictionary: it owns the buttons
+that own the callbacks. Resolve the current row from the emitting button.

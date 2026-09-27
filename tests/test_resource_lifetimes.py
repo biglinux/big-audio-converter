@@ -114,3 +114,25 @@ def test_welcome_dialog_finalizes(parent, census):
         del button, dialog, owner
         settle()
     assert counts["new"] == counts["fin"] == 5
+
+
+def test_segment_editor_and_removed_rows_finalize(parent, census):
+    from app.ui.segment_editor import SegmentEditor
+
+    parent.active_audio_id = "sample"
+    parent.visualizer = SimpleNamespace(duration=10, get_marker_pairs=lambda: [])
+    parent.player = SimpleNamespace(_position=0)
+    track, counts = census
+    for _ in range(5):
+        editor = SegmentEditor(parent)
+        track(editor)
+        editor.present(parent)
+        editor.add_segment(0, 1)
+        track(editor.rows[0]["group"])
+        editor.rows[0]["remove"].emit("clicked")
+        settle()
+        assert not editor.rows
+        editor.close()
+        del editor
+        settle()
+    assert counts["new"] == counts["fin"] == 10
