@@ -1,8 +1,22 @@
 """Explicit ownership of one-shot GLib sources with optional coalescing."""
 
 import threading
+import weakref
 
 from gi.repository import GLib
+
+
+def weak_callback(method):
+    """Let a native signal invoke a Python owner without keeping it alive."""
+    reference = weakref.WeakMethod(method)
+
+    def invoke(*args):
+        callback = reference()
+        if callback is not None:
+            return callback(*args)
+        return None
+
+    return invoke
 
 
 class MainLoopSources:

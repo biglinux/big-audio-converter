@@ -120,7 +120,7 @@ def test_segment_editor_and_removed_rows_finalize(parent, census):
     from app.ui.segment_editor import SegmentEditor
 
     parent.active_audio_id = "sample"
-    parent.visualizer = SimpleNamespace(duration=10, get_marker_pairs=lambda: [])
+    parent.visualizer = SimpleNamespace(duration=10, get_marker_pairs=list)
     parent.player = SimpleNamespace(_position=0)
     track, counts = census
     for _ in range(5):
@@ -176,4 +176,24 @@ def test_drawing_widgets_finalize(parent, census, kind):
         parent.set_content(None)
         del widget
         settle()
+    assert counts["new"] == counts["fin"] == 5
+
+
+def test_conversion_results_finalize(parent, census):
+    from app.audio.media import BatchResult
+    from app.ui.conversion_controller import ConversionController
+
+    parent.converter = SimpleNamespace()
+    controller = ConversionController(parent)
+    controller.last_batch = BatchResult()
+    track, counts = census
+    for _ in range(5):
+        controller.show_results()
+        dialog = controller.result_dialog
+        track(dialog)
+        settle()
+        dialog.close()
+        del dialog
+        settle()
+        assert controller.result_dialog is None
     assert counts["new"] == counts["fin"] == 5

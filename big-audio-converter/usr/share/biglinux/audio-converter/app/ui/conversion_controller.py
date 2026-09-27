@@ -9,7 +9,7 @@ from gi.repository import Adw, Gio, GLib, Gtk
 
 from app.audio.media import source_label
 from app.audio.process import MediaError
-from app.utils.main_loop import MainLoopSources
+from app.utils.main_loop import MainLoopSources, weak_callback
 
 _ = gettext.gettext
 
@@ -80,7 +80,7 @@ class ConversionController:
             [Gtk.AccessibleProperty.LABEL], [_("Overall conversion progress")]
         )
         self.cancel_button = Gtk.Button(label=_("Cancel"), halign=Gtk.Align.END)
-        self.cancel_button.connect("clicked", self.cancel)
+        self.cancel_button.connect("clicked", weak_callback(self.cancel))
         content.append(self.status)
         content.append(self.progress)
         content.append(self.cancel_button)
@@ -171,6 +171,7 @@ class ConversionController:
         window = self.window()
         if self.closed or window is None or self.last_batch is None:
             return
+        owner = weakref.proxy(self)
         batch = self.last_batch
         successes = sum(item.successful for item in batch.items)
         failures = sum(item.status == "failed" for item in batch.items)
@@ -241,7 +242,7 @@ class ConversionController:
                     [Gtk.AccessibleProperty.LABEL], [_("Show output file")]
                 )
                 reveal.connect(
-                    "clicked", lambda button, path=output: self._reveal(path)
+                    "clicked", lambda button, path=output: owner._reveal(path)
                 )
                 row.add_suffix(reveal)
                 group.add(row)
@@ -262,15 +263,16 @@ class ConversionController:
         if retry_files:
             retry = Gtk.Button(label=_("Retry unfinished files"))
             retry.connect(
-                "clicked", lambda button: self.start(retry_files, self.settings)
+                "clicked", lambda button: owner.start(retry_files, owner.settings)
             )
             buttons.append(retry)
         close = Gtk.Button(label=_("Close"))
-        close.connect("clicked", lambda button: dialog.close())
+        close.connect("clicked", lambda button: button.get_ancestor(Adw.Dialog).close())
         buttons.append(close)
         box.append(buttons)
         toolbar.set_content(box)
         dialog.set_child(toolbar)
+        dialog.connect("closed", lambda closed: setattr(owner, "result_dialog", None))
         dialog.present(window)
 
     def _reveal(self, path):
