@@ -223,17 +223,8 @@ class AppConfig:
                             indent=2,
                         )
                         handle.write("\n")
-                        handle.flush()
-                        os.fsync(handle.fileno())
                     os.replace(temporary, self.config_file)
                     temporary = None
-                    directory_fd = os.open(
-                        self.config_dir, os.O_RDONLY | os.O_DIRECTORY
-                    )
-                    try:
-                        os.fsync(directory_fd)
-                    finally:
-                        os.close(directory_fd)
                     self.config = values
                     self.modified_keys.clear()
                     return True

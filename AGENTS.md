@@ -32,3 +32,8 @@ while the application remains alive so process exit cannot hide survivors.
 Persistent worker loops must drop the completed request and its payload before
 waiting for another job. Otherwise the thread retains the last callback owner,
 metadata or marker snapshot even after main-loop delivery and cancellation.
+
+Remembered preferences use a same-directory temporary file and atomic replace,
+without forcing file or directory fsync. A power loss may lose the latest UI
+preferences; it must not expose a partially written JSON file. Media outputs keep
+their separate durability contract.

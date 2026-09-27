@@ -124,3 +124,18 @@ def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):
             config.set("noise_engine", "dfn3ll")
     finally:
         config.close()
+
+
+def test_remembered_preferences_do_not_force_storage(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(os, "fsync", lambda fd: calls.append(fd))
+    for index in range(3):
+        config = AppConfig(config_dir=tmp_path)
+        config.set("window_width", 1000 + index)
+        assert config.flush()
+        config.close()
+        assert (
+            json.loads((tmp_path / "config.json").read_text())["window_width"]
+            == 1000 + index
+        )
+    assert calls == []
