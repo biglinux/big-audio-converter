@@ -41,3 +41,8 @@ their separate durability contract.
 A display CSS provider registered per window must be removed during window
 cleanup. Track providers and other process-owned objects as well as the toplevel:
 a finalized window alone does not prove that its registrations were released.
+
+Queue drag sources must obtain their row from `get_widget()` instead of retaining
+it as signal user data. Release the drag icon on drag end, including cancellation.
+The queue's own drop controllers and display CSS registration need the same
+lifetime checks as its rows. Include the full widget subtree in leak audits.

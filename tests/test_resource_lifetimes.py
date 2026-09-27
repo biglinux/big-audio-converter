@@ -226,3 +226,49 @@ def test_main_windows_finalize_while_application_lives(tmp_path, census):
     app.config.close()
     app.quit()
     assert counts["new"] == counts["fin"] == 25
+
+
+def test_queue_and_drag_controllers_finalize(parent, census, tmp_path):
+    import wave
+
+    from app.audio.converter import AudioConverter
+    from app.ui.file_queue import FileQueue
+    from gi.repository import Gtk
+
+    path = tmp_path / "tone.wav"
+    with wave.open(str(path), "wb") as audio:
+        audio.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
+        audio.writeframes(b"\0\0" * 8000)
+    converter = AudioConverter()
+    track, counts = census
+    for _ in range(5):
+        queue = FileQueue(converter)
+        track(queue)
+        track(queue._css_provider)
+        parent.set_content(queue)
+        queue.add_file(str(path))
+        deadline = time.monotonic() + 5
+        while queue.pending and time.monotonic() < deadline:
+            settle()
+        assert not queue.pending
+        row = queue.file_rows[0]
+        track(row)
+        controllers = row.observe_controllers()
+        drag = next(
+            controller
+            for controller in controllers
+            if isinstance(controller, Gtk.DragSource)
+        )
+        assert drag.emit("prepare", 0.0, 0.0) is not None
+        queue._on_row_drag_begin(drag, None)
+        assert row.has_css_class("drag-row")
+        queue._on_row_drag_end(drag, None, False)
+        assert not row.has_css_class("drag-row")
+        del controllers, drag, row
+        queue.clear_queue()
+        queue.cleanup()
+        parent.set_content(None)
+        del queue
+        settle()
+    converter.cleanup()
+    assert counts["new"] == counts["fin"] == 15

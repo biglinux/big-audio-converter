@@ -26,7 +26,7 @@ from app.audio.media import audio_duration, audio_stream
 from app.audio.probe_service import ProbeService
 from app.audio.process import MediaError
 from app.audio.profiles import copy_container
-from app.utils.main_loop import MainLoopSources
+from app.utils.main_loop import MainLoopSources, weak_callback
 
 logger = logging.getLogger(__name__)
 
@@ -670,9 +670,9 @@ class FileQueue(Gtk.Box):
 
         # Add drop target for reordering rows within the list
         drop_target_reorder = Gtk.DropTarget.new(FileQueueRow, Gdk.DragAction.MOVE)
-        drop_target_reorder.connect("drop", self._on_row_drop)
-        drop_target_reorder.connect("enter", self._on_row_drag_enter)
-        drop_target_reorder.connect("leave", self._on_row_drag_leave)
+        drop_target_reorder.connect("drop", weak_callback(self._on_row_drop))
+        drop_target_reorder.connect("enter", weak_callback(self._on_row_drag_enter))
+        drop_target_reorder.connect("leave", weak_callback(self._on_row_drag_leave))
         self.file_list.add_controller(drop_target_reorder)
 
         scrolled.set_child(self.file_list)
@@ -692,9 +692,9 @@ class FileQueue(Gtk.Box):
         # Enable drag and drop for multiple files with improved visual feedback
         drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
         drop_target.set_gtypes([Gdk.FileList])
-        drop_target.connect("drop", self._on_drop)
-        drop_target.connect("enter", self._on_drop_enter)
-        drop_target.connect("leave", self._on_drop_leave)
+        drop_target.connect("drop", weak_callback(self._on_drop))
+        drop_target.connect("enter", weak_callback(self._on_drop_enter))
+        drop_target.connect("leave", weak_callback(self._on_drop_leave))
         self.add_controller(drop_target)
 
         # Initialize with no callbacks
@@ -714,7 +714,7 @@ class FileQueue(Gtk.Box):
 
     def _setup_styles(self):
         """Set up custom CSS styles for the file list."""
-        css_provider = Gtk.CssProvider()
+        css_provider = self._css_provider = Gtk.CssProvider()
         css_provider.load_from_string(
             """
             .drag-highlight {
@@ -790,8 +790,9 @@ class FileQueue(Gtk.Box):
         self.file_list.append(row)
         self._apply_row_tooltips(row)
         drag = Gtk.DragSource(actions=Gdk.DragAction.MOVE)
-        drag.connect("prepare", self._on_row_drag_prepare, row)
-        drag.connect("drag-begin", self._on_row_drag_begin, row)
+        drag.connect("prepare", weak_callback(self._on_row_drag_prepare))
+        drag.connect("drag-begin", weak_callback(self._on_row_drag_begin))
+        drag.connect("drag-end", self._on_row_drag_end)
         row.add_controller(drag)
         return row
 
@@ -1092,6 +1093,9 @@ class FileQueue(Gtk.Box):
         if self._closed:
             return
         self._closed = True
+        Gtk.StyleContext.remove_provider_for_display(
+            self.get_display(), self._css_provider
+        )
         self._imports.clear()
         self._sources.close()
         self._probes.cleanup()
@@ -1226,19 +1230,25 @@ class FileQueue(Gtk.Box):
         self.add_files(paths)
         return bool(paths)
 
-    def _on_row_drag_prepare(self, drag_source, x, y, row):
+    def _on_row_drag_prepare(self, drag_source, x, y):
         """Prepare drag operation for a row."""
         # Set the row as the drag content
-        content = Gdk.ContentProvider.new_for_value(row)
+        content = Gdk.ContentProvider.new_for_value(drag_source.get_widget())
         return content
 
-    def _on_row_drag_begin(self, drag_source, drag, row):
+    def _on_row_drag_begin(self, drag_source, drag):
         """Handle drag begin for a row."""
+        row = drag_source.get_widget()
         # Add visual feedback
         row.add_css_class("drag-row")
         # Create drag icon from the row
         paintable = Gtk.WidgetPaintable.new(row)
         drag_source.set_icon(paintable, 0, 0)
+
+    @staticmethod
+    def _on_row_drag_end(drag_source, _drag, _delete_data):
+        drag_source.set_icon(None, 0, 0)
+        drag_source.get_widget().remove_css_class("drag-row")
 
     def _on_row_drop(self, drop_target, value, x, y):
         """Handle drop of a row for reordering."""
