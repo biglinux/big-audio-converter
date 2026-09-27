@@ -9,6 +9,8 @@ import gettext
 
 import gi
 
+from app.utils.main_loop import weak_callback
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gdk, Gtk
@@ -172,7 +174,9 @@ class EqualizerPanel(Gtk.Box):
             [Gtk.AccessibleProperty.LABEL],
             [_("Equalizer preset")],
         )
-        self.preset_dropdown.connect("notify::selected", self._on_preset_changed)
+        self._preset_dropdown_handler = self.preset_dropdown.connect(
+            "notify::selected", weak_callback(self._on_preset_changed)
+        )
         self.preset_dropdown.set_valign(Gtk.Align.CENTER)
         header.append(self.preset_dropdown)
 
@@ -184,7 +188,7 @@ class EqualizerPanel(Gtk.Box):
             [Gtk.AccessibleProperty.LABEL],
             [_("Close equalizer")],
         )
-        close_btn.connect("clicked", self._on_close)
+        close_btn.connect("clicked", weak_callback(self._on_close))
         header.append(close_btn)
 
         self.append(header)
@@ -218,7 +222,7 @@ class EqualizerPanel(Gtk.Box):
             scale.set_hexpand(False)
             scale.set_size_request(-1, 100)
             scale.add_mark(0, Gtk.PositionType.LEFT, None)
-            scale.connect("value-changed", self._on_scale_changed, freq)
+            scale.connect("value-changed", weak_callback(self._on_scale_changed), freq)
             scale.update_property(
                 [Gtk.AccessibleProperty.LABEL],
                 [_("Equalizer band {} Hz").format(label_text)],
@@ -249,9 +253,9 @@ class EqualizerPanel(Gtk.Box):
         if not self._updating_preset:
             # Switch dropdown to "custom" (last item)
             custom_idx = len(self.PRESET_KEYS) - 1
-            self.preset_dropdown.handler_block_by_func(self._on_preset_changed)
+            self.preset_dropdown.handler_block(self._preset_dropdown_handler)
             self.preset_dropdown.set_selected(custom_idx)
-            self.preset_dropdown.handler_unblock_by_func(self._on_preset_changed)
+            self.preset_dropdown.handler_unblock(self._preset_dropdown_handler)
             self._apply_equalizer()
 
     def _on_preset_changed(self, dropdown, _pspec):

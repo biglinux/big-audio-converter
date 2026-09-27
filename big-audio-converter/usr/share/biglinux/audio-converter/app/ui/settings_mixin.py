@@ -15,8 +15,11 @@ Usage:
 import gettext
 import logging
 import math
+import weakref
 
 import gi
+
+from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -37,6 +40,7 @@ class SettingsManagerMixin:
 
     def setup_conversion_options(self, parent_box):
         """Expose the common path first; keep format-specific controls contextual."""
+        owner = weakref.proxy(self)
         self._updating_profile = False
 
         def group(title):
@@ -64,7 +68,7 @@ class SettingsManagerMixin:
                 width_chars=5,
             )
             control.update_property([Gtk.AccessibleProperty.LABEL], [title])
-            control.connect("value-changed", callback)
+            control.connect("value-changed", weak_callback(callback))
             row.add_suffix(control)
             row.set_activatable_widget(control)
             parent.add_row(row)
@@ -85,7 +89,9 @@ class SettingsManagerMixin:
             title=_("Format"), use_subtitle=True, model=Gtk.StringList.new(labels)
         )
         self.format_row.set_selected(1)
-        self.format_row.connect("notify::selected", self._on_format_changed)
+        self.format_row.connect(
+            "notify::selected", weak_callback(self._on_format_changed)
+        )
         output.add(self.format_row)
         self.copy_notice = Gtk.Label(
             label=_(
@@ -105,10 +111,10 @@ class SettingsManagerMixin:
         choose.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("Choose output folder")]
         )
-        choose.connect("clicked", self._choose_output_folder)
+        choose.connect("clicked", weak_callback(self._choose_output_folder))
         reset = Gtk.Button(icon_name="edit-undo-symbolic", valign=Gtk.Align.CENTER)
         reset.update_property([Gtk.AccessibleProperty.LABEL], [_("Use source folders")])
-        reset.connect("clicked", lambda *_: self._set_output_folder(""))
+        reset.connect("clicked", lambda *_: owner._set_output_folder(""))
         self.destination_row.add_suffix(choose)
         self.destination_row.add_suffix(reset)
         output.add(self.destination_row)
@@ -121,7 +127,9 @@ class SettingsManagerMixin:
             title=_("Bitrate"), model=Gtk.StringList.new(self._bitrate_list)
         )
         self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
-        self.bitrate_row.connect("notify::selected", self._on_bitrate_changed)
+        self.bitrate_row.connect(
+            "notify::selected", weak_callback(self._on_bitrate_changed)
+        )
         self._quality_bitrates = ("96k", "192k", "320k")
         self.quality_row = Adw.ComboRow(
             title=_("Quality"),
@@ -135,7 +143,9 @@ class SettingsManagerMixin:
             ),
         )
         self.quality_row.set_selected(1)
-        self.quality_row.connect("notify::selected", self._on_quality_changed)
+        self._quality_row_handler = self.quality_row.connect(
+            "notify::selected", weak_callback(self._on_quality_changed)
+        )
         output.add(self.quality_row)
         self.advanced_row = Adw.ExpanderRow(
             title=_("Advanced encoding"),
@@ -146,7 +156,9 @@ class SettingsManagerMixin:
             title=_("Channels"),
             model=Gtk.StringList.new([_("Original"), _("Mono"), _("Stereo")]),
         )
-        self.channels_row.connect("notify::selected", self._on_channels_changed)
+        self.channels_row.connect(
+            "notify::selected", weak_callback(self._on_channels_changed)
+        )
         self.advanced_row.add_row(self.channels_row)
         self._sample_rate_list = ["original"] + [
             str(rate) for rate in SAMPLE_RATES["mp3"]
@@ -157,7 +169,9 @@ class SettingsManagerMixin:
                 [_("Original")] + [f"{rate} Hz" for rate in SAMPLE_RATES["mp3"]]
             ),
         )
-        self.sample_rate_row.connect("notify::selected", self._on_sample_rate_changed)
+        self.sample_rate_row.connect(
+            "notify::selected", weak_callback(self._on_sample_rate_changed)
+        )
         self.advanced_row.add_row(self.sample_rate_row)
         self.precision_row = Adw.SwitchRow(
             title=_("Allow conversion to 24-bit PCM"),
@@ -168,7 +182,7 @@ class SettingsManagerMixin:
         )
         self.precision_row.connect(
             "notify::active",
-            lambda row, _pspec: self.app.config.set(
+            lambda row, _pspec: owner.app.config.set(
                 "allow_precision_reduction", row.get_active()
             ),
         )
@@ -186,17 +200,23 @@ class SettingsManagerMixin:
             use_subtitle=True,
             model=Gtk.StringList.new(self._cut_list),
         )
-        self.cut_row.connect("notify::selected", self._on_cut_combo_changed)
+        self.cut_row.connect(
+            "notify::selected", weak_callback(self._on_cut_combo_changed)
+        )
         editing.add(self.cut_row)
         self.cut_output_row = Adw.ComboRow(
             title=_("Save segments"),
             model=Gtk.StringList.new([_("Separate Files"), _("Merge into One")]),
             visible=False,
         )
-        self.cut_output_row.connect("notify::selected", self._on_cut_output_changed)
+        self.cut_output_row.connect(
+            "notify::selected", weak_callback(self._on_cut_output_changed)
+        )
         editing.add(self.cut_output_row)
         self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"), margin_top=6)
-        self.segment_edit_button.connect("clicked", self.on_edit_segments)
+        self.segment_edit_button.connect(
+            "clicked", weak_callback(self.on_edit_segments)
+        )
         editing.add(self.segment_edit_button)
         self.cut_options_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=6, visible=False
@@ -204,7 +224,9 @@ class SettingsManagerMixin:
         mark_buttons = Gtk.Box(spacing=6, homogeneous=True)
         for label, is_start in ((_("Mark start"), True), (_("Mark end"), False)):
             button = Gtk.Button(label=label)
-            button.connect("clicked", self._mark_current_position, is_start)
+            button.connect(
+                "clicked", weak_callback(self._mark_current_position), is_start
+            )
             mark_buttons.append(button)
         self.cut_options_box.append(mark_buttons)
         self.cut_options_box.append(
@@ -217,7 +239,9 @@ class SettingsManagerMixin:
             )
         )
         self.waveform_row = Adw.SwitchRow(title=_("Show waveform"), active=True)
-        self.waveform_row.connect("notify::active", self._on_waveform_switch_changed)
+        self.waveform_row.connect(
+            "notify::active", weak_callback(self._on_waveform_switch_changed)
+        )
         self.cut_options_box.append(self.waveform_row)
         editing.add(self.cut_options_box)
 
@@ -233,7 +257,7 @@ class SettingsManagerMixin:
         self.volume_spin.set_title(_("Volume (%)"))
         self.volume_spin.set_value(100)
         self.volume_spin.connect(
-            "notify::value", lambda row, _pspec: self._on_volume_spin_changed(row)
+            "notify::value", lambda row, _pspec: owner._on_volume_spin_changed(row)
         )
         self.effects_expander.add_row(self.volume_spin)
         self.speed_spin = Adw.SpinRow.new_with_range(0.10, 5.0, 0.05)
@@ -241,7 +265,7 @@ class SettingsManagerMixin:
         self.speed_spin.set_digits(2)
         self.speed_spin.set_value(1.0)
         self.speed_spin.connect(
-            "notify::value", lambda row, _pspec: self._on_speed_spin_changed(row)
+            "notify::value", lambda row, _pspec: owner._on_speed_spin_changed(row)
         )
         self.effects_expander.add_row(self.speed_spin)
 
@@ -254,7 +278,9 @@ class SettingsManagerMixin:
         self.noise_switch.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("Enable noise reduction")]
         )
-        self.noise_switch.connect("state-set", self._on_noise_switch_changed)
+        self.noise_switch.connect(
+            "state-set", weak_callback(self._on_noise_switch_changed)
+        )
         self.noise_expander.add_suffix(self.noise_switch)
         self.effects_expander.add_row(self.noise_expander)
         self.noise_engines = ("dfn3", "dpdfnet")
@@ -268,7 +294,9 @@ class SettingsManagerMixin:
                 ]
             ),
         )
-        self.noise_model_row.connect("notify::selected", self._on_noise_model_changed)
+        self.noise_model_row.connect(
+            "notify::selected", weak_callback(self._on_noise_model_changed)
+        )
         # Keep the choice reachable even when the selected plugin is missing.
         self.effects_expander.add_row(self.noise_model_row)
         self.noise_strength_row, self.noise_strength_scale = numeric_row(
@@ -305,7 +333,7 @@ class SettingsManagerMixin:
             expander = Adw.ExpanderRow(title=title, enable_expansion=False)
             switch = Gtk.Switch(valign=Gtk.Align.CENTER)
             switch.update_property([Gtk.AccessibleProperty.LABEL], [title])
-            switch.connect("state-set", handler)
+            switch.connect("state-set", weak_callback(handler))
             expander.add_suffix(switch)
             row, spin = numeric_row(
                 expander, _("Intensity"), initial, 0, 1, 0.05, intensity_handler
@@ -320,7 +348,9 @@ class SettingsManagerMixin:
         self.hpf_row = Adw.SwitchRow(
             title=_("High-Pass Filter"), subtitle=_("Removes low-frequency rumble")
         )
-        self.hpf_row.connect("notify::active", self._on_hpf_switch_changed)
+        self.hpf_row.connect(
+            "notify::active", weak_callback(self._on_hpf_switch_changed)
+        )
         self.effects_expander.add_row(self.hpf_row)
         self.hpf_freq_row, self.hpf_freq_scale = numeric_row(
             self.effects_expander,
@@ -337,13 +367,17 @@ class SettingsManagerMixin:
             title=_("Loudness Normalization"),
             subtitle=_("Target: −16 LUFS; changes the original volume"),
         )
-        self.normalize_row.connect("notify::active", self._on_normalize_switch_changed)
+        self.normalize_row.connect(
+            "notify::active", weak_callback(self._on_normalize_switch_changed)
+        )
         self.effects_expander.add_row(self.normalize_row)
         self.clipping_row = Adw.SwitchRow(
             title=_("Clipping protection"),
             subtitle=_("Limit peaks explicitly; may change dynamics"),
         )
-        self.clipping_row.connect("notify::active", self._on_clipping_changed)
+        self.clipping_row.connect(
+            "notify::active", weak_callback(self._on_clipping_changed)
+        )
         self.effects_expander.add_row(self.clipping_row)
         self.gain_notice = Gtk.Label(
             label=_(
@@ -463,13 +497,13 @@ class SettingsManagerMixin:
 
     def _sync_quality(self):
         bitrate = self._bitrate_list[self.bitrate_row.get_selected()]
-        self.quality_row.handler_block_by_func(self._on_quality_changed)
+        self.quality_row.handler_block(self._quality_row_handler)
         self.quality_row.set_selected(
             self._quality_bitrates.index(bitrate)
             if bitrate in self._quality_bitrates
             else 3
         )
-        self.quality_row.handler_unblock_by_func(self._on_quality_changed)
+        self.quality_row.handler_unblock(self._quality_row_handler)
 
     def _on_quality_changed(self, row, _pspec):
         selected = row.get_selected()
@@ -767,9 +801,9 @@ class SettingsManagerMixin:
             hasattr(self, "eq_toggle_btn")
             and self.eq_toggle_btn.get_active() != is_revealed
         ):
-            self.eq_toggle_btn.handler_block_by_func(self._on_eq_toggle_clicked)
+            self.eq_toggle_btn.handler_block(self._eq_toggle_btn_handler)
             self.eq_toggle_btn.set_active(is_revealed)
-            self.eq_toggle_btn.handler_unblock_by_func(self._on_eq_toggle_clicked)
+            self.eq_toggle_btn.handler_unblock(self._eq_toggle_btn_handler)
 
     # --- Copy mode UI ---
 

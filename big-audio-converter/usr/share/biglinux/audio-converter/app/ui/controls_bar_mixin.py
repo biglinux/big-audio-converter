@@ -153,9 +153,9 @@ class ControlsBarMixin:
             # Convert zoom level back to slider value
             slider_value = self._zoom_to_slider(zoom_level)
             # Temporarily block signal to avoid feedback loop
-            self.zoom_scale.handler_block_by_func(self._on_zoom_scale_changed)
+            self.zoom_scale.handler_block(self._zoom_scale_handler)
             self.zoom_scale.set_value(slider_value)
-            self.zoom_scale.handler_unblock_by_func(self._on_zoom_scale_changed)
+            self.zoom_scale.handler_unblock(self._zoom_scale_handler)
 
         # Update the zoom value label
         if hasattr(self, "zoom_value_label"):

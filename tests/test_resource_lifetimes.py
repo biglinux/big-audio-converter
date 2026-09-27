@@ -197,3 +197,31 @@ def test_conversion_results_finalize(parent, census):
         settle()
         assert controller.result_dialog is None
     assert counts["new"] == counts["fin"] == 5
+
+
+def test_main_windows_finalize_while_application_lives(tmp_path, census):
+    import main
+    from app.ui.main_window import MainWindow
+    from gi.repository import Gio
+
+    app = main.Application()
+    app.set_flags(app.get_flags() | Gio.ApplicationFlags.NON_UNIQUE)
+    app.config.set("show_welcome_dialog", False)
+    app.register(None)
+    track, counts = census
+    for _ in range(5):
+        window = MainWindow(application=app)
+        app._main_window = window
+        track(window)
+        track(window.volume_popover)
+        track(window.speed_popover)
+        track(window.zoom_popover)
+        window.present()
+        settle()
+        window.close()
+        del window
+        settle()
+        assert app._main_window is None
+    app.config.close()
+    app.quit()
+    assert counts["new"] == counts["fin"] == 20

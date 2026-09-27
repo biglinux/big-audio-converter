@@ -5,6 +5,7 @@ Main Window for the Audio Converter application.
 """
 
 import gettext
+import weakref
 
 import gi
 
@@ -28,7 +29,7 @@ from app.ui.playback_controller import PlaybackControllerMixin
 from app.ui.segment_editor import SegmentEditor
 from app.ui.settings_mixin import SettingsManagerMixin
 from app.ui.visualizer import AudioVisualizer, SeekBar
-from app.utils.main_loop import MainLoopSources
+from app.utils.main_loop import MainLoopSources, weak_callback
 from app.utils.tooltip_helper import TooltipHelper
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class HeaderBar(Gtk.Box):
 
     def __init__(self, main_window, window_buttons_left=False):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        self.main_window = main_window
+        self.main_window = weakref.proxy(main_window)
         self.window_buttons_left = window_buttons_left
 
         # Ensure the wrapper box occupies full width
@@ -74,7 +75,9 @@ class HeaderBar(Gtk.Box):
         self.clear_queue_button.add_css_class("flat")
         self.clear_queue_button.add_css_class("circular")
         self.clear_queue_button.set_valign(Gtk.Align.CENTER)
-        self.clear_queue_button.connect("clicked", self.main_window.on_clear_queue)
+        self.clear_queue_button.connect(
+            "clicked", weak_callback(self.main_window.on_clear_queue)
+        )
         self.clear_queue_button.set_visible(False)
         self.clear_queue_button.update_property(
             [Gtk.AccessibleProperty.LABEL],
@@ -110,7 +113,9 @@ class HeaderBar(Gtk.Box):
         tips_action = Gio.SimpleAction.new_stateful(
             "toggle-tips", None, GLib.Variant.new_boolean(tips_enabled)
         )
-        tips_action.connect("change-state", self.main_window._on_tips_action_changed)
+        tips_action.connect(
+            "change-state", weak_callback(self.main_window._on_tips_action_changed)
+        )
         app.add_action(tips_action)
 
         # Organize right-side elements
@@ -143,13 +148,17 @@ class HeaderBar(Gtk.Box):
 
         # Add Files button
         add_files_button = Gtk.Button(label=_("Add Files"))
-        add_files_button.connect("clicked", self.main_window.on_add_files)
+        add_files_button.connect(
+            "clicked", weak_callback(self.main_window.on_add_files)
+        )
         # Keep Convert as the single primary action once files are ready.
         center_box.append(add_files_button)
 
         # Convert button
         self.convert_button = Gtk.Button(label=_("Convert"))
-        self.convert_button.connect("clicked", self.main_window.on_convert)
+        self.convert_button.connect(
+            "clicked", weak_callback(self.main_window.on_convert)
+        )
         self.convert_button.add_css_class("suggested-action")
         self.convert_button.set_visible(False)
         center_box.append(self.convert_button)
@@ -313,24 +322,30 @@ class MainWindow(
         self.file_queue.on_probe_error = self._on_probe_error
         self.file_queue.on_pending_changed = self._on_pending_changed
         self.setup_drop_target()
-        self.connect("close-request", self.on_close_request)
+        self.connect("close-request", weak_callback(self.on_close_request))
 
         # Setup visualizer tooltip after UI is fully created
         if self.tooltip_helper and hasattr(self, "visualizer"):
             self._sources.idle(self._setup_visualizer_tooltip)
 
         # Connect to map event for visualizer height restoration
-        self.connect("map", self.on_window_mapped)
+        self.connect("map", weak_callback(self.on_window_mapped))
 
         # Connect window state signals (only maximized, save size on close only)
-        self.connect("notify::maximized", self._on_window_state_changed)
+        self.connect("notify::maximized", weak_callback(self._on_window_state_changed))
 
         # Connect player signals to UI
-        self.player.connect("position-updated", self.on_player_position_updated)
-        self.player.connect("duration-changed", self.on_player_duration_changed)
-        self.player.connect("state-changed", self.on_player_state_changed)
-        self.player.connect("eos", self.on_playback_finished)
-        self.player.connect("error", self._on_player_error)
+        self.player.connect(
+            "position-updated", weak_callback(self.on_player_position_updated)
+        )
+        self.player.connect(
+            "duration-changed", weak_callback(self.on_player_duration_changed)
+        )
+        self.player.connect(
+            "state-changed", weak_callback(self.on_player_state_changed)
+        )
+        self.player.connect("eos", weak_callback(self.on_playback_finished))
+        self.player.connect("error", weak_callback(self._on_player_error))
 
         # Restore maximized state after window is fully initialized
         if self._should_maximize:
@@ -348,22 +363,23 @@ class MainWindow(
     def _setup_keyboard_shortcuts(self):
         """Register window-level keyboard shortcuts."""
         # Create window-level actions
+        owner = weakref.proxy(self)
         add_files_action = Gio.SimpleAction.new("add-files", None)
-        add_files_action.connect("activate", lambda *_: self.on_add_files(None))
+        add_files_action.connect("activate", lambda *_: owner.on_add_files(None))
         self.add_action(add_files_action)
 
         convert_action = Gio.SimpleAction.new("convert", None)
-        convert_action.connect("activate", lambda *_: self.on_convert(None))
+        convert_action.connect("activate", lambda *_: owner.on_convert(None))
         self.add_action(convert_action)
 
         play_pause_action = Gio.SimpleAction.new("play-pause", None)
         play_pause_action.connect(
-            "activate", lambda *_: self._on_pause_play_clicked(None)
+            "activate", lambda *_: owner._on_pause_play_clicked(None)
         )
         self.add_action(play_pause_action)
 
         edit = Gio.SimpleAction.new("edit-segments", None)
-        edit.connect("activate", lambda *_: self.on_edit_segments())
+        edit.connect("activate", lambda *_: owner.on_edit_segments())
         self.add_action(edit)
 
         # Set accelerators at application level
@@ -376,6 +392,7 @@ class MainWindow(
     def setup_ui(self):
         """Set up the user interface."""
         # Create main vertical paned container (root content)
+        owner = weakref.proxy(self)
         self.vertical_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.set_content(self.vertical_paned)
         self.vertical_paned.set_vexpand(True)
@@ -512,7 +529,7 @@ class MainWindow(
         self.file_queue.on_queue_size_changed = self.update_queue_size_label
 
         # Connect play callback for file queue
-        self.file_queue.on_play_file = self.on_play_file
+        self.file_queue.on_play_file = weak_callback(self.on_play_file)
 
         # Connect stop playback callback to player.stop method
         self.file_queue.on_stop_playback = self.player.stop
@@ -539,7 +556,9 @@ class MainWindow(
         self.eq_revealer.set_transition_duration(200)
         self.eq_revealer.set_reveal_child(False)
         self.eq_revealer.set_child(self.eq_panel)
-        self.eq_revealer.connect("notify::reveal-child", self._on_eq_revealer_changed)
+        self.eq_revealer.connect(
+            "notify::reveal-child", weak_callback(self._on_eq_revealer_changed)
+        )
         right_box.add_bottom_bar(self.eq_revealer)
 
         # Add the two views to the paned container (swapped order)
@@ -566,7 +585,7 @@ class MainWindow(
             [Gtk.AccessibleProperty.LABEL], [_("Close conversion settings")]
         )
         close_sidebar.connect(
-            "clicked", lambda *_: self.split_view.set_show_sidebar(False)
+            "clicked", lambda *_: owner.split_view.set_show_sidebar(False)
         )
         self.split_view.bind_property(
             "collapsed", close_sidebar, "visible", GObject.BindingFlags.SYNC_CREATE
@@ -597,7 +616,7 @@ class MainWindow(
         self.play_selection_switch.add_css_class("circular")
         self.play_selection_switch.set_active(False)
         self.play_selection_switch.connect(
-            "toggled", self._on_play_selection_switch_toggled
+            "toggled", weak_callback(self._on_play_selection_switch_toggled)
         )
         self.play_selection_switch.set_valign(Gtk.Align.CENTER)
         self.play_selection_switch.update_property(
@@ -618,7 +637,7 @@ class MainWindow(
         auto_advance_enabled = self.app.config.get("auto_advance_enabled", True)
         self.auto_advance_switch.set_active(auto_advance_enabled)
         self.auto_advance_switch.connect(
-            "toggled", self._on_auto_advance_switch_toggled
+            "toggled", weak_callback(self._on_auto_advance_switch_toggled)
         )
         self.auto_advance_switch.set_valign(Gtk.Align.CENTER)
         self.auto_advance_switch.update_property(
@@ -646,7 +665,9 @@ class MainWindow(
         self.eq_toggle_btn.add_css_class("circular")
         self.eq_toggle_btn.add_css_class("eq-icon-btn")
         self.eq_toggle_btn.set_active(False)
-        self.eq_toggle_btn.connect("toggled", self._on_eq_toggle_clicked)
+        self._eq_toggle_btn_handler = self.eq_toggle_btn.connect(
+            "toggled", weak_callback(self._on_eq_toggle_clicked)
+        )
         self.eq_toggle_btn.set_valign(Gtk.Align.CENTER)
         self.eq_toggle_btn.update_property(
             [Gtk.AccessibleProperty.LABEL],
@@ -660,9 +681,9 @@ class MainWindow(
         )
         self.original_preview.connect(
             "toggled",
-            lambda button: self.player.set_effects_bypassed(
+            lambda button: owner.player.set_effects_bypassed(
                 button.get_active()
-                or self._format_list[self.format_row.get_selected()] == "copy"
+                or owner._format_list[owner.format_row.get_selected()] == "copy"
             ),
         )
         zoom_control_box.append(self.original_preview)
@@ -686,22 +707,24 @@ class MainWindow(
             title=_("Audio output"), model=Gtk.StringList.new([_("System default")])
         )
         self._audio_device_names = ["auto"]
-        self.audio_output_row.connect("notify::selected", self._on_audio_output_changed)
+        self._audio_output_row_handler = self.audio_output_row.connect(
+            "notify::selected", weak_callback(self._on_audio_output_changed)
+        )
         output_group.add(self.audio_output_row)
         refresh_outputs = Gtk.Button(label=_("Refresh audio outputs"), margin_top=6)
         refresh_outputs.connect(
-            "clicked", lambda *_: self.player.refresh_audio_devices()
+            "clicked", lambda *_: owner.player.refresh_audio_devices()
         )
         output_group.add(refresh_outputs)
         output_popover.set_child(output_group)
         output_popover.connect(
             "notify::visible",
             lambda popover, *_: (
-                self.player.refresh_audio_devices() if popover.get_visible() else None
+                owner.player.refresh_audio_devices() if popover.get_visible() else None
             ),
         )
         self.audio_output_button.set_popover(output_popover)
-        self.player.devices_callback = self._refresh_audio_outputs
+        self.player.devices_callback = weak_callback(self._refresh_audio_outputs)
         zoom_control_box.append(self.audio_output_button)
 
         # MIDDLE: Playback control buttons (centered)
@@ -722,7 +745,7 @@ class MainWindow(
             [_("Previous track")],
         )
         self.prev_audio_btn.connect(
-            "clicked", lambda btn: self._on_previous_audio_clicked()
+            "clicked", lambda btn: owner._on_previous_audio_clicked()
         )
         self.prev_audio_btn.set_visible(False)  # Initially hidden
         playback_controls_box.append(self.prev_audio_btn)
@@ -736,7 +759,9 @@ class MainWindow(
             [Gtk.AccessibleProperty.LABEL],
             [_("Play or pause")],
         )
-        self.pause_play_btn.connect("clicked", self._on_pause_play_clicked)
+        self.pause_play_btn.connect(
+            "clicked", weak_callback(self._on_pause_play_clicked)
+        )
         playback_controls_box.append(self.pause_play_btn)
 
         # Next audio button (right side)
@@ -749,7 +774,7 @@ class MainWindow(
             [_("Next track")],
         )
         self.next_audio_btn.connect(
-            "clicked", lambda btn: self._on_next_audio_clicked()
+            "clicked", lambda btn: owner._on_next_audio_clicked()
         )
         self.next_audio_btn.set_visible(False)  # Initially hidden
         playback_controls_box.append(self.next_audio_btn)
@@ -803,12 +828,14 @@ class MainWindow(
         self.volume_scale.add_mark(
             self._volume_to_slider(100.0), Gtk.PositionType.RIGHT, None
         )
-        self.volume_scale.connect("value-changed", self._on_volume_scale_changed)
+        self.volume_scale.connect(
+            "value-changed", weak_callback(self._on_volume_scale_changed)
+        )
         vol_popover_box.append(self.volume_scale)
 
         self.volume_popover.set_child(vol_popover_box)
 
-        self.volume_btn.connect("clicked", self._on_volume_btn_clicked)
+        self.volume_btn.connect("clicked", weak_callback(self._on_volume_btn_clicked))
 
         vol_box.append(self.volume_btn)
         vol_box.append(self.volume_value_label)
@@ -856,12 +883,14 @@ class MainWindow(
         self.speed_scale.add_mark(
             self._speed_to_slider(1.0), Gtk.PositionType.RIGHT, None
         )
-        self.speed_scale.connect("value-changed", self._on_speed_scale_changed)
+        self.speed_scale.connect(
+            "value-changed", weak_callback(self._on_speed_scale_changed)
+        )
         spd_popover_box.append(self.speed_scale)
 
         self.speed_popover.set_child(spd_popover_box)
 
-        self.speed_btn.connect("clicked", self._on_speed_btn_clicked)
+        self.speed_btn.connect("clicked", weak_callback(self._on_speed_btn_clicked))
 
         speed_box.append(self.speed_btn)
         speed_box.append(self.speed_value_label)
@@ -912,13 +941,15 @@ class MainWindow(
             [_("Waveform zoom level")],
         )
 
-        self.zoom_scale.set_format_value_func(self._format_zoom_value)
-        self.zoom_scale.connect("value-changed", self._on_zoom_scale_changed)
+        self.zoom_scale.set_format_value_func(weak_callback(self._format_zoom_value))
+        self._zoom_scale_handler = self.zoom_scale.connect(
+            "value-changed", weak_callback(self._on_zoom_scale_changed)
+        )
         popover_box.append(self.zoom_scale)
 
         self.zoom_popover.set_child(popover_box)
 
-        self.zoom_btn.connect("clicked", self._on_zoom_btn_clicked)
+        self.zoom_btn.connect("clicked", weak_callback(self._on_zoom_btn_clicked))
 
         self.zoom_box.append(self.zoom_btn)
         self.zoom_box.append(self.zoom_value_label)
@@ -1009,7 +1040,7 @@ class MainWindow(
 
         # Connect to position changes to save visualizer height
         self.vertical_paned.connect(
-            "notify::position", self._on_visualizer_height_changed
+            "notify::position", weak_callback(self._on_visualizer_height_changed)
         )
 
         # Apply tooltips to all UI elements (must be after all widgets are created)
@@ -1096,7 +1127,7 @@ class MainWindow(
                 ]
                 break
         self._audio_device_names = ["auto"] + [device["name"] for device in devices]
-        self.audio_output_row.handler_block_by_func(self._on_audio_output_changed)
+        self.audio_output_row.handler_block(self._audio_output_row_handler)
         self.audio_output_row.set_model(
             Gtk.StringList.new(
                 [_("System default")] + [device["description"] for device in devices]
@@ -1107,7 +1138,7 @@ class MainWindow(
             if self.player.audio_device in self._audio_device_names
             else 0
         )
-        self.audio_output_row.handler_unblock_by_func(self._on_audio_output_changed)
+        self.audio_output_row.handler_unblock(self._audio_output_row_handler)
 
     def _on_audio_output_changed(self, row, *_args):
         index = row.get_selected()
@@ -1405,6 +1436,13 @@ class MainWindow(
         self.visualizer.cleanup()
         if self.tooltip_helper:
             self.tooltip_helper.cleanup()
+        for popover in (self.volume_popover, self.speed_popover, self.zoom_popover):
+            popover.unparent()
+        self.seekbar.connect_seek_handler(None)
+        self.file_queue._parent_window = None
+        self.app.remove_action("toggle-tips")
+        if self.app._main_window is self:
+            self.app._main_window = None
         self.app.config.flush()
 
     def on_edit_segments(self, *_args):
@@ -1424,6 +1462,8 @@ class MainWindow(
             return
         editor = SegmentEditor(self)
         self.segment_editor = editor
+        owner = weakref.proxy(self)
+        editor.connect("closed", lambda dialog: setattr(owner, "segment_editor", None))
         editor.present(self)
 
     def _request_waveform(self, file_path, enabled=None):
@@ -1466,7 +1506,9 @@ class MainWindow(
                 heading=_("Some files could not be added"), body=body
             )
             self._probe_error_dialog.add_response("ok", _("OK"))
-            self._probe_error_dialog.connect("closed", self._probe_errors_closed)
+            self._probe_error_dialog.connect(
+                "closed", weak_callback(self._probe_errors_closed)
+            )
             self._probe_error_dialog.present(self)
         else:
             self._probe_error_dialog.set_body(body)
@@ -1569,7 +1611,7 @@ class MainWindow(
         dialog.set_response_appearance("clear", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response("cancel")
         dialog.set_close_response("cancel")
-        dialog.connect("response", self._on_clear_queue_response)
+        dialog.connect("response", weak_callback(self._on_clear_queue_response))
         dialog.present(self)
 
     def _on_clear_queue_response(self, dialog, response):
@@ -1593,7 +1635,7 @@ class MainWindow(
     def setup_drop_target(self):
         """Set up drag and drop support for files."""
         drop_target = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
-        drop_target.connect("drop", self.on_drop)
+        drop_target.connect("drop", weak_callback(self.on_drop))
         self.add_controller(drop_target)
 
     def on_drop(self, target, value, x, y):

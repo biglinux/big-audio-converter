@@ -20,3 +20,11 @@ must hold the row weakly, including lazy menus created after construction.
 
 Drawing functions receive their area; controllers expose their widget. Use
 those arguments rather than bound methods that keep the drawing area alive.
+
+Conversion dialogs must release their controller reference on close. Repeated
+bound-method signal connections use `weak_callback`; retain the returned handler
+ID when a control temporarily blocks that connection.
+
+A closed main window must release application actions, the active-window slot,
+queue parent references and manually parented popovers. Test window finalization
+while the application remains alive so process exit cannot hide survivors.
