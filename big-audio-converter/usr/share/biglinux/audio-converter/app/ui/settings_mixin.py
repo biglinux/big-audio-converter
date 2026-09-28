@@ -580,11 +580,7 @@ class SettingsManagerMixin:
         self.noise_switch.set_sensitive(self.noise_available)
         if not self.noise_available:
             self.noise_switch.set_active(False)
-            package = (
-                "deepfilternet-quantized-ladspa"
-                if engine == "dfn3"
-                else "dpdfnet-native"
-            )
+            package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
             self.noise_expander.set_subtitle(
                 _("Unavailable: install {package}").format(package=package)
             )

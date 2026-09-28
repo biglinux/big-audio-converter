@@ -3,7 +3,7 @@
 pkgname=big-audio-converter
 pkgdesc="audio converter and simple editor"
 depends=('python>=3.10' 'python-gobject' 'gtk4>=4.12' 'ffmpeg' 'python-cairo' 'python-numpy' 'libadwaita>=1.5' 'python-mpv')
-optdepends=('deepfilternet-quantized-ladspa: light speech noise reduction (standard DFN3, without LL)'
+optdepends=('deepfilternet3-native: light speech noise reduction (standard DFN3, without LL)'
     'dpdfnet-native: higher-quality speech noise reduction with DPDFNet-2 48 kHz HR')
 makedepends=('git' 'gettext')
 checkdepends=('python-pytest' 'python-hypothesis')
