@@ -8,9 +8,13 @@ from .media import pcm_codec
 from .process import MediaError
 
 # Only the standard DFN3 model is supported; the LL library is deliberately excluded.
+# File, label, output delay in samples, and the attenuation at full strength:
+# where the model stops removing more (measured on speech in pink noise).
+# DFN3's residual moves under 1 dB past 24 dB, while DPDFNet-2 at 48 dB leaves
+# noise at -74 dBFS; a 100 dB scale left half the control doing nothing.
 NOISE_PLUGINS = {
-    "dfn3": ("libdfn3_ladspa.so", "deep_filter_net3_rs_mono", 1919),
-    "dpdfnet": ("libdpdfnet_native.so", "dpdfnet_native_48hr", 2880),
+    "dfn3": ("libdfn3_ladspa.so", "deep_filter_net3_rs_mono", 1919, 24),
+    "dpdfnet": ("libdpdfnet_native.so", "dpdfnet_native_48hr", 2880, 48),
 }
 
 # Export measures the timeline first and replaces this with a linear pass.
@@ -19,7 +23,7 @@ LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
 
 def discover_noise_plugins():
     plugins = {}
-    for engine, (filename, _label, _delay) in NOISE_PLUGINS.items():
+    for engine, (filename, _label, _delay, _full_db) in NOISE_PLUGINS.items():
         for directory in ("/usr/lib/ladspa", "/usr/lib64/ladspa"):
             path = Path(directory) / filename
             if path.is_file():
@@ -76,7 +80,7 @@ COPY_CONTAINERS = {
     "dts": ("dts", "dts"),
 }
 NUMERIC_LIMITS = {
-    "noise_attenuation_db": (0, 100),
+    "noise_strength": (0, 100),
     "volume": (0, 10),
     "speed": (0.1, 5),
     "hpf_frequency": (20, 20000),
@@ -307,8 +311,9 @@ def build_audio_filters(settings, noise_plugins=None):
         )
 
     if settings.get("noise_reduction"):
-        _filename, label, delay = NOISE_PLUGINS[engine]
-        attenuation = settings.get("noise_attenuation_db", 100)
+        _filename, label, delay, full_db = NOISE_PLUGINS[engine]
+        # Strength in percent, linear in dB up to the model's useful cap.
+        attenuation = f"{settings.get('noise_strength', 100) / 100 * full_db:.2f}"
         # System plugin paths are fixed; never interpret a path as filter syntax.
         if any(char in str(plugin) for char in "\\'\":;,[]\n\r"):
             raise MediaError(gettext.gettext("The audio plugin path is unsupported."))

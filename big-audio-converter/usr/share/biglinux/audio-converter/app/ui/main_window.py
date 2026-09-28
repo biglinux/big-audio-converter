@@ -1094,7 +1094,7 @@ class MainWindow(
             "output_directory": self.output_directory,
             "noise_reduction": self.noise_switch.get_active(),
             "noise_engine": self.noise_engines[self.noise_model_row.get_selected()],
-            "noise_attenuation_db": self.noise_strength_scale.get_value(),
+            "noise_strength": self.noise_strength_scale.get_value(),
             "gate_enabled": self.gate_switch.get_active(),
             "gate_intensity": self.gate_intensity_scale.get_value(),
             "compressor_enabled": self.compressor_switch.get_active(),

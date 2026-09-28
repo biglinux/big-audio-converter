@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class AppConfig:
     MAX_BYTES = 1024 * 1024
     NUMBERS: ClassVar = {
-        "noise_attenuation_db": (0, 100),
+        "noise_strength": (0, 100),
         "conversion_volume": (0, 1000),
         "conversion_speed": (0.1, 5),
         "gate_intensity": (0, 1),
@@ -66,7 +66,7 @@ class AppConfig:
             "show_welcome_dialog": True,
             "noise_reduction_enabled": "false",
             "noise_engine": "dfn3",
-            "noise_attenuation_db": "100",
+            "noise_strength": "100",
             # Gate (single intensity slider, sqrt curve)
             "gate_enabled": "false",
             "gate_intensity": "0.5",

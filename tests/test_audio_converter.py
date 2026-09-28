@@ -77,7 +77,7 @@ class TestBuildAudioFilters:
         assert any("loudnorm" in f for f in filters)
 
     def test_noise_reduction_filter(self, converter):
-        settings = {"noise_reduction": True, "noise_attenuation_db": 80}
+        settings = {"noise_reduction": True, "noise_strength": 80}
         filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("ladspa" in f for f in filters)
 
@@ -140,21 +140,25 @@ class TestBuildAudioFilters:
         assert not any("equalizer" in f for f in filters)
 
     @pytest.mark.parametrize(
-        "engine,label",
-        [("dfn3", "deep_filter_net3_rs_mono"), ("dpdfnet", "dpdfnet_native_48hr")],
+        "engine,label,attenuation",
+        # 50 % strength: half of each model's useful cap (24 dB and 48 dB).
+        [
+            ("dfn3", "deep_filter_net3_rs_mono", "c0=12.00"),
+            ("dpdfnet", "dpdfnet_native_48hr", "c0=24.00"),
+        ],
     )
-    def test_selected_noise_model(self, converter, engine, label):
+    def test_selected_noise_model(self, converter, engine, label, attenuation):
         filters = build_audio_filters(
             {
                 "noise_reduction": True,
                 "noise_engine": engine,
-                "noise_attenuation_db": 30,
+                "noise_strength": 50,
             },
             converter.noise_plugins,
         )
         nr = next(f for f in filters if "ladspa=" in f)
         assert f"plugin={label}" in nr
-        assert "c0=30" in nr
+        assert attenuation in nr
         assert ("c6=0" in nr) == (engine == "dfn3")
 
     def test_multiple_filters(self, converter):
@@ -179,7 +183,7 @@ class TestFilterChainOrder:
             "hpf_enabled": True,
             "hpf_frequency": 80,
             "noise_reduction": True,
-            "noise_attenuation_db": 100,
+            "noise_strength": 100,
             "gate_enabled": True,
             "gate_intensity": 0.5,
             "compressor_enabled": True,
@@ -221,7 +225,7 @@ class TestFilterChainOrder:
     def test_partial_chain_preserves_order(self, converter):
         settings = {
             "noise_reduction": True,
-            "noise_attenuation_db": 80,
+            "noise_strength": 80,
             "compressor_enabled": True,
             "compressor_intensity": 0.5,
             "volume": 0.5,

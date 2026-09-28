@@ -301,7 +301,7 @@ class SettingsManagerMixin:
         self.effects_expander.add_row(self.noise_model_row)
         self.noise_strength_row, self.noise_strength_scale = numeric_row(
             self.noise_expander,
-            _("Noise attenuation (dB)"),
+            _("Noise reduction strength (%)"),
             100,
             0,
             100,
@@ -606,9 +606,9 @@ class SettingsManagerMixin:
         return False
 
     def _on_noise_strength_changed(self, scale):
-        decibels = scale.get_value()
-        self.app.config.set("noise_attenuation_db", str(decibels))
-        self.player.set_noise_attenuation(decibels)
+        percent = scale.get_value()
+        self.app.config.set("noise_strength", str(percent))
+        self.player.set_noise_strength(percent)
 
     def _on_noise_model_changed(self, row, pspec):
         engine = self.noise_engines[row.get_selected()]
@@ -886,9 +886,7 @@ class SettingsManagerMixin:
         engine = self.app.config.get("noise_engine", "dfn3")
         self.noise_model_row.set_selected(self.noise_engines.index(engine))
         self._on_noise_model_changed(self.noise_model_row, None)
-        self.noise_strength_scale.set_value(
-            self._config_float("noise_attenuation_db", 100)
-        )
+        self.noise_strength_scale.set_value(self._config_float("noise_strength", 100))
         self.noise_switch.set_active(
             self.noise_available and self._config_bool("noise_reduction_enabled")
         )

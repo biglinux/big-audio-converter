@@ -302,16 +302,18 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
         window.noise_model_row.set_selected(index)
         window.noise_switch.set_active(True)
         window.noise_strength_scale.set_value(25)
+        # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
+        attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
         pump(
-            lambda engine=engine: (
+            lambda engine=engine, attenuation=attenuation: (
                 engine == player.noise_engine
-                and "c0=25" in (player._last_filter_graph or "")
+                and attenuation in (player._last_filter_graph or "")
             )
         )
         assert player.noise_reduction
         settings = window._collect_conversion_settings()
         assert settings["noise_engine"] == engine
-        assert settings["noise_attenuation_db"] == 25
+        assert settings["noise_strength"] == 25
         assert player.play()
         player.seek(0.7)
         pump(

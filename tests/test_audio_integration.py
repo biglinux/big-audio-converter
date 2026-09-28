@@ -377,7 +377,7 @@ def test_denoiser_preserves_timing_channels_and_cut_tail(
         "noise_reduction": True,
         "noise_engine": engine_name,
         # Exercise the real plugin's delay without changing the expected samples.
-        "noise_attenuation_db": 0,
+        "noise_strength": 0,
     }
     converter = AudioConverter(noise_plugins=plugins)
     try:
@@ -500,7 +500,7 @@ def test_native_denoiser_does_not_need_onnx_runtime(tmp_path, monkeypatch, engin
                 "noise_reduction": True,
                 "noise_engine": engine_name,
                 # Keep a dry floor: pure noise may be fully suppressed at 100 dB.
-                "noise_attenuation_db": 20,
+                "noise_strength": 20,
             },
         ), converter.last_result
         original = np.frombuffer(pcm(source, "f32le"), "<f4")

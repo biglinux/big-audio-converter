@@ -90,14 +90,14 @@ def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):
     try:
         assert config.get("noise_reduction_enabled") == "false"
         config.set("noise_engine", "dpdfnet")
-        config.set("noise_attenuation_db", 35)
+        config.set("noise_strength", 35)
         config.set("noise_reduction_enabled", True)
         assert config.flush()
         saved = json.loads(path.read_text())
         assert all(saved[k] == value for k, value in legacy.items())
         loaded = config.load_config()
         assert loaded["noise_engine"] == "dpdfnet"
-        assert loaded["noise_attenuation_db"] == 35
+        assert loaded["noise_strength"] == 35
         assert loaded["noise_reduction_enabled"] is True
         with pytest.raises(ValueError):
             config.set("noise_engine", "dfn3ll")

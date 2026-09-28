@@ -46,7 +46,7 @@ class AudioPlayer:
         self.pitch_correction = True
         self.noise_reduction = False
         self.noise_engine = "dfn3"
-        self.noise_attenuation_db = 100.0
+        self.noise_strength = 100.0
         self.hpf_enabled = False
         self.hpf_frequency = 80
         self.gate_enabled = False
@@ -415,7 +415,7 @@ class AudioPlayer:
         fields = (
             "noise_reduction",
             "noise_engine",
-            "noise_attenuation_db",
+            "noise_strength",
             "hpf_enabled",
             "hpf_frequency",
             "gate_enabled",
@@ -519,8 +519,8 @@ class AudioPlayer:
     def set_noise_engine(self, engine):
         self._set_effect("noise_engine", engine)
 
-    def set_noise_attenuation(self, decibels):
-        self._set_effect("noise_attenuation_db", float(decibels))
+    def set_noise_strength(self, percent):
+        self._set_effect("noise_strength", float(percent))
 
     def set_hpf_enabled(self, enabled):
         self._set_effect("hpf_enabled", bool(enabled))
