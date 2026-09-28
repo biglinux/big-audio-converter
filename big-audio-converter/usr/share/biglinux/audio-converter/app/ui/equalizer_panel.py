@@ -1,11 +1,10 @@
-from typing import ClassVar
-
 """
 Inline equalizer panel with vertical sliders for audio frequency adjustment.
 Designed to slide in/out using Gtk.Revealer at the bottom of the playlist area.
 """
 
 import gettext
+from typing import ClassVar
 
 import gi
 
@@ -282,8 +281,7 @@ class EqualizerPanel(Gtk.Box):
             gain = self.band_scales[freq].get_value()
             if gain != 0:
                 eq_bands.append((freq, gain))
-        if hasattr(self.player, "set_equalizer_bands"):
-            self.player.set_equalizer_bands(eq_bands)
+        self.player.set_equalizer_bands(eq_bands)
         window = self.get_root()
-        if window is not None and hasattr(window, "_update_gain_notice"):
+        if window is not None:
             window._update_gain_notice()

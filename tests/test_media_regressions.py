@@ -239,7 +239,9 @@ def test_segments_arg_parses_ordered_ranges():
     ]
 
 
-@pytest.mark.parametrize("text", ["", "5", "3-1", "2-2", "-1-4", "a-b", "1-inf", "nan-3"])
+@pytest.mark.parametrize(
+    "text", ["", "5", "3-1", "2-2", "-1-4", "a-b", "1-inf", "nan-3"]
+)
 def test_segments_arg_rejects_malformed_ranges(text):
     from app.audio.media import parse_segments_arg
     from app.audio.process import MediaError

@@ -183,7 +183,7 @@ class MarkerManagerMixin:
                 if (x_start + edge_tolerance) <= x <= (x_stop - edge_tolerance):
                     return i  # Return segment index
 
-        return None
+        return -1
 
     def _prompt_delete_all_confirmation(self):
         self._close_marker_dialog()
@@ -238,20 +238,6 @@ class MarkerManagerMixin:
             # Reset to start mode for next segment
             self.marker_mode = MarkerMode.START
             self.current_pair_index = -1
-
-            # Notify listener
-            if self.marker_updated_callback:
-                self.marker_updated_callback(self.get_marker_pairs())
-
-            self.queue_draw()
-
-    def _cancel_current_segment(self):
-        """Cancel the current segment being edited."""
-        if self.current_pair_index >= 0:
-            # Remove the unconfirmed pair
-            self.marker_pairs.pop(self.current_pair_index)
-            self.current_pair_index = -1
-            self.marker_mode = MarkerMode.START
 
             # Notify listener
             if self.marker_updated_callback:
@@ -388,22 +374,6 @@ class MarkerManagerMixin:
         """
         self.marker_drag_callback = callback
 
-    def _format_time(self, time_in_seconds):
-        """Format time in seconds to HH:MM:SS.ms format for FFmpeg compatibility."""
-        if time_in_seconds is None:
-            return ""
-
-        # Ensure we have consistent precision (3 decimal places for milliseconds)
-        time_in_seconds = round(time_in_seconds, 3)
-
-        hours = int(time_in_seconds // 3600)
-        minutes = int((time_in_seconds % 3600) // 60)
-        seconds = int(time_in_seconds % 60)
-        milliseconds = int((time_in_seconds % 1) * 1000)
-
-        # Use FFmpeg-compatible format (HH:MM:SS.mmm)
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
-
     def get_marker_pairs(self):
         """Export every complete valid segment, without hidden minimum durations."""
         result = []
@@ -450,7 +420,6 @@ class MarkerManagerMixin:
 
         return ordered_pairs
 
-    # Add a new method for setting existing markers from strings
     def restore_markers(self, markers):
         """Restore an entire valid edit atomically, including an empty edit."""
         try:

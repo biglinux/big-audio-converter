@@ -10,12 +10,8 @@ from gi.repository import Gtk, Pango, PangoCairo
 
 
 class TextExtents(NamedTuple):
-    x_bearing: float
-    y_bearing: float
     width: float
     height: float
-    x_advance: float
-    y_advance: float
 
 
 def _layout(cr, text):
@@ -54,15 +50,7 @@ def _layout(cr, text):
 def text_extents(cr, text):
     layout = _layout(cr, text)
     _, logical = layout.get_extents()
-    scale = Pango.SCALE
-    return TextExtents(
-        logical.x / scale,
-        (logical.y - layout.get_baseline()) / scale,
-        logical.width / scale,
-        logical.height / scale,
-        logical.width / scale,
-        0.0,
-    )
+    return TextExtents(logical.width / Pango.SCALE, logical.height / Pango.SCALE)
 
 
 def show_text(cr, text):

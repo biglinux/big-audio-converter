@@ -90,17 +90,17 @@ class FileQueueRow(Adw.ActionRow):
         self.add_prefix(self.play_button)
 
         # Remove from queue button (left side, after play button)
-        remove_button = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
-        remove_button.add_css_class("flat")
-        remove_button.set_valign(Gtk.Align.CENTER)
-        remove_button.update_property(
+        self.remove_button = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
+        self.remove_button.add_css_class("flat")
+        self.remove_button.set_valign(Gtk.Align.CENTER)
+        self.remove_button.update_property(
             [Gtk.AccessibleProperty.LABEL],
             [_("Remove from queue")],
         )
-        remove_button.connect(
+        self.remove_button.connect(
             "clicked", lambda btn: owner.on_remove_callback(owner.index)
         )
-        self.add_prefix(remove_button)
+        self.add_prefix(self.remove_button)
 
         # Progress bar (right side)
         self.progress_bar = Gtk.ProgressBar()
@@ -125,13 +125,6 @@ class FileQueueRow(Adw.ActionRow):
             "pressed", lambda gesture, *_: gesture.get_widget().more_button.popup()
         )
         self.add_controller(right_click)
-
-        # Connect to realize signal to add tooltip to title widget after it's created
-        self.connect("realize", self._on_row_realized)
-
-        # Store references for tooltip helper (will be accessed later)
-        self._play_button = self.play_button
-        self._remove_button = remove_button
 
     def _setup_context_menu(self, button, *_args):
         """Allocate a row's menu only when it is opened, including by keyboard."""
@@ -178,53 +171,6 @@ class FileQueueRow(Adw.ActionRow):
 
         self.insert_action_group("row", action_group)
         button.set_popover(menu)
-
-    def _on_row_realized(self, widget):
-        """Add tooltip to the title label after the row is realized."""
-
-        # The ActionRow creates internal widgets, we need to find the title label
-        # In Adwaita, the title is typically in a Box containing labels
-        def find_title_label(widget):
-            """Recursively find the title label widget."""
-            if (isinstance(widget, Gtk.Label)) and (
-                widget.get_label() == self.get_title()
-            ):
-                return widget
-
-            # If widget is a container, check its children
-            if hasattr(widget, "get_first_child"):
-                child = widget.get_first_child()
-                while child:
-                    result = find_title_label(child)
-                    if result:
-                        return result
-                    child = child.get_next_sibling()
-            return None
-
-        # Find and add tooltip to the title label
-        title_label = find_title_label(self)
-        # Tooltip will be added via tooltip_helper if available
-        self._title_label = title_label
-
-        # Now apply tooltip to the title label if tooltip_helper exists
-        # Need to get tooltip_helper from file_queue parent
-        if title_label and hasattr(self, "index"):
-            # Access file queue through callbacks to get tooltip_helper
-            parent = self.get_parent()
-            while parent and not isinstance(parent, Gtk.ListBox):
-                parent = parent.get_parent()
-            if parent:
-                file_queue = parent.get_parent()
-                while file_queue and not isinstance(file_queue, FileQueue):
-                    file_queue = file_queue.get_parent()
-                if (
-                    file_queue
-                    and hasattr(file_queue, "_tooltip_helper")
-                    and file_queue._tooltip_helper
-                ):
-                    file_queue._tooltip_helper.add_tooltip(
-                        title_label, "right_click_options"
-                    )
 
     def _on_open_folder(self, action, param):
         parent = self.get_root()
@@ -423,7 +369,7 @@ class FileQueueRow(Adw.ActionRow):
         clipboard = []
         copy_button.connect(
             "clicked",
-            lambda button: self._copy_to_clipboard("\n".join(clipboard), dialog),
+            lambda button: self._copy_to_clipboard("\n".join(clipboard)),
         )
 
         def ready(token, path, info, error):
@@ -577,7 +523,7 @@ class FileQueueRow(Adw.ActionRow):
                 [_("Copy value")],
             )
             copy_btn.connect(
-                "clicked", lambda b, v=str(value): self._copy_value_to_clipboard(v)
+                "clicked", lambda b, v=str(value): self._copy_to_clipboard(v)
             )
             row.add_suffix(copy_btn)
 
@@ -586,27 +532,13 @@ class FileQueueRow(Adw.ActionRow):
         group_box.append(listbox)
         return group_box
 
-    def _copy_value_to_clipboard(self, value):
-        """Copy a single value to clipboard."""
-        clipboard = Gdk.Display.get_default().get_clipboard()
-        clipboard.set(str(value))
-        logger.debug("Metadata value copied to clipboard")
-
-    def _copy_to_clipboard(self, text, dialog):
-        """Copy text to clipboard."""
-        clipboard = Gdk.Display.get_default().get_clipboard()
-        clipboard.set(text)
-        logger.info("Information copied to clipboard")
+    @staticmethod
+    def _copy_to_clipboard(text):
+        Gdk.Display.get_default().get_clipboard().set(text)
 
     def set_metadata(self, metadata_text):
         """Set the metadata subtitle."""
         self.set_subtitle(metadata_text)
-
-    def update_progress(self, progress):
-        """Update the progress bar."""
-        self.progress_bar.set_fraction(progress)
-        self.progress_bar.set_text(f"{int(progress * 100)}%")
-        self.progress_bar.set_visible(True)  # Make visible during conversion
 
 
 class FileQueue(Gtk.Box):
@@ -620,7 +552,6 @@ class FileQueue(Gtk.Box):
         self.file_rows = []  # List of FileQueueRow widgets
         self.currently_playing_index = None
         self.active_file_index = None  # Index of file showing its waveform
-        self._updates_suspended = False
         self._probes = ProbeService(converter.ffmpeg_path)
         self._sources = MainLoopSources()
         self._pending_probes = {}
@@ -629,6 +560,7 @@ class FileQueue(Gtk.Box):
         self._closed = False
         self.on_probe_error = None
         self.on_pending_changed = None
+        self.on_queue_size_changed = None
         self._parent_window = None  # Will be set by MainWindow for dialogs
         self._tooltip_helper = None  # Will be set by MainWindow for tooltips
 
@@ -636,24 +568,8 @@ class FileQueue(Gtk.Box):
         # Key: file_path, Value: dict with 'source_video', 'track_index', 'codec', 'language', etc.
         self.track_metadata = {}
 
-        # Initialize dictionaries for metadata storage
         # Add custom CSS for better visual styling
         self._setup_styles()
-
-        # Create header with queue size label and actions
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        header_box.set_margin_top(6)
-        header_box.set_margin_bottom(6)
-        header_box.set_margin_start(10)
-        header_box.set_margin_end(10)
-
-        # Add queue size label to header (now hidden as it's shown in the headerbar)
-        self.queue_size_label = Gtk.Label(label=_("0 files"))
-        self.queue_size_label.set_halign(Gtk.Align.START)
-        self.queue_size_label.set_hexpand(True)
-        self.queue_size_label.set_visible(
-            False
-        )  # Hide the label as it's now in headerbar
 
         # Create scrolled window for file list
         scrolled = Gtk.ScrolledWindow()
@@ -699,15 +615,8 @@ class FileQueue(Gtk.Box):
 
         # Initialize with no callbacks
         self.on_stop_playback = None
-        self.on_playing_file_removed = (
-            None  # New callback for when a playing file is removed
-        )
-        self.on_file_added_to_empty_queue = (
-            None  # New callback for when file is added to empty queue
-        )
-        self.on_activate_file = (
-            None  # New callback for when file row is activated (clicked)
-        )
+        self.on_file_added_to_empty_queue = None
+        self.on_activate_file = None  # A row was activated (clicked)
 
         # Add a signal for file removal
         self.file_removed_signal = None  # Will be set by MainWindow
@@ -738,15 +647,16 @@ class FileQueue(Gtk.Box):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-    def _get_audio_codec_extension(self, codec_name):
-        """Choose an audio-only container rather than guess AAC for unknown codecs."""
-        extension, _ = copy_container({"codec_name": codec_name}, "")
-        return "." + extension
-
     def _add_track_entry(self, video_file, track_info, track_display_index):
         """Expand an inspected source without additional blocking probes."""
         codec = track_info.get("codec_name", "unknown")
-        extension = self._get_audio_codec_extension(codec)
+        # An audio-only container rather than a guessed AAC for unknown codecs.
+        extension = "." + copy_container({"codec_name": codec}, "")[0]
+        title = (
+            os.path.basename(video_file)
+            + " — "
+            + _("Track {number}").format(number=track_display_index)
+        )
         identifier = track_identifier(video_file, track_info["index"])
         if identifier in self.files:
             return False
@@ -754,9 +664,7 @@ class FileQueue(Gtk.Box):
             "source_video": video_file,
             "track_index": track_info["index"],
             "output_name": f"{Path(video_file).stem}-track{track_display_index}{extension}",
-            "display_name": os.path.basename(video_file)
-            + " — "
-            + _("Track {number}").format(number=track_display_index),
+            "display_name": title,
             "codec": codec,
             "channels": track_info.get("channels", 0),
             "sample_rate": track_info.get("sample_rate", ""),
@@ -767,11 +675,6 @@ class FileQueue(Gtk.Box):
         row = self._append_row(identifier)
         row.source_path = video_file
         row.stream_index = track_info["index"]
-        title = (
-            os.path.basename(video_file)
-            + " — "
-            + _("Track {number}").format(number=track_display_index)
-        )
         row.set_title(GLib.markup_escape_text(title))
         return True
 
@@ -779,7 +682,7 @@ class FileQueue(Gtk.Box):
         row = FileQueueRow(
             identifier,
             len(self.files),
-            self.on_remove_file,
+            self.remove_file,
             self.on_play_file,
             self.on_delete_file,
             self.on_activate_file,
@@ -904,8 +807,7 @@ class FileQueue(Gtk.Box):
             row.set_metadata(_("Inspecting audio…"))
             row.set_activatable(False)
             row.play_button.set_sensitive(False)
-            if not self._updates_suspended:
-                self.update_queue_size_label()
+            self.update_queue_size_label()
             self._pending_changed()
             return True
         except (MediaError, OSError, TypeError, ValueError) as exc:
@@ -944,33 +846,14 @@ class FileQueue(Gtk.Box):
         self._pending_changed()
 
     def update_queue_size_label(self):
-        self.queue_size_label.set_text(self.get_queue_size_text())
-        callback = getattr(self, "on_queue_size_changed", None)
-        if callback and not self._closed:
-            callback(len(self.files), self.get_queue_size_text())
-
-    def get_queue_size_text(self):
-        count = len(self.files)
-        return gettext.ngettext("{count} file", "{count} files", count).format(
-            count=count
-        )
-
-    def get_queue_size(self):
-        """Get the current queue size as a number."""
-        return len(self.files)
-
-    def suspend_updates(self):
-        """Temporarily suspend UI updates for batch operations."""
-        self._updates_suspended = True
-
-    def resume_updates(self):
-        """Resume UI updates after batch operations."""
-        self._updates_suspended = False
-        self.update_queue_size_label()
-
-    def on_remove_file(self, index):
-        """Remove a file from the queue."""
-        self.remove_file(index)
+        if self.on_queue_size_changed and not self._closed:
+            count = len(self.files)
+            self.on_queue_size_changed(
+                count,
+                gettext.ngettext("{count} file", "{count} files", count).format(
+                    count=count
+                ),
+            )
 
     def on_delete_file(self, index, file_path):
         if self.converter.busy:
@@ -1054,17 +937,11 @@ class FileQueue(Gtk.Box):
             remaining.index = position
         row.cleanup()
         self.file_list.remove(row)
-        if was_playing and self.on_playing_file_removed:
-            self.on_playing_file_removed()
         if self.file_removed_signal:
             self.file_removed_signal(identifier)
         self.update_queue_size_label()
         self._pending_changed()
         return True
-
-    def on_clear_queue(self, button):
-        """Clear the entire queue."""
-        self.clear_queue()
 
     def clear_queue(self):
         self._imports.clear()
@@ -1104,22 +981,18 @@ class FileQueue(Gtk.Box):
             row.cleanup()
         for name in (
             "on_stop_playback",
-            "on_playing_file_removed",
             "on_file_added_to_empty_queue",
             "on_activate_file",
             "file_removed_signal",
             "on_probe_error",
             "on_pending_changed",
+            "on_queue_size_changed",
         ):
             setattr(self, name, None)
 
     def get_files(self):
         """Get all files in the queue."""
         return self.files.copy()
-
-    def has_files(self):
-        """Check if there are any files in the queue."""
-        return len(self.files) > 0
 
     def update_progress(self, index, progress):
         """Update conversion progress for a file."""
@@ -1146,13 +1019,6 @@ class FileQueue(Gtk.Box):
     def on_play_file(self, file_path, index):
         """Handle play button click on a file."""
         # This will be implemented by the main window and connected
-
-    def on_stop_playback(self):
-        """Stop playback of the current file.
-
-        This method should be overridden by the main window or other component
-        that controls audio playback.
-        """
 
     def set_currently_playing(self, index):
         """Set the currently playing file and update UI."""
@@ -1207,14 +1073,6 @@ class FileQueue(Gtk.Box):
             self.file_rows[self.currently_playing_index].play_button.set_icon_name(
                 icon_name
             )
-
-    def get_current_playing_index(self):
-        """Return the index of the currently playing file or None if nothing is playing."""
-        return (
-            self.currently_playing_index
-            if hasattr(self, "currently_playing_index")
-            else None
-        )
 
     def _on_drop(self, drop_target, value, x, y):
         self.placeholder.remove_css_class("drag-highlight")
@@ -1361,17 +1219,9 @@ class FileQueue(Gtk.Box):
 
     def _apply_row_tooltips(self, row):
         """Apply custom tooltips to a file queue row."""
-        if not hasattr(self, "_tooltip_helper") or not self._tooltip_helper:
+        if not self._tooltip_helper:
             return
-
-        # Apply tooltip to play button
-        if hasattr(row, "_play_button"):
-            self._tooltip_helper.add_tooltip(row._play_button, "play_this_file")
-
-        # Apply tooltip to remove button
-        if hasattr(row, "_remove_button"):
-            self._tooltip_helper.add_tooltip(row._remove_button, "remove_from_queue")
-
-        # Apply tooltip to filename label (will be applied when row is realized)
-        if hasattr(row, "_title_label") and row._title_label:
-            self._tooltip_helper.add_tooltip(row._title_label, "right_click_options")
+        self._tooltip_helper.add_tooltip(row.play_button, "play_this_file")
+        self._tooltip_helper.add_tooltip(row.remove_button, "remove_from_queue")
+        # The buttons' own tooltips take precedence over the row's.
+        self._tooltip_helper.add_tooltip(row, "right_click_options")

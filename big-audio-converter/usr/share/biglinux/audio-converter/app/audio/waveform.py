@@ -136,7 +136,6 @@ class WaveformGenerator:
         converter_instance,
         visualizer,
         file_markers=None,
-        zoom_control_box=None,
         track_metadata=None,
         *,
         enabled=True,
@@ -186,38 +185,9 @@ class WaveformGenerator:
         converter_instance,
         visualizer,
         file_markers=None,
-        zoom_control_box=None,
         track_metadata=None,
     ):
-        """Synchronous compatibility entry point for headless/worker callers."""
-        self._synchronous(
-            file_path,
-            converter_instance,
-            visualizer,
-            file_markers,
-            track_metadata,
-            True,
-        )
-
-    def activate_without_waveform(
-        self,
-        file_path,
-        converter_instance,
-        visualizer,
-        file_markers=None,
-        zoom_control_box=None,
-        track_metadata=None,
-    ):
-        self._synchronous(
-            file_path,
-            converter_instance,
-            visualizer,
-            file_markers,
-            track_metadata,
-            False,
-        )
-
-    def _synchronous(self, path, converter, visualizer, markers, metadata, enabled):
+        """Decode on the calling thread; results are still delivered on GLib."""
         with self._condition:
             if self._disposed:
                 return
@@ -229,12 +199,12 @@ class WaveformGenerator:
         self._execute(
             generation,
             runner,
-            path,
-            converter.ffmpeg_path,
+            file_path,
+            converter_instance.ffmpeg_path,
             weakref.ref(visualizer),
-            deepcopy(markers or {}),
-            deepcopy(metadata or {}),
-            enabled,
+            deepcopy(file_markers or {}),
+            deepcopy(track_metadata or {}),
+            True,
         )
 
     def _schedule(self, generation, callback):
@@ -369,12 +339,11 @@ class WaveformGenerator:
                 # Give the UI its own container. Arrays are immutable and can
                 # safely be shared with the bounded cache.
                 target.set_waveform(dict(payload) if payload else None, duration or 0)
-                existing = (
-                    target.get_marker_pairs()
-                    if hasattr(target, "get_marker_pairs")
-                    else []
-                )
-                if not existing and markers.get(path) and target.markers_enabled:
+                if (
+                    markers.get(path)
+                    and target.markers_enabled
+                    and not target.get_marker_pairs()
+                ):
                     target.restore_markers(markers[path])
 
             self._schedule(generation, deliver)
@@ -409,8 +378,6 @@ class WaveformGenerator:
                 GLib.source_remove(identifier)
             self._sources.clear()
 
-    _cancel_current = cancel
-
     def cleanup(self):
         self.cancel()
         with self._condition:
@@ -421,8 +388,3 @@ class WaveformGenerator:
         with self._decode_lock:
             self._cache.clear()
             self._cache_bytes = 0
-
-
-_generator = WaveformGenerator()
-generate = _generator.generate
-activate_without_waveform = _generator.activate_without_waveform

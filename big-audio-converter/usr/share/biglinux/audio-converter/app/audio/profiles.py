@@ -334,13 +334,10 @@ def build_audio_filters(settings, noise_plugins=None):
 
     # Equalizer
     if settings.get("eq_enabled", False):
-        eq_bands_str = settings.get("eq_bands", "0,0,0,0,0,0,0,0,0,0")
-        try:
-            gains = [float(x) for x in eq_bands_str.split(",")]
-        except (ValueError, AttributeError):
-            gains = [0.0] * 10
+        # validate_settings has already checked ten finite gains.
+        gains = [float(x) for x in settings.get("eq_bands", "0," * 9 + "0").split(",")]
         eq_freqs = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-        for i, (freq, gain) in enumerate(zip(eq_freqs, gains)):
+        for freq, gain in zip(eq_freqs, gains):
             if gain != 0.0:
                 filters.append(f"equalizer=f={freq}:width_type=o:w=1.5:g={gain}")
 

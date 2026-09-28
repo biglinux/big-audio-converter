@@ -21,15 +21,9 @@ class AppConfig:
         "noise_attenuation_db": (0, 100),
         "conversion_volume": (0, 1000),
         "conversion_speed": (0.1, 5),
-        "noise_reduction_strength": (0, 1),
-        "noise_model": (0, 1),
-        "noise_speech_strength": (0, 1),
-        "noise_lookahead": (0, 200),
-        "noise_voice_enhance": (0, 1),
         "gate_intensity": (0, 1),
         "compressor_intensity": (0, 1),
         "hpf_frequency": (20, 20000),
-        "transient_attack": (-1, 1),
         "window_width": (320, 32768),
         "window_height": (240, 32768),
         "sidebar_width": (100, 4096),
@@ -40,17 +34,11 @@ class AppConfig:
     }
     BOOLS: ClassVar = {
         "noise_reduction_enabled",
-        "auto_play_preview",
         "auto_advance_enabled",
-        "confirm_overwrite",
         "show_welcome_dialog",
-        "conversion_noise_reduction",
-        "noise_model_blend",
         "gate_enabled",
         "compressor_enabled",
         "hpf_enabled",
-        "transient_enabled",
-        "eq_enabled",
         "normalize_enabled",
         "prevent_clipping",
         "allow_precision_reduction",
@@ -75,12 +63,6 @@ class AppConfig:
         self.modified_keys = set()
         self.load_warning = None
         self.defaults = {
-            "last_directory": str(Path.home()),
-            "default_output_directory": str(Path.home()),
-            "default_format": "mp3",
-            "default_preset": "mp3-standard",
-            "auto_play_preview": True,
-            "confirm_overwrite": True,
             "show_welcome_dialog": True,
             "noise_reduction_enabled": "false",
             "noise_engine": "dfn3",
@@ -94,10 +76,6 @@ class AppConfig:
             # HPF
             "hpf_enabled": "false",
             "hpf_frequency": "80",
-            # EQ
-            "eq_enabled": "false",
-            "eq_preset": "flat",
-            "eq_bands": "0,0,0,0,0,0,0,0,0,0",
             # Normalization
             "normalize_enabled": "false",
         }
@@ -124,16 +102,8 @@ class AppConfig:
                 )
             except (ValueError, TypeError, OverflowError):
                 return False
-        if key in ("conversion_format", "default_format"):
+        if key == "conversion_format":
             return value in ("copy", "mp3", "flac", "ogg", "wav", "aac", "opus")
-        if key == "eq_bands":
-            try:
-                gains = [float(gain) for gain in value.split(",")]
-                return len(gains) == 10 and all(
-                    math.isfinite(g) and -40 <= g <= 40 for g in gains
-                )
-            except (ValueError, TypeError, AttributeError):
-                return False
         return (
             value is None
             or isinstance(value, (str, bool, int))
@@ -171,7 +141,7 @@ class AppConfig:
                 )
             return values
 
-    def save_config(self, config=None):
+    def save_config(self):
         with self._lock:
             if self._closed:
                 return False
@@ -205,12 +175,7 @@ class AppConfig:
                             ):
                                 os.chmod(backup, 0o600)
                                 target.write(source.read(self.MAX_BYTES))
-                    if config is None:
-                        values.update(
-                            {key: self.config[key] for key in self.modified_keys}
-                        )
-                    else:
-                        values.update(self._sanitize(config))
+                    values.update({key: self.config[key] for key in self.modified_keys})
                     fd, temporary = tempfile.mkstemp(
                         prefix=".config-", suffix=".json", dir=self.config_dir
                     )

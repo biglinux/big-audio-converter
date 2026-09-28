@@ -30,11 +30,8 @@ class ControlsBarMixin:
 
     def _on_visualizer_height_changed(self, paned, param):
         """Handle visualizer height changes and save to config."""
-        if not hasattr(self.app, "config") or not self.app.config:
-            return
-
         # Don't save position when cut is off (paned is in collapsed state)
-        if hasattr(self, "cut_row") and self.cut_row.get_selected() == 0:
+        if self.cut_row.get_selected() == 0:
             return
 
         # Get total height and position
@@ -82,10 +79,7 @@ class ControlsBarMixin:
 
     def _format_zoom_value(self, scale, value):
         """Format zoom slider value to show actual zoom level."""
-        # Convert linear slider value (0-100) to logarithmic zoom (1-100)
-        # Using formula: zoom = 10^(value/50) where value 0→1x, 50→10x, 100→100x
-        zoom = math.pow(10, value / 50.0)
-        return f"{zoom:.1f}x"
+        return f"{self._slider_to_zoom(value):.1f}x"
 
     def _slider_to_zoom(self, slider_value):
         """Convert slider position (0-150) to zoom level (1-1000) logarithmically."""
@@ -105,17 +99,10 @@ class ControlsBarMixin:
         # Convert slider value to actual zoom level using logarithmic scale
         zoom_level = self._slider_to_zoom(slider_value)
 
-        # Update the zoom value label
-        if hasattr(self, "zoom_value_label"):
-            self.zoom_value_label.set_text(f"{zoom_level:.1f}x")
-
-        if hasattr(self.visualizer, "set_zoom_level"):
-            # Use the new set_zoom_level method which can use mouse position
-            self.visualizer.set_zoom_level(zoom_level, use_mouse_position=True)
-
-            # Notify zoom change (will be blocked if called from visualizer)
-            if self.visualizer.zoom_changed_callback:
-                self.visualizer.zoom_changed_callback(self.visualizer.zoom_level)
+        self.zoom_value_label.set_text(f"{zoom_level:.1f}x")
+        self.visualizer.set_zoom_level(zoom_level, use_mouse_position=True)
+        # Keep the label and seekbar on the clamped level actually applied.
+        self._on_visualizer_zoom_changed(self.visualizer.zoom_level)
 
     def _on_zoom_btn_clicked(self, button):
         """Open the zoom popover."""
@@ -126,7 +113,7 @@ class ControlsBarMixin:
 
     def _close_all_bar_popovers(self, except_name=None):
         for name in ("volume", "speed", "zoom"):
-            if name != except_name and hasattr(self, name + "_popover"):
+            if name != except_name:
                 getattr(self, name + "_popover").popdown()
 
     def _on_volume_btn_clicked(self, button):
@@ -149,25 +136,13 @@ class ControlsBarMixin:
 
     def _on_visualizer_zoom_changed(self, zoom_level):
         """Update zoom slider when zoom changes from visualizer (e.g. mouse wheel)."""
-        if hasattr(self, "zoom_scale"):
-            # Convert zoom level back to slider value
-            slider_value = self._zoom_to_slider(zoom_level)
-            # Temporarily block signal to avoid feedback loop
-            self.zoom_scale.handler_block(self._zoom_scale_handler)
-            self.zoom_scale.set_value(slider_value)
-            self.zoom_scale.handler_unblock(self._zoom_scale_handler)
-
-        # Update the zoom value label
-        if hasattr(self, "zoom_value_label"):
-            self.zoom_value_label.set_text(f"{zoom_level:.1f}x")
+        # Temporarily block signal to avoid feedback loop
+        self.zoom_scale.handler_block(self._zoom_scale_handler)
+        self.zoom_scale.set_value(self._zoom_to_slider(zoom_level))
+        self.zoom_scale.handler_unblock(self._zoom_scale_handler)
+        self.zoom_value_label.set_text(f"{zoom_level:.1f}x")
 
         # Sync seekbar viewport
-        self.seekbar.set_zoom_viewport(
-            self.visualizer.zoom_level, self.visualizer.viewport_offset
-        )
-
-    def _on_visualizer_viewport_changed(self):
-        """Sync seekbar when the visualizer viewport pans without zoom change."""
         self.seekbar.set_zoom_viewport(
             self.visualizer.zoom_level, self.visualizer.viewport_offset
         )

@@ -13,8 +13,6 @@ Usage:
 
 import logging
 
-from app.utils.time_formatter import format_time_short
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,17 +25,12 @@ class PlaybackControllerMixin:
         """Handle playback completion and auto-play next file."""
         logger.info("Playback finished, checking for next track")
 
-        auto_advance_enabled = (
-            self.auto_advance_switch.get_active()
-            if hasattr(self, "auto_advance_switch")
-            else True
-        )
-        if not auto_advance_enabled:
+        if not self.auto_advance_switch.get_active():
             logger.info("Auto-advance disabled, stopping playback")
             self._playback_sources.idle(self.file_queue.update_playing_state, False)
             return
 
-        current_index = self.file_queue.get_current_playing_index()
+        current_index = self.file_queue.currently_playing_index
         if current_index is None:
             logger.debug("No current track index found")
             return
@@ -81,8 +74,7 @@ class PlaybackControllerMixin:
             self.player.play()
 
             # Sync button state immediately to avoid race with stop() idle callbacks
-            if hasattr(self, "pause_play_btn"):
-                self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
+            self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
             if not same_file_as_active:
                 self._request_waveform(file_path, enabled=None)
@@ -106,7 +98,7 @@ class PlaybackControllerMixin:
 
     def _save_current_file_state(self):
         """Save markers for the currently active file before switching."""
-        if self.active_audio_id and hasattr(self.visualizer, "get_marker_pairs"):
+        if self.active_audio_id:
             current_markers = self.visualizer.get_marker_pairs()
             if current_markers:
                 logger.debug(
@@ -131,8 +123,7 @@ class PlaybackControllerMixin:
         self.active_audio_id = file_path
         logger.debug(f"Setting active_audio_id to: {file_path}")
 
-        if hasattr(self.file_queue, "set_active_file"):
-            self.file_queue.set_active_file(index)
+        self.file_queue.set_active_file(index)
 
         markers_enabled = self.visualizer.markers_enabled
         self.visualizer.clear_all_markers()
@@ -163,8 +154,7 @@ class PlaybackControllerMixin:
             and self.player.current_file == file_path
         ):
             self.player.pause()
-            if hasattr(self.file_queue, "update_playing_state"):
-                self.file_queue.update_playing_state(False)
+            self.file_queue.update_playing_state(False)
             return
 
         # Stop any different file that might be playing
@@ -182,23 +172,11 @@ class PlaybackControllerMixin:
         if (self.player.load(file_path, self.file_queue.track_metadata)) and (
             play_audio
         ):
-            if hasattr(self.file_queue, "set_currently_playing"):
-                self.file_queue.set_currently_playing(index)
+            self.file_queue.set_currently_playing(index)
             self.player.play()
-            # Sync UI immediately — on_file_loaded will confirm later
-            if hasattr(self, "pause_play_btn"):
-                self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
-            if hasattr(self.file_queue, "update_playing_state"):
-                self.file_queue.update_playing_state(True)
-
-    # --- Time display ---
-
-    def _update_time_display(self, position, duration):
-        """Update the time display label (called via GLib.idle_add)."""
-        if hasattr(self, "time_display_label"):
-            duration_str = format_time_short(duration)
-            self.time_display_label.set_label(duration_str)
-        return False
+            # Sync UI immediately; the player's state callback confirms later.
+            self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
+            self.file_queue.update_playing_state(True)
 
     # --- Position tracking and segment transitions ---
 
@@ -218,7 +196,6 @@ class PlaybackControllerMixin:
             self.visualizer.zoom_level, self.visualizer.viewport_offset
         )
 
-        self._update_time_display(position, duration)
         self._update_play_selection_button()
 
         # Handle segment transitions in Play Selection Only mode
@@ -241,7 +218,7 @@ class PlaybackControllerMixin:
                 )
                 self._is_transitioning_segment = True
                 self._current_segment_index += 1
-                self._playback_sources.idle(self._do_segment_transition_with_retry)
+                self._playback_sources.idle(self._do_segment_transition)
                 return
 
             if position < start - TOLERANCE:
@@ -251,10 +228,8 @@ class PlaybackControllerMixin:
                 self.player.seek(start)
                 return
 
-    def _do_segment_transition_with_retry(self, retry_count=0):
-        """Execute segment transition with error handling and retry capability."""
-        max_retries = 2
-
+    def _do_segment_transition(self):
+        """Seek to the next selected segment, or pause after the last one."""
         if not self._playing_selection or not self._selection_segments:
             logger.debug("Segment transition cancelled - not in selection mode")
             self._is_transitioning_segment = False
@@ -269,32 +244,14 @@ class PlaybackControllerMixin:
             )
 
             try:
-                current_pos = getattr(self.player, "_position", 0)
-                if abs(current_pos - next_start) < 0.01:
+                if abs(self.player._position - next_start) < 0.01:
                     logger.debug("Already at target position, skipping seek")
                     if not self.player.is_playing():
                         self.player.play()
                     self._is_transitioning_segment = False
                     return False
 
-                success = self.player.seek(next_start)
-
-                if not success and retry_count < max_retries:
-                    logger.warning(
-                        f"Segment transition seek failed, retry {retry_count + 1}/{max_retries}"
-                    )
-                    self._playback_sources.later(
-                        100,
-                        lambda: self._do_segment_transition_with_retry(retry_count + 1),
-                    )
-                    return False
-                elif not success:
-                    logger.error(
-                        f"Segment transition failed after {max_retries} retries"
-                    )
-                    self._playing_selection = False
-                    self._is_transitioning_segment = False
-                    return False
+                self.player.seek(next_start)
 
                 def ensure_playing():
                     if self._playing_selection and not self.player.is_playing():
@@ -323,10 +280,6 @@ class PlaybackControllerMixin:
 
         return False
 
-    def _do_segment_transition(self):
-        """Execute segment transition on GTK main thread (legacy wrapper)."""
-        return self._do_segment_transition_with_retry(0)
-
     def on_player_duration_changed(self, player, duration):
         """Handle duration changes from player."""
         if duration > 0:
@@ -340,9 +293,6 @@ class PlaybackControllerMixin:
         logger.info(
             f"MAIN_WINDOW: Received seek position={position:.6f}s, should_play={should_play}"
         )
-        if not hasattr(self.player, "seek"):
-            return
-
         # If marker is being dragged/resized, allow free seeking
         if self._marker_dragging:
             self.player.seek(position)
@@ -426,9 +376,7 @@ class PlaybackControllerMixin:
             self._load_selection_segments()
 
             if self._playing_selection and self._selection_segments:
-                current_position = (
-                    self.player._position if hasattr(self.player, "_position") else 0
-                )
+                current_position = self.player._position
 
                 found_index = -1
                 for i, (start, stop) in enumerate(self._selection_segments):
@@ -463,13 +411,7 @@ class PlaybackControllerMixin:
             logger.info("Marker dragging ended - RE-ENABLING segment boundary checks")
 
             if self._playing_selection and self._selection_segments:
-                current_position = (
-                    self.player._position if hasattr(self.player, "_position") else 0
-                )
-
-                if hasattr(self, "_last_transition_times"):
-                    self._last_transition_times.clear()
-                    logger.debug("Cleared transition tracking after drag end")
+                current_position = self.player._position
 
                 found_segment = -1
                 for i, (start, stop) in enumerate(self._selection_segments):
@@ -541,14 +483,12 @@ class PlaybackControllerMixin:
         logger.info(f"State changed: reported={is_playing}, actual={actual_state}")
         is_playing = actual_state
 
-        if hasattr(self.file_queue, "update_playing_state"):
-            self.file_queue.update_playing_state(is_playing)
-
-        if hasattr(self, "pause_play_btn"):
-            if is_playing:
-                self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
-            else:
-                self.pause_play_btn.set_icon_name("media-playback-start-symbolic")
+        self.file_queue.update_playing_state(is_playing)
+        self.pause_play_btn.set_icon_name(
+            "media-playback-pause-symbolic"
+            if is_playing
+            else "media-playback-start-symbolic"
+        )
 
     # --- Play/Pause/Next/Previous controls ---
 
@@ -573,13 +513,7 @@ class PlaybackControllerMixin:
                 logger.info(f"Loading active file for playback: {self.active_audio_id}")
                 self.player.load(self.active_audio_id, self.file_queue.track_metadata)
 
-                if active_index is not None and hasattr(
-                    self.file_queue, "set_currently_playing"
-                ):
-                    self.file_queue.set_currently_playing(active_index)
-            elif active_index is not None and hasattr(
-                self.file_queue, "set_currently_playing"
-            ):
+            if active_index is not None:
                 self.file_queue.set_currently_playing(active_index)
 
             if self._play_selection_mode:
@@ -592,18 +526,10 @@ class PlaybackControllerMixin:
         if not self.file_queue.files:
             return
 
-        current_index = None
-        if (
-            hasattr(self.file_queue, "currently_playing_index")
-            and self.file_queue.currently_playing_index is not None
-        ):
-            current_index = self.file_queue.currently_playing_index
-        elif (
-            hasattr(self.file_queue, "active_file_index")
-            and self.file_queue.active_file_index is not None
-        ):
+        current_index = self.file_queue.currently_playing_index
+        if current_index is None:
             current_index = self.file_queue.active_file_index
-        else:
+        if current_index is None:
             current_index = len(self.file_queue.files)
 
         prev_index = (current_index - 1) % len(self.file_queue.files)
@@ -617,18 +543,10 @@ class PlaybackControllerMixin:
         if not self.file_queue.files:
             return
 
-        current_index = None
-        if (
-            hasattr(self.file_queue, "currently_playing_index")
-            and self.file_queue.currently_playing_index is not None
-        ):
-            current_index = self.file_queue.currently_playing_index
-        elif (
-            hasattr(self.file_queue, "active_file_index")
-            and self.file_queue.active_file_index is not None
-        ):
+        current_index = self.file_queue.currently_playing_index
+        if current_index is None:
             current_index = self.file_queue.active_file_index
-        else:
+        if current_index is None:
             current_index = -1
 
         next_index = (current_index + 1) % len(self.file_queue.files)
@@ -700,9 +618,6 @@ class PlaybackControllerMixin:
 
     def _update_play_selection_button(self):
         """Update Play Selection switch state based on markers."""
-        if not hasattr(self, "play_selection_switch"):
-            return False
-
         has_complete_pair = False
         for marker in self.visualizer.marker_pairs:
             if marker.get("start") is not None and marker.get("stop") is not None:
@@ -725,16 +640,8 @@ class PlaybackControllerMixin:
             self.visualizer.clear_waveform()
             self.active_audio_id = None
 
-        if hasattr(self.player, "current_file"):
-            player_file = self.player.current_file
-            player_actual_file = getattr(self.player, "current_actual_file", None)
-
-            if player_file == file_id or (
-                player_actual_file and player_actual_file == file_id
-            ):
-                logger.info("Player had removed file loaded, stopping and clearing")
-                self.player.stop()
-                self.player.current_file = None
-                if hasattr(self.player, "current_actual_file"):
-                    self.player.current_actual_file = None
-                logger.debug("Stopped and unloaded player")
+        if file_id in (self.player.current_file, self.player.current_actual_file):
+            logger.info("Player had removed file loaded, stopping and clearing")
+            self.player.stop()
+            self.player.current_file = None
+            self.player.current_actual_file = None

@@ -33,7 +33,7 @@ class ConversionController:
         if self.closed or window is None or self.converter.busy:
             return
         if window.file_queue.pending:
-            window._show_info_dialog(
+            window._show_message(
                 _("Inspecting audio"),
                 _(
                     "Files are still being inspected. Conversion will be available when inspection finishes."
@@ -42,7 +42,7 @@ class ConversionController:
             return
         files = tuple(files if files is not None else window.file_queue.get_files())
         if not files:
-            window._show_info_dialog(
+            window._show_message(
                 _("No files to convert"), _("Please add at least one file to convert.")
             )
             return
@@ -54,7 +54,7 @@ class ConversionController:
                 else window._collect_conversion_settings()
             )
         except (MediaError, ValueError, TypeError) as exc:
-            window._show_error_dialog(_("Check conversion settings"), str(exc))
+            window._show_message(_("Check conversion settings"), str(exc))
             return
         if self.result_dialog is not None:
             self.result_dialog.close()
@@ -97,7 +97,7 @@ class ConversionController:
             self.dialog.close()
             self.dialog = None
             window.convert_button.set_sensitive(True)
-            window._show_error_dialog(_("Conversion could not start"), str(exc))
+            window._show_message(_("Conversion could not start"), str(exc))
 
     def cancel(self, *_args):
         if self.closed or not self.converter.busy:
@@ -286,7 +286,7 @@ class ConversionController:
                 source.open_containing_folder_finish(result)
             except GLib.Error:
                 if not self.closed:
-                    window._show_error_dialog(
+                    window._show_message(
                         _("Folder could not be opened"),
                         _("Open your file manager and navigate to: {path}").format(
                             path=os.path.dirname(path)

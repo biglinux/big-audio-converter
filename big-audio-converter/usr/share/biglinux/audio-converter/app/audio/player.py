@@ -28,7 +28,6 @@ class AudioPlayer:
         self.noise_plugins = dict(noise_plugins or {})
         self.current_file = None
         self.current_actual_file = None
-        self.current_track_metadata = None
         self.pending_track_index = None
         self._metadata = {}
         self.duration = 0.0
@@ -37,7 +36,6 @@ class AudioPlayer:
         self._want_play = False
         self._loaded = False
         self._load_requested = False
-        self._eof_reached = False
         self._generation = 0
         self._entry_id = None
         self._native_entry_id = None
@@ -67,7 +65,6 @@ class AudioPlayer:
         self.audio_device = "auto"
         self.audio_devices = []
         self.mpv_instance = None
-        self.initialization_error = None
         self._mpv_options = dict(mpv_options or {})
         self._sources = MainLoopSources()
         self._last_filter_graph = None
@@ -146,8 +143,7 @@ class AudioPlayer:
 
             self._apply_filters()
             return True
-        except (ImportError, OSError, RuntimeError, ValueError, AttributeError) as exc:
-            self.initialization_error = str(exc)
+        except (ImportError, OSError, RuntimeError, ValueError, AttributeError):
             logger.debug("Could not initialize libmpv", exc_info=True)
             if self.mpv_instance is not None:
                 self.mpv_instance.terminate()
@@ -282,7 +278,6 @@ class AudioPlayer:
         self._want_play = False
         self._set_playing(False)
         if reason == 0:  # MPV_END_FILE_REASON_EOF
-            self._eof_reached = True
             self._notify("eos_callback", self)
         elif reason == 4:  # MPV_END_FILE_REASON_ERROR
             self._error(
@@ -334,12 +329,10 @@ class AudioPlayer:
             self._load_requested = True
             self._want_play = False
             self._set_playing(False)
-            self._eof_reached = False
             self.pending_seek_position = None
             self.current_file = file_path
             self.current_actual_file = source.path
             self._metadata = deepcopy(track_metadata or {})
-            self.current_track_metadata = self._metadata.get(file_path)
             self.pending_track_index = source.stream_index
             self.duration = 0.0
             self._position = 0.0

@@ -388,7 +388,6 @@ class SettingsManagerMixin:
             margin_top=6,
         )
         self.effects_group.add(self.gain_notice)
-        self.noise_row = self.noise_expander
         self._restore_conversion_settings()
         self.clipping_row.set_active(self._config_bool("prevent_clipping"))
         self._on_format_changed(self.format_row, None)
@@ -408,7 +407,7 @@ class SettingsManagerMixin:
                 if path:
                     self._set_output_folder(path)
                 else:
-                    self._show_error_dialog(
+                    self._show_message(
                         _("Local folder required"),
                         _("Choose a folder on the local filesystem."),
                     )
@@ -436,7 +435,7 @@ class SettingsManagerMixin:
     # --- Settings change handlers ---
 
     def _on_format_changed(self, row, _pspec):
-        if not hasattr(self, "clipping_row") or self._updating_profile:
+        if self._updating_profile:
             return
         format_name = self._format_list[row.get_selected()]
         self.app.config.set("conversion_format", format_name)
@@ -472,7 +471,7 @@ class SettingsManagerMixin:
 
     def _mark_current_position(self, _button, is_start):
         if not self.active_audio_id or self.visualizer.duration <= 0:
-            self._show_info_dialog(
+            self._show_message(
                 _("No audio selected"),
                 _("Add a file and wait for its duration before marking a segment."),
             )
@@ -483,7 +482,7 @@ class SettingsManagerMixin:
         elif self.visualizer.current_pair_index >= 0:
             self.visualizer.add_stop_marker(position)
         else:
-            self._show_info_dialog(
+            self._show_message(
                 _("Mark the start first"),
                 _("Choose where the segment begins, then mark its end."),
             )
@@ -516,8 +515,7 @@ class SettingsManagerMixin:
 
     def _on_channels_changed(self, row, pspec):
         """Handle channels selection change and save setting."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("audio_channels", str(row.get_selected()))
+        self.app.config.set("audio_channels", str(row.get_selected()))
 
     def _on_volume_spin_changed(self, spin):
         self._set_processing_volume(spin.get_value())
@@ -549,8 +547,7 @@ class SettingsManagerMixin:
             self._syncing_volume = False
 
     def _update_gain_notice(self):
-        if not hasattr(self, "gain_notice"):
-            return
+        # The equalizer panel is created after the settings are restored.
         boosted_eq = hasattr(self, "eq_panel") and any(
             scale.get_value() > 0 for scale in self.eq_panel.band_scales.values()
         )
@@ -623,8 +620,7 @@ class SettingsManagerMixin:
 
     def _on_gate_switch_changed(self, switch, state):
         """Handle noise gate toggle."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("gate_enabled", str(state).lower())
+        self.app.config.set("gate_enabled", str(state).lower())
 
         self.gate_expander.set_enable_expansion(state)
         self.gate_intensity_scale.set_sensitive(state)
@@ -632,24 +628,20 @@ class SettingsManagerMixin:
         if not state:
             self.gate_expander.set_expanded(False)
 
-        if hasattr(self.player, "set_gate_enabled"):
-            self.player.set_gate_enabled(state)
+        self.player.set_gate_enabled(state)
 
         return False
 
     def _on_gate_intensity_changed(self, scale):
         """Handle gate intensity slider change."""
         intensity = scale.get_value()
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("gate_intensity", str(intensity))
+        self.app.config.set("gate_intensity", str(intensity))
 
-        if hasattr(self.player, "set_gate_intensity"):
-            self.player.set_gate_intensity(intensity)
+        self.player.set_gate_intensity(intensity)
 
     def _on_compressor_switch_changed(self, switch, state):
         """Handle compressor toggle."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("compressor_enabled", str(state).lower())
+        self.app.config.set("compressor_enabled", str(state).lower())
 
         self.compressor_expander.set_enable_expansion(state)
         self.compressor_intensity_scale.set_sensitive(state)
@@ -657,39 +649,32 @@ class SettingsManagerMixin:
         if not state:
             self.compressor_expander.set_expanded(False)
 
-        if hasattr(self.player, "set_compressor_enabled"):
-            self.player.set_compressor_enabled(state)
+        self.player.set_compressor_enabled(state)
 
         return False
 
     def _on_compressor_intensity_changed(self, scale):
         """Handle compressor intensity change."""
         intensity = scale.get_value()
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("compressor_intensity", str(intensity))
+        self.app.config.set("compressor_intensity", str(intensity))
 
-        if hasattr(self.player, "set_compressor_intensity"):
-            self.player.set_compressor_intensity(intensity)
+        self.player.set_compressor_intensity(intensity)
 
     def _on_hpf_switch_changed(self, row, pspec):
         """Handle high-pass filter toggle."""
         state = row.get_active()
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("hpf_enabled", str(state).lower())
+        self.app.config.set("hpf_enabled", str(state).lower())
 
         self.hpf_freq_row.set_visible(state)
 
-        if hasattr(self.player, "set_hpf_enabled"):
-            self.player.set_hpf_enabled(state)
+        self.player.set_hpf_enabled(state)
 
     def _on_hpf_freq_changed(self, scale):
         """Handle HPF frequency change."""
         freq = int(scale.get_value())
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("hpf_frequency", str(freq))
+        self.app.config.set("hpf_frequency", str(freq))
 
-        if hasattr(self.player, "set_hpf_frequency"):
-            self.player.set_hpf_frequency(freq)
+        self.player.set_hpf_frequency(freq)
 
     def _on_normalize_switch_changed(self, row, _pspec):
         state = row.get_active()
@@ -715,50 +700,37 @@ class SettingsManagerMixin:
         self.cut_options_box.set_visible(enabled)
 
         # Show/hide segment output option
-        if hasattr(self, "cut_output_row"):
-            self.cut_output_row.set_visible(enabled)
+        self.cut_output_row.set_visible(enabled)
 
-        # Enable/disable waveform markers
-        if hasattr(self, "visualizer"):
-            self.visualizer.set_markers_enabled(enabled)
-
-        # Show/hide waveform-related UI elements based on cut mode
-        if hasattr(self, "play_selection_switch"):
-            self.play_selection_switch.set_visible(enabled)
-        if hasattr(self, "zoom_box"):
-            self.zoom_box.set_visible(enabled)
+        # Settings are restored before setup_ui builds the waveform and bottom
+        # bar (the seekbar last); setup_ui then applies the same visibility.
         if hasattr(self, "seekbar"):
-            self.seekbar.set_visible(True)
-        if hasattr(self, "visualizer_frame"):
+            self.visualizer.set_markers_enabled(enabled)
+            self.play_selection_switch.set_visible(enabled)
+            self.zoom_box.set_visible(enabled)
             self.visualizer_frame.set_visible(enabled)
 
         # Collapse or expand the waveform area in the paned
         self._update_paned_for_cut_mode(enabled)
 
         # Generate waveform if enabling cut and active file has no waveform data
-        if (enabled and hasattr(self, "active_audio_id") and self.active_audio_id) and (
-            hasattr(self, "visualizer") and self.visualizer.waveform_data is None
-        ):
+        if enabled and self.active_audio_id and self.visualizer.waveform_data is None:
             self._request_waveform(self.active_audio_id, enabled=None)
 
         if not enabled and self.active_audio_id:
             self._request_waveform(self.active_audio_id, enabled=False)
 
         # Save setting
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("cut_audio_enabled", str(enabled).lower())
-            self.app.config.set("cut_audio_mode", str(active))
+        self.app.config.set("cut_audio_enabled", str(enabled).lower())
+        self.app.config.set("cut_audio_mode", str(active))
 
     def _on_cut_output_changed(self, row, pspec):
         """Handle cut output mode change (separate files vs merge)."""
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("cut_output_mode", str(row.get_selected()))
+        self.app.config.set("cut_output_mode", str(row.get_selected()))
 
     def _update_paned_for_cut_mode(self, cut_enabled):
         """Collapse or restore the paned position based on cut mode."""
-        if not hasattr(self, "vertical_paned") or not hasattr(
-            self, "visualizer_container"
-        ):
+        if not hasattr(self, "visualizer_container"):
             return
         if not self.visualizer_container.get_visible():
             return
@@ -779,7 +751,7 @@ class SettingsManagerMixin:
             self.vertical_paned.set_position(collapse_pos)
         else:
             # Restore saved paned position
-            if hasattr(self, "_saved_paned_position") and self._saved_paned_position:
+            if self._saved_paned_position:
                 self.vertical_paned.set_position(self._saved_paned_position)
             else:
                 # Fallback: use saved visualizer height
@@ -797,10 +769,7 @@ class SettingsManagerMixin:
     def _on_eq_revealer_changed(self, revealer, pspec):
         """Sync equalizer toggle button with revealer state."""
         is_revealed = revealer.get_reveal_child()
-        if (
-            hasattr(self, "eq_toggle_btn")
-            and self.eq_toggle_btn.get_active() != is_revealed
-        ):
+        if self.eq_toggle_btn.get_active() != is_revealed:
             self.eq_toggle_btn.handler_block(self._eq_toggle_btn_handler)
             self.eq_toggle_btn.set_active(is_revealed)
             self.eq_toggle_btn.handler_unblock(self._eq_toggle_btn_handler)
@@ -815,23 +784,25 @@ class SettingsManagerMixin:
         )
         self.advanced_row.set_visible(not is_copy_mode)
         self.effects_group.set_sensitive(not is_copy_mode)
+        # Settings are restored before setup_ui builds the bottom bar (the
+        # seekbar last); setup_ui calls this again once the bar exists.
+        bar_ready = hasattr(self, "seekbar")
         self.player.set_effects_bypassed(
-            is_copy_mode
-            or (
-                hasattr(self, "original_preview") and self.original_preview.get_active()
-            )
+            is_copy_mode or (bar_ready and self.original_preview.get_active())
         )
-        if hasattr(self, "original_preview"):
-            self.original_preview.set_sensitive(not is_copy_mode)
-        for name in ("volume_btn", "speed_btn", "eq_toggle_btn"):
-            if hasattr(self, name):
-                getattr(self, name).set_sensitive(not is_copy_mode)
+        if not bar_ready:
+            return
+        for widget in (
+            self.original_preview,
+            self.volume_btn,
+            self.speed_btn,
+            self.eq_toggle_btn,
+        ):
+            widget.set_sensitive(not is_copy_mode)
         if is_copy_mode:
-            for name in ("volume_popover", "speed_popover"):
-                if hasattr(self, name):
-                    getattr(self, name).popdown()
-            if hasattr(self, "eq_revealer"):
-                self.eq_revealer.set_reveal_child(False)
+            self.volume_popover.popdown()
+            self.speed_popover.popdown()
+            self.eq_revealer.set_reveal_child(False)
 
     # --- Slider / value conversion utilities ---
 
@@ -897,58 +868,19 @@ class SettingsManagerMixin:
         return default_idx
 
     def _restore_conversion_settings(self):
-        """Restore saved conversion settings from config."""
-        if not hasattr(self.app, "config") or not self.app.config:
-            return
+        """Restore saved conversion settings from config.
 
-        # Restore format selection
+        Runs inside setup_conversion_options, before the bottom bar exists;
+        setup_conversion_options then applies the format-dependent rows.
+        """
         self.format_row.set_selected(
             self._config_list_index("conversion_format", self._format_list, 1)
         )
-
-        # Don't show copy mode dialog or apply UI on startup
-        # The format change handler will apply the UI state
-
-        # Mark initialization as complete
-        self._initializing = False
-
-        # Restore bitrate selection
-        self.bitrate_row.set_selected(
-            self._config_list_index(
-                "conversion_bitrate",
-                self._bitrate_list,
-                self._bitrate_list.index("192k"),
-            )
+        self.channels_row.set_selected(
+            self._config_int("audio_channels", 0, lo=0, hi=2)
         )
-
-        # Set bitrate visibility based on format (only lossy formats use bitrate)
-        current_format = self._format_list[self.format_row.get_selected()]
-        lossy_formats = ("mp3", "ogg", "aac", "opus")
-        self.bitrate_row.set_visible(current_format in lossy_formats)
-        self.quality_row.set_visible(current_format in lossy_formats)
-        self._sync_quality()
-
-        # Restore channels
-        if hasattr(self, "channels_row"):
-            self.channels_row.set_selected(
-                self._config_int("audio_channels", 0, lo=0, hi=2)
-            )
-            # Hide channels in copy mode
-            self.channels_row.set_visible(current_format != "copy")
-
-        # Restore volume
-        vol_val = self._config_float("conversion_volume", 100)
-        self.volume_spin.set_value(vol_val)
-        if hasattr(self, "volume_scale"):
-            self.volume_scale.set_value(self._volume_to_slider(vol_val))
-            self.volume_value_label.set_text(f"{int(vol_val)}")
-
-        # Restore speed
-        spd_val = self._config_float("conversion_speed", 1.0)
-        self.speed_spin.set_value(spd_val)
-        if hasattr(self, "speed_scale"):
-            self.speed_scale.set_value(self._speed_to_slider(spd_val))
-            self.speed_value_label.set_text(f"{spd_val:.2f}x")
+        self.volume_spin.set_value(self._config_float("conversion_volume", 100))
+        self.speed_spin.set_value(self._config_float("conversion_speed", 1.0))
 
         # Legacy GTCRN settings stay on disk but never enable a different model.
         engine = self.app.config.get("noise_engine", "dfn3")
@@ -980,36 +912,12 @@ class SettingsManagerMixin:
         # Restore normalization
         self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
-        # Restore cut audio mode if present
-        if hasattr(self, "cut_row"):
-            mode = self._config_int("cut_audio_mode", -1, lo=0, hi=2)
-            if mode < 0:
-                # Legacy key fallback
-                mode = 1 if self._config_bool("cut_audio_enabled") else 0
-            self.cut_row.set_selected(mode)
-
-            # Set visibility based on combo selection
-            active = self.cut_row.get_selected()
-            if hasattr(self, "cut_options_box"):
-                self.cut_options_box.set_visible(active > 0)
-
-            # Restore cut output mode (separate files vs merge)
-            if hasattr(self, "cut_output_row"):
-                self.cut_output_row.set_visible(active > 0)
-                self.cut_output_row.set_selected(
-                    self._config_int("cut_output_mode", 0, lo=0, hi=1)
-                )
-
-            # The markers will be enabled in the window realize callback
-            # after the visualizer is fully created
-
-            # Restore cut times if those UI elements exist
-            if hasattr(self, "start_time_entry"):
-                saved_start_time = self.app.config.get("cut_start_time")
-                if saved_start_time:
-                    self.start_time_entry.set_text(saved_start_time)
-
-            if hasattr(self, "end_time_entry"):
-                saved_end_time = self.app.config.get("cut_end_time")
-                if saved_end_time:
-                    self.end_time_entry.set_text(saved_end_time)
+        # Cut mode; its change handler shows the dependent rows.
+        mode = self._config_int("cut_audio_mode", -1, lo=0, hi=2)
+        if mode < 0:
+            # Legacy key fallback
+            mode = 1 if self._config_bool("cut_audio_enabled") else 0
+        self.cut_row.set_selected(mode)
+        self.cut_output_row.set_selected(
+            self._config_int("cut_output_mode", 0, lo=0, hi=1)
+        )

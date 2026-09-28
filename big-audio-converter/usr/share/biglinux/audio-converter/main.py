@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Audio Converter - Main Application Entry Point
-This script should be run from the project root directory.
-"""
+"""Audio Converter application entry point (``big-audio-converter-gui``)."""
 
 import gettext
 import locale
@@ -29,17 +26,11 @@ from app.audio.converter import AudioConverter
 from app.audio.media import parse_segments_arg
 from app.audio.player import AudioPlayer
 from app.audio.process import MediaError
-
-# Application imports
 from app.audio.profiles import discover_noise_plugins
 from app.ui.main_window import MainWindow
 from app.ui.welcome_dialog import WelcomeDialog
 from app.utils.config import AppConfig
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
-
-# Add the project root directory to the Python path
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
 
 
 class Application(Adw.Application):
@@ -67,12 +58,7 @@ class Application(Adw.Application):
         self.player = AudioPlayer(noise_plugins=noise_plugins)
         self.converter = AudioConverter(noise_plugins=noise_plugins)
         self._main_window = None
-        self.logger = logging.getLogger(__name__)
         self._create_actions()
-
-    def _present_window_and_request_focus(self, window: Gtk.Window):
-        """Let the desktop handle activation; never steal focus with a fake dialog."""
-        window.present()
 
     def do_open(self, files, n_files, hint):
         """Handle files opened from command line or file manager."""
@@ -83,8 +69,8 @@ class Application(Adw.Application):
             win = MainWindow(application=self)
             self._main_window = win
 
-        # Always present and request focus for the window
-        self._present_window_and_request_focus(win)
+        # Let the desktop handle activation; never steal focus with a fake dialog.
+        win.present()
 
         # Add each file to the queue in bounded GTK work slices.
         paths = []
@@ -95,7 +81,7 @@ class Application(Adw.Application):
                 if path:
                     paths.append(path)
                 else:
-                    win._show_error_dialog(
+                    win._show_message(
                         _("Local files only"),
                         _("Download this file to a local folder before adding it."),
                     )
@@ -163,7 +149,7 @@ class Application(Adw.Application):
             # Show welcome dialog on first run
             if str(self.config.get("show_welcome_dialog", True)).lower() == "true":
                 self.show_welcome_dialog(win)
-        self._present_window_and_request_focus(win)
+        win.present()
 
     def show_welcome_dialog(self, parent_window=None):
         """Show the welcome dialog"""

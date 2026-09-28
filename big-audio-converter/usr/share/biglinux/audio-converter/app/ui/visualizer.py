@@ -40,6 +40,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Audio data
         self.waveform_data = None
+        self.waveform_error = None  # Set by WaveformGenerator on failure
         self.waveform_data_lock = Lock()
         self.position = 0
         self.duration = 0
@@ -52,7 +53,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Visualization settings
         self.bg_color = (0.11, 0.11, 0.13)
         self.wave_color = (0.30, 0.65, 1.0)
-        self.position_color = (1.0, 0.5, 0.0)
 
         # Waveform rendering cache for performance
         self.cached_peaks = None
@@ -129,21 +129,16 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.viewport_offset = 0.0  # Position in waveform (0.0 to 1.0)
         self.min_zoom = 1.0
         self.max_zoom = 1000.0
-        self.is_panning = False
-        self.pan_start_x = 0
-        self.pan_start_offset = 0
 
         # Simulated scrollbar for horizontal navigation when zoomed
         self.scrollbar_height = 12
         self.scrollbar_margin = 4
         self.is_dragging_scrollbar = False
-        self.scrollbar_drag_start_x = 0
         self.scrollbar_drag_start_offset = 0
         self.hovering_scrollbar = False
 
-        # Middle-click or Ctrl+drag panning
+        # Ctrl+drag panning
         self.pan_gesture_active = False
-        self.pan_gesture_start_x = 0
         self.pan_gesture_start_offset = 0
 
         # Callback for notifying zoom changes (to update UI slider)
@@ -223,41 +218,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 del self.cached_peaks
                 self.cached_peaks = None
 
-            # Store waveform data directly - no downsampling
-            # This preserves quality for all zoom levels
-            if data is not None:
-                if isinstance(data, dict) and "levels" in data:
-                    # New multi-level format
-                    self.waveform_data = data
-                    total_samples = sum(len(level) for level in data["levels"])
-                    logger.info(
-                        f"Multi-level waveform set: {len(data['levels'])} levels, "
-                        f"total {total_samples} samples, duration={duration:.2f}s"
-                    )
-                    for i, (level, rate) in enumerate(
-                        zip(data["levels"], data["rates"])
-                    ):
-                        logger.info(
-                            f"  Level {i}: {len(level)} samples @ {rate} Hz ({len(level) * 4 / 1024:.1f} KB)"
-                        )
-                else:
-                    # Old single-level format - wrap it for compatibility
-                    self.waveform_data = np.asarray(data, dtype=np.float32)
-                    samples_per_second = (
-                        len(self.waveform_data) / duration if duration > 0 else 0
-                    )
-                    logger.info(
-                        f"Single-level waveform data set: {len(self.waveform_data)} samples, "
-                        f"duration={duration:.2f}s, "
-                        f"rate={samples_per_second:.0f} Hz, "
-                        f"range=[{np.min(self.waveform_data):.3f}, {np.max(self.waveform_data):.3f}]"
-                    )
-            else:
-                self.waveform_data = None
-                logger.info("Waveform data cleared")
-
+            # A PeakCollector payload: {"levels", "rates", "zoom_thresholds"}.
+            self.waveform_data = data
             self.duration = duration
-            logger.info(f"🔍 VISUALIZER: Set duration={duration:.6f}s")
 
             # Invalidate viewport cache
             self.cached_viewport_key = None
@@ -283,11 +246,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 marker_pixel_x = ((position - start_time) / visible_duration) * width
 
                 # Check if playing for auto-follow behavior
-                is_playing = (
-                    self.player
-                    and hasattr(self.player, "is_playing")
-                    and self.player.is_playing()
-                )
+                is_playing = self.player and self.player.is_playing()
 
                 # When playing, follow with margin before edge
                 if is_playing:
@@ -327,8 +286,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         with self.waveform_data_lock:
             # Cached payloads are immutable and may be shared by another view.
-            self.waveform_data = None
-
             self.waveform_data = None
             self.position = 0
             self.duration = 0
@@ -372,17 +329,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Ignore clicks on scrollbar
         if self._is_over_scrollbar(x, y):
-            return
-
-        # Check if middle button or right button for panning
-        button = gesture.get_current_button()
-
-        # Start pan gesture if middle-click (button 2) or right-click (button 3) and zoomed
-        if self.zoom_level > 1.0 and (button == 2 or button == 3):
-            self.pan_gesture_active = True
-            self.pan_gesture_start_x = x
-            self.pan_gesture_start_offset = self.viewport_offset
-            self.set_cursor(Gdk.Cursor.new_from_name("grabbing"))
             return
 
         width = self.get_width()
@@ -460,7 +406,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Check if dragging scrollbar
         if self._is_over_scrollbar_thumb(start_x, start_y):
             self.is_dragging_scrollbar = True
-            self.scrollbar_drag_start_x = start_x
             self.scrollbar_drag_start_offset = self.viewport_offset
             self.queue_draw()
             return
@@ -475,7 +420,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
             if ctrl_pressed and button == 1:  # Ctrl + left-click
                 self.pan_gesture_active = True
-                self.pan_gesture_start_x = start_x
                 self.pan_gesture_start_offset = self.viewport_offset
                 self.set_cursor(Gdk.Cursor.new_from_name("grabbing"))
                 return
@@ -495,12 +439,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             if pair["stop"] is not None:
                 new_position = min(new_position, pair["stop"] - 0.1)
             pair["start"] = new_position
-            pair["start_str"] = self._format_time(new_position)
         else:
             if pair["start"] is not None:
                 new_position = max(new_position, pair["start"] + 0.1)
             pair["stop"] = new_position
-            pair["stop_str"] = self._format_time(new_position)
 
         self.queue_draw()
         if self.seek_position_callback:
@@ -551,8 +493,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         pair["start"] = new_start
         pair["stop"] = new_stop
-        pair["start_str"] = self._format_time(new_start)
-        pair["stop_str"] = self._format_time(new_stop)
         self.queue_draw()
 
         if self.seek_position_callback:
@@ -604,12 +544,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.is_dragging_marker = True
             self.dragging_pair_index = self.potential_drag_segment["index"]
             self.dragging_marker_type = "segment"
-            ok, start_x, _ = gesture.get_start_point()
-            if ok:
-                self.drag_start_x = start_x
-                # Record the starting segment position for more accurate movement
-                pair = self.marker_pairs[self.dragging_pair_index]
-                self.drag_start_pos = {"start": pair["start"], "stop": pair["stop"]}
+            # Record the starting segment position for more accurate movement
+            pair = self.marker_pairs[self.dragging_pair_index]
+            self.drag_start_pos = {"start": pair["start"], "stop": pair["stop"]}
 
             # Notify that marker dragging started (whole segment drag)
             if self.marker_drag_callback:
@@ -850,30 +787,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def zoom_out(self, factor=1.2):
         """Zoom out by the specified factor."""
-        new_zoom = self.zoom_level / factor
-        new_zoom = max(self.min_zoom, min(self.max_zoom, new_zoom))
-
-        if new_zoom != self.zoom_level:
-            # Zoom from center
-            visible_duration = self.duration / self.zoom_level
-            start_time = self.viewport_offset * self.duration
-            center_time = start_time + visible_duration / 2
-
-            self.zoom_level = new_zoom
-
-            # Adjust viewport to keep center position
-            new_visible_duration = self.duration / self.zoom_level
-            new_start_time = center_time - new_visible_duration / 2
-
-            self.viewport_offset = max(
-                0, min(1.0 - 1.0 / self.zoom_level, new_start_time / self.duration)
-            )
-
-            # Notify zoom change callback
-            if self.zoom_changed_callback:
-                self.zoom_changed_callback(self.zoom_level)
-
-            self.queue_draw()
+        self.zoom_in(1 / factor)
 
     def reset_zoom(self):
         """Reset zoom to default level."""
@@ -1239,23 +1153,15 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         Returns (waveform_array, sample_rate, selected_level).
         """
-        is_multi_level = (
-            isinstance(self.waveform_data, dict) and "levels" in self.waveform_data
+        selected_level = 0
+        for i, threshold in enumerate(self.waveform_data["zoom_thresholds"]):
+            if self.zoom_level >= threshold:
+                selected_level = i
+        return (
+            self.waveform_data["levels"][selected_level],
+            self.waveform_data["rates"][selected_level],
+            selected_level,
         )
-        if is_multi_level:
-            zoom_thresholds = self.waveform_data["zoom_thresholds"]
-            levels = self.waveform_data["levels"]
-            rates = self.waveform_data["rates"]
-            selected_level = 0
-            for i, threshold in enumerate(zoom_thresholds):
-                if self.zoom_level >= threshold:
-                    selected_level = i
-            return levels[selected_level], rates[selected_level], selected_level
-        # Old single-level format
-        sample_rate = (
-            len(self.waveform_data) / self.duration if self.duration > 0 else 1
-        )
-        return self.waveform_data, sample_rate, 0
 
     def _render_waveform_cache(self, width, height, visible_waveform, viewport_key):
         """Render the waveform to a cached ImageSurface."""
@@ -1279,20 +1185,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 break
             pixel_samples = visible_waveform[s_start:s_end]
             if len(pixel_samples) > 0:
-                if isinstance(self.waveform_data, dict) and self.waveform_data.get(
-                    "envelope"
-                ):
-                    peak = float(np.max(pixel_samples))
-                    peaks.append((bar_idx, bar_width, -peak, peak))
-                else:
-                    peaks.append(
-                        (
-                            bar_idx,
-                            bar_width,
-                            float(np.min(pixel_samples)),
-                            float(np.max(pixel_samples)),
-                        )
-                    )
+                # Levels hold absolute peaks; draw them mirrored.
+                peak = float(np.max(pixel_samples))
+                peaks.append((bar_idx, bar_width, -peak, peak))
             else:
                 peaks.append((bar_idx, bar_width, 0.0, 0.0))
 
@@ -1347,7 +1242,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(16)
 
-        if getattr(self, "waveform_error", None):
+        if self.waveform_error:
             text = _("Waveform could not be generated")
             subtitle = _("Numeric segment editing is still available.")
         elif self.duration > 0:
@@ -1418,16 +1313,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     visible_waveform = waveform_array[start_sample:end_sample]
 
                     if len(visible_waveform) > 0:
-                        is_multi_level = (
-                            isinstance(self.waveform_data, dict)
-                            and "levels" in self.waveform_data
-                        )
                         viewport_key = (
                             start_sample,
                             end_sample,
                             int(width),
                             int(height),
-                            selected_level if is_multi_level else 0,
+                            selected_level,
                         )
 
                         if (

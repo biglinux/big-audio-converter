@@ -56,7 +56,6 @@ class HeaderBar(Gtk.Box):
         self.header_bar.set_show_title(True)
 
         # Configure decoration layout based on window button position
-        # Configure decoration layout based on window button position
         if not window_buttons_left:
             self.header_bar.set_decoration_layout(":minimize,maximize,close")
         else:
@@ -104,12 +103,10 @@ class HeaderBar(Gtk.Box):
         )
 
         # Create stateful action for tooltip toggle
-        tips_enabled = True
         app = self.main_window.app
-        if hasattr(app, "config") and app.config:
-            tips_enabled = (
-                str(app.config.get("show_mouseover_tips", "true")).lower() == "true"
-            )
+        tips_enabled = (
+            str(app.config.get("show_mouseover_tips", "true")).lower() == "true"
+        )
         tips_action = Gio.SimpleAction.new_stateful(
             "toggle-tips", None, GLib.Variant.new_boolean(tips_enabled)
         )
@@ -172,9 +169,6 @@ class HeaderBar(Gtk.Box):
     def update_queue_label(self, text):
         self.queue_size_label.set_text(text)
 
-    def set_convert_button_visible(self, visible):
-        self.convert_button.set_visible(visible)
-
 
 class MainWindow(
     ControlsBarMixin,
@@ -182,6 +176,8 @@ class MainWindow(
     PlaybackControllerMixin,
     Adw.ApplicationWindow,
 ):
+    """Main application window."""
+
     def _window_buttons_on_left(self):
         """Respect GTK decoration preferences without requiring a GNOME schema."""
         settings = Gtk.Settings.get_default()
@@ -192,41 +188,27 @@ class MainWindow(
             else False
         )
 
-    """Main application window."""
-
     def __init__(self, **kwargs):
         # Extract stored window size and maximized state (with defaults)
         default_width = 1100
         default_height = 800
-        is_maximized = False
+        config = kwargs["application"].config
 
-        # Try to load saved window state
-        if hasattr(kwargs.get("application", None), "config"):
-            config = kwargs.get("application").config
-            if config:
-                # Load window size from config
-                saved_width = config.get("window_width")
-                if saved_width:
-                    try:
-                        loaded_width = int(saved_width)
-                        # Ensure width is not smaller than minimum
-                        default_width = max(loaded_width, 920)
-                    except (ValueError, TypeError):
-                        pass
+        saved_width = config.get("window_width")
+        if saved_width:
+            try:
+                default_width = max(int(saved_width), 920)
+            except (ValueError, TypeError):
+                pass
 
-                saved_height = config.get("window_height")
-                if saved_height:
-                    try:
-                        loaded_height = int(saved_height)
-                        # Ensure height is not smaller than minimum
-                        default_height = max(loaded_height, 600)
-                    except (ValueError, TypeError):
-                        pass
+        saved_height = config.get("window_height")
+        if saved_height:
+            try:
+                default_height = max(int(saved_height), 600)
+            except (ValueError, TypeError):
+                pass
 
-                # Load window maximized state from config
-                saved_maximized = config.get("window_maximized")
-                if saved_maximized:
-                    is_maximized = str(saved_maximized).lower() == "true"
+        is_maximized = str(config.get("window_maximized")).lower() == "true"
 
         # Initialize with loaded or default size
         super().__init__(
@@ -241,11 +223,7 @@ class MainWindow(
         # Store whether window should be maximized
         self._should_maximize = is_maximized
 
-        # Set minimum window size to prevent controls from being cut off
-        # Left sidebar (300px) + right content (620px) = 920px minimum width
         self.set_size_request(360, 480)
-        # For debouncing window size save
-        self._size_save_timeout_id = None
 
         self.app = kwargs.get("application")
         self._closed = False
@@ -256,62 +234,46 @@ class MainWindow(
         self._playback_sources = MainLoopSources()
         self.waveform_generator = WaveformGenerator()
 
-        # Initialize tooltip helper
-        if hasattr(self.app, "config") and self.app.config:
-            self.tooltip_helper = TooltipHelper(self.app.config)
-        else:
-            self.tooltip_helper = None
+        self.tooltip_helper = TooltipHelper(self.app.config)
 
         # Initialize components
         self.player = self.app.player
         self.converter = self.app.converter
         # Add marker cache to remember markers for each file
         self.file_markers = {}  # Dictionary mapping file path to marker pairs
-
-        # Track if copy mode info dialog has been shown (show only once per session)
-        self._copy_info_shown = False
-
-        # Track if we're in initialization to avoid showing dialogs on startup
-        self._initializing = True
+        self.active_audio_id = None  # Queue entry whose waveform is shown
 
         # Selection playback tracking
         self._playing_selection = False
         self._selection_segments = []  # List of (start, stop) tuples
         self._current_segment_index = 0
         self._play_selection_mode = False  # Whether switch is on
-        self._segment_seek_in_progress = False  # Prevent seek loops
-        self._last_segment_end_time = 0  # Track when we last transitioned
         self._marker_dragging = False  # Track when user is dragging markers
         self._is_transitioning_segment = (
             False  # Lock to prevent transition race conditions
         )
-
-        # For debouncing sidebar width save
-        self._sidebar_save_timeout_id = None
 
         # Default sidebar width - will be overridden by saved value if available
         self.sidebar_width = 380
 
         # Default visualizer height - will be overridden by saved value
         self.visualizer_height = 132
+        self._saved_paned_position = None  # Paned position before cut mode collapse
 
-        # Try to load saved sidebar width
-        if hasattr(self.app, "config") and self.app.config:
-            # Fix: match the parameter pattern used in the save method
-            saved_width = self.app.config.get("sidebar_width")
-            if saved_width:
-                try:
-                    self.sidebar_width = max(150, int(saved_width))
-                except (ValueError, TypeError):
-                    pass  # Use default if conversion fails
+        # Only legacy configurations contain sidebar_width; it bounds the sidebar.
+        saved_width = config.get("sidebar_width")
+        if saved_width:
+            try:
+                self.sidebar_width = max(150, int(saved_width))
+            except (ValueError, TypeError):
+                pass
 
-            # Load saved visualizer height
-            saved_height = self.app.config.get("visualizer_height")
-            if saved_height:
-                try:
-                    self.visualizer_height = max(100, int(saved_height))
-                except (ValueError, TypeError):
-                    pass  # Use default if conversion fails
+        saved_height = config.get("visualizer_height")
+        if saved_height:
+            try:
+                self.visualizer_height = max(100, int(saved_height))
+            except (ValueError, TypeError):
+                pass
 
         # Reuse the preferred width as a bound, not as a minimum window width.
         self.sidebar_width = min(420, max(280, self.sidebar_width))
@@ -323,10 +285,6 @@ class MainWindow(
         self.file_queue.on_pending_changed = self._on_pending_changed
         self.setup_drop_target()
         self.connect("close-request", weak_callback(self.on_close_request))
-
-        # Setup visualizer tooltip after UI is fully created
-        if self.tooltip_helper and hasattr(self, "visualizer"):
-            self._sources.idle(self._setup_visualizer_tooltip)
 
         # Connect to map event for visualizer height restoration
         self.connect("map", weak_callback(self.on_window_mapped))
@@ -353,9 +311,6 @@ class MainWindow(
 
         # Connect file removal signal
         self.file_queue.connect_file_removed_signal(self._on_file_removed)
-
-        # Store the currently active audio ID
-        self.active_audio_id = None
 
         # Setup window-level keyboard shortcuts
         self._setup_keyboard_shortcuts()
@@ -503,10 +458,8 @@ class MainWindow(
         self.right_header = HeaderBar(self, False)
         right_box.add_top_bar(self.right_header)
 
-        # Compatibility aliases for existing code references
         self.clear_queue_button = self.right_header.clear_queue_button
         self.convert_button = self.right_header.convert_button
-        self.header_queue_size_label = self.right_header.queue_size_label
 
         # Create scrollable container for right content (file queue)
         right_scroll = Gtk.ScrolledWindow()
@@ -540,9 +493,6 @@ class MainWindow(
         # Connect callback for when file row is activated (clicked)
         self.file_queue.on_activate_file = self.on_activate_file
 
-        # Initialize queue size label
-        self.update_queue_size_label(0, "0 files")
-
         # Add right content to scroll container
         right_scroll.set_child(right_content)
 
@@ -572,7 +522,6 @@ class MainWindow(
             [Gtk.AccessibleProperty.LABEL], [_("Conversion Settings")]
         )
         settings_button.set_tooltip_text(_("Show conversion settings"))
-        self.settings_button = settings_button
         self.split_view.bind_property(
             "show-sidebar",
             settings_button,
@@ -624,9 +573,6 @@ class MainWindow(
             [_("Play only selected area")],
         )
 
-        # Store reference for tooltip
-        self.play_selection_box = self.play_selection_switch
-
         zoom_control_box.append(self.play_selection_switch)
 
         # Add "Auto-Advance" toggle button — icon-only
@@ -644,9 +590,6 @@ class MainWindow(
             [Gtk.AccessibleProperty.LABEL],
             [_("Auto-advance to next track")],
         )
-
-        # Store reference for tooltip
-        self.auto_advance_box = self.auto_advance_switch
 
         zoom_control_box.append(self.auto_advance_switch)
 
@@ -956,9 +899,9 @@ class MainWindow(
         right_controls_box.append(self.zoom_box)
 
         zoom_control_box.append(right_controls_box)
-
-        # Store reference to zoom control box for showing/hiding
-        self.zoom_control_box = zoom_control_box
+        # Settings were restored before these bar controls existed.
+        self._set_processing_volume(self.volume_spin.get_value())
+        self._set_processing_speed(self.speed_spin.get_value())
 
         # Store reference to visualizer container
         self.visualizer_container = visualizer_container
@@ -981,9 +924,6 @@ class MainWindow(
 
         # Connect zoom change handler to update slider
         self.visualizer.zoom_changed_callback = self._on_visualizer_zoom_changed
-
-        # Connect viewport change handler to sync seekbar during panning
-        self.visualizer.viewport_changed_callback = self._on_visualizer_viewport_changed
 
         # Connect marker update handler to refresh selection playback
         self.visualizer.marker_updated_callback = self._on_markers_updated
@@ -1046,69 +986,24 @@ class MainWindow(
         # Apply tooltips to all UI elements (must be after all widgets are created)
         self._apply_tooltips()
 
-    def update_queue_size_label(self, count=None, text=None):
-        """Update the queue size label in the header."""
-        # Get count if not provided
-        if count is None and hasattr(self.file_queue, "get_queue_size"):
-            count = self.file_queue.get_queue_size()
-
-        # Get text if not provided
-        if text is None:
-            text = self.file_queue.get_queue_size_text()
-
-        # Update the label text
-        if hasattr(self, "right_header"):
-            try:
-                has_multiple_files = count > 1
-            except (ValueError, TypeError):
-                has_multiple_files = False
-
-            self.right_header.update_queue_label(text)
-            self.right_header.set_queue_info_visible(has_multiple_files)
-
-            # Update conversion button visibility
-            has_files = count > 0
-            self.right_header.set_convert_button_visible(has_files)
-
-        # Show/hide elements based on file count
+    def update_queue_size_label(self, count, text):
+        """Show queue-wide controls for the current number of entries."""
         has_files = count > 0
-        has_multiple_files = count >= 2
+        has_multiple_files = count > 1
+        self.right_header.update_queue_label(text)
+        self.right_header.set_queue_info_visible(has_multiple_files)
+        self.prev_audio_btn.set_visible(has_multiple_files)
+        self.next_audio_btn.set_visible(has_multiple_files)
+        self.convert_button.set_visible(has_files)
+        self.convert_button.set_label(
+            gettext.ngettext("Convert %d file", "Convert %d files", count) % count
+        )
 
-        # Show/hide waveform based on file count (seekbar+controls always visible)
-        if hasattr(self, "visualizer_container"):
-            if (
-                has_files
-                and hasattr(self, "cut_row")
-                and self.cut_row.get_selected() > 0
-            ):
-                self.visualizer_frame.set_visible(True)
-            else:
-                self.visualizer_frame.set_visible(False)
-            # Collapse paned to show only seekbar+controls when no waveform
-            if not has_files or (
-                hasattr(self, "cut_row") and self.cut_row.get_selected() == 0
-            ):
-                self._sources.idle(self._update_paned_for_cut_mode, False)
-
-        # Queue size label only shows when there are 2 or more files (matching clear button)
-        self.header_queue_size_label.set_visible(has_multiple_files)
-
-        # Show/hide navigation buttons - only visible with multiple files
-        if hasattr(self, "prev_audio_btn"):
-            self.prev_audio_btn.set_visible(has_multiple_files)
-        if hasattr(self, "next_audio_btn"):
-            self.next_audio_btn.set_visible(has_multiple_files)
-
-        # Clear queue button only shows when there are 2 or more files
-        if hasattr(self, "clear_queue_button"):
-            self.clear_queue_button.set_visible(has_multiple_files)
-
-        # Convert button shows when there's at least one file
-        if hasattr(self, "convert_button"):
-            self.convert_button.set_visible(has_files)
-            self.convert_button.set_label(
-                gettext.ngettext("Convert %d file", "Convert %d files", count) % count
-            )
+        # Show the waveform only while cutting; seekbar and controls stay visible.
+        cutting = self.cut_row.get_selected() > 0
+        self.visualizer_frame.set_visible(has_files and cutting)
+        if not has_files or not cutting:
+            self._sources.idle(self._update_paned_for_cut_mode, False)
 
     def _refresh_audio_outputs(self):
         devices = [
@@ -1148,149 +1043,51 @@ class MainWindow(
             self._refresh_audio_outputs()
 
     def _apply_tooltips(self):
-        """Apply tooltips to UI elements."""
-        if not self.tooltip_helper:
-            return
-
-        # Add tooltips to format combo parent row
-        # Add tooltip to format row (Adw.ComboRow is the row itself)
-        if hasattr(self, "format_row"):
-            self.tooltip_helper.add_tooltip(self.format_row, "format")
-
-        # Add tooltip to bitrate row
-        if hasattr(self, "bitrate_row"):
-            self.tooltip_helper.add_tooltip(self.bitrate_row, "bitrate")
-
-        # Add tooltip to volume spin
-        if hasattr(self, "volume_spin"):
-            self.tooltip_helper.add_tooltip(self.volume_spin, "volume")
-
-        # Add tooltip to speed spin
-        if hasattr(self, "speed_spin"):
-            self.tooltip_helper.add_tooltip(self.speed_spin, "speed")
-
-        # Add tooltip to noise row (Adw.SwitchRow is the row itself)
-        if hasattr(self, "noise_expander"):
-            self.tooltip_helper.add_tooltip(self.noise_expander, "noise_reduction")
-
-        # Add tooltip to noise strength spin
-        if hasattr(self, "noise_strength_row"):
-            self.tooltip_helper.add_tooltip(self.noise_strength_row, "noise_strength")
-
-        # Add tooltips to noise gate
-        if hasattr(self, "gate_expander"):
-            self.tooltip_helper.add_tooltip(self.gate_expander, "noise_gate")
-        if hasattr(self, "gate_threshold_spin"):
-            self.tooltip_helper.add_tooltip(self.gate_threshold_spin, "gate_threshold")
-        if hasattr(self, "gate_range_spin"):
-            self.tooltip_helper.add_tooltip(self.gate_range_spin, "gate_range")
-        if hasattr(self, "gate_attack_spin"):
-            self.tooltip_helper.add_tooltip(self.gate_attack_spin, "gate_attack")
-        if hasattr(self, "gate_release_spin"):
-            self.tooltip_helper.add_tooltip(self.gate_release_spin, "gate_release")
-
-        # Add tooltip to loudness normalization row
-        if hasattr(self, "normalize_row"):
-            self.tooltip_helper.add_tooltip(self.normalize_row, "normalize")
-
-        # Add tooltip to cut row (Adw.ComboRow is the row itself)
-        if hasattr(self, "cut_row"):
-            self.tooltip_helper.add_tooltip(self.cut_row, "cut")
-
-        # Add tooltip to cut output row
-        if hasattr(self, "cut_output_row"):
-            self.tooltip_helper.add_tooltip(self.cut_output_row, "cut_output")
-
-        # Add tooltip to channels row
-        if hasattr(self, "channels_row"):
-            self.tooltip_helper.add_tooltip(self.channels_row, "channels")
-
-        # Add tooltips to headerbar controls
-        if hasattr(self, "clear_queue_button"):
-            self.tooltip_helper.add_tooltip(
-                self.clear_queue_button, "clear_queue_button"
-            )
-        if hasattr(self, "prev_audio_btn"):
-            self.tooltip_helper.add_tooltip(self.prev_audio_btn, "prev_audio_btn")
-        if hasattr(self, "pause_play_btn"):
-            self.tooltip_helper.add_tooltip(self.pause_play_btn, "pause_play_btn")
-        if hasattr(self, "next_audio_btn"):
-            self.tooltip_helper.add_tooltip(self.next_audio_btn, "next_audio_btn")
-        # Apply tooltips to toggle buttons (now icon-only)
-        if hasattr(self, "play_selection_switch"):
-            self.tooltip_helper.add_tooltip(
-                self.play_selection_switch, "play_selection_switch"
-            )
-        if hasattr(self, "auto_advance_switch"):
-            self.tooltip_helper.add_tooltip(
-                self.auto_advance_switch, "auto_advance_switch"
-            )
-        if hasattr(self, "eq_toggle_btn"):
-            self.tooltip_helper.add_tooltip(self.eq_toggle_btn, "eq_toggle_btn")
+        """Register every help tooltip; the helper shows them only when enabled."""
+        for widget, key in (
+            (self.format_row, "format"),
+            (self.bitrate_row, "bitrate"),
+            (self.volume_spin, "volume"),
+            (self.speed_spin, "speed"),
+            (self.noise_expander, "noise_reduction"),
+            (self.gate_expander, "noise_gate"),
+            (self.normalize_row, "normalize"),
+            (self.cut_row, "cut"),
+            (self.cut_output_row, "cut_output"),
+            (self.channels_row, "channels"),
+            (self.clear_queue_button, "clear_queue_button"),
+            (self.prev_audio_btn, "prev_audio_btn"),
+            (self.pause_play_btn, "pause_play_btn"),
+            (self.next_audio_btn, "next_audio_btn"),
+            (self.play_selection_switch, "play_selection_switch"),
+            (self.auto_advance_switch, "auto_advance_switch"),
+            (self.eq_toggle_btn, "eq_toggle_btn"),
+            (self.visualizer, "waveform_visualizer"),
+        ):
+            self.tooltip_helper.add_tooltip(widget, key)
 
     def _on_tips_action_changed(self, action, value):
         """Handle mouseover tips toggle from hamburger menu."""
-        state = value.get_boolean()
         action.set_state(value)
-
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("show_mouseover_tips", "true" if state else "false")
-
-        if state:
-            # When enabling tooltips, re-apply all of them
-            self._apply_tooltips()
-            # Also setup visualizer tooltip
-            if hasattr(self, "visualizer"):
-                self._sources.idle(self._setup_visualizer_tooltip)
-        else:
-            # When disabling tooltips, hide current
-            if self.tooltip_helper:
-                self.tooltip_helper.hide(immediate=True)
-            # Hide visualizer tooltip
-            if hasattr(self, "visualizer"):
-                self._hide_visualizer_tooltip()
-
-    def _setup_visualizer_tooltip(self):
-        """Setup tooltip for the waveform visualizer using the standard TooltipHelper."""
-        if not self.tooltip_helper or not self.tooltip_helper.is_enabled():
-            return False
-
-        if not hasattr(self, "visualizer"):
-            return False
-
-        # Use TooltipHelper with y_offset to position above the controls bar
-        # Negative offset moves the tooltip up above the bar
-        bar_height = 40
-        self.tooltip_helper.add_tooltip(
-            self.visualizer, "waveform_visualizer", y_offset=-bar_height
+        self.app.config.set(
+            "show_mouseover_tips", "true" if value.get_boolean() else "false"
         )
-
-        return False  # Don't repeat idle_add
-
-    def _hide_visualizer_tooltip(self):
-        """Hide visualizer tooltip."""
-        if self.tooltip_helper:
-            self.tooltip_helper.hide(immediate=True)
+        self.tooltip_helper.refresh()
 
     def on_convert(self, button):
         """Delegate job presentation to the conversion controller."""
         self.conversion.start()
 
     def _collect_conversion_settings(self):
+        """Collect an immutable request before the worker starts."""
         self._save_current_file_state()
-        # Collect an immutable request before the worker starts.
-        # Channels: 0=original, 1=mono, 2=stereo
-        channels_sel = (
-            self.channels_row.get_selected() if hasattr(self, "channels_row") else 0
-        )
-        channels_map = {0: None, 1: 1, 2: 2}
-
         settings = {
             "format": self._format_list[self.format_row.get_selected()],
             "bitrate": self._bitrate_list[self.bitrate_row.get_selected()],
             "volume": self.volume_spin.get_value() / 100,
             "speed": self.speed_spin.get_value(),
-            "channels": channels_map.get(channels_sel),
+            # Channels: 0=original, 1=mono, 2=stereo
+            "channels": (None, 1, 2)[self.channels_row.get_selected()],
             "sample_rate": self._sample_rate_list[self.sample_rate_row.get_selected()],
             "prevent_clipping": self.clipping_row.get_active(),
             "allow_precision_reduction": self.precision_row.get_active(),
@@ -1304,79 +1101,24 @@ class MainWindow(
             "compressor_intensity": self.compressor_intensity_scale.get_value(),
             "hpf_enabled": self.hpf_row.get_active(),
             "hpf_frequency": int(self.hpf_freq_scale.get_value()),
-            "eq_enabled": hasattr(self, "eq_panel")
-            and any(
+            "eq_enabled": any(
                 self.eq_panel.band_scales[f].get_value() != 0
                 for _, f in self.eq_panel.BANDS
             ),
             "eq_bands": ",".join(
                 str(self.eq_panel.band_scales[f].get_value())
                 for _, f in self.eq_panel.BANDS
-            )
-            if hasattr(self, "eq_panel")
-            else "0,0,0,0,0,0,0,0,0,0",
+            ),
             "normalize": self.normalize_row.get_active(),
             "cut_enabled": self.cut_row.get_selected() > 0,
-            "cut_merge": hasattr(self, "cut_output_row")
-            and self.cut_output_row.get_selected() == 1,
+            "cut_merge": self.cut_output_row.get_selected() == 1,
+            # The converter orders each file's segments by number or by time.
+            "order_by_segment_number": self.cut_row.get_selected() == 2,
+            # Files without an entry here are converted in full.
+            "file_markers": self.file_markers,
             # Pass track metadata from file queue for video track extraction
             "track_metadata": self.file_queue.track_metadata,
         }
-
-        # Get segment ordering preference (True = by number, False = by timeline)
-        order_by_number = self.cut_row.get_selected() == 2
-        settings["order_by_segment_number"] = order_by_number
-
-        # For multi-file cutting, store ALL marker information
-        if settings["cut_enabled"]:
-            # Add current markers if file is active (showing waveform)
-            if self.active_audio_id:
-                # Get ordered segments based on user preference
-                logger.debug(f"Getting segments with order_by_number={order_by_number}")
-                current_markers = self.visualizer.get_ordered_marker_pairs(
-                    order_by_number
-                )
-                if current_markers:
-                    logger.debug(
-                        f"Storing {len(current_markers)} ordered segments for current file"
-                    )
-                    self.file_markers[self.active_audio_id] = current_markers
-
-            # Process each file's markers with the ordering preference
-            ordered_file_markers = {}
-            for file_path, markers in self.file_markers.items():
-                # Sort markers if needed (for files we didn't just process)
-                if (
-                    (file_path != self.active_audio_id)
-                    and (order_by_number and markers)
-                ) and ("segment_index" in markers[0]):
-                    logger.debug(
-                        f"Reordering {len(markers)} segments for {os.path.basename(file_path)}"
-                    )
-                    ordered_markers = sorted(
-                        markers, key=lambda x: x.get("segment_index", 1)
-                    )
-                    ordered_file_markers[file_path] = ordered_markers
-                    continue
-
-                # Default: keep existing order (either original or already sorted)
-                ordered_file_markers[file_path] = markers
-
-            # Store the ordered markers dictionary
-            settings["file_markers"] = ordered_file_markers
-
-            # For backward compatibility and logging
-            if (
-                self.active_audio_id
-                and self.active_audio_id in settings["file_markers"]
-            ):
-                current_file_segments = settings["file_markers"][self.active_audio_id]
-                if current_file_segments and len(current_file_segments) > 0:
-                    # Use segments from current file for backward compatibility
-                    settings["cut_segments"] = current_file_segments
-                    logger.debug(
-                        f"Final segments order for conversion: {[(s.get('segment_index', '?'), s['start_str']) for s in current_file_segments]}"
-                    )
 
         if settings["format"] == "copy":
             for key in (
@@ -1394,16 +1136,7 @@ class MainWindow(
             )
         return deepcopy(settings)
 
-    def _show_error_dialog(self, title, message):
-        if self._closed:
-            return
-        dialog = Adw.AlertDialog(heading=title, body=message)
-        dialog.add_response("ok", _("OK"))
-        dialog.set_default_response("ok")
-        dialog.set_close_response("ok")
-        dialog.present(self)
-
-    def _show_info_dialog(self, title, message):
+    def _show_message(self, title, message):
         if self._closed:
             return
         dialog = Adw.AlertDialog(heading=title, body=message)
@@ -1434,8 +1167,7 @@ class MainWindow(
         self.converter.cleanup()
         self.player.cleanup()
         self.visualizer.cleanup()
-        if self.tooltip_helper:
-            self.tooltip_helper.cleanup()
+        self.tooltip_helper.cleanup()
         Gtk.StyleContext.remove_provider_for_display(
             self.get_display(), self._css_provider
         )
@@ -1450,13 +1182,13 @@ class MainWindow(
 
     def on_edit_segments(self, *_args):
         if not self.active_audio_id:
-            self._show_info_dialog(
+            self._show_message(
                 _("No audio selected"),
                 _("Add a file and select it before editing segments."),
             )
             return
         if (self.visualizer.duration or self.player.duration) <= 0:
-            self._show_info_dialog(
+            self._show_message(
                 _("Audio duration unavailable"),
                 _(
                     "Enable cutting and wait for the waveform to finish before editing this file."
@@ -1522,85 +1254,43 @@ class MainWindow(
 
     def _on_player_error(self, message):
         if not self._closed:
-            self._show_error_dialog(_("Audio preview"), message)
-
-    def _on_window_size_changed(self, window, param):
-        """Handle window size changes."""
-        # Only save size if the window is not maximized
-        if not self.is_maximized():
-            # Debounce to avoid saving while resizing
-            if hasattr(self, "_size_save_timeout_id") and self._size_save_timeout_id:
-                self._sources.cancel(self._size_save_timeout_id)
-
-            self._size_save_timeout_id = self._sources.later(
-                500, self._save_window_size
-            )
+            self._show_message(_("Audio preview"), message)
 
     def _on_window_state_changed(self, window, param):
-        """Handle window state changes (maximized)."""
-        # Get current maximized state
+        """Save the maximized state and fix the layout after unmaximizing."""
         is_maximized = self.is_maximized()
-
-        # Save maximized state to config
-        if hasattr(self.app, "config") and self.app.config:
-            self.app.config.set("window_maximized", str(is_maximized).lower())
-
-        # When window is unmaximized, make a single adjustment to fix the layout
+        self.app.config.set("window_maximized", str(is_maximized).lower())
         if not is_maximized:
-            # Single adjustment with a small delay to allow window to settle
-            self._sources.later(200, self._fix_layout_after_unmaximize)
+            # A small delay lets the window settle before measuring it.
+            self._sources.later(200, self._restore_geometry)
 
     def _save_window_size(self):
-        """Save the current window size to config."""
-        if hasattr(self.app, "config") and self.app.config:
-            width = self.get_width()
-            height = self.get_height()
-
-            # Only save if the values are reasonable
-            if width > 200 and height > 200:
-                self.app.config.set("window_width", str(width))
-                self.app.config.set("window_height", str(height))
-
-        if hasattr(self, "_size_save_timeout_id"):
-            self._size_save_timeout_id = None
-
-        return False  # Don't repeat the timeout
-
-    def _fix_layout_after_unmaximize(self):
-        """Adjust visualizer height and position after unmaximizing."""
-        logger.debug("Fixing layout after unmaximize")
-        self._restore_geometry()
-        return False
+        width = self.get_width()
+        height = self.get_height()
+        # Only save if the values are reasonable
+        if width > 200 and height > 200:
+            self.app.config.set("window_width", str(width))
+            self.app.config.set("window_height", str(height))
 
     def on_window_mapped(self, widget):
-        """Called when the window is mapped. Restore geometry."""
-        # Use a short delay to ensure all allocations are done
+        """Restore geometry once the window has its first allocation."""
         self._sources.idle(self._restore_geometry)
-        return False
 
     def _restore_geometry(self):
-        """Restore sidebar width and visualizer height after window is shown."""
+        """Restore the visualizer height after the window is shown."""
+        self.visualizer.set_markers_enabled(self.cut_row.get_selected() > 0)
 
-        # Apply saved cut audio state to visualizer now that it exists
-        if hasattr(self, "visualizer") and hasattr(self, "cut_row"):
-            self.visualizer.set_markers_enabled(self.cut_row.get_selected() > 0)
-
-        # Use the allocation-based height for accuracy
         window_height = self.get_height()
-        if window_height < 100:  # Window not properly sized yet
-            return True  # Try again
+        if window_height < 100:  # Not allocated yet; nothing reliable to restore
+            return
 
         # Calculate proper position from saved visualizer height
         visualizer_position = max(200, window_height - self.visualizer_height - 50)
         self.vertical_paned.set_position(visualizer_position)
 
         # If cut is off, collapse the waveform area
-        if hasattr(self, "cut_row") and self.cut_row.get_selected() == 0:
+        if self.cut_row.get_selected() == 0:
             self._sources.idle(self._update_paned_for_cut_mode, False)
-
-        # Visualizer height is managed by GTK Box layout, no need to set content_height here
-
-        return False  # Don't repeat
 
     def on_clear_queue(self, button):
         dialog = Adw.AlertDialog(
@@ -1733,7 +1423,7 @@ class MainWindow(
             paths = [file.get_path() for file in files if file.get_path()]
             self.file_queue.add_files(paths)
             if len(paths) != files.get_n_items():
-                self._show_info_dialog(
+                self._show_message(
                     _("Local files only"),
                     _(
                         "Some selected files are remote. Download them before adding them."
@@ -1747,13 +1437,7 @@ class MainWindow(
                 )
                 and not error.matches(Gio.io_error_quark(), Gio.IOErrorEnum.CANCELLED)
             ):
-                self._show_error_dialog(_("Files could not be selected"), error.message)
-
-    def _set_busy_cursor(self, is_busy):
-        """Set busy cursor while processing."""
-        cursor_name = "wait" if is_busy else "default"
-        cursor = Gdk.Cursor.new_from_name(cursor_name, None)
-        self.get_surface().set_cursor(cursor)
+                self._show_message(_("Files could not be selected"), error.message)
 
     def on_file_added_to_empty_queue(self, file_path, index):
         """Handle file added to empty queue - generate waveform but don't play."""
