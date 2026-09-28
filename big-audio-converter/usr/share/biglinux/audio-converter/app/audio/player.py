@@ -448,7 +448,10 @@ class AudioPlayer:
                 )
             )
             if graph != self._last_filter_graph:
-                self.mpv_instance.af = f"lavfi=[{graph}]" if graph else ""
+                # Quoted by byte length: [] quoting ends at the first pad label.
+                self.mpv_instance.af = (
+                    f"lavfi=graph=%{len(graph.encode())}%{graph}" if graph else ""
+                )
                 self._last_filter_graph = graph
         except (MediaError, RuntimeError, ValueError) as exc:
             logger.debug("Preview filter failure: %s", exc)
