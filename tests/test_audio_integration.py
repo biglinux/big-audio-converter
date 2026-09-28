@@ -331,12 +331,12 @@ def test_explicit_second_track_remains_second_after_opaque_identifier(source, tm
 
 def test_invalid_batch_entry_does_not_prevent_next_file(source, tmp_path):
     engine = AudioConverter()
-    engine.convert_all_files(
+    engine.start_batch(
         ["", str(source)],
         {"format": "flac", "output_directory": str(tmp_path / "output")},
         None,
-        lambda *args: None,
-    )
+        lambda: None,
+    ).join(30)
     assert [item.status for item in engine.last_batch_result.items] == [
         "failed",
         "success",
@@ -386,7 +386,8 @@ def test_denoiser_preserves_timing_channels_and_cut_tail(
             request = dict(settings)
             if cut:
                 request.update(
-                    cut_enabled=True, cut_segments=[{"start": 0.1, "stop": 0.4}]
+                    cut_enabled=True,
+                    file_markers={str(source): [{"start": 0.1, "stop": 0.4}]},
                 )
             target = tmp_path / f"output-{cut}.wav"
             assert converter.convert_file(str(source), str(target), request), (
@@ -457,7 +458,7 @@ def test_dpdfnet_missing_model_never_publishes_output(tmp_path, monkeypatch, cut
                 "noise_reduction": True,
                 "noise_engine": "dpdfnet",
                 "cut_enabled": cut,
-                "cut_segments": [{"start": 0.01, "stop": 0.09}],
+                "file_markers": {str(source): [{"start": 0.01, "stop": 0.09}]},
             },
         )
         assert "could not be processed" in converter.last_result.message
@@ -510,3 +511,203 @@ def test_native_denoiser_does_not_need_onnx_runtime(tmp_path, monkeypatch, engin
         assert 0 < np.mean(actual**2) < 0.5 * np.mean(original**2)
     finally:
         converter.cleanup()
+
+
+def duration(path):
+    return float(probe(path)["format"]["duration"])
+
+
+def test_cut_to_the_container_end_is_accepted_when_the_audio_ends_earlier(tmp_path):
+    # Players hand over the container's end: 2.0 s, while this track ends at 1.9 s.
+    source = tmp_path / "two.mov"
+    command(
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=997:sample_rate=48000:duration=1.9",
+        "-f",
+        "lavfi",
+        "-i",
+        "aevalsrc=0.1:s=48000:d=2",
+        "-map",
+        "0",
+        "-map",
+        "1",
+        "-c:a",
+        "pcm_s16le",
+        str(source),
+    )
+    result = convert(
+        source,
+        tmp_path / "end.flac",
+        {
+            "format": "flac",
+            "cut_enabled": True,
+            "file_markers": {str(source): [{"start": 1, "stop": 2.0}]},
+        },
+    )
+    assert duration(result.outputs[0]) == pytest.approx(0.9)
+
+
+@pytest.mark.parametrize("merge", [False, True])
+def test_cut_output_drops_source_chapters_at_unedited_times(tmp_path, merge):
+    chapters = tmp_path / "chapters.txt"
+    chapters.write_text(
+        ";FFMETADATA1\n"
+        + "".join(
+            f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={n * 1000}\nEND={n * 1000 + 1000}\n"
+            for n in range(3)
+        )
+    )
+    source = tmp_path / "chapters.mka"
+    command(
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=997:sample_rate=48000:duration=3",
+        "-i",
+        str(chapters),
+        "-map",
+        "0",
+        "-map_chapters",
+        "1",
+        str(source),
+    )
+
+    def chapter_count(path):
+        return len(
+            json.loads(
+                command(
+                    "ffprobe", "-v", "error", "-show_chapters", "-of", "json", path
+                ).stdout
+            )["chapters"]
+        )
+
+    full = convert(source, tmp_path / "full.mp3", {"format": "mp3"})
+    assert chapter_count(full.outputs[0]) == 3
+    cut = convert(
+        source,
+        tmp_path / "cut.mp3",
+        {
+            "format": "mp3",
+            "cut_enabled": True,
+            "cut_merge": merge,
+            "file_markers": {
+                str(source): [{"start": 1.2, "stop": 1.8}, {"start": 2.2, "stop": 2.5}]
+            },
+        },
+    )
+    assert [chapter_count(path) for path in cut.outputs] == [0] * len(cut.outputs)
+
+
+def test_one_corrupt_frame_does_not_abort_the_conversion(tmp_path):
+    source = tmp_path / "clean.mp3"
+    command(
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:sample_rate=44100:duration=10",
+        "-c:a",
+        "libmp3lame",
+        str(source),
+    )
+    data = bytearray(source.read_bytes())
+    middle = len(data) // 2
+    for offset in range(middle, middle + 3000, 7):
+        data[offset] ^= 0xFF
+    damaged = tmp_path / "damaged.mp3"
+    damaged.write_bytes(data)
+    result = convert(damaged, tmp_path / "damaged.flac", {"format": "flac"})
+    assert duration(result.outputs[0]) > 9.5
+
+
+def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
+    source = tmp_path / "quiet.wav"
+    command(
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "aevalsrc=0.05*sin(2*PI*440*t)*(1+0.8*sin(2*PI*0.5*t)):s=44100:d=12",
+        "-c:a",
+        "pcm_s16le",
+        str(source),
+    )
+    fractions = []
+    engine = AudioConverter()
+    assert engine.convert_file(
+        str(source),
+        str(tmp_path / "loud.wav"),
+        {
+            "format": "wav",
+            "normalize": True,
+            "prevent_clipping": True,
+            "cut_enabled": True,
+            "file_markers": {
+                str(source): [{"start": 1, "stop": 5}, {"start": 6, "stop": 11}]
+            },
+        },
+        fractions.append,
+    ), engine.last_result
+    output = engine.last_result.outputs[0]
+    assert probe(output)["streams"][0]["sample_rate"] == "44100"
+    assert duration(output) == pytest.approx(9)
+    summary = command(
+        "ffmpeg", "-nostats", "-i", output, "-af", "ebur128", "-f", "null", "-"
+    ).stderr.decode()
+    loudness = float(summary.rsplit("I:", 1)[1].split()[0])
+    assert loudness == pytest.approx(-16, abs=0.5)
+    # A cut job reports progress while FFmpeg runs, not only when it ends.
+    assert any(0 < fraction < 1 for fraction in fractions)
+
+
+def test_hundreds_of_cuts_are_joined_with_exact_samples(source, tmp_path):
+    segments = [{"start": n * 0.005, "stop": n * 0.005 + 0.002} for n in range(300)]
+    result = convert(
+        source,
+        tmp_path / "many.flac",
+        {
+            "format": "flac",
+            "cut_enabled": True,
+            "file_markers": {str(source): segments},
+        },
+    )
+    original = pcm(source, "s16le")
+    expected = b"".join(
+        original[round(item["start"] * 48000) * 2 : round(item["stop"] * 48000) * 2]
+        for item in segments
+    )
+    assert pcm(result.outputs[0], "s16le") == expected
+    assert probe(result.outputs[0])["format"]["tags"]["title"] == "Title 東京 🎵"
+
+
+def test_batch_cuts_only_the_file_that_has_markers(source, tmp_path):
+    other = tmp_path / "other.wav"
+    other.write_bytes(source.read_bytes())
+    engine = AudioConverter()
+    engine.start_batch(
+        [str(source), str(other)],
+        {
+            "format": "flac",
+            "output_directory": str(tmp_path / "output"),
+            "cut_enabled": True,
+            "file_markers": {str(source): [{"start": 0.5, "stop": 1}]},
+        },
+        None,
+        lambda: None,
+    ).join(30)
+    first, second = engine.last_batch_result.items
+    engine.cleanup()
+    assert duration(first.outputs[0]) == pytest.approx(0.5)
+    assert duration(second.outputs[0]) == pytest.approx(duration(other))

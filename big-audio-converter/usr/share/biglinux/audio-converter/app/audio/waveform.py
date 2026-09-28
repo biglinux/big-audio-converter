@@ -278,7 +278,6 @@ class WaveformGenerator:
                                 "-nostdin",
                                 "-v",
                                 "error",
-                                "-xerror",
                                 "-protocol_whitelist",
                                 "file,pipe",
                                 "-i",

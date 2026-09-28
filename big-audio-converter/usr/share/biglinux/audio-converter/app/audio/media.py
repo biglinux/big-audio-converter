@@ -46,6 +46,9 @@ class MediaSource:
         return cls(os.path.abspath(source), index)
 
 
+END_TOLERANCE = 0.05  # seconds, above one video frame at 25 fps
+
+
 @dataclass(frozen=True)
 class Segment:
     start: float
@@ -67,12 +70,16 @@ class Segment:
                     "Every segment must have a finite end time after its start."
                 )
             )
-        if duration is not None and (start >= duration or stop > duration + 1e-6):
-            raise MediaError(
-                gettext.gettext(
-                    "A segment extends beyond the source audio. Adjust its end time."
+        if duration is not None:
+            # Players hand over the end of the file as they measured it; a cut
+            # ending within a frame of the end means "to the end".
+            if start >= duration or stop > duration + END_TOLERANCE:
+                raise MediaError(
+                    gettext.gettext(
+                        "A segment extends beyond the source audio. Adjust its end time."
+                    )
                 )
-            )
+            stop = min(stop, duration)
         if sample_rate and round(stop * sample_rate) <= round(start * sample_rate):
             raise MediaError(
                 gettext.gettext("A segment must contain at least one audio sample.")
@@ -110,10 +117,6 @@ class BatchResult:
     @property
     def outputs(self):
         return tuple(path for item in self.items for path in item.outputs)
-
-    @property
-    def successful_sources(self):
-        return [item.source for item in self.items if item.successful]
 
 
 MAX_SEGMENTS = 10_000

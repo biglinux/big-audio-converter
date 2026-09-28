@@ -1,25 +1,10 @@
 """Unit tests for BAC AudioConverter helper methods."""
 
-import os
-import sys
-
 import pytest
-
-sys.path.insert(
-    0,
-    os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "big-audio-converter",
-        "usr",
-        "share",
-        "biglinux",
-        "audio-converter",
-    ),
-)
-
 from app.audio.converter import AudioConverter
+from app.audio.media import Segment
 from app.audio.process import MediaError
+from app.audio.profiles import build_audio_filters, codec_args
 
 
 def test_noise_discovery_excludes_ort_and_ll(monkeypatch):
@@ -68,50 +53,48 @@ def converter(tmp_path):
     plugin = tmp_path / "plugin.so"
     plugin.touch()
     conv.noise_plugins = {"dfn3": str(plugin), "dpdfnet": str(plugin)}
-    conv.cancel_flag = False
-    conv.current_process = None
     return conv
 
 
 class TestBuildAudioFilters:
     def test_no_filters(self, converter):
         settings = {}
-        assert converter._build_audio_filters(settings) == []
+        assert build_audio_filters(settings, converter.noise_plugins) == []
 
     def test_volume_filter(self, converter):
         settings = {"volume": 0.5}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert "volume=0.5" in filters
 
     def test_speed_filter(self, converter):
         settings = {"speed": 2.0}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert "atempo=2.0" in filters
 
     def test_normalize_filter(self, converter):
         settings = {"normalize": True}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("loudnorm" in f for f in filters)
 
     def test_noise_reduction_filter(self, converter):
         settings = {"noise_reduction": True, "noise_attenuation_db": 80}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("ladspa" in f for f in filters)
 
     def test_noise_reduction_without_ladspa(self, converter):
         converter.noise_plugins = {}
         settings = {"noise_reduction": True}
         with pytest.raises(MediaError, match="unavailable"):
-            converter._build_audio_filters(settings)
+            build_audio_filters(settings, converter.noise_plugins)
 
     def test_hpf_filter(self, converter):
         settings = {"hpf_enabled": True, "hpf_frequency": 120}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("highpass" in f and "120" in f for f in filters)
 
     def test_hpf_default_frequency(self, converter):
         settings = {"hpf_enabled": True}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("highpass" in f and "80" in f for f in filters)
 
     def test_gate_filter(self, converter):
@@ -119,41 +102,41 @@ class TestBuildAudioFilters:
             "gate_enabled": True,
             "gate_intensity": 0.5,
         }
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("agate" in f for f in filters)
 
     def test_gate_intensity_affects_params(self, converter):
         settings_low = {"gate_enabled": True, "gate_intensity": 0.1}
         settings_high = {"gate_enabled": True, "gate_intensity": 0.9}
-        filters_low = converter._build_audio_filters(settings_low)
-        filters_high = converter._build_audio_filters(settings_high)
+        filters_low = build_audio_filters(settings_low, converter.noise_plugins)
+        filters_high = build_audio_filters(settings_high, converter.noise_plugins)
         gate_low = next(f for f in filters_low if "agate" in f)
         gate_high = next(f for f in filters_high if "agate" in f)
         assert gate_low != gate_high
 
     def test_compressor_filter(self, converter):
         settings = {"compressor_enabled": True, "compressor_intensity": 0.5}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert any("acompressor" in f for f in filters)
 
     def test_compressor_intensity_affects_params(self, converter):
         settings_low = {"compressor_enabled": True, "compressor_intensity": 0.2}
         settings_high = {"compressor_enabled": True, "compressor_intensity": 0.9}
-        filters_low = converter._build_audio_filters(settings_low)
-        filters_high = converter._build_audio_filters(settings_high)
+        filters_low = build_audio_filters(settings_low, converter.noise_plugins)
+        filters_high = build_audio_filters(settings_high, converter.noise_plugins)
         comp_low = next(f for f in filters_low if "acompressor" in f)
         comp_high = next(f for f in filters_high if "acompressor" in f)
         assert comp_low != comp_high
 
     def test_eq_filter(self, converter):
         settings = {"eq_enabled": True, "eq_bands": "5,0,0,0,0,0,0,0,0,-3"}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         eq_filters = [f for f in filters if "equalizer" in f]
         assert len(eq_filters) == 2  # 31Hz +5dB and 16kHz -3dB
 
     def test_eq_all_zero_no_filter(self, converter):
         settings = {"eq_enabled": True, "eq_bands": "0,0,0,0,0,0,0,0,0,0"}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert not any("equalizer" in f for f in filters)
 
     @pytest.mark.parametrize(
@@ -161,12 +144,13 @@ class TestBuildAudioFilters:
         [("dfn3", "deep_filter_net3_rs_mono"), ("dpdfnet", "dpdfnet_native_48hr")],
     )
     def test_selected_noise_model(self, converter, engine, label):
-        filters = converter._build_audio_filters(
+        filters = build_audio_filters(
             {
                 "noise_reduction": True,
                 "noise_engine": engine,
                 "noise_attenuation_db": 30,
-            }
+            },
+            converter.noise_plugins,
         )
         nr = next(f for f in filters if "ladspa=" in f)
         assert f"plugin={label}" in nr
@@ -175,16 +159,16 @@ class TestBuildAudioFilters:
 
     def test_multiple_filters(self, converter):
         settings = {"volume": 0.8, "normalize": True}
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
         assert len(filters) == 2
 
     def test_volume_1_no_filter(self, converter):
         settings = {"volume": 1.0}
-        assert converter._build_audio_filters(settings) == []
+        assert build_audio_filters(settings, converter.noise_plugins) == []
 
     def test_speed_1_no_filter(self, converter):
         settings = {"speed": 1.0}
-        assert converter._build_audio_filters(settings) == []
+        assert build_audio_filters(settings, converter.noise_plugins) == []
 
 
 class TestFilterChainOrder:
@@ -206,7 +190,7 @@ class TestFilterChainOrder:
             "speed": 1.5,
             "normalize": True,
         }
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
 
         def find_idx(keyword):
             for i, f in enumerate(filters):
@@ -242,7 +226,7 @@ class TestFilterChainOrder:
             "compressor_intensity": 0.5,
             "volume": 0.5,
         }
-        filters = converter._build_audio_filters(settings)
+        filters = build_audio_filters(settings, converter.noise_plugins)
 
         def find_idx(keyword):
             for i, f in enumerate(filters):
@@ -259,13 +243,13 @@ class TestFilterChainOrder:
 class TestBuildCodecArgs:
     def test_mp3_format(self, converter):
         settings = {"format": "mp3"}
-        args = converter._build_codec_args(settings)
+        args = codec_args(settings)
         assert "-f" in args
         assert "mp3" in args
 
     def test_aac_format(self, converter):
         settings = {"format": "aac"}
-        args = converter._build_codec_args(settings)
+        args = codec_args(settings)
         assert "-c:a" in args
         assert "aac" in args
         assert "-f" in args
@@ -273,19 +257,19 @@ class TestBuildCodecArgs:
 
     def test_bitrate(self, converter):
         settings = {"format": "mp3", "bitrate": "320k"}
-        args = converter._build_codec_args(settings)
+        args = codec_args(settings)
         assert "-b:a" in args
         assert "320k" in args
 
     def test_channels(self, converter):
         settings = {"format": "mp3"}
-        args = converter._build_codec_args(settings, channels=2)
+        args = codec_args(settings, channels=2)
         assert "-ac" in args
         assert "2" in args
 
     def test_channels_ignored_for_copy(self, converter):
         settings = {"format": "copy"}
-        args = converter._build_codec_args(settings, channels=2)
+        args = codec_args(settings, channels=2)
         assert "-ac" not in args
 
 
@@ -335,51 +319,45 @@ class TestGetOutputPath:
         assert result != input_path
 
 
-class TestSegmentProcessorValidation:
-    """Test SegmentProcessor._validate_segments and _format_time."""
+class TestSegmentValidation:
+    def test_valid_segment(self):
+        segment = Segment.from_mapping({"start": 0.0, "stop": 5.0})
+        assert (segment.start, segment.stop) == (0.0, 5.0)
 
-    @pytest.fixture
-    def processor(self):
-        from app.audio.segment_processor import SegmentProcessor
+    def test_short_segment_is_not_silently_discarded(self):
+        segment = Segment.from_mapping({"start": 1.0, "stop": 1.05}, 10, 48000)
+        assert segment.stop - segment.start == pytest.approx(0.05)
 
-        return SegmentProcessor("/usr/bin/ffmpeg")
-
-    def test_valid_segment(self, processor):
-        segments = [
-            {"start": 0.0, "stop": 5.0, "start_str": "0:00", "stop_str": "0:05"}
-        ]
-        result = processor._validate_segments(segments)
-        assert len(result) == 1
-
-    def test_short_segment_is_not_silently_discarded(self, processor):
-        segments = [
-            {"start": 1.0, "stop": 1.05, "start_str": "0:01", "stop_str": "0:01.05"}
-        ]
-        result = processor._validate_segments(segments)
-        assert len(result) == 1
-
-    def test_missing_start(self, processor):
-        segments = [{"stop": 5.0, "stop_str": "0:05"}]
+    def test_missing_start(self):
         with pytest.raises(MediaError):
-            processor._validate_segments(segments)
+            Segment.from_mapping({"stop": 5.0})
 
-    def test_rejects_reversed_segment(self, processor):
-        segments = [
-            {"start": 10.0, "stop": 5.0, "start_str": "0:10", "stop_str": "0:05"}
-        ]
+    def test_rejects_reversed_segment(self):
         with pytest.raises(MediaError):
-            processor._validate_segments(segments)
+            Segment.from_mapping({"start": 10.0, "stop": 5.0})
 
-    def test_format_time(self, processor):
-        result = processor._format_time(3661.5)
-        assert result.startswith("01:01:")
+    def test_end_within_a_frame_of_the_end_means_the_end(self):
+        segment = Segment.from_mapping({"start": 10, "stop": 12.346}, 12.3456789, 48000)
+        assert segment.stop == 12.3456789
 
-    def test_format_time_none(self, processor):
-        assert processor._format_time(None) == ""
+    def test_rejects_end_clearly_beyond_the_source(self):
+        with pytest.raises(MediaError):
+            Segment.from_mapping({"start": 10, "stop": 12.5}, 12.3456789, 48000)
 
-    def test_missing_time_strings_generated(self, processor):
-        segments = [{"start": 0.0, "stop": 5.0}]
-        result = processor._validate_segments(segments)
-        assert len(result) == 1
-        assert result[0]["start_str"] != ""
-        assert result[0]["stop_str"] != ""
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        "",
+        "no report",
+        (
+            '{"input_i" : "-inf", "input_tp" : "-inf", "input_lra" : "0.00",'
+            ' "input_thresh" : "-inf", "target_offset" : "inf"}'
+        ),
+    ],
+)
+def test_unusable_loudness_measurement_falls_back_to_one_pass(report):
+    from app.audio.profiles import LOUDNORM
+    from app.audio.segment_processor import linear_loudnorm
+
+    assert linear_loudnorm(report) == LOUDNORM

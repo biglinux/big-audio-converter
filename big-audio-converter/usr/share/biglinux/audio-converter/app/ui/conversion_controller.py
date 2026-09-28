@@ -135,7 +135,7 @@ class ConversionController:
                 window.file_queue.files.index(path), fraction
             )
 
-    def _finished(self, _success, _message, _successful_sources):
+    def _finished(self):
         if self.closed:
             return
         window = self.window()

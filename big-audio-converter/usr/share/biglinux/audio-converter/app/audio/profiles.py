@@ -13,6 +13,9 @@ NOISE_PLUGINS = {
     "dpdfnet": ("libdpdfnet_native.so", "dpdfnet_native_48hr", 2880),
 }
 
+# Export measures the timeline first and replaces this with a linear pass.
+LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
+
 
 def discover_noise_plugins():
     plugins = {}
@@ -359,7 +362,7 @@ def build_audio_filters(settings, noise_plugins=None):
 
     # Normalization (last)
     if settings.get("normalize", False):
-        filters.append("loudnorm=I=-16:LRA=11:TP=-1.5")
+        filters.append(LOUDNORM)
 
     if settings.get("prevent_clipping", False):
         filters.append("alimiter=limit=0.891251:level=false:latency=true")

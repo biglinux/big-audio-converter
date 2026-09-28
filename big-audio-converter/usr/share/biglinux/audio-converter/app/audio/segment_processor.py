@@ -1,13 +1,26 @@
 """Precise editing and packet-copy editing using the same process owner."""
 
 import gettext
-import math
+import json
 import os
+import time
 from pathlib import Path
 
-from .media import Segment, audio_duration, audio_stream, pcm_codec, probe_media
+from .media import audio_duration, audio_stream, pcm_codec, probe_media
 from .process import MediaError, ProcessRunner
-from .profiles import metadata_args
+from .profiles import LOUDNORM, metadata_args
+
+# Every input costs FFmpeg a demuxer, a decoder and about 1 MB; near 2,300 it
+# cannot open another decoder. Longer edits are joined through lossless parts.
+CUTS_PER_RUN = 256
+# The first pass's JSON keys, and the ranges FFmpeg accepts for them.
+LOUDNESS_MEASUREMENTS = (
+    ("measured_I", "input_i", -99, 0),
+    ("measured_LRA", "input_lra", 0, 99),
+    ("measured_TP", "input_tp", -99, 99),
+    ("measured_thresh", "input_thresh", -99, 0),
+    ("offset", "target_offset", -99, 99),
+)
 
 
 def command_error(stderr):
@@ -49,14 +62,65 @@ def command_error(stderr):
     )
 
 
-class SegmentProcessor:
-    """Extract every requested segment or fail without publishing any output.
+def linear_loudnorm(stderr):
+    """Build the second loudnorm pass from the first pass's report.
 
-    Re-encoded merges use lossless intermediates and one final encode. This
-    avoids codec priming/padding at every join and applies continuous effects,
-    including loudness normalization, to the assembled timeline only once.
-    Intermediate files trade disk I/O for bounded memory with reordered or
-    overlapping segments. No filter is silently combined with stream copy.
+    Falls back to the single dynamic pass when the report is missing or out
+    of range, as it is for silence (-inf).
+    """
+    try:
+        report = json.loads(stderr[stderr.rindex("{") : stderr.rindex("}") + 1])
+        values = [
+            (option, float(report[key]), low, high)
+            for option, key, low, high in LOUDNESS_MEASUREMENTS
+        ]
+    except (ValueError, KeyError, TypeError):
+        return LOUDNORM
+    if not all(low <= value <= high for _option, value, low, high in values):
+        return LOUDNORM
+    return (
+        LOUDNORM
+        + "".join(f":{option}={value}" for option, value, _low, _high in values)
+        + ":linear=true"
+    )
+
+
+def progress_consumer(callback, duration, speed):
+    """Turn FFmpeg's ``-progress`` output into fractions of ``duration``."""
+    pending = bytearray()
+    last_update = 0.0
+
+    def consume(data):
+        nonlocal last_update
+        pending.extend(data)
+        while b"\n" in pending:
+            line, _, remainder = pending.partition(b"\n")
+            pending[:] = remainder
+            if line.startswith(b"out_time_us=") and callback and duration:
+                try:
+                    fraction = (
+                        float(line.split(b"=", 1)[1]) / 1_000_000 * speed / duration
+                    )
+                except ValueError:
+                    continue
+                now = time.monotonic()
+                if now - last_update >= 0.1:
+                    callback(max(0.0, min(0.99, fraction)))
+                    last_update = now
+        if len(pending) > 65536:
+            pending.clear()
+
+    return consume
+
+
+class SegmentProcessor:
+    """Render the whole track or its cuts, or fail without publishing any output.
+
+    Re-encoded cuts are decoded straight from the source and joined by the
+    concat filter in one FFmpeg run: no codec priming or padding at the
+    joins, and continuous effects, including loudness normalization, see the
+    assembled timeline once. Packet copies cannot pass through a filter, so
+    they are cut separately and joined by the concat demuxer.
     """
 
     def __init__(self, ffmpeg_path, runner=None):
@@ -64,178 +128,127 @@ class SegmentProcessor:
         self.runner = runner or ProcessRunner()
         self.last_output_info = None
 
-    def process_segments(
+    def render(
         self,
-        input_file,
-        segments,
-        output_format,
-        temp_dir,
-        audio_filters=None,
-        track_index=None,
-        final_output_path=None,
-        codec_params=None,
+        source,
+        info,
+        stream,
+        output,
+        cuts=None,
+        filters=(),
+        params=("-c:a", "copy"),
+        progress=None,
+        speed=1,
+        temp_dir=None,
     ):
-        info = probe_media(input_file, self.runner, self.ffmpeg_path)
-        stream = audio_stream(info, track_index)
-        selected = self._validate_segments(
-            segments, audio_duration(info, stream), int(stream["sample_rate"])
-        )
-        if not selected:
-            raise MediaError(
-                gettext.gettext("Mark at least one valid segment before exporting.")
-            )
-        output = final_output_path or str(
-            Path(temp_dir) / f"combined_output.{output_format}"
-        )
-        if len(selected) == 1:
-            self._extract_segment(
-                input_file,
-                selected[0],
-                output,
-                audio_filters,
-                stream["index"],
-                codec_params,
-                info,
-            )
-            return output
-        if audio_filters and not codec_params:
-            raise MediaError(
-                gettext.gettext(
-                    "Effects require re-encoding. Select an audio format instead of Fast Copy."
+        """Write the whole track, or validated ``cuts`` joined in order."""
+        filters, params, index = list(filters), list(params), stream["index"]
+        if params[params.index("-c:a") + 1] == "copy":
+            if filters:
+                raise MediaError(
+                    gettext.gettext(
+                        "Effects require re-encoding. Select an audio format instead of Fast Copy."
+                    )
                 )
-            )
-        intermediates = []
-        for index, segment in enumerate(selected):
-            self.runner.check_cancelled()
-            if codec_params:
-                params = ["-f", "nut", "-c:a", pcm_codec(stream)]
-                extension = "nut"
-            else:
-                params = None
-                extension = output_format
-            target = str(Path(temp_dir) / f"segment-{index:06d}.{extension}")
-            self._extract_segment(
-                input_file,
-                segment,
-                target,
-                None,
-                stream["index"],
-                params,
-                info,
-                artwork=False,
-            )
-            intermediates.append(target)
-        self._concatenate_segments(
-            intermediates,
-            output,
-            temp_dir,
-            codec_params,
-            audio_filters,
-            input_file,
-            info,
-            stream,
+            if cuts and len(cuts) > 1:
+                return self._join_copies(
+                    source, info, stream, output, cuts, params, temp_dir
+                )
+        inputs = [(source, index, cut) for cut in cuts or [None]]
+        count, metadata = len(inputs), 0
+        if count > CUTS_PER_RUN:
+            parts = []
+            for first in range(0, count, CUTS_PER_RUN):
+                part = str(Path(temp_dir) / f"part-{first:06d}.nut")
+                self.render(
+                    source,
+                    info,
+                    stream,
+                    part,
+                    cuts[first : first + CUTS_PER_RUN],
+                    params=["-f", "nut", "-c:a", pcm_codec(stream)],
+                )
+                parts.append((part, 0, None))
+            # The source follows the parts only for its tags and artwork.
+            inputs = parts + [(source, index, cuts[0])]
+            count = metadata = len(parts)
+        duration = (
+            sum(cut["stop"] - cut["start"] for cut in cuts)
+            if cuts
+            else audio_duration(info, stream)
         )
+
+        def ffmpeg(chain, level="error"):
+            argv = [self.ffmpeg_path, "-hide_banner", "-nostdin", "-n", "-v", level]
+            for path, _track, cut in inputs:
+                if cut:
+                    length = f"{cut['stop'] - cut['start']:.9f}"
+                    argv += ["-ss", cut["start_str"], "-t", length]
+                argv += [
+                    "-protocol_whitelist",
+                    "file,pipe",
+                    "-i",
+                    os.path.abspath(path),
+                ]
+            if count > 1:
+                chain = [f"concat=n={count}:v=0:a=1"] + chain
+            if chain:
+                labels = "".join(
+                    f"[{number}:{track}]"
+                    for number, (_path, track, _cut) in enumerate(inputs[:count])
+                )
+                argv += ["-filter_complex", labels + ",".join(chain) + "[out]"]
+                argv += ["-map", "[out]"]
+            else:
+                argv += ["-map", f"0:{index}"]
+            return argv + ["-nostats", "-progress", "pipe:1"]
+
+        report = progress
+        if LOUDNORM in filters:
+            at = filters.index(LOUDNORM)
+            # loudnorm only normalizes linearly with the whole timeline measured.
+            measurement = self.runner.run(
+                ffmpeg(filters[:at] + [LOUDNORM + ":print_format=json"], "info")
+                + ["-f", "null", "-"],
+                stdout_callback=progress_consumer(
+                    progress and (lambda fraction: progress(fraction / 2)),
+                    duration,
+                    speed,
+                ),
+            )
+            # loudnorm runs at 192 kHz; later filters work at the output rate.
+            rate = params[params.index("-ar") + 1] if "-ar" in params else None
+            filters[at : at + 1] = [linear_loudnorm(measurement.stderr)]
+            filters.insert(at + 1, f"aresample={rate or stream['sample_rate']}")
+            report = progress and (lambda fraction: progress(0.5 + fraction / 2))
+        extension = Path(output).suffix.lstrip(".").lower()
+        # Skip the audio mapping; ffmpeg() already mapped the rendered audio.
+        argv = ffmpeg(filters) + metadata_args(info, stream, extension, metadata)[2:]
+        if cuts:
+            # Source chapters would keep their unedited times.
+            argv += ["-map_chapters", "-1"]
+        self._run(
+            argv + params + [os.path.abspath(output)],
+            progress_consumer(report, duration, speed),
+        )
+        self.validate_output(output)
         return output
 
-    @staticmethod
-    def _validate_segments(segments, duration=None, sample_rate=None):
-        return [
-            Segment.from_mapping(segment, duration, sample_rate).as_mapping()
-            for segment in segments
-        ]
-
-    @staticmethod
-    def _format_time(seconds):
-        if seconds is None:
-            return ""
-        value = float(seconds)
-        if value < 0 or not math.isfinite(value):
-            raise ValueError("Time must be finite and nonnegative")
-        hours, remainder = divmod(value, 3600)
-        minutes, remainder = divmod(remainder, 60)
-        return f"{int(hours):02d}:{int(minutes):02d}:{remainder:09.6f}"
-
-    def _extract_segment(
-        self,
-        input_file,
-        segment,
-        output_file,
-        audio_filters=None,
-        track_index=None,
-        codec_params=None,
-        info=None,
-        artwork=True,
-    ):
-        info = info or probe_media(input_file, self.runner, self.ffmpeg_path)
-        stream = audio_stream(info, track_index)
-        selected = Segment.from_mapping(
-            segment, audio_duration(info, stream), int(stream["sample_rate"])
-        )
-        if audio_filters and not codec_params:
-            raise MediaError(
-                gettext.gettext(
-                    "Effects require re-encoding. Select an audio format instead of Fast Copy."
-                )
-            )
-        command = [
-            self.ffmpeg_path,
-            "-hide_banner",
-            "-nostdin",
-            "-n",
-            "-v",
-            "error",
-            "-xerror",
-            "-ss",
-            f"{selected.start:.9f}",
-            "-t",
-            f"{selected.stop - selected.start:.9f}",
-            "-protocol_whitelist",
-            "file,pipe",
-            "-i",
-            os.path.abspath(input_file),
-        ]
-        extension = Path(output_file).suffix.lstrip(".").lower()
-        command += metadata_args(info, stream, extension if artwork else "")
-        if audio_filters:
-            command += ["-af", audio_filters]
-        command += codec_params or ["-c:a", "copy"]
-        command += [os.path.abspath(output_file)]
-        self._run(command)
-        self.validate_output(output_file)
-        return True
-
-    def _concatenate_segments(
-        self,
-        segment_files,
-        output_file,
-        temp_dir,
-        codec_params=None,
-        audio_filters=None,
-        metadata_source=None,
-        info=None,
-        stream=None,
-    ):
-        if not segment_files:
-            raise MediaError(
-                gettext.gettext("No complete audio segments were produced.")
-            )
+    def _join_copies(self, source, info, stream, output, cuts, params, temp_dir):
         directory = Path(temp_dir).absolute()
         manifest = directory / "segments.ffconcat"
         # Generated relative basenames cannot contain quotes, newlines or
         # protocols. User paths remain separate argv elements throughout.
         with manifest.open("x", encoding="utf-8") as handle:
             handle.write("ffconcat version 1.0\n")
-            for source in segment_files:
-                source = Path(source).absolute()
-                if (
-                    source.parent != directory
-                    or not source.name.startswith("segment-")
-                    or not source.name.replace("-", "").replace(".", "").isalnum()
-                ):
+            for number, cut in enumerate(cuts):
+                part = directory / f"segment-{number:06d}{Path(output).suffix}"
+                if not part.name.replace("-", "").replace(".", "").isalnum():
                     raise MediaError(
                         gettext.gettext("An intermediate segment has an unsafe path.")
                     )
-                handle.write(f"file '{source.name}'\n")
+                self.render(source, info, stream, str(part), [cut], params=params)
+                handle.write(f"file '{part.name}'\n")
         command = [
             self.ffmpeg_path,
             "-hide_banner",
@@ -243,7 +256,6 @@ class SegmentProcessor:
             "-n",
             "-v",
             "error",
-            "-xerror",
             "-f",
             "concat",
             "-safe",
@@ -252,40 +264,30 @@ class SegmentProcessor:
             "file,pipe",
             "-i",
             str(manifest),
+            "-protocol_whitelist",
+            "file,pipe",
+            "-i",
+            os.path.abspath(source),
+            "-map",
+            "0:a:0",
+            "-map_metadata",
+            "1",
+            "-map_metadata:s:a:0",
+            f"1:s:{stream['index']}",
+            "-map_chapters",
+            "-1",
         ]
-        if metadata_source:
-            command += [
-                "-protocol_whitelist",
-                "file,pipe",
-                "-i",
-                os.path.abspath(metadata_source),
-                "-map",
-                "0:a:0",
-                "-map_metadata",
-                "1",
-                "-map_metadata:s:a:0",
-                f"1:s:{stream['index']}",
-            ]
-            metadata = metadata_args(
-                info, stream, Path(output_file).suffix.lstrip("."), 1
-            )
-            # The concatenated audio is input zero; take only artwork mappings
-            # from the original source, not its unedited audio.
-            if "-c:v" in metadata:
-                start = metadata.index("-c:v") - 2
-                command += metadata[start:]
-        else:
-            command += ["-map", "0:a:0", "-map_metadata", "0"]
-        if audio_filters:
-            command += ["-af", audio_filters]
-        command += codec_params or ["-c:a", "copy"]
-        command += [os.path.abspath(output_file)]
-        self._run(command)
-        self.validate_output(output_file)
-        return True
+        metadata = metadata_args(info, stream, Path(output).suffix.lstrip("."), 1)
+        # The joined audio is input zero; take only artwork mappings from the
+        # original source, not its unedited audio.
+        if "-c:v" in metadata:
+            command += metadata[metadata.index("-c:v") - 2 :]
+        self._run(command + params + [os.path.abspath(output)])
+        self.validate_output(output)
+        return output
 
-    def _run(self, command):
-        result = self.runner.run(command)
+    def _run(self, command, progress=None):
+        result = self.runner.run(command, stdout_callback=progress)
         if result.returncode:
             raise command_error(result.stderr)
         return result
@@ -307,7 +309,6 @@ class SegmentProcessor:
                 "-nostdin",
                 "-v",
                 "error",
-                "-xerror",
                 "-protocol_whitelist",
                 "file,pipe",
                 "-i",

@@ -5,9 +5,10 @@ import logging
 import os
 import shutil
 import threading
-import time
 from copy import deepcopy
 from pathlib import Path
+
+from gi.repository import GLib
 
 from .media import (
     BatchResult,
@@ -24,27 +25,11 @@ from .profiles import (
     build_audio_filters,
     codec_args,
     copy_container,
-    metadata_args,
     validate_settings,
 )
-from .segment_processor import SegmentProcessor, command_error
+from .segment_processor import SegmentProcessor
 
 logger = logging.getLogger(__name__)
-
-
-def _dispatch_once(callback, *args):
-    """Compatibility boundary for the existing GTK batch callback API."""
-    try:
-        from gi.repository import GLib
-    except ImportError:
-        callback(*args)
-        return
-
-    def deliver():
-        callback(*args)
-        return False
-
-    GLib.idle_add(deliver)
 
 
 class AudioConverter:
@@ -56,10 +41,8 @@ class AudioConverter:
         self._runner = None
         self._thread = None
         self._disposed = False
-        self.cancel_flag = False
         self.last_result = None
         self.last_batch_result = BatchResult()
-        self.current_process = None  # Kept for callers of the original API.
 
     def _find_ffmpeg(self):
         found = shutil.which("ffmpeg")
@@ -80,14 +63,12 @@ class AudioConverter:
                         "A conversion is still running. Wait for it to finish cancelling before starting another."
                     )
                 )
-            self.cancel_flag = False
             self._runner = ProcessRunner()
             return self._runner
 
     def _end(self):
         with self._state_lock:
             self._runner = None
-            self.current_process = None
             self._operation_lock.release()
 
     @property
@@ -95,7 +76,11 @@ class AudioConverter:
         return self._operation_lock.locked()
 
     def start_batch(self, files, settings, progress_callback, finish_callback):
-        """Reserve the operation before starting its worker (no cancel race)."""
+        """Reserve the operation before starting its worker (no cancel race).
+
+        ``finish_callback()`` runs on the GLib main loop; the outcome is in
+        ``last_batch_result``.
+        """
         snapshot = deepcopy(settings)
         files = tuple(files)
         runner = self._begin()
@@ -111,12 +96,6 @@ class AudioConverter:
             self._end()
             raise
         return self._thread
-
-    def convert_all_files(self, files, settings, progress_callback, finish_callback):
-        """Synchronous worker API; GUI code should call ``start_batch``."""
-        files, snapshot = tuple(files), deepcopy(settings)
-        runner = self._begin()
-        self._run_batch(files, snapshot, progress_callback, finish_callback, runner)
 
     def _run_batch(self, files, settings, progress_callback, finish_callback, runner):
         batch = BatchResult()
@@ -183,14 +162,11 @@ class AudioConverter:
         finally:
             self.last_batch_result = batch
             self._end()
-        successful = batch.successful_sources
-        cancelled = any(item.status == "cancelled" for item in batch.items)
-        message = "Conversion cancelled." if cancelled else "Conversion finished."
         if not self._disposed:
-            _dispatch_once(finish_callback, bool(successful), message, successful)
+            GLib.idle_add(finish_callback)
 
     def convert_file(self, input_path, output_path, settings, progress_callback=None):
-        """Convert one file; read ``last_result`` for actual paths and details."""
+        """Convert one file synchronously; ``last_result`` holds paths and details."""
         runner = self._begin()
         try:
             self.last_result = self._convert_result(
@@ -255,7 +231,7 @@ class AudioConverter:
             else:
                 extension = format_name
                 params = codec_args(settings, settings.get("channels"), stream)
-                filters = self._build_audio_filters(settings)
+                filters = build_audio_filters(settings, self.noise_plugins)
                 if format_name == "flac" and stream.get("codec_name", "").startswith(
                     ("pcm_f32", "pcm_f64")
                 ):
@@ -306,103 +282,60 @@ class AudioConverter:
                 )
             segments = []
             if settings.get("cut_enabled"):
-                raw = settings.get("file_markers", {}).get(
-                    input_path, settings.get("cut_segments", [])
-                )
+                # A file without marked segments is converted in full.
+                raw = settings.get("file_markers", {}).get(input_path, [])
+                # Players measure the container, which may outlast the audio;
+                # audio_duration without a stream reads the container's.
+                end = max(duration or 0, audio_duration(info, {}) or 0) or None
                 segments = [
-                    Segment.from_mapping(s, duration, rate).as_mapping() for s in raw
+                    Segment.from_mapping(s, end, rate).as_mapping() for s in raw
                 ]
                 if settings.get("order_by_segment_number"):
                     segments.sort(key=lambda s: s["segment_index"])
                 else:
                     segments.sort(key=lambda s: s["start"])
             processor = SegmentProcessor(self.ffmpeg_path, runner)
+            speed = settings.get("speed", 1) if format_name != "copy" else 1
             with staging_directory(output_path) as directory:
-                staged = []
-                filter_graph = ",".join(filters) or None
-                if (
-                    segments
-                    and not settings.get("cut_merge", True)
-                    and len(segments) > 1
-                ):
+                if len(segments) > 1 and not settings.get("cut_merge", True):
                     destination = Path(output_path)
-                    for index, segment in enumerate(segments):
-                        runner.check_cancelled()
-                        target = directory / f"output-{index:06d}.{extension}"
-                        processor._extract_segment(
-                            source.path,
-                            segment,
-                            str(target),
-                            filter_graph,
-                            stream["index"],
-                            params,
-                            info,
+                    jobs = [
+                        (
+                            [segment],
+                            directory / f"output-{index:06d}.{extension}",
+                            str(
+                                destination.with_name(
+                                    f"{destination.stem}_segment{index + 1}{destination.suffix}"
+                                )
+                            ),
                         )
-                        self._validate_encoding(
-                            processor.last_output_info, format_name, params
-                        )
-                        staged.append(
-                            (
-                                target,
-                                str(
-                                    destination.with_name(
-                                        f"{destination.stem}_segment{index + 1}{destination.suffix}"
-                                    )
-                                ),
-                            )
-                        )
-                        if progress_callback:
-                            progress_callback((index + 1) / len(segments) * 0.95)
-                elif segments:
-                    target = directory / f"output.{extension}"
-                    # Copy has no codec parameters for the editing strategy;
-                    # the safe audio-only extension supplies its muxer.
-                    processor.process_segments(
-                        source.path,
-                        segments,
-                        extension,
-                        str(directory),
-                        filter_graph,
-                        stream["index"],
-                        str(target),
-                        None if format_name == "copy" else params,
-                    )
-                    self._validate_encoding(
-                        processor.last_output_info, format_name, params
-                    )
-                    staged.append((target, output_path))
-                else:
-                    target = directory / f"output.{extension}"
-                    command = [
-                        self.ffmpeg_path,
-                        "-hide_banner",
-                        "-nostdin",
-                        "-n",
-                        "-v",
-                        "error",
-                        "-xerror",
-                        "-protocol_whitelist",
-                        "file,pipe",
-                        "-i",
-                        source.path,
+                        for index, segment in enumerate(segments)
                     ]
-                    command += metadata_args(info, stream, extension)
-                    if filter_graph:
-                        command += ["-af", filter_graph]
-                    command += params + ["-nostats", "-progress", "pipe:1", str(target)]
-                    progress = self._progress_consumer(
-                        progress_callback,
-                        duration,
-                        settings.get("speed", 1) if format_name != "copy" else 1,
+                else:
+                    jobs = [(segments, directory / f"output.{extension}", output_path)]
+                staged = []
+                for number, (cuts, target, destination) in enumerate(jobs):
+                    processor.render(
+                        source.path,
+                        info,
+                        stream,
+                        str(target),
+                        cuts,
+                        filters,
+                        params,
+                        progress_callback
+                        and (
+                            lambda fraction, n=number: progress_callback(
+                                (n + fraction) / len(jobs)
+                            )
+                        ),
+                        speed,
+                        directory,
                     )
-                    result = runner.run(command, stdout_callback=progress)
-                    if result.returncode:
-                        raise command_error(result.stderr)
-                    processor.validate_output(str(target))
                     self._validate_encoding(
                         processor.last_output_info, format_name, params
                     )
-                    staged.append((target, output_path))
+                    staged.append((target, destination))
                 current_stat = os.stat(source.path)
                 fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns")
                 if any(
@@ -485,39 +418,6 @@ class AudioConverter:
                     )
                 )
 
-    @staticmethod
-    def _progress_consumer(callback, duration, speed):
-        pending = bytearray()
-        last_update = 0.0
-
-        def consume(data):
-            nonlocal last_update
-            pending.extend(data)
-            while b"\n" in pending:
-                line, _, remainder = pending.partition(b"\n")
-                pending[:] = remainder
-                if line.startswith(b"out_time_us=") and callback and duration:
-                    try:
-                        fraction = (
-                            float(line.split(b"=", 1)[1]) / 1_000_000 * speed / duration
-                        )
-                    except ValueError:
-                        continue
-                    now = time.monotonic()
-                    if now - last_update >= 0.1:
-                        callback(max(0.0, min(0.99, fraction)))
-                        last_update = now
-            if len(pending) > 65536:
-                pending.clear()
-
-        return consume
-
-    def _build_audio_filters(self, settings):
-        return build_audio_filters(settings, self.noise_plugins)
-
-    def _build_codec_args(self, settings, channels=None):
-        return codec_args(settings, channels)
-
     def _get_output_path(self, input_path, output_format, track_metadata=None):
         path = Path(input_path)
         entry = (track_metadata or {}).get(input_path)
@@ -543,30 +443,7 @@ class AudioConverter:
         )
         return available_path(str(path.with_name(f"{path.stem}{suffix}.{extension}")))
 
-    def _get_duration(self, file_path):
-        info = probe_media(file_path, ffmpeg_path=self.ffmpeg_path)
-        return audio_duration(info, audio_stream(info)) or 0
-
-    def get_file_metadata(self, file_path):
-        info = probe_media(file_path, ffmpeg_path=self.ffmpeg_path)
-        stream = audio_stream(info)
-        duration = audio_duration(info, stream)
-        size = os.path.getsize(file_path)
-        result = {
-            "size": f"{size / (1024 * 1024):.1f} MB"
-            if size >= 1024 * 1024
-            else f"{size / 1024:.1f} KB",
-            "format": Path(file_path).suffix.lstrip(".").upper(),
-        }
-        if duration:
-            result["duration"] = f"{int(duration // 60)}:{int(duration % 60):02d}"
-        bitrate = stream.get("bit_rate")
-        if bitrate and str(bitrate).isdigit():
-            result["bitrate"] = f"{int(bitrate) // 1000} kbps"
-        return result
-
     def cancel_conversion(self):
-        self.cancel_flag = True
         with self._state_lock:
             if self._runner is not None:
                 self._runner.cancel()
