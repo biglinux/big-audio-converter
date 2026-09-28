@@ -316,11 +316,20 @@ def build_audio_filters(settings, noise_plugins=None):
         if engine == "dfn3":
             # The microphone default discards the first second of speech.
             controls += "|c6=0"
+        # The plugin starts from an empty model state and under-restores the
+        # first ~150 ms, so it first runs over the opening half second played
+        # backwards, which is cut away again. That lead-in ends at timestamp 0,
+        # so concat keeps the stream's own timeline across preview seeks.
         filters += [
-            "aresample=48000",
+            (
+                "aresample=48000,asplit[nr_main][nr_head];"
+                "[nr_head]atrim=end_sample=24000,apad=whole_len=24000,areverse,"
+                "asetpts=PTS-STARTPTS-24000/SR/TB[nr_pre];"
+                "[nr_pre][nr_main]concat=n=2:v=0:a=1"
+            ),
             f"apad=pad_len={delay}",
             f"ladspa=file={plugin}:plugin={label}:controls={controls}",
-            f"atrim=start_sample={delay}",
+            f"atrim=start_sample={24000 + delay}",
             f"asetpts=PTS-{delay}/SR/TB",
         ]
 
