@@ -6,7 +6,7 @@ depends=('python>=3.10' 'python-gobject' 'gtk4>=4.12' 'ffmpeg' 'python-cairo' 'p
 optdepends=('deepfilternet-quantized-ladspa: light speech noise reduction (standard DFN3, without LL)'
     'dpdfnet-native: higher-quality speech noise reduction with DPDFNet-2 48 kHz HR')
 makedepends=('git' 'gettext')
-checkdepends=('python-pytest' 'python-hypothesis' 'python-polib')
+checkdepends=('python-pytest' 'python-hypothesis')
 pkgver=$(date +%y.%m.%d)
 pkgrel=$(date +%H%M)
 arch=('any')

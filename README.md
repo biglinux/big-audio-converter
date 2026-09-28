@@ -58,7 +58,7 @@ From the repository root, run the application with:
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
-The test suite uses real FFmpeg and libmpv in addition to Python assertions. Install `pytest`, `hypothesis` and `polib` for tests; graphical tests also require Xvfb, a session bus and the native GTK dependencies above. Use an executable temporary directory if `/tmp` is mounted `noexec`:
+The test suite uses real FFmpeg and libmpv in addition to Python assertions. Install `pytest` and `hypothesis` for tests; graphical tests also require Xvfb, a session bus and the native GTK dependencies above. Use an executable temporary directory if `/tmp` is mounted `noexec`:
 
 ```sh
 mkdir -p "$HOME/.cache/bac-tests"
