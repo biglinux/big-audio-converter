@@ -111,6 +111,44 @@ def test_queue_probe_lifecycle_and_numeric_editor(window, audio):
     assert not queue.pending
 
 
+def test_handed_over_cuts_follow_each_track_of_a_multi_track_file(window, tmp_path):
+    video = tmp_path / "multi.mkv"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000:duration=2",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=880:sample_rate=48000:duration=2",
+            "-map",
+            "0",
+            "-map",
+            "1",
+            "-c:a",
+            "flac",
+            str(video),
+        ],
+        check=True,
+        timeout=10,
+    )
+    queue = window.file_queue
+    assert queue.add_file(str(video))
+    # main.py records a player's cuts while the file is still being inspected.
+    window.file_markers[str(video)] = [{"start": 0.5, "stop": 1.0}]
+    pump(lambda: not queue.pending)
+    assert len(queue.files) == 2
+    assert str(video) not in window.file_markers
+    for identifier in queue.files:
+        (cut,) = window.file_markers[identifier]
+        assert (cut["start"], cut["stop"]) == pytest.approx((0.5, 1.0))
+
+
 def test_removed_pending_row_never_receives_stale_result(window, audio):
     queue = window.file_queue
     queue.add_file(str(audio))

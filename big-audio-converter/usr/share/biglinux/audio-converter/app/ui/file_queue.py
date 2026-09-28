@@ -738,6 +738,9 @@ class FileQueue(Gtk.Box):
             self.file_rows.pop(index)
             self.file_list.remove(row)
             row.cleanup()
+            # Cuts handed over for the file apply to each of its tracks.
+            markers = getattr(self._parent_window, "file_markers", {})
+            cuts = markers.pop(path, None)
             added = []
             for number, track in enumerate(tracks, 1):
                 if self._add_track_entry(path, track, number):
@@ -748,6 +751,8 @@ class FileQueue(Gtk.Box):
                 self.file_rows.insert(index + offset, track_row)
                 self.file_list.insert(track_row, index + offset)
                 self._set_probed_metadata(track_row, info)
+                if cuts is not None:
+                    markers[identifier] = [dict(cut) for cut in cuts]
             for position, current_row in enumerate(self.file_rows):
                 current_row.index = position
         else:

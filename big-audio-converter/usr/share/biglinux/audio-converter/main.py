@@ -111,11 +111,20 @@ class Application(Adw.Application):
         self.do_open([Gio.File.new_for_path(p) for p in paths], len(paths), "")
         win = self._main_window
         if segments is not None and win is not None:
+            tracks = win.file_queue.track_metadata
             for path in paths:
-                win.file_markers[path] = [dict(s) for s in segments]
-                # A file already on screen keeps its old markers until redrawn.
-                if path == win.active_audio_id:
-                    win.visualizer.restore_markers(win.file_markers[path])
+                # A multi-track file already queued is listed as its tracks;
+                # the queue splits a newly added one and carries its cuts.
+                entries = [
+                    entry
+                    for entry, track in tracks.items()
+                    if track["source_video"] == path
+                ] or [path]
+                for entry in entries:
+                    win.file_markers[entry] = [dict(s) for s in segments]
+                    # A file already on screen keeps its old markers until redrawn.
+                    if entry == win.active_audio_id:
+                        win.visualizer.restore_markers(win.file_markers[entry])
             # Cut on, in timeline order; join/split stays the user's choice here.
             win.cut_row.set_selected(1)
         return 0
