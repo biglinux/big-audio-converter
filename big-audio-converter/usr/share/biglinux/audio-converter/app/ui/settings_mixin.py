@@ -23,7 +23,7 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, GLib, GObject, Gtk
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def _untruncated_list_factory():
-    """Popover items for a ComboRow whose default factory cuts them at 20 characters."""
+    """Popup items shown in full, with a check on the chosen one."""
     factory = Gtk.SignalListItemFactory()
 
     def setup(_factory, item):
@@ -62,22 +62,73 @@ def _show_check(item, *_args):
     item.get_child().get_last_child().set_opacity(1.0 if item.get_selected() else 0.0)
 
 
+def _short_label_factory(labels):
+    """Button text for a dropdown whose list entries carry an explanation."""
+    factory = Gtk.SignalListItemFactory()
+    factory.connect("setup", lambda _f, item: item.set_child(Gtk.Label(xalign=0)))
+    factory.connect(
+        "bind",
+        lambda _f, item: item.get_child().set_label(labels[item.get_position()]),
+    )
+    return factory
+
+
+class ChoiceRow(Adw.ActionRow):
+    """A titled row whose value is a dropdown button, as in the compact list.
+
+    It mirrors the ComboRow calls the settings code uses, so a row can be
+    read, set and watched through ``selected`` without reaching the button.
+    """
+
+    selected = GObject.Property(type=GObject.TYPE_UINT, maximum=GLib.MAXUINT32)
+
+    def __init__(self, title, labels, short_labels=None):
+        super().__init__(title=title)
+        self.dropdown = Gtk.DropDown(
+            model=Gtk.StringList.new(labels), valign=Gtk.Align.CENTER
+        )
+        self.dropdown.set_list_factory(_untruncated_list_factory())
+        if short_labels:
+            self.dropdown.set_factory(_short_label_factory(short_labels))
+        self.dropdown.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        self.bind_property(
+            "selected",
+            self.dropdown,
+            "selected",
+            GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
+        )
+        self.add_suffix(self.dropdown)
+        self.set_activatable_widget(self.dropdown)
+
+    def get_selected(self):
+        return self.dropdown.get_selected()
+
+    def set_selected(self, position):
+        self.dropdown.set_selected(position)
+
+    def get_selected_item(self):
+        return self.dropdown.get_selected_item()
+
+    def set_model(self, model):
+        self.dropdown.set_model(model)
+
+
 class SettingsManagerMixin:
     """Mixin providing all conversion-settings logic for MainWindow."""
 
     # --- Conversion options UI setup ---
 
     def setup_conversion_options(self, parent_box):
-        """Expose the common path first; keep format-specific controls contextual."""
+        """One compact list: common choices first, rare ones in closed rows."""
         owner = weakref.proxy(self)
         self._updating_profile = False
-
-        def group(title):
-            item = Adw.PreferencesGroup(
-                title=title, margin_start=12, margin_end=12, margin_top=12
-            )
-            parent_box.append(item)
-            return item
+        options = Adw.PreferencesGroup(
+            margin_start=12,
+            margin_end=12,
+            margin_top=12,
+            css_classes=["compact-options"],
+        )
+        parent_box.append(options)
 
         def numeric_row(parent, title, value, lower, upper, step, callback, digits=2):
             row = Adw.ActionRow(title=title)
@@ -100,91 +151,216 @@ class SettingsManagerMixin:
             control.connect("value-changed", weak_callback(callback))
             row.add_suffix(control)
             row.set_activatable_widget(control)
-            parent.add_row(row)
+            (parent.add_row if isinstance(parent, Adw.ExpanderRow) else parent.add)(row)
             return row, control
 
-        output = group(_("Output"))
         self._format_list = ["copy", "mp3", "ogg", "flac", "wav", "aac", "opus"]
-        labels = [
-            _("Copy without changing quality"),
-            _("MP3 — widely compatible"),
-            "Ogg Vorbis",
-            _("FLAC — lossless, smaller than WAV"),
-            _("WAV — uncompressed"),
-            "AAC",
-            "Opus",
-        ]
-        self.format_row = Adw.ComboRow(
-            title=_("Format"), use_subtitle=True, model=Gtk.StringList.new(labels)
+        self.format_row = ChoiceRow(
+            _("Format"),
+            [
+                _("Copy without changing quality"),
+                _("MP3 — widely compatible"),
+                _("Ogg Vorbis — open format"),
+                _("FLAC — lossless, smaller than WAV"),
+                _("WAV — uncompressed"),
+                _("AAC — good quality in small files"),
+                _("Opus — smallest files, great for voice"),
+            ],
+            [_("Copy"), "MP3", "Ogg", "FLAC", "WAV", "AAC", "Opus"],
         )
         self.format_row.set_selected(1)
         self.format_row.connect(
             "notify::selected", weak_callback(self._on_format_changed)
         )
-        output.add(self.format_row)
-        self.copy_notice = Gtk.Label(
-            label=_(
-                "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-            ),
-            wrap=True,
-            xalign=0,
-            visible=False,
-            margin_top=6,
+        options.add(self.format_row)
+
+        self._bitrate_list = list(BITRATES["mp3"])
+        self.bitrate_row = ChoiceRow(_("Bitrate"), self._bitrate_list)
+        self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
+        self.bitrate_row.connect(
+            "notify::selected", weak_callback(self._on_bitrate_changed)
         )
-        output.add(self.copy_notice)
+        options.add(self.bitrate_row)
+
+        self.volume_spin = Adw.SpinRow.new_with_range(0, 1000, 5)
+        self.volume_spin.set_title(_("Volume (%)"))
+        self.volume_spin.set_value(100)
+        self.volume_spin.connect(
+            "notify::value", lambda row, _pspec: owner._on_volume_spin_changed(row)
+        )
+        options.add(self.volume_spin)
+        self.speed_spin = Adw.SpinRow.new_with_range(0.10, 5.0, 0.05)
+        self.speed_spin.set_title(_("Speed (×)"))
+        self.speed_spin.set_digits(2)
+        self.speed_spin.set_value(1.0)
+        self.speed_spin.connect(
+            "notify::value", lambda row, _pspec: owner._on_speed_spin_changed(row)
+        )
+        options.add(self.speed_spin)
+
+        # Each switch is followed by the settings it enables, shown only while on.
+        self.noise_row = Adw.SwitchRow(title=_("Noise Reduction"))
+        self.noise_row.connect(
+            "notify::active", weak_callback(self._on_noise_switch_changed)
+        )
+        options.add(self.noise_row)
+        self.noise_engines = ("dfn3", "dpdfnet")
+        self.noise_model_row = ChoiceRow(
+            _("Noise reduction mode"),
+            [
+                _("Light — DeepFilterNet3"),
+                _("Higher quality — DPDFNet-2 48 kHz"),
+            ],
+            ["DeepFilterNet3", "DPDFNet-2"],
+        )
+        self.noise_model_row.connect(
+            "notify::selected", weak_callback(self._on_noise_model_changed)
+        )
+        options.add(self.noise_model_row)
+        self.noise_strength_row, self.noise_strength_scale = numeric_row(
+            options,
+            _("Noise reduction strength (%)"),
+            100,
+            0,
+            100,
+            5,
+            self._on_noise_strength_changed,
+            0,
+        )
+        self.noise_strength_row.set_subtitle(
+            _("Lower values keep more background sound; 0 leaves it unchanged")
+        )
+        self._update_noise_availability()
+
+        equalizer_row = self.equalizer_row = Adw.ActionRow(title=_("Equalizer"))
+        configure = Gtk.Button(label=_("Configure…"), valign=Gtk.Align.CENTER)
+        configure.connect("clicked", lambda *_: owner.eq_toggle_btn.set_active(True))
+        equalizer_row.add_suffix(configure)
+        equalizer_row.set_activatable_widget(configure)
+        options.add(equalizer_row)
+
+        self._cut_list = [
+            _("Keep the whole audio"),
+            _("Cut in timeline order"),
+            _("Cut in the order marked"),
+        ]
+        self.cut_row = ChoiceRow(_("Cut audio"), self._cut_list)
+        self.cut_row.connect(
+            "notify::selected", weak_callback(self._on_cut_combo_changed)
+        )
+        options.add(self.cut_row)
+        self.cut_output_row = ChoiceRow(
+            _("Save segments"), [_("Separate Files"), _("Merge into One")]
+        )
+        self.cut_output_row.set_visible(False)
+        self.cut_output_row.connect(
+            "notify::selected", weak_callback(self._on_cut_output_changed)
+        )
+        options.add(self.cut_output_row)
+        self.waveform_row = Adw.SwitchRow(
+            title=_("Show waveform"), active=True, visible=False
+        )
+        self.waveform_row.connect(
+            "notify::active", weak_callback(self._on_waveform_switch_changed)
+        )
+        options.add(self.waveform_row)
 
         self.destination_row = Adw.ActionRow(
             title=_("Save to"), subtitle=_("Same folder as each source")
         )
         choose = Gtk.Button(icon_name="folder-open-symbolic", valign=Gtk.Align.CENTER)
+        choose.set_tooltip_text(_("Choose output folder"))
         choose.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("Choose output folder")]
         )
         choose.connect("clicked", weak_callback(self._choose_output_folder))
-        reset = Gtk.Button(icon_name="edit-undo-symbolic", valign=Gtk.Align.CENTER)
+        reset = self.output_reset_button = Gtk.Button(
+            icon_name="edit-undo-symbolic", valign=Gtk.Align.CENTER, visible=False
+        )
+        reset.set_tooltip_text(_("Use source folders"))
         reset.update_property([Gtk.AccessibleProperty.LABEL], [_("Use source folders")])
         reset.connect("clicked", lambda *_: owner._set_output_folder(""))
         self.destination_row.add_suffix(choose)
         self.destination_row.add_suffix(reset)
-        output.add(self.destination_row)
-        self.output_directory = str(self.app.config.get("output_directory", "") or "")
-        if self.output_directory:
-            self.destination_row.set_subtitle(self.output_directory)
+        self._set_output_folder(
+            str(self.app.config.get("output_directory", "") or ""), save=False
+        )
+        options.add(self.destination_row)
 
-        self._bitrate_list = list(BITRATES["mp3"])
-        self.bitrate_row = Adw.ComboRow(
-            title=_("Bitrate"), model=Gtk.StringList.new(self._bitrate_list)
-        )
-        self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
-        self.bitrate_row.connect(
-            "notify::selected", weak_callback(self._on_bitrate_changed)
-        )
-        self._quality_bitrates = ("96k", "192k", "320k")
-        self.quality_row = Adw.ComboRow(
-            title=_("Quality"),
-            use_subtitle=True,
-            model=Gtk.StringList.new(
-                [
-                    _("Smaller file"),
-                    _("Balanced"),
-                    _("Higher quality"),
-                    _("Custom bitrate"),
-                ]
+        # Most conversions change nothing below; each closed row names what is on.
+        effects = self.effects_expander = Adw.ExpanderRow(title=_("Adjust sound"))
+        options.add(effects)
+        for prefix, title, subtitle, initial, handler, intensity_handler in (
+            (
+                "gate",
+                _("Noise Gate"),
+                _("Silences the background between words"),
+                0.5,
+                self._on_gate_switch_changed,
+                self._on_gate_intensity_changed,
             ),
+            (
+                "compressor",
+                _("Compressor"),
+                _("Evens out loud and quiet parts"),
+                1,
+                self._on_compressor_switch_changed,
+                self._on_compressor_intensity_changed,
+            ),
+        ):
+            switch_row = Adw.SwitchRow(title=title, subtitle=subtitle)
+            switch_row.connect("notify::active", weak_callback(handler))
+            effects.add_row(switch_row)
+            row, spin = numeric_row(
+                effects, _("Intensity"), initial, 0, 1, 0.05, intensity_handler
+            )
+            row.set_visible(False)
+            setattr(self, prefix + "_row", switch_row)
+            setattr(self, prefix + "_intensity_row", row)
+            setattr(self, prefix + "_intensity_scale", spin)
+
+        self.hpf_row = Adw.SwitchRow(
+            title=_("High-Pass Filter"), subtitle=_("Removes low-frequency rumble")
         )
-        self.quality_row.set_selected(1)
-        self._quality_row_handler = self.quality_row.connect(
-            "notify::selected", weak_callback(self._on_quality_changed)
+        self.hpf_row.connect(
+            "notify::active", weak_callback(self._on_hpf_switch_changed)
         )
-        output.add(self.quality_row)
+        effects.add_row(self.hpf_row)
+        self.hpf_freq_row, self.hpf_freq_scale = numeric_row(
+            effects,
+            _("Frequency (Hz)"),
+            80,
+            20,
+            500,
+            5,
+            self._on_hpf_freq_changed,
+            0,
+        )
+        self.hpf_freq_row.set_visible(False)
+        self.normalize_row = Adw.SwitchRow(
+            title=_("Loudness Normalization"),
+            subtitle=_("Target: −16 LUFS; changes the original volume"),
+        )
+        self.normalize_row.connect(
+            "notify::active", weak_callback(self._on_normalize_switch_changed)
+        )
+        effects.add_row(self.normalize_row)
+        self.clipping_row = Adw.SwitchRow(
+            title=_("Clipping protection"),
+            subtitle=_("Limit peaks explicitly; may change dynamics"),
+        )
+        self.clipping_row.connect(
+            "notify::active", weak_callback(self._on_clipping_changed)
+        )
+        effects.add_row(self.clipping_row)
+
         self.advanced_row = Adw.ExpanderRow(
             title=_("Advanced encoding"),
             subtitle=_("Keep original properties when supported"),
         )
-        self.advanced_row.add_row(self.bitrate_row)
-        self.channels_row = Adw.ComboRow(
-            title=_("Channels"),
-            model=Gtk.StringList.new([_("Original"), _("Mono"), _("Stereo")]),
+        self._advanced_subtitle = self.advanced_row.get_subtitle()
+        self.channels_row = ChoiceRow(
+            _("Channels"), [_("Original"), _("Mono"), _("Stereo")]
         )
         self.channels_row.connect(
             "notify::selected", weak_callback(self._on_channels_changed)
@@ -193,11 +369,9 @@ class SettingsManagerMixin:
         self._sample_rate_list = ["original"] + [
             str(rate) for rate in SAMPLE_RATES["mp3"]
         ]
-        self.sample_rate_row = Adw.ComboRow(
-            title=_("Sample rate"),
-            model=Gtk.StringList.new(
-                [_("Original")] + [f"{rate} Hz" for rate in SAMPLE_RATES["mp3"]]
-            ),
+        self.sample_rate_row = ChoiceRow(
+            _("Sample rate"),
+            [_("Original")] + [f"{rate} Hz" for rate in SAMPLE_RATES["mp3"]],
         )
         self.sample_rate_row.connect(
             "notify::selected", weak_callback(self._on_sample_rate_changed)
@@ -217,228 +391,34 @@ class SettingsManagerMixin:
             ),
         )
         self.advanced_row.add_row(self.precision_row)
-        output.add(self.advanced_row)
+        options.add(self.advanced_row)
 
-        editing = group(_("Editing"))
-        self._cut_list = [
-            _("Keep the whole audio"),
-            _("Cut in timeline order"),
-            _("Cut in the order marked"),
-        ]
-        self.cut_row = Adw.ComboRow(
-            title=_("Cut audio"),
-            use_subtitle=True,
-            model=Gtk.StringList.new(self._cut_list),
-        )
-        self.cut_row.connect(
-            "notify::selected", weak_callback(self._on_cut_combo_changed)
-        )
-        editing.add(self.cut_row)
-        self.cut_output_row = Adw.ComboRow(
-            title=_("Save segments"),
-            use_subtitle=True,
-            model=Gtk.StringList.new([_("Separate Files"), _("Merge into One")]),
-            visible=False,
-        )
-        self.cut_output_row.connect(
-            "notify::selected", weak_callback(self._on_cut_output_changed)
-        )
-        editing.add(self.cut_output_row)
-        self.waveform_row = Adw.SwitchRow(
-            title=_("Show waveform"), active=True, visible=False
-        )
-        self.waveform_row.connect(
-            "notify::active", weak_callback(self._on_waveform_switch_changed)
-        )
-        editing.add(self.waveform_row)
-        # The segment editor needs cutting on, so its entry lives with the cut tools.
-        self.cut_options_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=6,
+        # A group places plain widgets after its rows: notices and the cut
+        # tools sit under the list.
+        self.copy_notice = Gtk.Label(
+            label=_(
+                "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+            ),
+            wrap=True,
+            xalign=0,
             visible=False,
             margin_top=12,
+            css_classes=["dim-label", "caption"],
         )
-        self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"))
-        self.segment_edit_button.connect(
-            "clicked", weak_callback(self.on_edit_segments)
-        )
-        self.cut_options_box.append(self.segment_edit_button)
-        mark_buttons = Gtk.Box(spacing=6, homogeneous=True)
-        for label, is_start in ((_("Mark start"), True), (_("Mark end"), False)):
-            button = Gtk.Button(label=label)
-            button.connect(
-                "clicked", weak_callback(self._mark_current_position), is_start
-            )
-            mark_buttons.append(button)
-        self.cut_options_box.append(mark_buttons)
-        self.cut_options_box.append(
-            Gtk.Label(
-                label=_(
-                    "Enter start and end times in Edit Segments, or mark sections on the waveform. Files without segments are converted in full."
-                ),
-                wrap=True,
-                xalign=0,
-                css_classes=["dim-label", "caption"],
-            )
-        )
-        editing.add(self.cut_options_box)
-
-        self.effects_group = group(_("Audio effects"))
-        self.effects_group.set_description(
-            _("These effects also change the exported audio.")
-        )
-        self.effects_expander = Adw.ExpanderRow(
-            title=_("Adjust sound"), subtitle=_("Volume, speed, filters and loudness")
-        )
-        self.effects_group.add(self.effects_expander)
-        self.volume_spin = Adw.SpinRow.new_with_range(0, 1000, 5)
-        self.volume_spin.set_title(_("Volume (%)"))
-        self.volume_spin.set_value(100)
-        self.volume_spin.connect(
-            "notify::value", lambda row, _pspec: owner._on_volume_spin_changed(row)
-        )
-        self.effects_expander.add_row(self.volume_spin)
-        self.speed_spin = Adw.SpinRow.new_with_range(0.10, 5.0, 0.05)
-        self.speed_spin.set_title(_("Speed (×)"))
-        self.speed_spin.set_digits(2)
-        self.speed_spin.set_value(1.0)
-        self.speed_spin.connect(
-            "notify::value", lambda row, _pspec: owner._on_speed_spin_changed(row)
-        )
-        self.effects_expander.add_row(self.speed_spin)
-
-        self.noise_expander = Adw.ExpanderRow(
-            title=_("Noise Reduction"),
-            subtitle=_("For speech, not music"),
-            enable_expansion=False,
-        )
-        self.noise_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
-        self.noise_switch.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Enable noise reduction")]
-        )
-        self.noise_switch.connect(
-            "state-set", weak_callback(self._on_noise_switch_changed)
-        )
-        self.noise_expander.add_suffix(self.noise_switch)
-        self.effects_expander.add_row(self.noise_expander)
-        self.noise_engines = ("dfn3", "dpdfnet")
-        self.noise_model_row = Adw.ComboRow(
-            title=_("Noise reduction mode"),
-            use_subtitle=True,
-            model=Gtk.StringList.new(
-                [
-                    _("Light — DeepFilterNet3"),
-                    _("Higher quality — DPDFNet-2 48 kHz"),
-                ]
-            ),
-        )
-        self.noise_model_row.connect(
-            "notify::selected", weak_callback(self._on_noise_model_changed)
-        )
-        # Keep the choice reachable even when the selected plugin is missing.
-        self.effects_expander.add_row(self.noise_model_row)
-        self.noise_strength_row, self.noise_strength_scale = numeric_row(
-            self.noise_expander,
-            _("Noise reduction strength (%)"),
-            100,
-            0,
-            100,
-            5,
-            self._on_noise_strength_changed,
-            0,
-        )
-        self.noise_strength_row.set_subtitle(
-            _("Lower values keep more background sound; 0 leaves it unchanged")
-        )
-        self._update_noise_availability()
-
-        for prefix, title, initial, handler, intensity_handler in (
-            (
-                "gate",
-                _("Noise Gate"),
-                0.5,
-                self._on_gate_switch_changed,
-                self._on_gate_intensity_changed,
-            ),
-            (
-                "compressor",
-                _("Compressor"),
-                1,
-                self._on_compressor_switch_changed,
-                self._on_compressor_intensity_changed,
-            ),
-        ):
-            expander = Adw.ExpanderRow(title=title, enable_expansion=False)
-            switch = Gtk.Switch(valign=Gtk.Align.CENTER)
-            switch.update_property([Gtk.AccessibleProperty.LABEL], [title])
-            switch.connect("state-set", weak_callback(handler))
-            expander.add_suffix(switch)
-            row, spin = numeric_row(
-                expander, _("Intensity"), initial, 0, 1, 0.05, intensity_handler
-            )
-            spin.set_sensitive(False)
-            setattr(self, prefix + "_expander", expander)
-            setattr(self, prefix + "_switch", switch)
-            setattr(self, prefix + "_intensity_row", row)
-            setattr(self, prefix + "_intensity_scale", spin)
-            self.effects_expander.add_row(expander)
-
-        self.hpf_row = Adw.SwitchRow(
-            title=_("High-Pass Filter"), subtitle=_("Removes low-frequency rumble")
-        )
-        self.hpf_row.connect(
-            "notify::active", weak_callback(self._on_hpf_switch_changed)
-        )
-        self.effects_expander.add_row(self.hpf_row)
-        self.hpf_freq_row, self.hpf_freq_scale = numeric_row(
-            self.effects_expander,
-            _("Frequency (Hz)"),
-            80,
-            20,
-            500,
-            5,
-            self._on_hpf_freq_changed,
-            0,
-        )
-        self.hpf_freq_row.set_visible(False)
-        self.normalize_row = Adw.SwitchRow(
-            title=_("Loudness Normalization"),
-            subtitle=_("Target: −16 LUFS; changes the original volume"),
-        )
-        self.normalize_row.connect(
-            "notify::active", weak_callback(self._on_normalize_switch_changed)
-        )
-        self.effects_expander.add_row(self.normalize_row)
-        self.clipping_row = Adw.SwitchRow(
-            title=_("Clipping protection"),
-            subtitle=_("Limit peaks explicitly; may change dynamics"),
-        )
-        self.clipping_row.connect(
-            "notify::active", weak_callback(self._on_clipping_changed)
-        )
-        self.effects_expander.add_row(self.clipping_row)
+        options.add(self.copy_notice)
         self.gain_notice = Gtk.Label(
             label=_(
                 "Boosting volume or equalizer bands can distort audio. Reduce gain or enable clipping protection."
             ),
             wrap=True,
             xalign=0,
-            margin_top=6,
+            margin_top=12,
+            css_classes=["dim-label", "caption"],
         )
-        self.effects_group.add(self.gain_notice)
-        for row in (
-            self.format_row,
-            self.quality_row,
-            self.bitrate_row,
-            self.channels_row,
-            self.sample_rate_row,
-            self.cut_row,
-            self.cut_output_row,
-            self.noise_model_row,
-        ):
-            row.set_list_factory(_untruncated_list_factory())
+        options.add(self.gain_notice)
         self._restore_conversion_settings()
         self.clipping_row.set_active(self._config_bool("prevent_clipping"))
+        self._update_effects_summary()
         self._on_format_changed(self.format_row, None)
         self._update_gain_notice()
 
@@ -464,10 +444,16 @@ class SettingsManagerMixin:
             if not exc.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 logger.debug("Could not select output folder: %s", exc)
 
-    def _set_output_folder(self, path):
+    def _set_output_folder(self, path, save=True):
         self.output_directory = path
-        self.app.config.set("output_directory", path)
-        self.destination_row.set_subtitle(path or _("Same folder as each source"))
+        if save:
+            self.app.config.set("output_directory", path)
+        home = GLib.get_home_dir()
+        shown = "~" + path[len(home) :] if path.startswith(home + "/") else path
+        self.destination_row.set_subtitle(
+            GLib.markup_escape_text(shown) or _("Same folder as each source")
+        )
+        self.output_reset_button.set_visible(bool(path))
 
     def _on_sample_rate_changed(self, row, _pspec):
         if not self._updating_profile and row.get_selected() < len(
@@ -476,10 +462,12 @@ class SettingsManagerMixin:
             self.app.config.set(
                 "sample_rate", self._sample_rate_list[row.get_selected()]
             )
+            self._update_advanced_summary()
 
     def _on_clipping_changed(self, row, _pspec):
         self.app.config.set("prevent_clipping", str(row.get_active()).lower())
         self.player.set_prevent_clipping(row.get_active())
+        self._update_effects_summary()
 
     # --- Settings change handlers ---
 
@@ -498,8 +486,6 @@ class SettingsManagerMixin:
             else self._bitrate_list.index("192k")
         )
         self.bitrate_row.set_visible(format_name in BITRATES)
-        self.quality_row.set_visible(format_name in BITRATES)
-        self._sync_quality()
         saved_rate = str(self.app.config.get("sample_rate", "original"))
         rates = SAMPLE_RATES.get(
             format_name,
@@ -516,55 +502,28 @@ class SettingsManagerMixin:
         )
         self.sample_rate_row.set_selected(selected_rate)
         self._updating_profile = False
+        self._update_advanced_summary()
         self._set_copy_mode_ui(format_name == "copy")
-
-    def _mark_current_position(self, _button, is_start):
-        if not self.active_audio_id or self.visualizer.duration <= 0:
-            self._show_message(
-                _("No audio selected"),
-                _("Add a file and wait for its duration before marking a segment."),
-            )
-            return
-        position = self.visualizer.position
-        if is_start:
-            self.visualizer.add_start_marker(position)
-        elif self.visualizer.current_pair_index >= 0:
-            self.visualizer.add_stop_marker(position)
-        else:
-            self._show_message(
-                _("Mark the start first"),
-                _("Choose where the segment begins, then mark its end."),
-            )
 
     def _on_bitrate_changed(self, row, _pspec):
         if not self._updating_profile and row.get_selected() < len(self._bitrate_list):
             self.app.config.set(
                 "conversion_bitrate", self._bitrate_list[row.get_selected()]
             )
-            self._sync_quality()
-
-    def _sync_quality(self):
-        bitrate = self._bitrate_list[self.bitrate_row.get_selected()]
-        self.quality_row.handler_block(self._quality_row_handler)
-        self.quality_row.set_selected(
-            self._quality_bitrates.index(bitrate)
-            if bitrate in self._quality_bitrates
-            else 3
-        )
-        self.quality_row.handler_unblock(self._quality_row_handler)
-
-    def _on_quality_changed(self, row, _pspec):
-        selected = row.get_selected()
-        if selected < len(self._quality_bitrates):
-            self.bitrate_row.set_selected(
-                self._bitrate_list.index(self._quality_bitrates[selected])
-            )
-        else:
-            self.advanced_row.set_expanded(True)
 
     def _on_channels_changed(self, row, pspec):
         """Handle channels selection change and save setting."""
         self.app.config.set("audio_channels", str(row.get_selected()))
+        self._update_advanced_summary()
+
+    def _update_advanced_summary(self):
+        """Name the properties that differ from the source, like the queue rows."""
+        changed = [
+            row.get_selected_item().get_string()
+            for row in (self.channels_row, self.sample_rate_row)
+            if row.get_selected() > 0
+        ]
+        self.advanced_row.set_subtitle(" · ".join(changed) or self._advanced_subtitle)
 
     def _on_volume_spin_changed(self, spin):
         self._set_processing_volume(spin.get_value())
@@ -626,29 +585,54 @@ class SettingsManagerMixin:
     def _update_noise_availability(self):
         engine = self.noise_engines[self.noise_model_row.get_selected()]
         self.noise_available = engine in self.player.noise_plugins
-        self.noise_switch.set_sensitive(self.noise_available)
+        self.noise_row.set_sensitive(
+            self.noise_available
+            and self._format_list[self.format_row.get_selected()] != "copy"
+        )
         if not self.noise_available:
-            self.noise_switch.set_active(False)
+            self.noise_row.set_active(False)
             package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
-            self.noise_expander.set_subtitle(
+            self.noise_row.set_subtitle(
                 _("Unavailable: install {package}").format(package=package)
             )
         else:
-            self.noise_expander.set_subtitle(
-                _("For speech. Uses less processing.")
-                if engine == "dfn3"
-                else _("For speech. Higher quality, more processing.")
-            )
+            self.noise_row.set_subtitle("")
+        self._show_noise_rows()
 
-    def _on_noise_switch_changed(self, switch, state):
-        if state and not self.noise_available:
-            return True
-        if not self.player.set_noise_reduction(state):
-            return True
+    def _show_noise_rows(self):
+        active = self.noise_row.get_active()
+        # A missing engine keeps the mode reachable so another can be chosen.
+        self.noise_model_row.set_visible(active or not self.noise_available)
+        self.noise_strength_row.set_visible(active)
+
+    def _on_noise_switch_changed(self, row, _pspec):
+        state = row.get_active()
+        if state and not (
+            self.noise_available and self.player.set_noise_reduction(True)
+        ):
+            row.set_active(False)
+            return
+        if not state:
+            self.player.set_noise_reduction(False)
         self.app.config.set("noise_reduction_enabled", str(state).lower())
-        self.noise_expander.set_enable_expansion(state)
-        self.noise_expander.set_expanded(state)
-        return False
+        self._show_noise_rows()
+
+    def _update_effects_summary(self):
+        """Name the active effects so a closed list still shows its state."""
+        active = [
+            row.get_title()
+            for row in (
+                self.gate_row,
+                self.compressor_row,
+                self.hpf_row,
+                self.normalize_row,
+                self.clipping_row,
+            )
+            if row.get_active()
+        ]
+        self.effects_expander.set_subtitle(
+            ", ".join(active) or _("Filters and loudness")
+        )
 
     def _on_noise_strength_changed(self, scale):
         percent = scale.get_value()
@@ -658,24 +642,18 @@ class SettingsManagerMixin:
     def _on_noise_model_changed(self, row, pspec):
         engine = self.noise_engines[row.get_selected()]
         if engine not in self.player.noise_plugins:
-            self.noise_switch.set_active(False)
+            self.noise_row.set_active(False)
         self.player.set_noise_engine(engine)
         self.app.config.set("noise_engine", engine)
         self._update_noise_availability()
 
-    def _on_gate_switch_changed(self, switch, state):
+    def _on_gate_switch_changed(self, row, _pspec):
         """Handle noise gate toggle."""
+        state = row.get_active()
         self.app.config.set("gate_enabled", str(state).lower())
-
-        self.gate_expander.set_enable_expansion(state)
-        self.gate_intensity_scale.set_sensitive(state)
-
-        if not state:
-            self.gate_expander.set_expanded(False)
-
+        self.gate_intensity_row.set_visible(state)
         self.player.set_gate_enabled(state)
-
-        return False
+        self._update_effects_summary()
 
     def _on_gate_intensity_changed(self, scale):
         """Handle gate intensity slider change."""
@@ -684,19 +662,13 @@ class SettingsManagerMixin:
 
         self.player.set_gate_intensity(intensity)
 
-    def _on_compressor_switch_changed(self, switch, state):
+    def _on_compressor_switch_changed(self, row, _pspec):
         """Handle compressor toggle."""
+        state = row.get_active()
         self.app.config.set("compressor_enabled", str(state).lower())
-
-        self.compressor_expander.set_enable_expansion(state)
-        self.compressor_intensity_scale.set_sensitive(state)
-
-        if not state:
-            self.compressor_expander.set_expanded(False)
-
+        self.compressor_intensity_row.set_visible(state)
         self.player.set_compressor_enabled(state)
-
-        return False
+        self._update_effects_summary()
 
     def _on_compressor_intensity_changed(self, scale):
         """Handle compressor intensity change."""
@@ -713,6 +685,7 @@ class SettingsManagerMixin:
         self.hpf_freq_row.set_visible(state)
 
         self.player.set_hpf_enabled(state)
+        self._update_effects_summary()
 
     def _on_hpf_freq_changed(self, scale):
         """Handle HPF frequency change."""
@@ -725,6 +698,7 @@ class SettingsManagerMixin:
         state = row.get_active()
         self.app.config.set("normalize_enabled", str(state).lower())
         self.player.set_normalize(state)
+        self._update_effects_summary()
 
     def _on_waveform_switch_changed(self, row, pspec):
         enabled = row.get_active()
@@ -741,9 +715,6 @@ class SettingsManagerMixin:
         # Enable markers and show options when any option except "Off" is selected
         enabled = active > 0
 
-        # Show/hide cut options based on selection
-        self.cut_options_box.set_visible(enabled)
-
         # Show/hide segment output option
         self.cut_output_row.set_visible(enabled)
         self.waveform_row.set_visible(enabled)
@@ -753,6 +724,7 @@ class SettingsManagerMixin:
         if hasattr(self, "seekbar"):
             self.visualizer.set_markers_enabled(enabled)
             self.play_selection_switch.set_visible(enabled)
+            self.segment_edit_button.set_visible(enabled)
             self.zoom_box.set_visible(enabled)
             self._set_waveform_visible(enabled and bool(self.file_queue.files))
 
@@ -794,7 +766,17 @@ class SettingsManagerMixin:
             self._format_list[self.format_row.get_selected()] == "flac"
         )
         self.advanced_row.set_visible(not is_copy_mode)
-        self.effects_group.set_sensitive(not is_copy_mode)
+        # Copy keeps the encoded audio, so nothing that processes it applies.
+        for row in (
+            self.volume_spin,
+            self.speed_spin,
+            self.noise_model_row,
+            self.noise_strength_row,
+            self.equalizer_row,
+            self.effects_expander,
+        ):
+            row.set_sensitive(not is_copy_mode)
+        self._update_noise_availability()
         # Settings are restored before setup_ui builds the bottom bar (the
         # seekbar last); setup_ui calls this again once the bar exists.
         bar_ready = hasattr(self, "seekbar")
@@ -878,6 +860,40 @@ class SettingsManagerMixin:
             return valid_list.index(saved)
         return default_idx
 
+    def reset_settings(self):
+        """Return every option to its first-run value through its own control.
+
+        Each control's handler saves the value and updates the player, so the
+        screen, the preview and the settings file agree afterwards.
+        """
+        self.format_row.set_selected(self._format_list.index("mp3"))
+        self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
+        self.channels_row.set_selected(0)
+        self.sample_rate_row.set_selected(0)
+        self.precision_row.set_active(False)
+        self._set_output_folder("")
+        self.cut_row.set_selected(0)
+        self.cut_output_row.set_selected(0)
+        self.waveform_row.set_active(True)
+        self._set_processing_volume(100)
+        self._set_processing_speed(1.0)
+        self.noise_row.set_active(False)
+        self.noise_model_row.set_selected(0)
+        self.noise_strength_scale.set_value(100)
+        self.gate_row.set_active(False)
+        self.gate_intensity_scale.set_value(0.5)
+        self.compressor_row.set_active(False)
+        self.compressor_intensity_scale.set_value(1.0)
+        self.hpf_row.set_active(False)
+        self.hpf_freq_scale.set_value(80)
+        self.normalize_row.set_active(False)
+        self.clipping_row.set_active(False)
+        self.eq_panel.preset_dropdown.set_selected(
+            self.eq_panel.PRESET_KEYS.index("flat")
+        )
+        self.auto_advance_switch.set_active(True)
+        self.original_preview.set_active(False)
+
     def _restore_conversion_settings(self):
         """Restore saved conversion settings from config.
 
@@ -898,18 +914,16 @@ class SettingsManagerMixin:
         self.noise_model_row.set_selected(self.noise_engines.index(engine))
         self._on_noise_model_changed(self.noise_model_row, None)
         self.noise_strength_scale.set_value(self._config_float("noise_strength", 100))
-        self.noise_switch.set_active(
+        self.noise_row.set_active(
             self.noise_available and self._config_bool("noise_reduction_enabled")
         )
 
         # Restore noise gate settings (intensity slider)
-        self.gate_switch.set_active(self._config_bool("gate_enabled"))
-        self.gate_expander.set_expanded(False)
+        self.gate_row.set_active(self._config_bool("gate_enabled"))
         self.gate_intensity_scale.set_value(self._config_float("gate_intensity", 0.5))
 
         # Restore compressor
-        self.compressor_switch.set_active(self._config_bool("compressor_enabled"))
-        self.compressor_expander.set_expanded(False)
+        self.compressor_row.set_active(self._config_bool("compressor_enabled"))
         self.compressor_intensity_scale.set_value(
             self._config_float("compressor_intensity", 1.0)
         )

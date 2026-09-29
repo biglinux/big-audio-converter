@@ -69,10 +69,13 @@ class HeaderBar(Gtk.Box):
 
     def _create_ui_elements(self):
         # Always create queue controls
-        self.clear_queue_button = Gtk.Button()
-        self.clear_queue_button.set_icon_name("edit-delete-symbolic")
+        # Named in words: the rows' own remove buttons use the delete icon.
+        self.clear_queue_button = Gtk.Button(
+            child=Adw.ButtonContent(
+                icon_name="edit-clear-all-symbolic", label=_("Clear queue")
+            )
+        )
         self.clear_queue_button.add_css_class("flat")
-        self.clear_queue_button.add_css_class("circular")
         self.clear_queue_button.set_valign(Gtk.Align.CENTER)
         self.clear_queue_button.connect(
             "clicked", weak_callback(self.main_window.on_clear_queue)
@@ -95,7 +98,12 @@ class HeaderBar(Gtk.Box):
         menu = Gio.Menu()
         menu.append(_("Show help on hover"), "app.toggle-tips")
         menu.append(_("Show Welcome Screen"), "app.show-welcome")
-        menu.append(_("About"), "app.about")
+        settings_section = Gio.Menu()
+        settings_section.append(_("Reset All Settings…"), "win.reset-settings")
+        menu.append_section(None, settings_section)
+        about_section = Gio.Menu()
+        about_section.append(_("About"), "app.about")
+        menu.append_section(None, about_section)
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu)
         menu_button.update_property(
             [Gtk.AccessibleProperty.LABEL],
@@ -178,16 +186,6 @@ class MainWindow(
 ):
     """Main application window."""
 
-    def _window_buttons_on_left(self):
-        """Respect GTK decoration preferences without requiring a GNOME schema."""
-        settings = Gtk.Settings.get_default()
-        layout = settings.get_property("gtk-decoration-layout") if settings else ""
-        return (
-            "close" in (layout or "").split(":", 1)[0]
-            if ":" in (layout or "")
-            else False
-        )
-
     def __init__(self, **kwargs):
         # Extract stored window size and maximized state (with defaults)
         default_width = 1100
@@ -253,19 +251,8 @@ class MainWindow(
             False  # Lock to prevent transition race conditions
         )
 
-        # Default sidebar width - will be overridden by saved value if available
-        self.sidebar_width = 380
-
         # Default visualizer height - will be overridden by saved value
         self.visualizer_height = 132
-
-        # Only legacy configurations contain sidebar_width; it bounds the sidebar.
-        saved_width = config.get("sidebar_width")
-        if saved_width:
-            try:
-                self.sidebar_width = max(150, int(saved_width))
-            except (ValueError, TypeError):
-                pass
 
         saved_height = config.get("visualizer_height")
         if saved_height:
@@ -273,9 +260,6 @@ class MainWindow(
                 self.visualizer_height = max(100, int(saved_height))
             except (ValueError, TypeError):
                 pass
-
-        # Reuse the preferred width as a bound, not as a minimum window width.
-        self.sidebar_width = min(420, max(280, self.sidebar_width))
 
         # Set up GUI first, creating the visualizer
         self.setup_ui()
@@ -332,6 +316,10 @@ class MainWindow(
         )
         self.add_action(play_pause_action)
 
+        reset = Gio.SimpleAction.new("reset-settings", None)
+        reset.connect("activate", lambda *_: owner._confirm_reset_settings())
+        self.add_action(reset)
+
         edit = Gio.SimpleAction.new("edit-segments", None)
         edit.connect("activate", lambda *_: owner.on_edit_segments())
         self.add_action(edit)
@@ -359,7 +347,9 @@ class MainWindow(
         self.split_view = Adw.OverlaySplitView(vexpand=True)
         self.split_view.set_sidebar_position(Gtk.PackType.START)
         self.split_view.set_min_sidebar_width(280)
-        self.split_view.set_max_sidebar_width(self.sidebar_width)
+        # Wide enough that row subtitles keep to one line; the sidebar no longer
+        # has a drag handle, so the legacy sidebar_width setting is not read.
+        self.split_view.set_max_sidebar_width(400)
         self.split_view.set_sidebar_width_fraction(0.34)
         # Add split_view directly to vertical_paned (top part)
         self.vertical_paned.set_start_child(self.split_view)
@@ -369,6 +359,8 @@ class MainWindow(
         css_provider.load_from_string("""
         .sidebar { background-color: @sidebar_bg_color; }
         .playback-controls { padding: 6px 10px; }
+        /* The queue side is one light surface, set apart from the sidebar. */
+        .queue-pane { background-color: @window_bg_color; color: @window_fg_color; }
         /* A player stays dark in both themes, matching the waveform's own
            background; flat controls follow currentColor. */
         .playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
@@ -377,6 +369,11 @@ class MainWindow(
             background-color: alpha(@accent_bg_color, 0.55);
             color: #ffffff;
         }
+        .queue-pane > revealer > windowhandle > headerbar,
+        .queue-pane headerbar { background: none; box-shadow: none; }
+        /* Rows at the height of the original compact list. */
+        /* Only the list's own rows: a dropdown's popup is a descendant too. */
+        .compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }
         """)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
@@ -384,75 +381,21 @@ class MainWindow(
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-        # Prepare queue controls, but only add to one headerbar (never both)
-        window_buttons_left = self._window_buttons_on_left()
-        # LEFT SIDE - Now contains conversion options (previously on right)
-        left_box = Adw.ToolbarView()
-        left_box.add_css_class("sidebar")
-        # Set minimum width for left sidebar
-        left_box.set_size_request(-1, -1)
-
-        # Create header bar for left side
-        left_header = Adw.HeaderBar()
-        left_header.add_css_class("sidebar")
-        left_header.set_show_title(True)
-        # Configure left header bar based on window button layout
-        left_header.set_show_start_title_buttons(False)
-        left_header.set_show_end_title_buttons(False)
-
-        # Create title box with label and (optionally) app icon
-        if not window_buttons_left:
-            # App icon on left if window buttons are on right, text truly centered
-            center_box = Gtk.CenterBox()
-            center_box.set_hexpand(True)
-            app_icon = Gtk.Image.new_from_icon_name("big-audio-converter")
-            app_icon.set_pixel_size(20)
-            app_icon.set_halign(Gtk.Align.START)
-            app_icon.set_valign(Gtk.Align.START)
-            # Do not expand icon
-            app_icon.set_hexpand(False)
-            center_box.set_start_widget(app_icon)
-            title_label = Gtk.Label(label=_("Audio Converter"))
-            title_label.set_halign(Gtk.Align.CENTER)
-            title_label.set_valign(Gtk.Align.START)
-            title_label.set_hexpand(True)
-            center_box.set_center_widget(title_label)
-            # No end widget
-            left_header.set_title_widget(center_box)
-        else:
-            title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            title_label = Gtk.Label(label=_("Audio Converter"))
-            title_box.append(title_label)
-            # Add an expanding box to push controls to the left
-            expander = Gtk.Box()
-            expander.set_hexpand(True)
-            title_box.append(expander)
-            left_header.set_title_widget(title_box)
-        left_box.add_top_bar(left_header)
-
-        # Create scrollable container for left content
+        # LEFT SIDE: conversion options. The window title already names the
+        # app, so the options start at the top; empty space still moves the
+        # window like a header bar would.
         left_scroll = Gtk.ScrolledWindow()
-        left_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        left_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         left_scroll.set_vexpand(True)
+        left_scroll.add_css_class("sidebar")
 
-        # Create left content container
-        left_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        left_content.add_css_class("sidebar")
+        left_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_bottom=12)
         left_scroll.set_child(left_content)
-
-        # Create middle container for conversion options (moved from right)
-        middle_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        middle_container.set_valign(Gtk.Align.FILL)
-        left_content.append(middle_container)
-
-        # Add conversion options to middle container (this stays the same)
-        self.setup_conversion_options(middle_container)
-
-        # Set the left content
-        left_box.set_content(left_scroll)
+        self.setup_conversion_options(left_content)
+        left_box = Gtk.WindowHandle(child=left_scroll)
 
         # RIGHT SIDE - Now contains file queue (previously on left)
-        right_box = Adw.ToolbarView()
+        right_box = Adw.ToolbarView(css_classes=["queue-pane"])
         # Set minimum width for right content area
         right_box.set_size_request(320, -1)
 
@@ -551,6 +494,15 @@ class MainWindow(
         )
 
         zoom_control_box.append(self.play_selection_switch)
+
+        # Next to the waveform it edits; cutting has to be on to use it.
+        self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"))
+        self.segment_edit_button.add_css_class("flat")
+        self.segment_edit_button.set_valign(Gtk.Align.CENTER)
+        self.segment_edit_button.connect(
+            "clicked", weak_callback(self.on_edit_segments)
+        )
+        zoom_control_box.append(self.segment_edit_button)
 
         # Add "Auto-Advance" toggle button — icon-only
         self.auto_advance_switch = Gtk.ToggleButton()
@@ -952,6 +904,7 @@ class MainWindow(
         # Set initial visibility for cut-mode-dependent elements
         cut_enabled = self.cut_row.get_selected() > 0
         self.play_selection_switch.set_visible(cut_enabled)
+        self.segment_edit_button.set_visible(cut_enabled)
         self.zoom_box.set_visible(cut_enabled)
         self.seekbar.set_visible(True)
 
@@ -1061,8 +1014,8 @@ class MainWindow(
             (self.bitrate_row, "bitrate"),
             (self.volume_spin, "volume"),
             (self.speed_spin, "speed"),
-            (self.noise_expander, "noise_reduction"),
-            (self.gate_expander, "noise_gate"),
+            (self.noise_row, "noise_reduction"),
+            (self.gate_row, "noise_gate"),
             (self.normalize_row, "normalize"),
             (self.cut_row, "cut"),
             (self.cut_output_row, "cut_output"),
@@ -1104,12 +1057,12 @@ class MainWindow(
             "prevent_clipping": self.clipping_row.get_active(),
             "allow_precision_reduction": self.precision_row.get_active(),
             "output_directory": self.output_directory,
-            "noise_reduction": self.noise_switch.get_active(),
+            "noise_reduction": self.noise_row.get_active(),
             "noise_engine": self.noise_engines[self.noise_model_row.get_selected()],
             "noise_strength": self.noise_strength_scale.get_value(),
-            "gate_enabled": self.gate_switch.get_active(),
+            "gate_enabled": self.gate_row.get_active(),
             "gate_intensity": self.gate_intensity_scale.get_value(),
-            "compressor_enabled": self.compressor_switch.get_active(),
+            "compressor_enabled": self.compressor_row.get_active(),
             "compressor_intensity": self.compressor_intensity_scale.get_value(),
             "hpf_enabled": self.hpf_row.get_active(),
             "hpf_frequency": int(self.hpf_freq_scale.get_value()),
@@ -1294,6 +1247,26 @@ class MainWindow(
         self.visualizer.set_markers_enabled(self.cut_row.get_selected() > 0)
 
         self._fit_bottom_panel()
+
+    def _confirm_reset_settings(self):
+        dialog = Adw.AlertDialog(
+            heading=_("Reset all settings?"),
+            body=_(
+                "Format, quality, output folder, cutting, effects and equalizer "
+                "return to their defaults. The queue and your source files are kept."
+            ),
+        )
+        dialog.add_response("cancel", _("Cancel"))
+        dialog.add_response("reset", _("Reset"))
+        dialog.set_response_appearance("reset", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+        dialog.connect("response", weak_callback(self._on_reset_settings_response))
+        dialog.present(self)
+
+    def _on_reset_settings_response(self, _dialog, response):
+        if response == "reset" and not self._closed:
+            self.reset_settings()
 
     def on_clear_queue(self, button):
         dialog = Adw.AlertDialog(

@@ -215,17 +215,21 @@ def test_information_dialog_is_nonblocking_and_preserves_rate(window, audio):
     assert not row._info_dialogs
 
 
-def test_quality_preview_and_mark_buttons(window, audio):
-    assert window.format_row.get_subtitle()
-    assert window.cut_row.get_subtitle()
+def test_bitrate_preview_and_waveform_marks(window, audio):
+    assert window.format_row.get_selected_item().get_string()
+    assert window.cut_row.get_selected_item().get_string()
     assert window._bitrate_list[window.bitrate_row.get_selected()] == "192k"
-    assert window.quality_row.get_selected() == 1
-    window.quality_row.set_selected(2)
-    assert window._bitrate_list[window.bitrate_row.get_selected()] == "320k"
     window.bitrate_row.set_selected(window._bitrate_list.index("128k"))
-    assert window.quality_row.get_selected() == 3
+    assert window.app.config.get("conversion_bitrate") == "128k"
     window.format_row.set_selected(window._format_list.index("flac"))
-    assert not window.quality_row.get_visible()
+    assert not window.bitrate_row.get_visible()
+    window.format_row.set_selected(window._format_list.index("copy"))
+    assert not window.volume_spin.get_sensitive()
+    assert not window.noise_row.get_sensitive()
+    assert window.format_row.get_sensitive()
+    window.format_row.set_selected(window._format_list.index("flac"))
+    assert window.volume_spin.get_sensitive()
+    assert window.noise_row.get_sensitive()
     window.original_preview.set_active(True)
     assert window.player.effects_bypassed
     window.format_row.set_selected(window._format_list.index("mp3"))
@@ -235,10 +239,9 @@ def test_quality_preview_and_mark_buttons(window, audio):
     window.file_queue.add_file(str(audio))
     window.cut_row.set_selected(1)
     pump(lambda: window.visualizer.duration > 0 and not window.file_queue.pending)
-    window.visualizer.set_position(0.2)
-    window._mark_current_position(None, True)
-    window.visualizer.set_position(0.8)
-    window._mark_current_position(None, False)
+    assert window.segment_edit_button.get_visible()
+    window.visualizer.add_start_marker(0.2)
+    window.visualizer.add_stop_marker(0.8)
     settings = window._collect_conversion_settings()
     assert settings["file_markers"][window.active_audio_id][0][
         "start"
@@ -300,7 +303,7 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     pump(lambda: player._loaded)
     for index, engine in enumerate(window.noise_engines):
         window.noise_model_row.set_selected(index)
-        window.noise_switch.set_active(True)
+        window.noise_row.set_active(True)
         window.noise_strength_scale.set_value(25)
         # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
         attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
@@ -327,11 +330,64 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     # A missing heavy plugin must not trap the user behind a disabled chooser.
     del player.noise_plugins["dpdfnet"]
     window._update_noise_availability()
-    assert not window.noise_switch.get_active()
+    assert not window.noise_row.get_active()
     assert not player.noise_reduction
-    assert not window.noise_switch.get_sensitive()
-    assert "dpdfnet-native" in window.noise_expander.get_subtitle()
+    assert not window.noise_row.get_sensitive()
+    assert "dpdfnet-native" in window.noise_row.get_subtitle()
+    assert window.noise_model_row.get_visible()
     window.noise_model_row.set_selected(0)
-    assert window.noise_switch.get_sensitive()
-    window.noise_switch.set_active(True)
+    assert window.noise_row.get_sensitive()
+    window.noise_row.set_active(True)
     assert player.noise_reduction and player.noise_engine == "dfn3"
+    assert window.noise_strength_row.get_visible()
+
+
+def test_reset_settings_restores_first_run_values(window, tmp_path):
+    config = window.app.config
+    window.format_row.set_selected(window._format_list.index("opus"))
+    window.bitrate_row.set_selected(window._bitrate_list.index("128k"))
+    window.channels_row.set_selected(1)
+    window._set_output_folder(str(tmp_path))
+    window.cut_row.set_selected(2)
+    window.volume_spin.set_value(250)
+    window.speed_spin.set_value(1.5)
+    window.gate_row.set_active(True)
+    window.hpf_row.set_active(True)
+    window.normalize_row.set_active(True)
+    window.eq_panel.band_scales[window.eq_panel.BANDS[0][1]].set_value(6)
+    window.auto_advance_switch.set_active(False)
+
+    window._on_reset_settings_response(None, "cancel")
+    assert window.gate_row.get_active()
+
+    window._on_reset_settings_response(None, "reset")
+    assert window._format_list[window.format_row.get_selected()] == "mp3"
+    assert window._bitrate_list[window.bitrate_row.get_selected()] == "192k"
+    assert window.bitrate_row.get_visible()
+    assert window.channels_row.get_selected() == 0
+    assert window.output_directory == ""
+    assert window.cut_row.get_selected() == 0
+    assert window.volume_spin.get_value() == 100
+    assert window.speed_spin.get_value() == 1.0
+    assert not window.gate_row.get_active()
+    assert not window.gate_intensity_row.get_visible()
+    assert not window.hpf_row.get_active()
+    assert not window.normalize_row.get_active()
+    assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
+    assert window.auto_advance_switch.get_active()
+    assert not window.player.normalize
+    assert window.effects_expander.get_subtitle() == "Filters and loudness"
+    for key, value in (
+        ("conversion_format", "mp3"),
+        ("audio_channels", "0"),
+        ("output_directory", ""),
+        ("cut_audio_mode", "0"),
+        ("gate_enabled", "false"),
+        ("hpf_enabled", "false"),
+        ("normalize_enabled", "false"),
+        ("auto_advance_enabled", True),
+    ):
+        assert config.get(key) == value, key
+    # A first-run value that was never changed is simply absent.
+    assert config.get("conversion_bitrate", "192k") == "192k"
+    assert float(config.get("conversion_volume")) == 100

@@ -8,7 +8,12 @@ _ = gettext.gettext
 TOOLTIPS = {
     "format": _("Choose the output format. Fast Copy does not apply effects."),
     "bitrate": _(
-        "Higher bitrates generally use more space. Available values depend on the format."
+        "Higher values sound better and make larger files.\n"
+        "96k: speech, smallest files\n"
+        "128k: podcasts and audiobooks\n"
+        "192k: music, a good balance\n"
+        "320k: highest MP3 quality\n"
+        "Available values depend on the format."
     ),
     "volume": _(
         "Changes preview and export volume. Values above 100% can distort the audio."
