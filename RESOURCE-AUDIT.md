@@ -20,7 +20,7 @@ incluindo essas alterações anteriores; não representa um checkout limpo de HE
 | `a3d2ecb` | Provider CSS por janela continuava registrado no display | Finalização do provider no teardown |
 | `c38c5f7` | Fila, drag controllers, ícone de arraste e CSS retidos | Censo com preparação e término de arraste |
 
-Os contratos estão em AGENTS.md. Os testes novos são
+Os testes novos são
 `tests/test_resource_lifetimes.py` e `tests/test_worker_lifetimes.py`, mais o caso
 de gravação em `tests/test_config.py`. A regra geral foi registrada também em
 `~/.agents/skills/linux-ui-a11y/references/memory-leak-checking.md`.
