@@ -40,6 +40,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Audio data
         self.waveform_data = None
+        self.waveform_peak = 1.0
         self.waveform_error = None  # Set by WaveformGenerator on failure
         self.waveform_data_lock = Lock()
         self.position = 0
@@ -220,6 +221,11 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
             # A PeakCollector payload: {"levels", "rates", "zoom_thresholds"}.
             self.waveform_data = data
+            # Scale the drawing to the file's own peak so quiet speech stays
+            # readable for cutting; every level holds the same global peak.
+            self.waveform_peak = 1.0
+            if data and len(data["levels"][0]):
+                self.waveform_peak = float(np.max(data["levels"][0])) or 1.0
             self.duration = duration
 
             # Invalidate viewport cache
@@ -1166,7 +1172,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
     def _render_waveform_cache(self, width, height, visible_waveform, viewport_key):
         """Render the waveform to a cached ImageSurface."""
         y_center = height / 2
-        y_scale = height * 0.4
+        y_scale = height * 0.4 / self.waveform_peak
         render_width = int(width)
         bar_width = 1
         samples_per_bar = (

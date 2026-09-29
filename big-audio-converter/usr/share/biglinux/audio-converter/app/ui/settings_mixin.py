@@ -33,6 +33,35 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
+def _untruncated_list_factory():
+    """Popover items for a ComboRow whose default factory cuts them at 20 characters."""
+    factory = Gtk.SignalListItemFactory()
+
+    def setup(_factory, item):
+        box = Gtk.Box(spacing=6)
+        box.append(Gtk.Label(xalign=0, hexpand=True))
+        box.append(
+            Gtk.Image(
+                icon_name="object-select-symbolic",
+                accessible_role=Gtk.AccessibleRole.PRESENTATION,
+            )
+        )
+        item.set_child(box)
+        item.connect("notify::selected", _show_check)
+
+    def bind(_factory, item):
+        item.get_child().get_first_child().set_label(item.get_item().get_string())
+        _show_check(item)
+
+    factory.connect("setup", setup)
+    factory.connect("bind", bind)
+    return factory
+
+
+def _show_check(item, *_args):
+    item.get_child().get_last_child().set_opacity(1.0 if item.get_selected() else 0.0)
+
+
 class SettingsManagerMixin:
     """Mixin providing all conversion-settings logic for MainWindow."""
 
@@ -133,6 +162,7 @@ class SettingsManagerMixin:
         self._quality_bitrates = ("96k", "192k", "320k")
         self.quality_row = Adw.ComboRow(
             title=_("Quality"),
+            use_subtitle=True,
             model=Gtk.StringList.new(
                 [
                     _("Smaller file"),
@@ -206,6 +236,7 @@ class SettingsManagerMixin:
         editing.add(self.cut_row)
         self.cut_output_row = Adw.ComboRow(
             title=_("Save segments"),
+            use_subtitle=True,
             model=Gtk.StringList.new([_("Separate Files"), _("Merge into One")]),
             visible=False,
         )
@@ -213,14 +244,25 @@ class SettingsManagerMixin:
             "notify::selected", weak_callback(self._on_cut_output_changed)
         )
         editing.add(self.cut_output_row)
-        self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"), margin_top=6)
+        self.waveform_row = Adw.SwitchRow(
+            title=_("Show waveform"), active=True, visible=False
+        )
+        self.waveform_row.connect(
+            "notify::active", weak_callback(self._on_waveform_switch_changed)
+        )
+        editing.add(self.waveform_row)
+        # The segment editor needs cutting on, so its entry lives with the cut tools.
+        self.cut_options_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=6,
+            visible=False,
+            margin_top=12,
+        )
+        self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"))
         self.segment_edit_button.connect(
             "clicked", weak_callback(self.on_edit_segments)
         )
-        editing.add(self.segment_edit_button)
-        self.cut_options_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL, spacing=6, visible=False
-        )
+        self.cut_options_box.append(self.segment_edit_button)
         mark_buttons = Gtk.Box(spacing=6, homogeneous=True)
         for label, is_start in ((_("Mark start"), True), (_("Mark end"), False)):
             button = Gtk.Button(label=label)
@@ -236,13 +278,9 @@ class SettingsManagerMixin:
                 ),
                 wrap=True,
                 xalign=0,
+                css_classes=["dim-label", "caption"],
             )
         )
-        self.waveform_row = Adw.SwitchRow(title=_("Show waveform"), active=True)
-        self.waveform_row.connect(
-            "notify::active", weak_callback(self._on_waveform_switch_changed)
-        )
-        self.cut_options_box.append(self.waveform_row)
         editing.add(self.cut_options_box)
 
         self.effects_group = group(_("Audio effects"))
@@ -388,6 +426,17 @@ class SettingsManagerMixin:
             margin_top=6,
         )
         self.effects_group.add(self.gain_notice)
+        for row in (
+            self.format_row,
+            self.quality_row,
+            self.bitrate_row,
+            self.channels_row,
+            self.sample_rate_row,
+            self.cut_row,
+            self.cut_output_row,
+            self.noise_model_row,
+        ):
+            row.set_list_factory(_untruncated_list_factory())
         self._restore_conversion_settings()
         self.clipping_row.set_active(self._config_bool("prevent_clipping"))
         self._on_format_changed(self.format_row, None)
@@ -697,6 +746,7 @@ class SettingsManagerMixin:
 
         # Show/hide segment output option
         self.cut_output_row.set_visible(enabled)
+        self.waveform_row.set_visible(enabled)
 
         # Settings are restored before setup_ui builds the waveform and bottom
         # bar (the seekbar last); setup_ui then applies the same visibility.
@@ -704,10 +754,7 @@ class SettingsManagerMixin:
             self.visualizer.set_markers_enabled(enabled)
             self.play_selection_switch.set_visible(enabled)
             self.zoom_box.set_visible(enabled)
-            self.visualizer_frame.set_visible(enabled)
-
-        # Collapse or expand the waveform area in the paned
-        self._update_paned_for_cut_mode(enabled)
+            self._set_waveform_visible(enabled and bool(self.file_queue.files))
 
         # Generate waveform if enabling cut and active file has no waveform data
         if enabled and self.active_audio_id and self.visualizer.waveform_data is None:
@@ -723,38 +770,6 @@ class SettingsManagerMixin:
     def _on_cut_output_changed(self, row, pspec):
         """Handle cut output mode change (separate files vs merge)."""
         self.app.config.set("cut_output_mode", str(row.get_selected()))
-
-    def _update_paned_for_cut_mode(self, cut_enabled):
-        """Collapse or restore the paned position based on cut mode."""
-        if not hasattr(self, "visualizer_container"):
-            return
-        if not self.visualizer_container.get_visible():
-            return
-
-        total_height = self.get_height()
-        if total_height <= 0:
-            return
-
-        if not cut_enabled:
-            # Save the current paned position before collapsing
-            current_pos = self.vertical_paned.get_position()
-            controls_bar_height = 48
-            seekbar_height = 36
-            collapse_pos = total_height - controls_bar_height - seekbar_height
-            # Only save if not already collapsed
-            if current_pos < collapse_pos - 10:
-                self._saved_paned_position = current_pos
-            self.vertical_paned.set_position(collapse_pos)
-        else:
-            # Restore saved paned position
-            if self._saved_paned_position:
-                self.vertical_paned.set_position(self._saved_paned_position)
-            else:
-                # Fallback: use saved visualizer height
-                visualizer_position = max(
-                    200, total_height - self.visualizer_height - 50
-                )
-                self.vertical_paned.set_position(visualizer_position)
 
     # --- Equalizer toggle ---
 

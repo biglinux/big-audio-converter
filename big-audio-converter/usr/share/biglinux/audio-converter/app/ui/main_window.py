@@ -18,7 +18,7 @@ from pathlib import Path
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from app.audio.waveform import WaveformGenerator
 from app.ui.controls_bar_mixin import ControlsBarMixin
@@ -148,7 +148,7 @@ class HeaderBar(Gtk.Box):
         add_files_button.connect(
             "clicked", weak_callback(self.main_window.on_add_files)
         )
-        # Keep Convert as the single primary action once files are ready.
+        add_files_button.add_css_class("suggested-action")
         center_box.append(add_files_button)
 
         # Convert button
@@ -258,7 +258,6 @@ class MainWindow(
 
         # Default visualizer height - will be overridden by saved value
         self.visualizer_height = 132
-        self._saved_paned_position = None  # Paned position before cut mode collapse
 
         # Only legacy configurations contain sidebar_width; it bounds the sidebar.
         saved_width = config.get("sidebar_width")
@@ -362,9 +361,6 @@ class MainWindow(
         self.split_view.set_min_sidebar_width(280)
         self.split_view.set_max_sidebar_width(self.sidebar_width)
         self.split_view.set_sidebar_width_fraction(0.34)
-        compact = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 850sp"))
-        compact.add_setter(self.split_view, "collapsed", True)
-        self.add_breakpoint(compact)
         # Add split_view directly to vertical_paned (top part)
         self.vertical_paned.set_start_child(self.split_view)
 
@@ -373,7 +369,14 @@ class MainWindow(
         css_provider.load_from_string("""
         .sidebar { background-color: @sidebar_bg_color; }
         .playback-controls { padding: 6px 10px; }
-        .playback-panel { background-color: @window_bg_color; color: @window_fg_color; }
+        /* A player stays dark in both themes, matching the waveform's own
+           background; flat controls follow currentColor. */
+        .playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
+        .playback-panel frame { border-color: rgba(255, 255, 255, 0.08); }
+        .playback-controls button:checked {
+            background-color: alpha(@accent_bg_color, 0.55);
+            color: #ffffff;
+        }
         """)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
@@ -514,32 +517,6 @@ class MainWindow(
         # Add the two views to the paned container (swapped order)
         self.split_view.set_sidebar(left_box)
         self.split_view.set_content(right_box)
-
-        settings_button = Gtk.ToggleButton(
-            icon_name="emblem-system-symbolic", active=True
-        )
-        settings_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Conversion Settings")]
-        )
-        settings_button.set_tooltip_text(_("Show conversion settings"))
-        self.split_view.bind_property(
-            "show-sidebar",
-            settings_button,
-            "active",
-            GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
-        )
-        self.right_header.header_bar.pack_start(settings_button)
-        close_sidebar = Gtk.Button(icon_name="go-previous-symbolic")
-        close_sidebar.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Close conversion settings")]
-        )
-        close_sidebar.connect(
-            "clicked", lambda *_: owner.split_view.set_show_sidebar(False)
-        )
-        self.split_view.bind_property(
-            "collapsed", close_sidebar, "visible", GObject.BindingFlags.SYNC_CREATE
-        )
-        left_header.pack_start(close_sidebar)
 
         # Add visualizer at the bottom spanning full width
         # Create the visualizer instance
@@ -696,6 +673,7 @@ class MainWindow(
         # Pause/Play button (center)
         self.pause_play_btn = Gtk.Button()
         self.pause_play_btn.set_icon_name("media-playback-start-symbolic")
+        self.pause_play_btn.set_sensitive(False)  # until the queue has a file
         self.pause_play_btn.add_css_class("flat")
         self.pause_play_btn.add_css_class("circular")
         self.pause_play_btn.update_property(
@@ -962,6 +940,10 @@ class MainWindow(
 
         # Add visualizer container to the bottom part of the vertical paned
         self.vertical_paned.set_end_child(visualizer_container)
+        self._fit_pending = False
+        self.vertical_paned.connect(
+            "notify::max-position", weak_callback(self._on_paned_allocated)
+        )
 
         # Hide visualizer waveform initially (shown when files are added)
         # Seekbar and controls bar stay visible
@@ -972,16 +954,6 @@ class MainWindow(
         self.play_selection_switch.set_visible(cut_enabled)
         self.zoom_box.set_visible(cut_enabled)
         self.seekbar.set_visible(True)
-        self.visualizer_frame.set_visible(cut_enabled)
-
-        # Set initial position, but don't rely on it for final height
-        # We'll adjust this after the window is mapped
-        self.vertical_paned.set_position(300)  # Use a reasonable initial position
-
-        # Connect to position changes to save visualizer height
-        self.vertical_paned.connect(
-            "notify::position", weak_callback(self._on_visualizer_height_changed)
-        )
 
         # Apply tooltips to all UI elements (must be after all widgets are created)
         self._apply_tooltips()
@@ -995,15 +967,55 @@ class MainWindow(
         self.prev_audio_btn.set_visible(has_multiple_files)
         self.next_audio_btn.set_visible(has_multiple_files)
         self.convert_button.set_visible(has_files)
+        self.pause_play_btn.set_sensitive(has_files)
         self.convert_button.set_label(
             gettext.ngettext("Convert %d file", "Convert %d files", count) % count
         )
 
         # Show the waveform only while cutting; seekbar and controls stay visible.
-        cutting = self.cut_row.get_selected() > 0
-        self.visualizer_frame.set_visible(has_files and cutting)
-        if not has_files or not cutting:
-            self._sources.idle(self._update_paned_for_cut_mode, False)
+        self._set_waveform_visible(has_files and self.cut_row.get_selected() > 0)
+
+    def _set_waveform_visible(self, visible):
+        if visible == self.visualizer_frame.get_visible():
+            return
+        self._remember_waveform_height()
+        self.visualizer_frame.set_visible(visible)
+        self._fit_bottom_panel()
+
+    def _on_paned_allocated(self, *_args):
+        if self._fit_pending:
+            self._fit_pending = False
+            self._sources.idle(self._fit_bottom_panel)
+
+    def _remember_waveform_height(self):
+        """Keep the height the person dragged the waveform to."""
+        height = self.visualizer_frame.get_height()
+        if self.visualizer_frame.get_visible() and height >= 100:
+            self.visualizer_height = height
+            self.app.config.set("visualizer_height", str(height))
+
+    def _fit_bottom_panel(self):
+        """Give the bottom panel its controls, plus the waveform while cutting."""
+        paned = self.vertical_paned
+        if not self.visualizer_frame.get_visible():
+            # Clamped to the largest position that keeps the controls whole.
+            paned.set_position(GLib.MAXINT32)
+            return
+        if paned.get_height() <= 0:
+            # Not allocated yet: the paned's first allocation retries.
+            self._fit_pending = True
+            return
+        # The measured minimum holds the waveform at its 100 px floor.
+        panel = self.visualizer_container.measure(
+            Gtk.Orientation.VERTICAL, paned.get_width()
+        )[0]
+        extra = self.visualizer_height - 100
+        handle = (
+            paned.get_height()
+            - self.split_view.get_height()
+            - self.visualizer_container.get_height()
+        )
+        paned.set_position(max(200, paned.get_height() - handle - panel - extra))
 
     def _refresh_audio_outputs(self):
         devices = [
@@ -1157,6 +1169,7 @@ class MainWindow(
         self._dialog_cancellable.cancel()
         if not self.is_maximized():
             self._save_window_size()
+        self._remember_waveform_height()
         self._sources.close()
         self._playback_sources.close()
         self.conversion.cleanup()
@@ -1280,17 +1293,7 @@ class MainWindow(
         """Restore the visualizer height after the window is shown."""
         self.visualizer.set_markers_enabled(self.cut_row.get_selected() > 0)
 
-        window_height = self.get_height()
-        if window_height < 100:  # Not allocated yet; nothing reliable to restore
-            return
-
-        # Calculate proper position from saved visualizer height
-        visualizer_position = max(200, window_height - self.visualizer_height - 50)
-        self.vertical_paned.set_position(visualizer_position)
-
-        # If cut is off, collapse the waveform area
-        if self.cut_row.get_selected() == 0:
-            self._sources.idle(self._update_paned_for_cut_mode, False)
+        self._fit_bottom_panel()
 
     def on_clear_queue(self, button):
         dialog = Adw.AlertDialog(

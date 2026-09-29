@@ -219,13 +219,14 @@ class ConversionController:
                 "failed": _("Failed"),
                 "cancelled": _("Cancelled"),
             }[item.status]
-            message = Gtk.Label(
-                label=status + (": " + item.message if item.message else ""),
-                wrap=True,
-                xalign=0,
-                selectable=True,
-            )
-            group.add(message)
+            # The output row already says a plain success; a group puts plain
+            # widgets after its rows, so the status goes in the description.
+            if item.status != "success" or item.message:
+                group.set_description(
+                    GLib.markup_escape_text(
+                        status + (": " + item.message if item.message else "")
+                    )
+                )
             for warning in item.warnings:
                 group.add(Gtk.Label(label=warning, wrap=True, xalign=0))
             for output in item.outputs:

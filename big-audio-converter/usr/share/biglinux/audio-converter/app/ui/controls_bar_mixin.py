@@ -4,7 +4,7 @@
 Controls Bar Mixin for MainWindow.
 
 Extracts all bottom controls bar related methods (zoom popover, volume popover,
-speed popover, visualizer height/viewport sync) from
+speed popover, visualizer viewport sync) from
 MainWindow into a reusable mixin.
 
 Usage:
@@ -25,55 +25,6 @@ logger = logging.getLogger(__name__)
 
 class ControlsBarMixin:
     """Mixin handling bottom controls bar interactions: zoom, volume, speed popovers and visualizer sync."""
-
-    # --- Visualizer height ---
-
-    def _on_visualizer_height_changed(self, paned, param):
-        """Handle visualizer height changes and save to config."""
-        # Don't save position when cut is off (paned is in collapsed state)
-        if self.cut_row.get_selected() == 0:
-            return
-
-        # Get total height and position
-        total_height = self.get_height()
-        position = paned.get_position()
-
-        # Calculate visualizer height (accounting for margins, zoom control bar, and seekbar)
-        visualizer_height = (
-            total_height - position - 50 - 34
-        )  # 50px = 10px margin + 40px zoom controls; 34px = seekbar (28px + 6px margin)
-
-        # Define minimum heights for both sections
-        min_top_height = 200
-        min_visualizer_height = 100
-
-        # Make sure we don't resize the visualizer too small
-        if visualizer_height < min_visualizer_height:
-            # Calculate the maximum valid position to maintain minimum visualizer height
-            max_position = total_height - min_visualizer_height - 50 - 34
-            # Adjust the position
-            paned.set_position(max_position)
-            # Recalculate visualizer height
-            visualizer_height = min_visualizer_height
-
-        # Make sure we don't resize the top section too small (only check if visualizer constraint is satisfied)
-        elif position < min_top_height:
-            # Prevent the top section from getting too small
-            paned.set_position(min_top_height)
-            # Recalculate visualizer height
-            visualizer_height = total_height - min_top_height - 50 - 34
-
-        # Only save if it's a reasonable value
-        if (
-            visualizer_height >= min_visualizer_height
-            and visualizer_height <= total_height * 0.8
-        ):
-            # Update stored height
-            self.visualizer_height = visualizer_height
-            # Save to config
-            self.app.config.set("visualizer_height", str(visualizer_height))
-
-            # Visualizer height is managed by GTK Box layout via vexpand
 
     # --- Zoom popover ---
 

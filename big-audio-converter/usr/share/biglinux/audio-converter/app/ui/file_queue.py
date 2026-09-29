@@ -111,6 +111,8 @@ class FileQueueRow(Adw.ActionRow):
         self.add_suffix(self.progress_bar)
 
         self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic")
+        self.more_button.add_css_class("flat")
+        self.more_button.set_valign(Gtk.Align.CENTER)
         self.more_button.set_tooltip_text(_("File actions"))
         self.more_button.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("File actions")]
