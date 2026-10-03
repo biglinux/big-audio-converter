@@ -1,1304 +1,48 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the big-audio-converter package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+# Translation of big-audio-converter.
+# Distributed under the same license as the package.
+# Original catalogs: BigLinux contributors.
+# Completed with AI assistance; see TRANSLATION-REPORT.md.
+
 msgid ""
 msgstr ""
 "Project-Id-Version: big-audio-converter\n"
-"Report-Msgid-Bugs-To: https://github.com/biglinux/big-audio-converter/"
-"issues\n"
-"Last-Translator: BigLinux contributors\n"
+"Report-Msgid-Bugs-To: https://github.com/biglinux/big-audio-converter/issues\n"
+"POT-Creation-Date: 2026-10-03 00:00+0000\n"
+"PO-Revision-Date: 2026-10-03 00:00+0000\n"
+"Last-Translator: AI-assisted localization\n"
 "Language-Team: fr\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: attranslate\n"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:59
-msgid "The application is closing."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:63
-msgid ""
-"A conversion is still running. Wait for it to finish cancelling before "
-"starting another."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:109
-msgid "Conversion cancelled."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:130
-msgid "The output path is invalid. Check the source filename and destination."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:157
-msgid "An unexpected error stopped this conversion."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:186
-msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:217
-msgid ""
-"Fast Copy cannot apply effects, change channels or resample. Select an "
-"encoding format."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:228
-msgid ""
-"Fast Copy preserves encoded audio packets; cut boundaries are approximate. "
-"Effects are not applied."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:240
-msgid ""
-"Floating-point audio was explicitly converted to 24-bit integer PCM for "
-"FLAC; this is not a bit-exact copy."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:246
-msgid ""
-"Opus uses a 48 kHz playback sample clock. The source sample rate cannot be "
-"represented unchanged in the output container."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:253
-#, python-brace-format
-msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:268
-msgid "Positive gain may clip. Enable clipping protection or reduce the gain."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:274
-msgid "This raw audio format cannot preserve all tags or artwork."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:281
-msgid "Artwork is not preserved by this output profile."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:347
-msgid ""
-"The source changed during conversion. No output was published; add the file "
-"again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:361
-msgid "Conversion cancelled. No incomplete output was published."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:375
-msgid ""
-"The file or destination could not be accessed. Check permissions and free "
-"disk space."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:384
-msgid "The media information or conversion settings are invalid."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:401
-msgid "The encoder changed the requested sample rate. No output was published."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:409
-msgid ""
-"The encoder changed the requested channel count. No output was published."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:417
-msgid ""
-"This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV "
-"or install a compatible FFmpeg package."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/converter.py:436
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:153
-msgid "Select a supported output format."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:24
-msgid "Select a valid local media file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:32
-msgid "The source file is missing or is not a regular file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:39
-msgid "The selected audio track is invalid. Add the file again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:44
-msgid "The source video is missing. Add the file again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:65
-msgid "A segment has invalid start or end times."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:70
-msgid "Every segment must have a finite end time after its start."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:79
-msgid "A segment extends beyond the source audio. Adjust its end time."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:85
-msgid "A segment must contain at least one audio sample."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:168
-msgid "FFprobe is not installed. Install the FFmpeg package and try again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:195
-msgid "The media file could not be read. It may be damaged or unsupported."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:203
-msgid "FFprobe returned invalid media information."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:208
-msgid "FFprobe returned incomplete media information."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:221
-msgid "This file does not contain the selected audio track."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/media.py:266
-msgid "This PCM precision cannot be preserved by the selected WAV encoder."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:153
-msgid ""
-"Audio preview is unavailable. Install mpv and python-mpv, then reopen the "
-"application."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:180
-msgid "Audio outputs could not be listed. Try reopening the output selector."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:202
-msgid ""
-"The selected audio output was disconnected. Playback is paused. Choose an "
-"output or resume using the system default."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:215
-msgid "This audio output is no longer available. Choose another output."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:227
-msgid "The audio output could not be selected. Choose another output."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:253
-msgid "The selected audio track is unavailable. Add the file again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:285
-msgid "The audio could not be played. Check the file and audio output device."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:411
-msgid "This audio position could not be reached."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/player.py:460
-msgid ""
-"A preview effect could not be applied. Check the selected effects and "
-"installed plugins."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/probe_service.py:59
-msgid ""
-"Too many files are waiting for inspection. Wait for some files to finish, "
-"then add more."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/probe_service.py:80
-msgid "Select a regular local media file, not a folder or device."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/probe_service.py:100
-msgid "The file changed during inspection. Add it again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/process.py:109
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/process.py:137
-msgid "The media command timed out."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/process.py:127
-msgid "The media information is too large to process safely."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:111
-#, python-brace-format
-msgid "Invalid value for {key}."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:115
-#, python-brace-format
-msgid "{key} must be between {low} and {high}."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:123
-#, python-brace-format
-msgid "Invalid switch value for {key}."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:133
-msgid "The equalizer bands are invalid."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:140
-msgid "The equalizer needs ten finite gains between -40 and 40 dB."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:144
-msgid "Select a supported noise reduction mode."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:169
-msgid ""
-"FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow "
-"conversion to 24-bit PCM in Advanced encoding."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:194
-msgid "The selected bitrate is not supported by this output profile."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:201
-msgid "Select original, mono or stereo channels."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:209
-msgid "MP3 supports mono or stereo. Select stereo channels or another format."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:216
-msgid "Select a valid output sample rate."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:223
-msgid "The selected codec does not support that sample rate."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:290
-msgid ""
-"The selected noise reduction plugin is unavailable. Install it or turn noise "
-"reduction off."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/profiles.py:319
-msgid "The audio plugin path is unsupported."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:32
-msgid "There is not enough free disk space. Free some space and try again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:39
-msgid "The file or destination is not accessible. Check its permissions."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:46
-msgid ""
-"The required audio encoder is unavailable. Install a compatible FFmpeg "
-"package."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:53
-msgid "A selected audio effect is unavailable in this FFmpeg installation."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:59
-msgid ""
-"The audio could not be processed. Check the file and selected output "
-"settings."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:150
-msgid ""
-"Effects require re-encoding. Select an audio format instead of Fast Copy."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:248
-msgid "An intermediate segment has an unsafe path."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/segment_processor.py:331
-msgid "The output contains no readable audio. No file was published."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:56
-msgid "The audio contains non-finite samples."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:98
-msgid "The decoded audio ends with an incomplete sample frame."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:101
-msgid "The file contains no readable audio samples."
-msgstr ""
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 146
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 176
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:239
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:150
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:188
-msgid "Generating waveform..."
-msgstr "Génération de forme d'onde..."
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:247
-msgid "FFmpeg is not installed."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:300
-msgid "The waveform could not be generated."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/audio/waveform.py:319
-msgid "The source changed while its waveform was being generated."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
-msgid "Inspecting audio"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:39
-msgid ""
-"Files are still being inspected. Conversion will be available when "
-"inspection finishes."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 914
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "No files to convert"
-msgstr "Aucun fichier à convertir"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 914
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "Please add at least one file to convert."
-msgstr "Veuillez ajouter au moins un fichier à convertir."
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:57
-msgid "Check conversion settings"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1002
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:63
-msgid "Converting Files"
-msgstr "Conversion de fichiers"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77
-msgid "Preparing conversion…"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
-msgid "Overall conversion progress"
-msgstr ""
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1010
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1383
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2082
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2162
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:881
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1247
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1266
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:258
-msgid "Cancel"
-msgstr "Annuler"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
-msgid "Conversion could not start"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:107
-msgid "Cancelling…"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:109
-msgid "Stopping the current operation and removing incomplete outputs…"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:127
-#, python-brace-format
-msgid ""
-"File {current} of {total}\n"
-"{name}"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:158
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:218
-msgid "Converted"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:159
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:219
-msgid "Failed"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:160
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:220
-msgid "Cancelled"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:180
-msgid "Conversion Results"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:193
-#, python-brace-format
-msgid "Converted: {success} · Failed: {failed} · Cancelled: {cancelled}"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:199
-msgid "Existing files were not replaced. Inputs remain in the queue."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:240
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:243
-msgid "Show output file"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:251
-msgid "Technical details"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:265
-msgid "Retry unfinished files"
-msgstr ""
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1171
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1174
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_dialog.py, line: 31
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:270
-msgid "Close"
-msgstr "Fermer"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:291
-msgid "Folder could not be opened"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:292
-#, python-brace-format
-msgid "Open your file manager and navigate to: {path}"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 87
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:98
-msgid "Default Voice"
-msgstr "Voix par défaut"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 91
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:102
-msgid "Natural (No Effects)"
-msgstr "Naturel (Pas d'effets)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 95
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:106
-msgid "Crystal Voice"
-msgstr "Voix Cristal"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 99
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:110
-msgid "Radio Host"
-msgstr "Animateur radio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 103
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:114
-msgid "Velvet Voice"
-msgstr "Voix Velours"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 107
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:118
-msgid "Extra Brightness"
-msgstr "Luminosité supplémentaire"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 111
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122
-msgid "Soften 'S' (De-esser)"
-msgstr "Adoucir 'S' (Dé-esseur)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 115
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:126
-msgid "Remove Rumble"
-msgstr "Supprimer Rumble"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 119
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:130
-msgid "Present Voice"
-msgstr "Voix Présente"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 123
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:134
-msgid "Custom"
-msgstr "Personnalisé"
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 744
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_dialog.py, line: 21
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:158
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:534
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
-msgid "Equalizer"
-msgstr "Égaliseur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 163
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:174
-msgid "Equalizer preset"
-msgstr "Préréglage d'égaliseur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 174
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:188
-msgid "Close equalizer"
-msgstr "Fermer l'égaliseur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/equalizer_panel.py, line: 213
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:227
-#, python-brace-format
-msgid "Equalizer band {} Hz"
-msgstr "Bande d'égaliseur {} Hz"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 72
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:85
-msgid "Play file"
-msgstr "Lire le fichier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 84
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:98
-msgid "Remove from queue"
-msgstr "Retirer de la file d'attente"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:116
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:118
-msgid "File actions"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:139
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:882
-msgid "Move to Trash"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 103
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:142
-msgid "Open Containing Folder"
-msgstr "Ouvrir le dossier contenant"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 106
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:145
-msgid "More Information..."
-msgstr "Plus d'informations..."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 179
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:342
-msgid "File Information"
-msgstr "Informations sur le fichier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 191
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:350
-msgid "Copy information to clipboard"
-msgstr "Copier les informations dans le presse-papiers"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:382
-msgid "No audio information is available."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 479
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:391
-msgid "File Details"
-msgstr "Détails du fichier"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:391
-msgid "Path"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 484
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:394
-msgid "Audio Properties"
-msgstr "Propriétés audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 525
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:460
-msgid "Metadata Tags"
-msgstr "Étiquettes de métadonnées"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 602
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:519
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:525
-msgid "Copy value"
-msgstr "Copier la valeur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 703
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:601
-msgid "No Audio Files"
-msgstr "Aucun fichier audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 705
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:603
-msgid "Drag files here or use the Add Files Button"
-msgstr ""
-"Faites glisser des fichiers ici ou utilisez le bouton Ajouter des fichiers."
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:660
-#, python-brace-format
-msgid "Track {number}"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:732
-msgid "This file has no supported audio track."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:790
-msgid "Unknown duration"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:793
-#, python-brace-format
-msgid "{rate} Hz"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:805
-msgid "Choose a valid local media file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:814
-msgid "Inspecting audio…"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:833
-msgid "The queue limit is 10,000 files. Convert this batch before adding more."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:860
-#, python-brace-format
-msgid "{count} file"
-msgid_plural "{count} files"
-msgstr[0] ""
-msgstr[1] ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:870
-msgid ""
-"Cancel the conversion or wait for it to finish before moving its input to "
-"Trash."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:876
-msgid "Move File to Trash?"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:878
-#, python-brace-format
-msgid ""
-"Move '{name}' to Trash? All of its tracks will be removed from the queue."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:896
-msgid ""
-"The file is in use by a conversion. Cancel it before moving the input to "
-"Trash."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py:909
-msgid "The file could not be moved to Trash. It has not been deleted."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 76
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 509
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:75
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:86
-msgid "Clear queue"
-msgstr "Vider la file d'attente"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 236
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:89
-msgid "0 files"
-msgstr "0 fichiers"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 754
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:99
-msgid "Show help on hover"
-msgstr "Afficher l'aide au survol"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 346
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:100
-msgid "Show Welcome Screen"
-msgstr "Afficher l'écran d'accueil"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:102
-msgid "Reset All Settings…"
-msgstr "Réinitialiser tous les réglages…"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 347
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:105
-msgid "About"
-msgstr "À propos"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 94
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:110
-msgid "Main menu"
-msgstr "Menu principal"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 384
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:155
-msgid "Add Files"
-msgstr "Ajouter des fichiers"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 390
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:163
-msgid "Convert"
-msgstr "Convertir"
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 90
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/main.py, line: 104
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:213
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:185
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:209
-msgid "Audio Converter"
-msgstr "Convertisseur Audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 686
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:481
-msgid "Play only selected area"
-msgstr "Lire uniquement la zone sélectionnée"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:487
-msgid "Edit Segments…"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 706
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:508
-msgid "Auto-advance to next track"
-msgstr "Avance automatique vers la piste suivante"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:538
-msgid "Listen to original"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:540
-msgid "Temporarily listen without effects. Export settings stay unchanged."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:552
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:554
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:567
-msgid "Audio output"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:558
-msgid "Listen through"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:559
-msgid "Only affects playback. Converted files stay unchanged."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:567
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:981
-msgid "System default"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:574
-msgid "Refresh audio outputs"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 760
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:605
-msgid "Previous track"
-msgstr "Piste précédente"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 774
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:621
-msgid "Play or pause"
-msgstr "Lire ou mettre en pause"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 785
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:635
-msgid "Next track"
-msgstr "Piste suivante"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 706
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:661
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:674
-msgid "Volume"
-msgstr "Volume"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 836
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:687
-msgid "Volume level"
-msgstr "Niveau de volume"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 873
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:716
-msgid "Playback speed"
-msgstr "Vitesse de lecture"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 714
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:729
-msgid "Speed"
-msgstr "Vitesse"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 899
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:742
-msgid "Playback speed level"
-msgstr "Niveau de vitesse de lecture"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 939
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:774
-msgid "Waveform zoom"
-msgstr "Zoom de forme d'onde"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 955
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:789
-msgid "Zoom"
-msgstr "Zoom"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 967
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:802
-msgid "Waveform zoom level"
-msgstr "Niveau de zoom de la forme d'onde"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:913
-#, python-format
-msgid "Convert %d file"
-msgid_plural "Convert %d files"
-msgstr[0] ""
-msgstr[1] ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1197
-msgid "OK"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
-msgid "No audio selected"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1141
-msgid "Add a file and select it before editing segments."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1146
-msgid "Audio duration unavailable"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1148
-msgid ""
-"Enable cutting and wait for the waveform to finish before editing this file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1191
-msgid ""
-"Other valid files remain in the queue. Check these files and add them again."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1195
-msgid "Some files could not be added"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1211
-msgid "Audio preview"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1241
-msgid "Reset all settings?"
-msgstr "Réinitialiser tous les réglages ?"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1243
-msgid ""
-"Format, quality, output folder, cutting, effects and equalizer return to "
-"their defaults. The queue and your source files are kept."
-msgstr ""
-"Le format, la qualité, le dossier de sortie, la découpe, les effets et "
-"l’égaliseur reviennent à leurs valeurs par défaut. La file d’attente et vos "
-"fichiers source sont conservés."
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1248
-msgid "Reset"
-msgstr "Réinitialiser"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1380
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1261
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1267
-msgid "Clear Queue"
-msgstr "Vider la file d'attente"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1263
-msgid ""
-"Remove the queue entries and their edits? Source files will not be deleted."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1509
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1311
-msgid "Select Audio or Video Files"
-msgstr "Sélectionnez des fichiers audio ou vidéo"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1513
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1315
-msgid "Audio and Video files"
-msgstr "Fichiers audio et vidéo"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1563
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1365
-msgid "All files"
-msgstr "Tous les fichiers"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1391
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:85
+"X-Generator: Contextual translation and automated validation\n"
+
+#: usr/share/biglinux/audio-converter/main.py:86
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1403
 msgid "Local files only"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1393
-msgid "Some selected files are remote. Download them before adding them."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/main_window.py:1404
-msgid "Files could not be selected"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
-msgid "Delete All Segments"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
-msgid "Delete all marked segments? Source files will not be changed."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2107
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:196
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:261
-msgid "Delete All"
-msgstr "Tout supprimer"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:255
-msgid "Delete Segment"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:256
-#, python-brace-format
-msgid "Delete segment {number}?"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2094
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/marker_manager.py:259
-msgid "Delete"
-msgstr "Supprimer"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
-msgid "Edit Segments"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:37
-msgid ""
-"Set start and end times in seconds. Changes are applied only when you press "
-"Apply."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:44
-msgid "Position (seconds)"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:47
-msgid "Playback position in seconds"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:49
-msgid "_Seek"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:64
-msgid "_Add Segment"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:74
-msgid "_Cancel"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:76
-msgid "_Apply"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:97
-msgid "Start (seconds)"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:99
-msgid "End (seconds)"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:107
-msgid "Move segment up"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:115
-msgid "Move segment down"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:123
-msgid "Remove segment"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:143
-#, python-brace-format
-msgid "Segment {number}"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:146
-#, python-brace-format
-msgid "Segment {number} start in seconds"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:150
-#, python-brace-format
-msgid "Segment {number} end in seconds"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/segment_editor.py:194
-msgid ""
-"The active file changed. Reopen the segment editor for the current file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:159
-msgid "Format"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:161
-msgid "Copy without changing quality"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:162
-msgid "MP3 — widely compatible"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:163
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — format ouvert"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:164
-msgid "FLAC — lossless, smaller than WAV"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:165
-msgid "WAV — uncompressed"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:166
-msgid "AAC — good quality in small files"
-msgstr "AAC — bonne qualité dans des fichiers légers"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:167
-msgid "Opus — smallest files, great for voice"
-msgstr "Opus — fichiers les plus légers, idéal pour la voix"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:169
-msgid "Copy"
-msgstr "Copier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 692
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:178
-msgid "Bitrate"
-msgstr "Débit binaire"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:186
-msgid "Volume (%)"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:193
-msgid "Speed (×)"
-msgstr ""
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 112
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 723
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:202
-msgid "Noise Reduction"
-msgstr "Réduction du bruit"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:209
-msgid "Noise reduction mode"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:211
-msgid "Light — DeepFilterNet3"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
-msgid "Higher quality — DPDFNet-2 48 kHz"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
-msgid "Noise reduction strength (%)"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
-msgid "Lower values keep more background sound; 0 leaves it unchanged"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:236
-msgid "Configure…"
-msgstr "Configurer…"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
-msgid "Keep the whole audio"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
-msgid "Cut in timeline order"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:245
-msgid "Cut in the order marked"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:247
-msgid "Cut audio"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Save segments"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 103
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Separate Files"
-msgstr "Fichiers séparés"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 103
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Merge into One"
-msgstr "Fusionner en un seul"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:261
-msgid "Show waveform"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
-msgid "Save to"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:454
-msgid "Same folder as each source"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:272
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:274
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:426
-msgid "Choose output folder"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:280
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:281
-msgid "Use source folders"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
-msgid "Adjust sound"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 209
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:296
-msgid "Noise Gate"
-msgstr "Porte de bruit"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:297
-msgid "Silences the background between words"
-msgstr "Coupe le bruit de fond entre les mots"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 238
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:304
-msgid "Compressor"
-msgstr "Compresseur"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:305
-msgid "Evens out loud and quiet parts"
-msgstr "Équilibre les passages forts et faibles"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 220
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 249
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:315
-msgid "Intensity"
-msgstr "Intensité"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 267
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
-msgid "High-Pass Filter"
-msgstr "Filtre passe-haut"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 268
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
-msgid "Removes low-frequency rumble"
-msgstr "Supprime le grondement basse fréquence"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 273
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:331
-msgid "Frequency (Hz)"
-msgstr "Fréquence (Hz)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 319
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:341
-msgid "Loudness Normalization"
-msgstr "Normalisation de la loudness"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
-msgid "Target: −16 LUFS; changes the original volume"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:349
-msgid "Clipping protection"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:350
-msgid "Limit peaks explicitly; may change dynamics"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:358
-msgid "Advanced encoding"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:359
-msgid "Keep original properties when supported"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 64
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-msgid "Channels"
-msgstr "Canaux"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:374
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:496
-msgid "Original"
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 62
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 62
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 62
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-msgid "Mono"
-msgstr "Mono"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 62
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-msgid "Stereo"
-msgstr "Stéréo"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
-msgid "Sample rate"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
-msgid "Allow conversion to 24-bit PCM"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:383
-msgid ""
-"For floating-point audio exported to FLAC. Reduces precision; WAV preserves "
-"the original representation."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:400
-msgid ""
-"Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not "
-"match the exact times. Effects are bypassed in preview and export."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:411
-msgid ""
-"Boosting volume or equalizer bands can distort audio. Reduce gain or enable "
-"clipping protection."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:440
-msgid "Local folder required"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:441
-msgid "Choose a folder on the local filesystem."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:596
-#, python-brace-format
-msgid "Unavailable: install {package}"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:634
-msgid "Filters and loudness"
-msgstr "Filtres et volume sonore"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 39
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:38
-msgid "Audio waveform visualizer"
-msgstr "Visualiseur d'onde audio"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1252
-msgid "Waveform could not be generated"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1253
-msgid "Numeric segment editing is still available."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2722
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1255
-msgid "Waveform visualization disabled"
-msgstr "Visualisation de la forme d'onde désactivée"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2723
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1256
-msgid "Enable in settings to see waveform"
-msgstr "Activer dans les paramètres pour voir l'onde sonore."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2725
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1258
-msgid "No audio loaded"
-msgstr "Aucun audio chargé"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 1450
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/visualizer.py:1380
-msgid "Audio position seekbar"
-msgstr "Barre de recherche de position audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 185
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
-msgid "Welcome"
-msgstr "Bienvenue"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:33
-msgid "Convert audio in three steps"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:39
-msgid "1. Add your files"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:41
-msgid ""
-"Add audio or video files. Videos with several audio tracks show one entry "
-"for each track."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:45
-msgid "2. Choose the output"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:47
-msgid ""
-"Choose MP3, FLAC, Ogg Vorbis, WAV, AAC or Opus and a destination folder. "
-"Original files are never replaced."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:51
-msgid "3. Convert"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:53
-msgid ""
-"The results list each output and any files that need another attempt. Your "
-"queue stays available for repeating an operation."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:57
-msgid "Editing and effects"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:59
-msgid ""
-"Edit Segments provides start and end times and keyboard controls. Volume, "
-"speed, equalizer and other enabled effects also change exported audio."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:63
-msgid "Fast Copy"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:65
-msgid ""
-"Copy encoded audio without re-encoding. Cut boundaries are approximate; "
-"effects are bypassed. Container support determines which tags and artwork "
-"can be kept."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:69
-msgid "Speech cleanup"
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:71
-msgid ""
-"Neural noise reduction requires the optional DeepFilterNet3 or DPDFNet-2 "
-"plugin and is intended for speech, not music. Unavailable effects are "
-"identified in settings."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 147
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:82
-msgid "Show dialog on startup"
-msgstr "Afficher la boîte de dialogue au démarrage"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 165
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:93
-msgid "Let's Start"
-msgstr "Commençons"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:9
+msgstr "Fichiers locaux uniquement"
+
+#: usr/share/biglinux/audio-converter/main.py:87
+msgid "Download this file to a local folder before adding it."
+msgstr "Téléchargez ce fichier dans un dossier local avant de l’ajouter."
+
+#: usr/share/biglinux/audio-converter/main.py:216
+#: usr/share/biglinux/audio-converter/main.py:192
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:213
+msgid "Audio Converter"
+msgstr "Convertisseur audio"
+
+#: usr/share/biglinux/audio-converter/main.py:194
+#: usr/share/biglinux/audio-converter/main.py:196
+msgid "BigLinux Team"
+msgstr "Équipe BigLinux"
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:9
 msgid "Choose the output format. Fast Copy does not apply effects."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:11
+msgstr "Choisissez le format de sortie. La copie directe n’applique aucun effet."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
 msgid ""
 "Higher values sound better and make larger files.\n"
 "96k: speech, smallest files\n"
@@ -1307,1078 +51,1401 @@ msgid ""
 "320k: highest MP3 quality\n"
 "Available values depend on the format."
 msgstr ""
-"Des valeurs plus élevées sonnent mieux et donnent des fichiers plus gros.\n"
-"96k : voix, fichiers les plus légers\n"
+"Les valeurs élevées améliorent le son et produisent des fichiers plus volumineux.\n"
+"96k : voix, fichiers les plus petits\n"
 "128k : podcasts et livres audio\n"
-"192k : musique, bon équilibre\n"
-"320k : meilleure qualité MP3\n"
+"192k : musique, un bon compromis\n"
+"320k : qualité MP3 maximale\n"
 "Les valeurs disponibles dépendent du format."
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:19
-msgid ""
-"Changes preview and export volume. Values above 100% can distort the audio."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:18
+#, no-python-format
+msgid "Changes preview and export volume. Values above 100% can distort the audio."
+msgstr "Modifie le volume de la préécoute et de l’exportation. Les valeurs supérieures à 100% peuvent déformer le son."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
 msgid "Changes preview and export speed while preserving pitch."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:23
-msgid ""
-"Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for "
-"music."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
+msgstr "Modifie la vitesse de la préécoute et de l’exportation sans changer la hauteur du son."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:22
+msgid "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
+msgstr "Réduit le bruit dans la voix avec DeepFilterNet3 ou DPDFNet. Ne convient pas à la musique."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
 msgid "Reduce quiet background sound between spoken phrases."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:26
+msgstr "Atténue les bruits de fond de faible niveau entre les phrases."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:26
 msgid "Adjust loudness to −16 LUFS. This changes the original volume."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
+msgstr "Ajuste la sonie à −16 LUFS. Cela modifie le volume d’origine."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
 msgid "Choose the order in which marked segments are exported."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:28
+msgstr "Choisissez l’ordre d’exportation des segments marqués."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:28
 msgid "Export each segment separately or join the selected segments."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:29
+msgstr "Exportez chaque segment séparément ou réunissez les segments sélectionnés."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:29
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:31
-msgid ""
-"Click the waveform to mark cuts, or drag markers to adjust them. Use the "
-"seek bar to preview. Edit Segments provides numeric and keyboard controls."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:34
+msgstr "Conservez la disposition d’origine des canaux ou effectuez un mixage en mono ou en stéréo."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:30
+msgid "Click the waveform to mark cuts, or drag markers to adjust them. Use the seek bar to preview. Edit Segments provides numeric and keyboard controls."
+msgstr "Cliquez sur la forme d’onde pour marquer des coupes, ou faites glisser les repères pour les ajuster. Utilisez la barre de position pour écouter le résultat. Modifier les segments propose des réglages numériques et des commandes au clavier."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:33
 msgid "Remove all entries from the queue without deleting source files."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
+msgstr "Retire tous les éléments de la file sans supprimer les fichiers sources."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
 msgid "Preview the previous file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
+msgstr "Écoutez le fichier précédent."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
 msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
+msgstr "Lance ou suspend la lecture. Raccourci clavier : Ctrl+Espace."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
 msgid "Preview the next file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:39
+msgstr "Écoutez le fichier suivant."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:39
 msgid "Preview only the marked segments."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
+msgstr "Écoutez uniquement les segments marqués."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
 msgid "Preview the next track after the current track ends."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:41
+msgstr "Lit la piste suivante à la fin de la piste en cours."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:41
 msgid "Show the equalizer. Its settings affect exported audio."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:42
+msgstr "Affiche l’égaliseur. Ses réglages affectent le son exporté."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:42
 msgid "Preview this audio file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:43
+msgstr "Écoutez ce fichier audio."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:43
 msgid "Remove this entry without deleting the source file."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:45
+msgstr "Retire cet élément sans supprimer le fichier source."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:44
 msgid "More actions are available from the adjacent menu button."
+msgstr "Le bouton de menu adjacent propose d’autres actions."
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
+msgid "Delete All Segments"
+msgstr "Supprimer tous les segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
+msgid "Delete all marked segments? Source files will not be changed."
+msgstr "Supprimer tous les segments marqués ? Les fichiers sources ne seront pas modifiés."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:894
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1259
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1278
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:258
+msgid "Cancel"
+msgstr "Annuler"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:196
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:261
+msgid "Delete All"
+msgstr "Tout supprimer"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:255
+msgid "Delete Segment"
+msgstr "Supprimer le segment"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:256
+#, python-brace-format
+msgid "Delete segment {number}?"
+msgstr "Supprimer le segment {number} ?"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:259
+msgid "Delete"
+msgstr "Supprimer"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:98
+msgid "Default Voice"
+msgstr "Voix par défaut"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:102
+msgid "Natural (No Effects)"
+msgstr "Naturel (sans effets)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:106
+msgid "Crystal Voice"
+msgstr "Voix cristalline"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:110
+msgid "Radio Host"
+msgstr "Voix de radio"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:114
+msgid "Velvet Voice"
+msgstr "Voix veloutée"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:118
+msgid "Extra Brightness"
+msgstr "Brillance accrue"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122
+msgid "Soften 'S' (De-esser)"
+msgstr "Atténuer les « s » (de-esser)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:126
+msgid "Remove Rumble"
+msgstr "Supprimer les grondements"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:130
+msgid "Present Voice"
+msgstr "Voix avec présence"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:134
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:158
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:546
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+msgid "Equalizer"
+msgstr "Égaliseur"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:174
+msgid "Equalizer preset"
+msgstr "Préréglage de l’égaliseur"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:188
+msgid "Close equalizer"
+msgstr "Fermer l’égaliseur"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:227
+#, python-brace-format
+msgid "Equalizer band {} Hz"
+msgstr "Bande de l’égaliseur à {} Hz"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:94
+msgid "Play file"
+msgstr "Lire le fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:107
+msgid "Remove from queue"
+msgstr "Retirer de la file"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:125
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:127
+msgid "File actions"
+msgstr "Actions sur le fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:148
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:895
+msgid "Move to Trash"
+msgstr "Mettre à la corbeille"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:151
+msgid "Open Containing Folder"
+msgstr "Ouvrir le dossier du fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:154
+msgid "More Information..."
+msgstr "Plus d’informations…"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:355
+msgid "File Information"
+msgstr "Informations sur le fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:363
+msgid "Copy information to clipboard"
+msgstr "Copier les informations dans le presse-papiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:395
+msgid "No audio information is available."
+msgstr "Aucune information audio disponible."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+msgid "File Details"
+msgstr "Détails du fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+msgid "Path"
+msgstr "Chemin"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:407
+msgid "Audio Properties"
+msgstr "Propriétés audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:473
+msgid "Metadata Tags"
+msgstr "Étiquettes de métadonnées"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:532
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:538
+msgid "Copy value"
+msgstr "Copier la valeur"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:614
+msgid "No Audio Files"
+msgstr "Aucun fichier audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:616
+msgid "Drag files here or use the Add Files Button"
+msgstr "Déposez des fichiers ici ou utilisez le bouton Ajouter des fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:673
+#, python-brace-format
+msgid "Track {number}"
+msgstr "Piste {number}"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:745
+msgid "This file has no supported audio track."
+msgstr "Ce fichier ne contient aucune piste audio prise en charge."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:803
+msgid "Unknown duration"
+msgstr "Durée inconnue"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:806
+#, python-brace-format
+msgid "{rate} Hz"
+msgstr "{rate} Hz"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:818
+msgid "Choose a valid local media file."
+msgstr "Choisissez un fichier audio ou vidéo local valide."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:827
+msgid "Inspecting audio…"
+msgstr "Analyse du son…"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:845
+msgid "The queue limit is 10,000 files. Convert this batch before adding more."
+msgstr "La file est limitée à 10 000 fichiers. Convertissez ce lot avant d’en ajouter d’autres."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:873
+#, python-brace-format
+msgid "{count} file"
+msgid_plural "{count} files"
+msgstr[0] "{count} fichier"
+msgstr[1] "{count} fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:882
+msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
+msgstr "Annulez la conversion ou attendez qu’elle se termine avant de mettre le fichier source à la corbeille."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:889
+msgid "Move File to Trash?"
+msgstr "Mettre le fichier à la corbeille ?"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:890
+#, python-brace-format
+msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
+msgstr "Mettre « {name} » à la corbeille ? Toutes ses pistes seront retirées de la file."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:908
+msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
+msgstr "Le fichier est utilisé par une conversion. Annulez-la avant de mettre le fichier source à la corbeille."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:921
+msgid "The file could not be moved to Trash. It has not been deleted."
+msgstr "Impossible de mettre le fichier à la corbeille. Il n’a pas été supprimé."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
+msgid "Inspecting audio"
+msgstr "Analyse du son"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:38
+msgid "Files are still being inspected. Conversion will be available when inspection finishes."
+msgstr "L’analyse des fichiers est toujours en cours. La conversion sera disponible une fois l’analyse terminée."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
+msgid "No files to convert"
+msgstr "Aucun fichier à convertir"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
+msgid "Please add at least one file to convert."
+msgstr "Ajoutez au moins un fichier à convertir."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:57
+msgid "Check conversion settings"
+msgstr "Vérifiez les paramètres de conversion"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:63
+msgid "Converting Files"
+msgstr "Conversion des fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77
+msgid "Preparing conversion…"
+msgstr "Préparation de la conversion…"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
+msgid "Overall conversion progress"
+msgstr "Progression globale de la conversion"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
+msgid "Conversion could not start"
+msgstr "Impossible de démarrer la conversion"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:107
+msgid "Cancelling…"
+msgstr "Annulation…"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:109
+msgid "Stopping the current operation and removing incomplete outputs…"
+msgstr "Arrêt de l’opération en cours et suppression des fichiers de sortie incomplets…"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:127
+#, python-brace-format
+msgid ""
+"File {current} of {total}\n"
+"{name}"
 msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:86
-msgid "Download this file to a local folder before adding it."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/main.py, line: 106
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/main.py, line: 108
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:187
-#: big-audio-converter/usr/share/biglinux/audio-converter/main.py:189
-msgid "BigLinux Team"
-msgstr "Équipe BigLinux"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 109
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
+"Fichier {current} sur {total}\n"
+"{name}"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:218
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:158
+msgid "Converted"
+msgstr "Converti"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:219
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:159
+msgid "Failed"
+msgstr "Échec"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:220
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:160
+msgid "Cancelled"
+msgstr "Annulé"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:180
+msgid "Conversion Results"
+msgstr "Résultats de la conversion"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:192
+#, python-brace-format
+msgid "Converted: {success} · Failed: {failed} · Cancelled: {cancelled}"
+msgstr "Convertis : {success} · Échecs : {failed} · Annulés : {cancelled}"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:198
+msgid "Existing files were not replaced. Inputs remain in the queue."
+msgstr "Les fichiers existants n’ont pas été remplacés. Les fichiers sources restent dans la file."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:240
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:243
+msgid "Show output file"
+msgstr "Afficher le fichier de sortie"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:251
+msgid "Technical details"
+msgstr "Détails techniques"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:265
+msgid "Retry unfinished files"
+msgstr "Réessayer les fichiers non terminés"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:270
+msgid "Close"
+msgstr "Fermer"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:291
+msgid "Folder could not be opened"
+msgstr "Impossible d’ouvrir le dossier"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:292
+#, python-brace-format
+msgid "Open your file manager and navigate to: {path}"
+msgstr "Ouvrez votre gestionnaire de fichiers et accédez à : {path}"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:86
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:75
+msgid "Clear queue"
+msgstr "Vider la file"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:89
+msgid "0 files"
+msgstr "0 fichier"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:99
+msgid "Show help on hover"
+msgstr "Afficher l’aide au survol"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:100
+msgid "Show Welcome Screen"
+msgstr "Afficher l’écran de bienvenue"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:102
+msgid "Reset All Settings…"
+msgstr "Réinitialiser tous les paramètres…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:105
+msgid "About"
+msgstr "À propos"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:110
+msgid "Main menu"
+msgstr "Menu principal"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:155
+msgid "Add Files"
+msgstr "Ajouter des fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:163
+msgid "Convert"
+msgstr "Convertir"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:493
+msgid "Play only selected area"
+msgstr "Lire uniquement la zone sélectionnée"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
+msgid "Edit Segments…"
+msgstr "Modifier les segments…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:520
+msgid "Auto-advance to next track"
+msgstr "Passer automatiquement à la piste suivante"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
+msgid "Listen to original"
+msgstr "Écouter l’original"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:552
+msgid "Temporarily listen without effects. Export settings stay unchanged."
+msgstr "Écoutez temporairement sans effets. Les paramètres d’exportation restent inchangés."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:564
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:566
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+msgid "Audio output"
+msgstr "Sortie audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:570
+msgid "Listen through"
+msgstr "Écouter sur"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:571
+msgid "Only affects playback. Converted files stay unchanged."
+msgstr "Affecte uniquement la lecture. Les fichiers convertis restent inchangés."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:993
+msgid "System default"
+msgstr "Valeur par défaut du système"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:586
+msgid "Refresh audio outputs"
+msgstr "Actualiser les sorties audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:617
+msgid "Previous track"
+msgstr "Piste précédente"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:633
+msgid "Play or pause"
+msgstr "Lecture ou pause"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:647
+msgid "Next track"
+msgstr "Piste suivante"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:671
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:672
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:684
+msgid "Volume"
+msgstr "Volume"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:697
+msgid "Volume level"
+msgstr "Niveau du volume"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:724
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:726
+msgid "Playback speed"
+msgstr "Vitesse de lecture"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:739
+msgid "Speed"
+msgstr "Vitesse"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:752
+msgid "Playback speed level"
+msgstr "Réglage de la vitesse de lecture"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:782
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:784
+msgid "Waveform zoom"
+msgstr "Zoom sur la forme d’onde"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:799
+msgid "Zoom"
+msgstr "Zoom"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:812
+msgid "Waveform zoom level"
+msgstr "Niveau de zoom sur la forme d’onde"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:925
+#, python-format
+msgid "Convert %d file"
+msgid_plural "Convert %d files"
+msgstr[0] "Convertir %d fichier"
+msgstr[1] "Convertir %d fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1108
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1209
+msgid "OK"
+msgstr "Valider"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1152
+msgid "No audio selected"
+msgstr "Aucun son sélectionné"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1153
+msgid "Add a file and select it before editing segments."
+msgstr "Ajoutez un fichier et sélectionnez-le avant de modifier les segments."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1158
+msgid "Audio duration unavailable"
+msgstr "Durée du son indisponible"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1159
+msgid "Enable cutting and wait for the waveform to finish before editing this file."
+msgstr "Activez la découpe et attendez la fin de la génération de la forme d’onde avant de modifier ce fichier."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1202
+msgid "Other valid files remain in the queue. Check these files and add them again."
+msgstr "Les autres fichiers valides restent dans la file. Vérifiez ces fichiers et ajoutez-les à nouveau."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1207
+msgid "Some files could not be added"
+msgstr "Certains fichiers n’ont pas pu être ajoutés"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1223
+msgid "Audio preview"
+msgstr "Préécoute audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1253
+msgid "Reset all settings?"
+msgstr "Réinitialiser tous les paramètres ?"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1254
+msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
+msgstr "Le format, la qualité, le dossier de sortie, la découpe, les effets et l’égaliseur retrouveront leurs valeurs par défaut. La file et les fichiers sources seront conservés."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1260
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1279
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1273
+msgid "Clear Queue"
+msgstr "Vider la file"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1274
+msgid "Remove the queue entries and their edits? Source files will not be deleted."
+msgstr "Retirer les éléments de la file et leurs modifications ? Les fichiers sources ne seront pas supprimés."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1323
+msgid "Select Audio or Video Files"
+msgstr "Sélectionner des fichiers audio ou vidéo"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1327
+msgid "Audio and Video files"
+msgstr "Fichiers audio et vidéo"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1377
+msgid "All files"
+msgstr "Tous les fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1404
+msgid "Some selected files are remote. Download them before adding them."
+msgstr "Certains fichiers sélectionnés sont distants. Téléchargez-les avant de les ajouter."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1416
+msgid "Files could not be selected"
+msgstr "Impossible de sélectionner les fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
+msgid "Welcome"
+msgstr "Bienvenue"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:33
+msgid "Convert audio in three steps"
+msgstr "Convertissez du son en trois étapes"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:39
+msgid "1. Add your files"
+msgstr "1. Ajoutez vos fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:40
+msgid "Add audio or video files. Videos with several audio tracks show one entry for each track."
+msgstr "Ajoutez des fichiers audio ou vidéo. Les vidéos comportant plusieurs pistes audio affichent un élément par piste."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:45
+msgid "2. Choose the output"
+msgstr "2. Choisissez la sortie"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:46
+msgid "Choose MP3, FLAC, Ogg Vorbis, WAV, AAC or Opus and a destination folder. Original files are never replaced."
+msgstr "Choisissez MP3, FLAC, Ogg Vorbis, WAV, AAC ou Opus et un dossier de destination. Les fichiers d’origine ne sont jamais remplacés."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:51
+msgid "3. Convert"
+msgstr "3. Convertissez"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:52
+msgid "The results list each output and any files that need another attempt. Your queue stays available for repeating an operation."
+msgstr "Les résultats indiquent chaque fichier généré et les fichiers à réessayer. La file reste disponible pour répéter une opération."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:57
+msgid "Editing and effects"
+msgstr "Édition et effets"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:58
+msgid "Edit Segments provides start and end times and keyboard controls. Volume, speed, equalizer and other enabled effects also change exported audio."
+msgstr "Modifier les segments propose des champs de début et de fin ainsi que des commandes au clavier. Le volume, la vitesse, l’égaliseur et les autres effets activés modifient aussi le son exporté."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:63
+msgid "Fast Copy"
+msgstr "Copie directe"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:64
+msgid "Copy encoded audio without re-encoding. Cut boundaries are approximate; effects are bypassed. Container support determines which tags and artwork can be kept."
+msgstr "Copiez le son encodé sans le réencoder. Les limites de coupe sont approximatives et les effets sont ignorés. Le format du conteneur détermine les étiquettes et les pochettes qui peuvent être conservées."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:69
+msgid "Speech cleanup"
+msgstr "Nettoyage de la voix"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:70
+msgid "Neural noise reduction requires the optional DeepFilterNet3 or DPDFNet-2 plugin and is intended for speech, not music. Unavailable effects are identified in settings."
+msgstr "La réduction de bruit par réseau neuronal nécessite le greffon facultatif DeepFilterNet3 ou DPDFNet-2 et vise la voix, pas la musique. Les effets indisponibles sont signalés dans les paramètres."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:82
+msgid "Show dialog on startup"
+msgstr "Afficher cette boîte de dialogue au démarrage"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:93
+msgid "Let's Start"
+msgstr "Commencer"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:293
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:159
+msgid "Format"
+msgstr "Format"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:161
+msgid "Copy without changing quality"
+msgstr "Copier sans modifier la qualité"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:162
+msgid "MP3 — widely compatible"
+msgstr "MP3 — largement compatible"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:163
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — format ouvert"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:164
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — sans perte, plus petit que WAV"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:165
+msgid "WAV — uncompressed"
+msgstr "WAV — non compressé"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:166
+msgid "AAC — good quality in small files"
+msgstr "AAC — bonne qualité dans de petits fichiers"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:167
+msgid "Opus — smallest files, great for voice"
+msgstr "Opus — fichiers plus petits, idéal pour la voix"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:169
+msgid "Copy"
+msgstr "Copier"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:301
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:178
+msgid "Bitrate"
+msgstr "Débit binaire"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:186
+#, no-python-format
+msgid "Volume (%)"
+msgstr "Volume (%)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:193
+msgid "Speed (×)"
+msgstr "Vitesse (×)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:202
+msgid "Noise Reduction"
+msgstr "Réduction de bruit"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:209
+msgid "Noise reduction mode"
+msgstr "Mode de réduction de bruit"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:211
+msgid "Light — DeepFilterNet3"
+msgstr "Léger — DeepFilterNet3"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
+msgid "Higher quality — DPDFNet-2 48 kHz"
+msgstr "Qualité supérieure — DPDFNet-2 48 kHz"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
+#, no-python-format
+msgid "Noise reduction strength (%)"
+msgstr "Intensité de la réduction de bruit (%)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
+msgid "Lower values keep more background sound; 0 leaves it unchanged"
+msgstr "Les valeurs faibles conservent davantage le son de fond ; 0 le laisse inchangé"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:236
+msgid "Configure…"
+msgstr "Configurer…"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
+msgid "Keep the whole audio"
+msgstr "Conserver tout le son"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
+msgid "Cut in timeline order"
+msgstr "Découper dans l’ordre chronologique"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:245
+msgid "Cut in the order marked"
+msgstr "Découper dans l’ordre de marquage"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:247
+msgid "Cut audio"
+msgstr "Découper le son"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
+msgid "Save segments"
+msgstr "Enregistrer les segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
+msgid "Separate Files"
+msgstr "Fichiers séparés"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
+msgid "Merge into One"
+msgstr "Réunir en un seul"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:261
+msgid "Show waveform"
+msgstr "Afficher la forme d’onde"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
+msgid "Save to"
+msgstr "Enregistrer dans"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:454
+msgid "Same folder as each source"
+msgstr "Dossier de chaque fichier source"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:272
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:274
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:426
+msgid "Choose output folder"
+msgstr "Choisir le dossier de sortie"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:280
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:281
+msgid "Use source folders"
+msgstr "Utiliser les dossiers sources"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
+msgid "Adjust sound"
+msgstr "Ajuster le son"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:296
+msgid "Noise Gate"
+msgstr "Porte de bruit"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:297
+msgid "Silences the background between words"
+msgstr "Coupe le bruit de fond entre les mots"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:304
+msgid "Compressor"
+msgstr "Compresseur"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:305
+msgid "Evens out loud and quiet parts"
+msgstr "Équilibre les passages forts et faibles"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:315
+msgid "Intensity"
+msgstr "Intensité"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "High-Pass Filter"
+msgstr "Filtre passe-haut"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Removes low-frequency rumble"
+msgstr "Supprime les grondements de basse fréquence"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:331
+msgid "Frequency (Hz)"
+msgstr "Fréquence (Hz)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:341
+msgid "Loudness Normalization"
+msgstr "Normalisation de la sonie"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
+msgid "Target: −16 LUFS; changes the original volume"
+msgstr "Cible : −16 LUFS ; modifie le volume d’origine"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:349
+msgid "Clipping protection"
+msgstr "Protection contre l’écrêtage"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:350
+msgid "Limit peaks explicitly; may change dynamics"
+msgstr "Limite les crêtes ; peut modifier la dynamique"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:358
+msgid "Advanced encoding"
+msgstr "Encodage avancé"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:359
+msgid "Keep original properties when supported"
+msgstr "Conserver les propriétés d’origine si elles sont prises en charge"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:321
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+msgid "Channels"
+msgstr "Canaux"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:374
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:496
+msgid "Original"
+msgstr "D’origine"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+msgid "Mono"
+msgstr "Mono"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+msgid "Stereo"
+msgstr "Stéréo"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:312
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
+msgid "Sample rate"
+msgstr "Fréquence d’échantillonnage"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
+msgid "Allow conversion to 24-bit PCM"
+msgstr "Autoriser la conversion en PCM 24 bits"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:382
+msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+msgstr "Pour le son en virgule flottante exporté en FLAC. Réduit la précision ; WAV préserve la représentation d’origine."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:399
+msgid "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+msgstr "La copie directe conserve le son encodé. Les coupes suivent les limites des paquets et peuvent ne pas correspondre aux temps exacts. Les effets sont ignorés à la préécoute comme à l’exportation."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
+msgid "Boosting volume or equalizer bands can distort audio. Reduce gain or enable clipping protection."
+msgstr "Augmenter le volume ou le gain des bandes de l’égaliseur peut déformer le son. Réduisez le gain ou activez la protection contre l’écrêtage."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:440
+msgid "Local folder required"
+msgstr "Dossier local requis"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:441
+msgid "Choose a folder on the local filesystem."
+msgstr "Choisissez un dossier du système de fichiers local."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:596
+#, python-brace-format
+msgid "Unavailable: install {package}"
+msgstr "Indisponible : installez {package}"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:634
+msgid "Filters and loudness"
+msgstr "Filtres et sonie"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:52
+msgid "Audio waveform visualizer"
+msgstr "Visualiseur de forme d’onde audio"
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:239
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:164
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:202
+msgid "Generating waveform..."
+msgstr "Génération de la forme d’onde…"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1267
+msgid "Waveform could not be generated"
+msgstr "Impossible de générer la forme d’onde"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1268
+msgid "Numeric segment editing is still available."
+msgstr "L’édition numérique des segments reste disponible."
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1270
+msgid "Waveform visualization disabled"
+msgstr "Affichage de la forme d’onde désactivé"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1271
+msgid "Enable in settings to see waveform"
+msgstr "Activez-le dans les paramètres pour voir la forme d’onde"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1273
+msgid "No audio loaded"
+msgstr "Aucun son chargé"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1395
+msgid "Audio position seekbar"
+msgstr "Barre de position audio"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
+msgid "Edit Segments"
+msgstr "Modifier les segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:36
+msgid "Set start and end times in seconds. Changes are applied only when you press Apply."
+msgstr "Définissez le début et la fin en secondes. Les modifications ne sont appliquées que lorsque vous appuyez sur Appliquer."
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:44
+msgid "Position (seconds)"
+msgstr "Position (secondes)"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:47
+msgid "Playback position in seconds"
+msgstr "Position de lecture en secondes"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:49
+msgid "_Seek"
+msgstr "_Atteindre la position"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:64
+msgid "_Add Segment"
+msgstr "A_jouter un segment"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:74
+msgid "_Cancel"
+msgstr "A_nnuler"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:76
+msgid "_Apply"
+msgstr "A_ppliquer"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:97
+msgid "Start (seconds)"
+msgstr "Début (secondes)"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:99
+msgid "End (seconds)"
+msgstr "Fin (secondes)"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:107
+msgid "Move segment up"
+msgstr "Monter le segment"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:115
+msgid "Move segment down"
+msgstr "Descendre le segment"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:123
+msgid "Remove segment"
+msgstr "Retirer le segment"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:143
+#, python-brace-format
+msgid "Segment {number}"
+msgstr "Segment {number}"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:146
+#, python-brace-format
+msgid "Segment {number} start in seconds"
+msgstr "Début du segment {number} en secondes"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:150
+#, python-brace-format
+msgid "Segment {number} end in seconds"
+msgstr "Fin du segment {number} en secondes"
+
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:193
+msgid "The active file changed. Reopen the segment editor for the current file."
+msgstr "Le fichier actif a changé. Rouvrez l’éditeur de segments pour le fichier actuel."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:59
+msgid "The application is closing."
+msgstr "L’application se ferme."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:62
+msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
+msgstr "Une conversion est encore en cours. Attendez la fin de son annulation avant d’en lancer une autre."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:109
+msgid "Conversion cancelled."
+msgstr "Conversion annulée."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:129
+msgid "The output path is invalid. Check the source filename and destination."
+msgstr "Le chemin de sortie est invalide. Vérifiez le nom du fichier source et la destination."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:156
+msgid "An unexpected error stopped this conversion."
+msgstr "Une erreur inattendue a interrompu cette conversion."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:185
+msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
+msgstr "FFmpeg n’est pas installé. Installez le paquet FFmpeg et réessayez."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:216
+msgid "Fast Copy cannot apply effects, change channels or resample. Select an encoding format."
+msgstr "La copie directe ne permet pas d’appliquer des effets, de changer les canaux ou de rééchantillonner. Sélectionnez un format d’encodage."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:227
+msgid "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
+msgstr "La copie directe préserve les paquets audio encodés ; les limites de coupe sont approximatives. Aucun effet n’est appliqué."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:239
+msgid "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
+msgstr "Le son en virgule flottante a été converti en PCM entier 24 bits pour FLAC, conformément à votre choix ; il ne s’agit pas d’une copie exacte bit à bit."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:245
+msgid "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
+msgstr "Opus utilise une fréquence d’échantillonnage de lecture de 48 kHz. La fréquence source ne peut pas être représentée telle quelle dans le conteneur de sortie."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:252
+#, python-brace-format
+msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
+msgstr "Le codec de sortie nécessite un rééchantillonnage de {rate} Hz à {final_rate} Hz."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:267
+msgid "Positive gain may clip. Enable clipping protection or reduce the gain."
+msgstr "Un gain positif peut provoquer un écrêtage. Activez la protection contre l’écrêtage ou réduisez le gain."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:273
+msgid "This raw audio format cannot preserve all tags or artwork."
+msgstr "Ce format audio brut ne peut pas conserver toutes les étiquettes ou pochettes."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:281
+msgid "Artwork is not preserved by this output profile."
+msgstr "Ce profil de sortie ne conserve pas les pochettes."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:346
+msgid "The source changed during conversion. No output was published; add the file again."
+msgstr "Le fichier source a changé pendant la conversion. Aucun résultat n’a été enregistré ; ajoutez à nouveau le fichier."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:360
+msgid "Conversion cancelled. No incomplete output was published."
+msgstr "Conversion annulée. Aucun fichier de sortie incomplet n’a été enregistré."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:374
+msgid "The file or destination could not be accessed. Check permissions and free disk space."
+msgstr "Impossible d’accéder au fichier ou à la destination. Vérifiez les permissions et l’espace disque disponible."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:383
+msgid "The media information or conversion settings are invalid."
+msgstr "Les informations multimédias ou les paramètres de conversion sont invalides."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:400
+msgid "The encoder changed the requested sample rate. No output was published."
+msgstr "L’encodeur a modifié la fréquence d’échantillonnage demandée. Aucun résultat n’a été enregistré."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:408
+msgid "The encoder changed the requested channel count. No output was published."
+msgstr "L’encodeur a modifié le nombre de canaux demandé. Aucun résultat n’a été enregistré."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:416
+msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
+msgstr "Cette version de FFmpeg ne peut pas préserver la précision FLAC demandée. Choisissez WAV ou installez un paquet FFmpeg compatible."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:153
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:436
+msgid "Select a supported output format."
+msgstr "Sélectionnez un format de sortie pris en charge."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:24
+msgid "Select a valid local media file."
+msgstr "Sélectionnez un fichier multimédia local valide."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:32
+msgid "The source file is missing or is not a regular file."
+msgstr "Le fichier source est introuvable ou n’est pas un fichier ordinaire."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:38
+msgid "The selected audio track is invalid. Add the file again."
+msgstr "La piste audio sélectionnée est invalide. Ajoutez à nouveau le fichier."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:44
+msgid "The source video is missing. Add the file again."
+msgstr "La vidéo source est introuvable. Ajoutez à nouveau le fichier."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:65
+msgid "A segment has invalid start or end times."
+msgstr "Un segment a un temps de début ou de fin invalide."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:69
+msgid "Every segment must have a finite end time after its start."
+msgstr "Chaque segment doit avoir un temps de fin fini et postérieur à son début."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:78
+msgid "A segment extends beyond the source audio. Adjust its end time."
+msgstr "Un segment dépasse la durée du son source. Ajustez son temps de fin."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:85
+msgid "A segment must contain at least one audio sample."
+msgstr "Un segment doit contenir au moins un échantillon audio."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:167
+msgid "FFprobe is not installed. Install the FFmpeg package and try again."
+msgstr "FFprobe n’est pas installé. Installez le paquet FFmpeg et réessayez."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:194
+msgid "The media file could not be read. It may be damaged or unsupported."
+msgstr "Impossible de lire le fichier multimédia. Il est peut-être endommagé ou non pris en charge."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:203
+msgid "FFprobe returned invalid media information."
+msgstr "FFprobe a renvoyé des informations multimédias invalides."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:208
+msgid "FFprobe returned incomplete media information."
+msgstr "FFprobe a renvoyé des informations multimédias incomplètes."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:221
+msgid "This file does not contain the selected audio track."
+msgstr "Ce fichier ne contient pas la piste audio sélectionnée."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:265
+msgid "This PCM precision cannot be preserved by the selected WAV encoder."
+msgstr "L’encodeur WAV sélectionné ne peut pas préserver cette précision PCM."
+
+#: usr/share/biglinux/audio-converter/app/audio/process.py:109
+#: usr/share/biglinux/audio-converter/app/audio/process.py:137
+msgid "The media command timed out."
+msgstr "L’opération multimédia a dépassé le délai imparti."
+
+#: usr/share/biglinux/audio-converter/app/audio/process.py:126
+msgid "The media information is too large to process safely."
+msgstr "Les informations multimédias sont trop volumineuses pour être traitées en toute sécurité."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:31
+msgid "There is not enough free disk space. Free some space and try again."
+msgstr "L’espace disque disponible est insuffisant. Libérez de l’espace et réessayez."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:38
+msgid "The file or destination is not accessible. Check its permissions."
+msgstr "Le fichier ou la destination est inaccessible. Vérifiez les permissions."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:45
+msgid "The required audio encoder is unavailable. Install a compatible FFmpeg package."
+msgstr "L’encodeur audio requis est indisponible. Installez un paquet FFmpeg compatible."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:52
+msgid "A selected audio effect is unavailable in this FFmpeg installation."
+msgstr "Un effet audio sélectionné est indisponible dans cette installation de FFmpeg."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:58
+msgid "The audio could not be processed. Check the file and selected output settings."
+msgstr "Impossible de traiter le son. Vérifiez le fichier et les paramètres de sortie sélectionnés."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:149
+msgid "Effects require re-encoding. Select an audio format instead of Fast Copy."
+msgstr "Les effets nécessitent un réencodage. Sélectionnez un format audio plutôt que Copie directe."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:248
+msgid "An intermediate segment has an unsafe path."
+msgstr "Un segment intermédiaire utilise un chemin non sécurisé."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:330
+msgid "The output contains no readable audio. No file was published."
+msgstr "Le résultat ne contient aucun son lisible. Aucun fichier n’a été enregistré."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:56
+msgid "The audio contains non-finite samples."
+msgstr "Le son contient des échantillons aux valeurs non finies."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:98
+msgid "The decoded audio ends with an incomplete sample frame."
+msgstr "Le son décodé se termine par une trame d’échantillons incomplète."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:101
+msgid "The file contains no readable audio samples."
+msgstr "Le fichier ne contient aucun échantillon audio lisible."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:247
+msgid "FFmpeg is not installed."
+msgstr "FFmpeg n’est pas installé."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:300
+msgid "The waveform could not be generated."
+msgstr "Impossible de générer la forme d’onde."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:318
+msgid "The source changed while its waveform was being generated."
+msgstr "Le fichier source a changé pendant la génération de sa forme d’onde."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:58
+msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
+msgstr "Trop de fichiers sont en attente d’analyse. Attendez que l’analyse de certains se termine avant d’en ajouter d’autres."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:79
+msgid "Select a regular local media file, not a folder or device."
+msgstr "Sélectionnez un fichier multimédia local ordinaire, et non un dossier ou un périphérique."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:100
+msgid "The file changed during inspection. Add it again."
+msgstr "Le fichier a changé pendant l’analyse. Ajoutez-le à nouveau."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:152
+msgid "Audio preview is unavailable. Install mpv and python-mpv, then reopen the application."
+msgstr "La préécoute audio est indisponible. Installez mpv et python-mpv, puis rouvrez l’application."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:179
+msgid "Audio outputs could not be listed. Try reopening the output selector."
+msgstr "Impossible de lister les sorties audio. Essayez de rouvrir le sélecteur de sortie."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:201
+msgid "The selected audio output was disconnected. Playback is paused. Choose an output or resume using the system default."
+msgstr "La sortie audio sélectionnée a été déconnectée. La lecture est en pause. Choisissez une sortie ou reprenez avec celle par défaut du système."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:214
+msgid "This audio output is no longer available. Choose another output."
+msgstr "Cette sortie audio n’est plus disponible. Choisissez-en une autre."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:226
+msgid "The audio output could not be selected. Choose another output."
+msgstr "Impossible de sélectionner la sortie audio. Choisissez-en une autre."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:252
+msgid "The selected audio track is unavailable. Add the file again."
+msgstr "La piste audio sélectionnée est indisponible. Ajoutez à nouveau le fichier."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:284
+msgid "The audio could not be played. Check the file and audio output device."
+msgstr "Impossible de lire le son. Vérifiez le fichier et le périphérique de sortie audio."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:411
+msgid "This audio position could not be reached."
+msgstr "Impossible d’atteindre cette position dans le son."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:459
+msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
+msgstr "Impossible d’appliquer un effet à la préécoute. Vérifiez les effets sélectionnés et les greffons installés."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:111
+#, python-brace-format
+msgid "Invalid value for {key}."
+msgstr "Valeur invalide pour {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:115
+#, python-brace-format
+msgid "{key} must be between {low} and {high}."
+msgstr "{key} doit être compris entre {low} et {high}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:123
+#, python-brace-format
+msgid "Invalid switch value for {key}."
+msgstr "Valeur d’activation invalide pour {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:133
+msgid "The equalizer bands are invalid."
+msgstr "Les bandes de l’égaliseur sont invalides."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:139
+msgid "The equalizer needs ten finite gains between -40 and 40 dB."
+msgstr "L’égaliseur nécessite dix gains finis compris entre -40 et 40 dB."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:144
+msgid "Select a supported noise reduction mode."
+msgstr "Sélectionnez un mode de réduction de bruit pris en charge."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:168
+msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
+msgstr "FLAC ne peut pas préserver cette représentation PCM. Choisissez WAV ou autorisez explicitement la conversion en PCM 24 bits dans Encodage avancé."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:193
+msgid "The selected bitrate is not supported by this output profile."
+msgstr "Le débit binaire sélectionné n’est pas pris en charge par ce profil de sortie."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:201
+msgid "Select original, mono or stereo channels."
+msgstr "Sélectionnez les canaux d’origine, mono ou stéréo."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:208
+msgid "MP3 supports mono or stereo. Select stereo channels or another format."
+msgstr "MP3 prend en charge le mono ou la stéréo. Sélectionnez des canaux stéréo ou un autre format."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:216
+msgid "Select a valid output sample rate."
+msgstr "Sélectionnez une fréquence d’échantillonnage de sortie valide."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:222
+msgid "The selected codec does not support that sample rate."
+msgstr "Le codec sélectionné ne prend pas en charge cette fréquence d’échantillonnage."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:289
+msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
+msgstr "Le greffon de réduction de bruit sélectionné est indisponible. Installez-le ou désactivez la réduction de bruit."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:319
+msgid "The audio plugin path is unsupported."
+msgstr "Le chemin du greffon audio n’est pas pris en charge."
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Extract Audio"
-msgstr "Extraire l'audio"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 103
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
+msgstr "Extraire le son"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Convert or Edit Audio"
-msgstr "Convertir ou modifier l'audio"
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:49
+msgstr "Convertir ou modifier du son"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:49
 msgid "No local media files"
-msgstr ""
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:50
+msgstr "Aucun fichier multimédia local"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:50
 msgid "Download remote files before converting them."
-msgstr ""
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 126
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:68
+msgstr "Téléchargez les fichiers distants avant de les convertir."
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:68
 msgid "Application Launch Error"
-msgstr "Erreur de lancement de l'application"
-#: big-audio-converter/usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
+msgstr "Erreur au lancement de l’application"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:69
 msgid "Big Audio Converter could not be started. Check that it is installed."
-msgstr ""
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py
+msgstr "Impossible de démarrer Big Audio Converter. Vérifiez qu’il est installé."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
 msgid "Size"
 msgstr "Taille"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:277
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:282
 msgid "Duration"
 msgstr "Durée"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
 msgid "Unknown"
 msgstr "Inconnu"
-#: big-audio-converter/usr/share/biglinux/audio-converter/app/ui/file_queue.py
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:324
 msgid "Bit Depth"
 msgstr "Profondeur de bits"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 131
-#~ msgid "Enable noise reduction"
-#~ msgstr "Activer la réduction du bruit"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 139
-#~ msgid "Strength"
-#~ msgstr "Force"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 160
-#~ msgid "AI Model"
-#~ msgstr "Modèle d'IA"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 155
-#~ msgid "Maximum Cleaning"
-#~ msgstr "Nettoyage maximum"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 156
-#~ msgid "Natural Voice"
-#~ msgstr "Voix Naturelle"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 157
-#~ msgid "Smart (both combined)"
-#~ msgstr "Intelligent (les deux combinés)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 165
-#~ msgid "Speech Strength"
-#~ msgstr "Force de la parole"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 179
-#~ msgid "Lookahead (ms)"
-#~ msgstr "Regard (ms)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 194
-#~ msgid "Voice Enhance"
-#~ msgstr "Amélioration vocale"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 290
-#~ msgid "Transient Suppressor"
-#~ msgstr "Suppresseur transitoire"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 291
-#~ msgid "Suppresses clicks and plosives"
-#~ msgstr "Supprime les clics et les plosives"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 296
-#~ msgid "Attack"
-#~ msgstr "Attaque"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 100
-#~ msgid "Delete File"
-#~ msgstr "Supprimer le fichier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 530
-#~ msgid "Timeout getting metadata"
-#~ msgstr "Délai d'attente pour obtenir les métadonnées"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 536
-#~ msgid "Failed to parse metadata"
-#~ msgstr "Échec de l'analyse des métadonnées"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 543
-#, python-brace-format
-#~ msgid "Error: {0}"
-#~ msgstr "Erreur : {0}"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1344
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1359
-#~ msgid "1 file"
-#~ msgstr "1 fichier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1346
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1361
-#~ msgid "{} files"
-#~ msgstr "{} fichiers"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1338
-#~ msgid "Delete File Permanently?"
-#~ msgstr "Supprimer le fichier de manière permanente ?"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1340
-#, python-brace-format
-#~ msgid ""
-#~ "Are you sure you want to delete '{0}'? This action cannot be undone and "
-#~ "the file will be permanently deleted from your disk."
-#~ msgstr ""
-#~ "Êtes-vous sûr de vouloir supprimer '{0}' ? Cette action ne peut pas être "
-#~ "annulée et le fichier sera définitivement supprimé de votre disque."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1372
-#~ msgid "Error Deleting File"
-#~ msgstr "Erreur de suppression de fichier"
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1329
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1587
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1593
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1329
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1587
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1593
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 1969
-#~ msgid "Confirm selection?"
-#~ msgstr "Confirmer la sélection ?"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2174
-#~ msgid "Confirm"
-#~ msgstr "Confirmer"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2030
-#~ msgid "Delete segment #{}?"
-#~ msgstr "Supprimer le segment #{} ?"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/visualizer.py, line: 2120
-#~ msgid "Delete ALL segments? This cannot be undone."
-#~ msgstr "Supprimer TOUS les segments ? Cela ne peut pas être annulé."
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1434
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1421
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1427
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1413
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1419
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1413
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1419
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1413
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1419
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1413
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1419
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# #-#-#-#-#  big-audio-converter.pot (big-audio-converter)  #-#-#-#-#
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/file_queue.py, line: 1375
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1196
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1202
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 56
-#~ msgid "Welcome to Big Audio Converter"
-#~ msgstr "Bienvenue dans Big Audio Converter"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 75
-#~ msgid "Play and Convert Audio"
-#~ msgstr "Lire et convertir l'audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 75
-#~ msgid ""
-#~ "Convert or play your audio files easily — supports MP3, FLAC, OGG, WAV, "
-#~ "AAC, Opus, and WMA."
-#~ msgstr ""
-#~ "Convertissez ou lisez facilement vos fichiers audio — prend en charge "
-#~ "MP3, FLAC, OGG, WAV, AAC, Opus et WMA."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 79
-#~ msgid "Extract Audio from Video"
-#~ msgstr "Extraire l'audio de la vidéo"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 79
-#~ msgid ""
-#~ "Extract the soundtrack from any video file and save it in your preferred "
-#~ "audio format."
-#~ msgstr ""
-#~ "Extraire la bande sonore de n'importe quel fichier vidéo et l'enregistrer "
-#~ "dans votre format audio préféré."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 86
-#~ msgid "Cut and Merge Audio"
-#~ msgstr "Couper et fusionner l'audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 83
-#~ msgid ""
-#~ "Use the visual waveform to mark sections and create new files with only "
-#~ "the parts you want."
-#~ msgstr ""
-#~ "Utilisez l'onde visuelle pour marquer des sections et créer de nouveaux "
-#~ "fichiers avec uniquement les parties que vous souhaitez."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 93
-#~ msgid "Fast Copy Mode"
-#~ msgstr "Mode de copie rapide"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 87
-#, python-format
-#~ msgid ""
-#~ "Cut or copy audio instantly without re-encoding — preserving 100% of the "
-#~ "original quality."
-#~ msgstr ""
-#~ "Coupez ou copiez l'audio instantanément sans ré-encodage — préservant 100 "
-#~ "% de la qualité originale."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 103
-#~ msgid ""
-#~ "Reduce background noise during conversion for cleaner, clearer audio."
-#~ msgstr ""
-#~ "Réduisez le bruit de fond pendant la conversion pour un audio plus propre "
-#~ "et plus clair."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 116
-#~ msgid "Volume and Equalizer"
-#~ msgstr "Volume et Égaliseur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 107
-#~ msgid ""
-#~ "Adjust volume levels and fine-tune frequencies with the built-in "
-#~ "equalizer for optimal sound."
-#~ msgstr ""
-#~ "Ajustez les niveaux de volume et peaufinez les fréquences avec "
-#~ "l'égaliseur intégré pour un son optimal."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 123
-#~ msgid "Speed Control"
-#~ msgstr "Contrôle de la vitesse"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/welcome_dialog.py, line: 111
-#~ msgid ""
-#~ "Change playback and conversion speed — slow down or speed up while "
-#~ "keeping pitch corrected."
-#~ msgstr ""
-#~ "Modifier la vitesse de lecture et de conversion — ralentir ou accélérer "
-#~ "tout en corrigeant la tonalité."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1003
-#, python-brace-format
-#~ msgid "Converting file 1 of {0}"
-#~ msgstr "Conversion du fichier 1 de {0}"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1063
-#, python-brace-format
-#~ msgid ""
-#~ "Converting file {0} of {1} ({2}%)\n"
-#~ "Current file: {3}"
-#~ msgstr ""
-#~ "Conversion du fichier {0} sur {1} ({2}%)  \n"
-#~ "Fichier actuel : {3}"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1092
-#~ msgid "Conversion Error"
-#~ msgstr "Erreur de conversion"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1093
-#~ msgid "An error occurred during conversion."
-#~ msgstr "Une erreur est survenue lors de la conversion."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1143
-#~ msgid "Successfully converted {} files"
-#~ msgstr "Fichiers {} convertis avec succès"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1145
-#~ msgid "Successfully converted 1 file"
-#~ msgstr "Fichier 1 converti avec succès"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1162
-#~ msgid "Conversion Complete"
-#~ msgstr "Conversion terminée"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1167
-#~ msgid "Open Folder"
-#~ msgstr "Ouvrir le dossier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1381
-#~ msgid "Are you sure you want to clear the queue?"
-#~ msgstr "Êtes-vous sûr de vouloir vider la file d'attente ?"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 1384
-#~ msgid "Clear"
-#~ msgstr "Effacer"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 680
-#~ msgid "Output Format"
-#~ msgstr "Format de sortie"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 734
-#~ msgid "Generate Waveforms"
-#~ msgstr "Générer des formes d'onde"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 752
-#~ msgid "Cut"
-#~ msgstr "Couper"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 769
-#~ msgid "Off"
-#~ msgstr "Désactivé"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 770
-#~ msgid "Chronological"
-#~ msgstr "Chronologique"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 771
-#~ msgid "Segment Number"
-#~ msgstr "Numéro de segment"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 97
-#~ msgid "Mode"
-#~ msgstr "Mode"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 105
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 105
-#
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 126
-#~ msgid "Enable"
-#~ msgstr "Activer"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 127
-#~ msgid "Filter background noise from audio"
-#~ msgstr "Filtrer le bruit de fond de l'audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 213
-#~ msgid "Enable noise gate"
-#~ msgstr "Activer le filtre anti-bruit"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 242
-#~ msgid "Enable compressor"
-#~ msgstr "Activer le compresseur"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 314
-#~ msgid "Output Processing"
-#~ msgstr "Traitement de la sortie"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/settings_mixin.py, line: 320
-#~ msgid "EBU R128 standard (-16 LUFS)"
-#~ msgstr "Norme EBU R128 (-16 LUFS)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 18
-#~ msgid ""
-#~ "Select the output audio format\n"
-#~ "\n"
-#~ "• copy: Keeps the original audio data — only cutting is available\n"
-#~ "• mp3: Widely supported, great balance between size and quality\n"
-#~ "• ogg: Open format, good quality at smaller file sizes\n"
-#~ "• flac: Lossless compression, perfect audio fidelity\n"
-#~ "• wav: Uncompressed format, very large files\n"
-#~ "• aac: Modern format with good overall quality\n"
-#~ "• opus: Excellent quality at low bitrates"
-#~ msgstr ""
-#~ "Sélectionnez le format audio de sortie\n"
-#~ "\n"
-#~ "• copier : Conserve les données audio d'origine — seule la coupe est "
-#~ "disponible\n"
-#~ "• mp3 : Largement pris en charge, bon équilibre entre taille et qualité\n"
-#~ "• ogg : Format ouvert, bonne qualité à des tailles de fichiers plus "
-#~ "petites\n"
-#~ "• flac : Compression sans perte, fidélité audio parfaite\n"
-#~ "• wav : Format non compressé, fichiers très volumineux\n"
-#~ "• aac : Format moderne avec une bonne qualité globale\n"
-#~ "• opus : Excellente qualité à faibles débits binaires"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 28
-#~ msgid ""
-#~ "Choose the audio bitrate (quality level)\n"
-#~ "\n"
-#~ "• 32k: Very low quality\n"
-#~ "• 64k: Low quality\n"
-#~ "• 128k: Standard quality\n"
-#~ "• 192k: Good quality\n"
-#~ "• 256k: High quality\n"
-#~ "• 320k: Highest quality"
-#~ msgstr ""
-#~ "Choisissez le débit binaire audio (niveau de qualité)\n"
-#~ "\n"
-#~ "• 32k : Qualité très basse\n"
-#~ "• 64k : Qualité basse\n"
-#~ "• 128k : Qualité standard\n"
-#~ "• 192k : Bonne qualité\n"
-#~ "• 256k : Haute qualité\n"
-#~ "• 320k : Qualité maximale"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 37
-#~ msgid ""
-#~ "Adjust the audio volume\n"
-#~ "\n"
-#~ "• 100 = original volume\n"
-#~ "• < 100 = lower volume\n"
-#~ "• > 100 = higher volume\n"
-#~ "\n"
-#~ "Tip: Values above 100 may cause distortion"
-#~ msgstr ""
-#~ "Ajustez le volume audio\n"
-#~ "\n"
-#~ "• 100 = volume d'origine\n"
-#~ "• < 100 = volume réduit\n"
-#~ "• > 100 = volume augmenté\n"
-#~ "\n"
-#~ "Astuce : Les valeurs supérieures à 100 peuvent provoquer des distorsions"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 44
-#~ msgid ""
-#~ "Change playback and conversion speed\n"
-#~ "\n"
-#~ "• 1.0 = normal speed\n"
-#~ "• < 1.0 = slower\n"
-#~ "• > 1.0 = faster\n"
-#~ "\n"
-#~ "Pitch correction is applied automatically"
-#~ msgstr ""
-#~ "Modifier la vitesse de lecture et de conversion\n"
-#~ "\n"
-#~ "• 1.0 = vitesse normale\n"
-#~ "• < 1.0 = plus lent\n"
-#~ "• > 1.0 = plus rapide\n"
-#~ "\n"
-#~ "La correction de hauteur est appliquée automatiquement"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 65
-#~ msgid ""
-#~ "Reduce background noise during conversion\n"
-#~ "using the GTCRN neural network.\n"
-#~ "\n"
-#~ "Should not be used in music."
-#~ msgstr ""
-#~ "Réduisez le bruit de fond pendant la conversion en utilisant le réseau de "
-#~ "neurones GTCRN.\n"
-#~ "\n"
-#~ "Ne doit pas être utilisé pour la musique."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 70
-#~ msgid ""
-#~ "Adjust the intensity of noise reduction\n"
-#~ "\n"
-#~ "• 1.0 = maximum reduction\n"
-#~ "• 0.5 = moderate reduction\n"
-#~ "• Lower values preserve more original audio detail\n"
-#~ "\n"
-#~ "Tip: Start at 1.0 and reduce if the voice sounds muffled"
-#~ msgstr ""
-#~ "Ajustez l'intensité de la réduction du bruit\n"
-#~ "\n"
-#~ "• 1.0 = réduction maximale\n"
-#~ "• 0.5 = réduction modérée\n"
-#~ "• Des valeurs plus basses préservent plus de détails audio d'origine\n"
-#~ "\n"
-#~ "Astuce : Commencez à 1.0 et réduisez si la voix semble étouffée"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 77
-#~ msgid ""
-#~ "Noise gate silences audio below a volume threshold\n"
-#~ "\n"
-#~ "Useful combined with noise reduction to eliminate\n"
-#~ "residual noise during pauses between speech.\n"
-#~ "\n"
-#~ "Should not be used in music."
-#~ msgstr ""
-#~ "Le noise gate silence l'audio en dessous d'un seuil de volume.\n"
-#~ "\n"
-#~ "Utile combiné avec la réduction de bruit pour éliminer\n"
-#~ "le bruit résiduel pendant les pauses entre les discours.\n"
-#~ "\n"
-#~ "Ne doit pas être utilisé dans la musique."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 83
-#~ msgid ""
-#~ "Volume level below which the gate closes\n"
-#~ "\n"
-#~ "• Higher values (e.g. -20 dB): Gate closes more often\n"
-#~ "• Lower values (e.g. -50 dB): Gate only closes in near-silence"
-#~ msgstr ""
-#~ "Niveau de volume en dessous duquel le gate se ferme\n"
-#~ "\n"
-#~ "• Valeurs plus élevées (par exemple -20 dB) : Le gate se ferme plus "
-#~ "souvent\n"
-#~ "• Valeurs plus basses (par exemple -50 dB) : Le gate ne se ferme que dans "
-#~ "un quasi-silence"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 88
-#~ msgid ""
-#~ "How much the audio is attenuated when the gate closes\n"
-#~ "\n"
-#~ "• -60 dB: Almost complete silence\n"
-#~ "• -20 dB: Gentle reduction, some background remains"
-#~ msgstr ""
-#~ "Combien l'audio est atténué lorsque le seuil se ferme\n"
-#~ "\n"
-#~ "• -60 dB : Silence presque complet\n"
-#~ "• -20 dB : Réduction douce, un peu de bruit de fond reste"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 93
-#~ msgid ""
-#~ "How quickly the gate opens when signal exceeds threshold\n"
-#~ "\n"
-#~ "• Low values (5 ms): Fast opening, may cause clicks\n"
-#~ "• High values (50+ ms): Smooth opening, may cut speech starts"
-#~ msgstr ""
-#~ "À quelle vitesse la porte s'ouvre lorsque le signal dépasse le seuil\n"
-#~ "\n"
-#~ "• Faibles valeurs (5 ms) : Ouverture rapide, peut provoquer des clics\n"
-#~ "• Hautes valeurs (50 ms et plus) : Ouverture fluide, peut couper les "
-#~ "débuts de parole"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 98
-#~ msgid ""
-#~ "How quickly the gate closes after signal drops below threshold\n"
-#~ "\n"
-#~ "• Low values (50 ms): Fast closing, may cut word endings\n"
-#~ "• High values (300+ ms): Smooth closing, keeps natural tails"
-#~ msgstr ""
-#~ "À quelle vitesse la porte se ferme-t-elle après que le signal tombe en "
-#~ "dessous du seuil\n"
-#~ "\n"
-#~ "• Faibles valeurs (50 ms) : Fermeture rapide, peut couper les fins de "
-#~ "mots\n"
-#~ "• Hautes valeurs (300 ms et plus) : Fermeture douce, conserve les queues "
-#~ "naturelles"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 56
-#~ msgid ""
-#~ "Display audio as a visual waveform\n"
-#~ "\n"
-#~ "Easily edit by viewing your audio as a waveform.\n"
-#~ "Disable this option to load large files faster."
-#~ msgstr ""
-#~ "Affichez l'audio sous forme d'onde visuelle\n"
-#~ "\n"
-#~ "Modifiez facilement en visualisant votre audio sous forme d'onde.\n"
-#~ "Désactivez cette option pour charger des fichiers volumineux plus "
-#~ "rapidement."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 61
-#~ msgid ""
-#~ "Adjust the sound frequencies\n"
-#~ "\n"
-#~ "Fine-tune bass, midrange, and treble to enhance your audio."
-#~ msgstr ""
-#~ "Ajustez les fréquences sonores\n"
-#~ "\n"
-#~ "Affinez les basses, les médiums et les aigus pour améliorer votre audio."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 65
-#~ msgid ""
-#~ "Cut and export selected parts of your audio\n"
-#~ "\n"
-#~ "• Off: Converts the entire file\n"
-#~ "• Chronological: Exports segments in timeline order\n"
-#~ "• Segment Number: Exports segments by marking order"
-#~ msgstr ""
-#~ "Coupez et exportez les parties sélectionnées de votre audio\n"
-#~ "\n"
-#~ "• Désactivé : Convertit l'intégralité du fichier\n"
-#~ "• Chronologique : Exporte les segments dans l'ordre de la chronologie\n"
-#~ "• Numéro de segment : Exporte les segments par ordre de marquage"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 118
-#~ msgid ""
-#~ "Choose how cut segments are saved\n"
-#~ "\n"
-#~ "• Separate Files: Each segment becomes its own file\n"
-#~ "• Merge into One: All segments are joined into a single file"
-#~ msgstr ""
-#~ "Choisissez comment les segments découpés sont enregistrés\n"
-#~ "\n"
-#~ "• Fichiers séparés : Chaque segment devient son propre fichier\n"
-#~ "• Fusionner en un : Tous les segments sont regroupés en un seul fichier"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 123
-#~ msgid ""
-#~ "Limit the number of audio channels\n"
-#~ "\n"
-#~ "• Original: Keeps the source channel layout\n"
-#~ "• Mono: Downmix to 1 channel\n"
-#~ "• Stereo: Limit to 2 channels\n"
-#~ "\n"
-#~ "Useful for reducing file size or ensuring compatibility"
-#~ msgstr ""
-#~ "Limitez le nombre de canaux audio\n"
-#~ "\n"
-#~ "• Original : Conserve la disposition des canaux source\n"
-#~ "• Mono : Réduit à 1 canal\n"
-#~ "• Stéréo : Limite à 2 canaux\n"
-#~ "\n"
-#~ "Utile pour réduire la taille du fichier ou garantir la compatibilité"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 130
-#~ msgid ""
-#~ "Click the top half to seek playback\n"
-#~ "Click the bottom half to set cut markers:\n"
-#~ "  1st click → Start (red) · 2nd click → End (green)\n"
-#~ "Scroll to zoom in/out for precision"
-#~ msgstr ""
-#~ "Cliquez sur la moitié supérieure pour rechercher la lecture  \n"
-#~ "Cliquez sur la moitié inférieure pour définir des marqueurs de coupe :  \n"
-#~ "1er clic → Début (rouge) · 2ème clic → Fin (vert)  \n"
-#~ "Faites défiler pour zoomer/dézoomer pour plus de précision"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 82
-#~ msgid "You're seeing an example of help shown when hovering over an item."
-#~ msgstr ""
-#~ "Vous voyez un exemple d'aide affiché lorsque vous survolez un élément."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 86
-#~ msgid "Remove all files from the queue"
-#~ msgstr "Supprimer tous les fichiers de la file d'attente."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 89
-#~ msgid "Go to the previous audio file in the queue"
-#~ msgstr "Allez au fichier audio précédent dans la file d'attente."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 92
-#~ msgid "Play or pause the current audio"
-#~ msgstr "Lire ou mettre en pause l'audio actuel"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 95
-#~ msgid "Go to the next audio file in the queue"
-#~ msgstr "Allez au fichier audio suivant dans la file d'attente."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 475
-#~ msgid ""
-#~ "When enabled, playback automatically plays only the marked segments, "
-#~ "skipping unselected parts"
-#~ msgstr ""
-#~ "Lorsqu'il est activé, la lecture joue automatiquement uniquement les "
-#~ "segments marqués, en sautant les parties non sélectionnées."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/ui/main_window.py, line: 500
-#~ msgid ""
-#~ "When enabled, automatically plays the next track when current track "
-#~ "finishes"
-#~ msgstr ""
-#~ "Lorsqu'il est activé, joue automatiquement la piste suivante lorsque la "
-#~ "piste actuelle se termine."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 149
-#~ msgid "Show or hide the equalizer panel to adjust audio frequencies"
-#~ msgstr ""
-#~ "Afficher ou masquer le panneau d'égaliseur pour ajuster les fréquences "
-#~ "audio."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 150
-#~ msgid "Open zoom control to adjust the waveform view magnification"
-#~ msgstr ""
-#~ "Ouvrir le contrôle de zoom pour ajuster la magnification de l'affichage "
-#~ "de l'onde."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 151
-#~ msgid "Adjust the output volume level (0-1000%)"
-#~ msgstr "Ajustez le niveau de volume de sortie (0-1000%)"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 152
-#~ msgid "Adjust the playback and conversion speed"
-#~ msgstr "Ajustez la vitesse de lecture et de conversion."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 105
-#~ msgid "Preview this audio file"
-#~ msgstr "Aperçu de ce fichier audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 108
-#~ msgid "Remove this file from the queue"
-#~ msgstr "Retirez ce fichier de la file d'attente."
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 111
-#~ msgid "Right-click for more options"
-#~ msgstr "Clic droit pour plus d'options"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/tooltip_helper.py, line: 158
-#~ msgid ""
-#~ "Normalize the audio volume to a standard level (EBU R128)\n"
-#~ "\n"
-#~ "• Target: -16 LUFS (broadcast standard)\n"
-#~ "• Ensures consistent volume across different files\n"
-#~ "• Applied as the last step in the audio chain"
-#~ msgstr ""
-#~ "Normalisez le volume audio à un niveau standard (EBU R128)\n"
-#~ "\n"
-#~ "• Cible : -16 LUFS (norme de diffusion)\n"
-#~ "• Assure un volume cohérent entre différents fichiers\n"
-#~ "• Appliqué comme dernière étape dans la chaîne audio"
-# File: big-audio-converter/big-audio-converter/usr/share/biglinux/audio-
-# converter/app/utils/config.py, line: 37
-#~ msgid "MP3 Standard"
-#~ msgstr "Norme MP3"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 105
-#, python-brace-format
-#~ msgid "Convert or Edit {0} Audio Files"
-#~ msgstr "Convertir ou modifier des fichiers audio {0}"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 111
-#, python-brace-format
-#~ msgid "Extract Audio from {0} Video Files"
-#~ msgstr "Extraire l'audio des fichiers vidéo {0}"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 114
-#, python-brace-format
-#~ msgid "Process {0} Audio/Video Files"
-#~ msgstr "Traiter les fichiers audio/vidéo {0}"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 110
-#~ msgid "No valid local files selected"
-#~ msgstr "Aucun fichier local valide sélectionné"
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 111
-#~ msgid "Could not get the path for the selected audio files."
-#~ msgstr "Impossible d'obtenir le chemin des fichiers audio sélectionnés."
-# File: big-audio-converter/big-audio-converter/usr/share/nautilus-
-# python/extensions/big_audio_converter_extension.py, line: 127
-#, python-brace-format
-#~ msgid "Failed to start Big Audio Converter: {0}"
-#~ msgstr "Échec du démarrage de Big Audio Converter : {0}"
+
