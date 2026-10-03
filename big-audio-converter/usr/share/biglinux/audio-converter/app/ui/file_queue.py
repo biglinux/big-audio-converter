@@ -31,6 +31,15 @@ from app.utils.main_loop import MainLoopSources, weak_callback
 logger = logging.getLogger(__name__)
 
 
+def shares_file(info, stream):
+    """Whether the probed file holds tracks besides `stream`; embedded cover
+    art is part of the file, not another track."""
+    return any(
+        other is not stream and not other.get("disposition", {}).get("attached_pic")
+        for other in info["streams"]
+    )
+
+
 class FileQueueRow(Adw.ActionRow):
     """Row representing a file in the queue using Adwaita ActionRow."""
 
@@ -228,8 +237,12 @@ class FileQueueRow(Adw.ActionRow):
                     return value
         return None
 
-    def _extract_audio_props(self, audio_stream, data, is_video_track, actual_path):
-        """Extract ordered list of (label, value) for audio properties."""
+    def _extract_audio_props(self, audio_stream, data, shares_file, actual_path):
+        """Extract ordered list of (label, value) for audio properties.
+
+        `shares_file`: the file also holds other tracks, so its size is not
+        this track's and is estimated from duration and bitrate instead.
+        """
         props = []
 
         # --- Size ---
@@ -247,26 +260,26 @@ class FileQueueRow(Adw.ActionRow):
             except (ValueError, TypeError):
                 pass
 
-        if duration_val is not None and bitrate_val is not None:
-            props.append(
-                ("Size", self._format_size(int(duration_val * bitrate_val / 8)))
-            )
-        elif not is_video_track:
+        size = None
+        if not shares_file:
             try:
-                props.append(("Size", self._format_size(os.path.getsize(actual_path))))
+                size = os.path.getsize(actual_path)
             except OSError:
-                props.append(("Size", "Unknown"))
-        else:
-            props.append(("Size", "Unknown"))
+                pass
+        elif duration_val is not None and bitrate_val is not None:
+            size = int(duration_val * bitrate_val / 8)
+        props.append(
+            (_("Size"), _("Unknown") if size is None else self._format_size(size))
+        )
 
         # --- Duration ---
         if duration_val is not None:
-            props.append(("Duration", self._format_duration(duration_val)))
+            props.append((_("Duration"), self._format_duration(duration_val)))
         elif "format" in data and "duration" in data["format"]:
             try:
                 props.append(
                     (
-                        "Duration",
+                        _("Duration"),
                         self._format_duration(float(data["format"]["duration"])),
                     )
                 )
@@ -275,17 +288,17 @@ class FileQueueRow(Adw.ActionRow):
 
         # --- Format ---
         if audio_stream and "codec_long_name" in audio_stream:
-            props.append(("Format", audio_stream["codec_long_name"]))
+            props.append((_("Format"), audio_stream["codec_long_name"]))
         elif "format" in data and "format_long_name" in data["format"]:
-            props.append(("Format", data["format"]["format_long_name"]))
+            props.append((_("Format"), data["format"]["format_long_name"]))
 
         # --- Bitrate ---
         if bitrate_val is not None:
-            props.append(("Bitrate", f"{bitrate_val // 1000} kbps"))
+            props.append((_("Bitrate"), f"{bitrate_val // 1000} kbps"))
         elif "format" in data and "bit_rate" in data["format"]:
             try:
                 props.append(
-                    ("Bitrate", f"{int(data['format']['bit_rate']) // 1000} kbps")
+                    (_("Bitrate"), f"{int(data['format']['bit_rate']) // 1000} kbps")
                 )
             except (ValueError, TypeError):
                 pass
@@ -296,7 +309,7 @@ class FileQueueRow(Adw.ActionRow):
                 try:
                     props.append(
                         (
-                            "Sample Rate",
+                            _("Sample rate"),
                             f"{int(audio_stream['sample_rate']) / 1000:g} kHz",
                         )
                     )
@@ -305,10 +318,10 @@ class FileQueueRow(Adw.ActionRow):
             if "channels" in audio_stream:
                 ch = audio_stream["channels"]
                 layout = audio_stream.get("channel_layout", "")
-                props.append(("Channels", f"{ch} ({layout})" if layout else str(ch)))
+                props.append((_("Channels"), f"{ch} ({layout})" if layout else str(ch)))
             bps = audio_stream.get("bits_per_sample", 0)
             if bps and int(bps) > 0:
-                props.append(("Bit Depth", f"{bps} bit"))
+                props.append((_("Bit Depth"), f"{bps} bit"))
 
         return props
 
@@ -385,7 +398,7 @@ class FileQueueRow(Adw.ActionRow):
             try:
                 stream = audio_stream(info, self.stream_index)
                 properties = self._extract_audio_props(
-                    stream, info, self.stream_index is not None, path
+                    stream, info, shares_file(info, stream), path
                 )
                 main_box.append(
                     self._create_info_group(_("File Details"), [(_("Path"), path)])
