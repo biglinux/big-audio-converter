@@ -8,7 +8,7 @@ Convert audio files, extract audio tracks from videos and save selected sections
 
 On BigLinux, install **Big Audio Converter** from the software manager and open it from the applications menu. The package command is `big-audio-converter-gui`.
 
-Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv, python-mpv and [big-gtk-kit](https://github.com/biglinux/big-gtk-kit) (`python-big-gtk-kit`). Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
+Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv and python-mpv. The Python module of [big-gtk-kit](https://github.com/biglinux/big-gtk-kit) ships inside the package. Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
 
 ## Convert files
 
@@ -52,9 +52,10 @@ Keyboard shortcuts: **Ctrl+O** adds files, **Ctrl+Enter** converts, **Ctrl+Space
 
 ## Development and validation
 
-From the repository root, run the application with:
+From the repository root, with a [big-gtk-kit](https://github.com/biglinux/big-gtk-kit) checkout beside it, run the application with:
 
 ```sh
+export PYTHONPATH="$PWD/../big-gtk-kit/python"
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
