@@ -26,6 +26,20 @@ logger = logging.getLogger(__name__)
 
 
 class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
+    # Told of every change of the visible window: zoom, panning, scrollbar.
+    viewport_changed_callback = None
+
+    @property
+    def viewport_offset(self):
+        return self._viewport_offset
+
+    @viewport_offset.setter
+    def viewport_offset(self, offset):
+        changed = offset != getattr(self, "_viewport_offset", None)
+        self._viewport_offset = offset
+        if changed and self.viewport_changed_callback:
+            self.viewport_changed_callback()
+
     """Widget that displays audio waveform visualization."""
 
     def __init__(self):
@@ -1144,6 +1158,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             "marker_updated_callback",
             "marker_drag_callback",
             "zoom_changed_callback",
+            "viewport_changed_callback",
         ):
             setattr(self, name, None)
         with self.waveform_data_lock:

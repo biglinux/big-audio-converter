@@ -93,7 +93,10 @@ class ControlsBarMixin:
         self.zoom_scale.handler_unblock(self._zoom_scale_handler)
         self.zoom_value_label.set_text(f"{zoom_level:.1f}x")
 
-        # Sync seekbar viewport
+        self._sync_seekbar_viewport()
+
+    def _sync_seekbar_viewport(self):
+        """Show the waveform's visible window on the seek bar."""
         self.seekbar.set_zoom_viewport(
             self.visualizer.zoom_level, self.visualizer.viewport_offset
         )

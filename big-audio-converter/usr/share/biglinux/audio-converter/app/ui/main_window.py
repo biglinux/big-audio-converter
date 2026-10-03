@@ -852,6 +852,8 @@ class MainWindow(
 
         # Connect zoom change handler to update slider
         self.visualizer.zoom_changed_callback = self._on_visualizer_zoom_changed
+        # Panning while paused moves the window too; the seek bar follows it.
+        self.visualizer.viewport_changed_callback = self._sync_seekbar_viewport
 
         # Connect marker update handler to refresh selection playback
         self.visualizer.marker_updated_callback = self._on_markers_updated
