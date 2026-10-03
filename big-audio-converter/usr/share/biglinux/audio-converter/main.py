@@ -161,7 +161,10 @@ class Application(Adw.Application):
         win.present()
         # An Adw.Dialog presented before its window is mapped never shows,
         # yet it still takes the window's first close request.
-        if first_window and str(self.config.get("show_welcome_dialog", True)).lower() == "true":
+        if (
+            first_window
+            and str(self.config.get("show_welcome_dialog", True)).lower() == "true"
+        ):
             self.show_welcome_dialog(win)
 
     def show_welcome_dialog(self, parent_window=None):

@@ -8,7 +8,7 @@ Convert audio files, extract audio tracks from videos and save selected sections
 
 On BigLinux, install **Big Audio Converter** from the software manager and open it from the applications menu. The package command is `big-audio-converter-gui`.
 
-Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv and python-mpv. Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
+Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv, python-mpv and [big-gtk-kit](https://github.com/biglinux/big-gtk-kit) (`python-big-gtk-kit`). Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
 
 ## Convert files
 
@@ -39,14 +39,14 @@ Speech noise reduction offers exactly two modes:
 
 | Mode | Installation | Plugin |
 |---|---|---|
-| Light — DeepFilterNet3 | `deepfilternet-quantized-ladspa` | `libdfn3_ladspa.so`, the standard model without LL |
+| Light — DeepFilterNet3 | `deepfilternet3-native` | `libdfn3_ladspa.so`, the standard model without LL |
 | Higher quality — DPDFNet-2 48 kHz | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
 The light mode is selected initially; noise reduction starts disabled. It is intended for speech, not music. Lower attenuation retains more background sound; 0 dB leaves it unchanged. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
 
 Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`. The plugin supports a `DPDFNET_NATIVE_MODEL` environment override; keep it unset to use the intended DPDFNet-2 model.
 
-GTCRN and its transient suppressor are no longer used. Their saved settings remain on disk but do not activate a new model automatically. Installing the DeepFilterNet package may also install its LL library; the converter never selects that library.
+The DeepFilterNet package also installs its LL library; the converter never selects it.
 
 Keyboard shortcuts: **Ctrl+O** adds files, **Ctrl+Enter** converts, **Ctrl+Space** plays or pauses, **Ctrl+E** opens the segment editor and **Ctrl+Q** quits.
 
@@ -58,7 +58,7 @@ From the repository root, run the application with:
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
-The test suite uses real FFmpeg and libmpv in addition to Python assertions. Install `pytest` and `hypothesis` for tests; graphical tests also require Xvfb, a session bus and the native GTK dependencies above. Use an executable temporary directory if `/tmp` is mounted `noexec`:
+The tests run real FFmpeg and libmpv. They need `pytest` and `hypothesis`; the GTK tests also need Xvfb and a session bus. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
 
 ```sh
 mkdir -p "$HOME/.cache/bac-tests"
@@ -69,9 +69,9 @@ ruff check big-audio-converter/usr/share/biglinux/audio-converter tests
 ruff format --check big-audio-converter/usr/share/biglinux/audio-converter tests
 ```
 
-The conversion backend owns subprocess cancellation and validates staged outputs before publishing them. The queue probes metadata on bounded workers; stable source identities prevent delayed results from updating a different row. Waveform decoding uses a single cancellable worker and a bounded peak cache. Native player callbacks return to the GTK main loop before updating interface state.
+Conversions write to a staging file that is renamed into place, never over an existing file, only when FFmpeg succeeds; cancelling stops FFmpeg and removes it. Metadata probes and waveform decoding run off the GTK main loop.
 
-The [package recipe](pkgbuild/PKGBUILD) compiles translation catalogs and runs backend tests. The [quality workflow](.github/workflows/quality.yml) also runs GTK tests. Real device and file-manager activation journeys still require testing in an installed desktop session; a headless test is not evidence of physical USB or Bluetooth behavior.
+The [package recipe](pkgbuild/PKGBUILD) compiles the translations and runs the backend tests; the [CI workflow](.github/workflows/quality.yml) runs the GTK tests too. Audio devices and file-manager actions still need a check on an installed desktop.
 
 ## License and support
 

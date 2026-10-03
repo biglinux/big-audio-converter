@@ -1,4 +1,4 @@
-"""Real FFmpeg regression contracts for the product audit."""
+"""FFmpeg regressions: real encodes and cuts checked against the files they produce."""
 
 import json
 import subprocess
