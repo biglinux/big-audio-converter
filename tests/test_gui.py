@@ -229,7 +229,8 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     assert window.format_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("flac"))
     assert window.volume_spin.get_sensitive()
-    assert window.noise_row.get_sensitive()
+    # Back on when the noise plugin is installed, which CI machines lack.
+    assert window.noise_row.get_sensitive() == window.noise_available
     window.original_preview.set_active(True)
     assert window.player.effects_bypassed
     window.format_row.set_selected(window._format_list.index("mp3"))
