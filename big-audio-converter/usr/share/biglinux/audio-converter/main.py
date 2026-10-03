@@ -152,13 +152,15 @@ class Application(Adw.Application):
     def do_activate(self):
         """Called when the application is activated."""
         win = self._main_window
-        if win is None or win._closed:
+        first_window = win is None or win._closed
+        if first_window:
             win = MainWindow(application=self)
             self._main_window = win
-            # Show welcome dialog on first run
-            if str(self.config.get("show_welcome_dialog", True)).lower() == "true":
-                self.show_welcome_dialog(win)
         win.present()
+        # An Adw.Dialog presented before its window is mapped never shows,
+        # yet it still takes the window's first close request.
+        if first_window and str(self.config.get("show_welcome_dialog", True)).lower() == "true":
+            self.show_welcome_dialog(win)
 
     def show_welcome_dialog(self, parent_window=None):
         """Show the welcome dialog"""
