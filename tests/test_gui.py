@@ -391,3 +391,35 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     # A first-run value that was never changed is simply absent.
     assert config.get("conversion_bitrate", "192k") == "192k"
     assert float(config.get("conversion_volume")) == 100
+
+
+def test_information_size_is_the_file_unless_other_tracks_share_it(window, audio):
+    from app.ui.file_queue import shares_file
+
+    track = {"index": 0, "codec_type": "audio", "duration": "2.0"}
+    cover = {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 1}}
+    video = {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 0}}
+    assert not shares_file({"streams": [track]}, track)
+    assert not shares_file({"streams": [track, cover]}, track)
+    assert shares_file({"streams": [track, video]}, track)
+
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    row = queue.file_rows[0]
+
+    def size(stream, shares):
+        info = {"streams": [stream], "format": {}}
+        return dict(row._extract_audio_props(stream, info, shares, str(audio)))["Size"]
+
+    assert size(track, False) == row._format_size(audio.stat().st_size)
+    assert size(track, True) == "Unknown"
+    assert size({**track, "bit_rate": "128000"}, True) == row._format_size(32000)
+
+
+def test_panning_the_waveform_moves_the_seek_bar_window(window):
+    window.visualizer.zoom_level = 4.0
+    window.visualizer.viewport_offset = 0.5
+    assert window.seekbar._viewport_offset == 0.5
+    window.visualizer.viewport_offset = 0.25
+    assert window.seekbar._viewport_offset == 0.25
