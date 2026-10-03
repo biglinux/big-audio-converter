@@ -68,7 +68,7 @@ class WelcomeDialog:
             (
                 _("Speech cleanup"),
                 _(
-                    "Neural noise reduction requires the optional GTCRN plugin and is intended for speech, not music. Unavailable effects are identified in settings."
+                    "Neural noise reduction requires the optional DeepFilterNet3 or DPDFNet-2 plugin and is intended for speech, not music. Unavailable effects are identified in settings."
                 ),
             ),
         ):
