@@ -668,10 +668,8 @@ class MainWindow(
         self.volume_btn.set_icon_name("audio-volume-high-symbolic")
         self.volume_btn.add_css_class("flat")
         self.volume_btn.add_css_class("circular")
-        self.volume_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Volume")],
-        )
+        self.volume_btn.set_tooltip_text(_("Volume"))
+        self.volume_btn.update_property([Gtk.AccessibleProperty.LABEL], [_("Volume")])
 
         self.volume_popover = Gtk.Popover()
         self.volume_popover.set_parent(self.volume_btn)
@@ -723,9 +721,9 @@ class MainWindow(
         self.speed_btn.set_icon_name("preferences-system-time-symbolic")
         self.speed_btn.add_css_class("flat")
         self.speed_btn.add_css_class("circular")
+        self.speed_btn.set_tooltip_text(_("Playback speed"))
         self.speed_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Playback speed")],
+            [Gtk.AccessibleProperty.LABEL], [_("Playback speed")]
         )
 
         self.speed_popover = Gtk.Popover()
@@ -781,9 +779,9 @@ class MainWindow(
         self.zoom_btn.set_icon_name("system-search-symbolic")
         self.zoom_btn.add_css_class("flat")
         self.zoom_btn.add_css_class("circular")
+        self.zoom_btn.set_tooltip_text(_("Waveform zoom"))
         self.zoom_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Waveform zoom")],
+            [Gtk.AccessibleProperty.LABEL], [_("Waveform zoom")]
         )
 
         # Popover with vertical slider
