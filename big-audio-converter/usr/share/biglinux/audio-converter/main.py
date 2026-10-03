@@ -22,6 +22,7 @@ _ = gettext.gettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
+import big_gtk_kit
 from app.audio.converter import AudioConverter
 from app.audio.media import parse_segments_arg
 from app.audio.player import AudioPlayer
@@ -146,6 +147,7 @@ class Application(Adw.Application):
 
     def do_startup(self):
         Adw.Application.do_startup(self)
+        big_gtk_kit.install()
         icon_theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
         icon_theme.add_search_path(str(Path(__file__).resolve().parents[2] / "icons"))
 

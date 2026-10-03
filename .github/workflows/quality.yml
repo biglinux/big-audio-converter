@@ -30,6 +30,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y ffmpeg python3-pytest python3-pytest-cov python3-hypothesis python3-gi python3-gi-cairo python3-cairo python3-numpy python3-mpv gir1.2-gtk-4.0 gir1.2-adw-1 xvfb xauth xdotool dbus-x11 gettext desktop-file-utils appstream
+      - name: Fetch the shared GTK kit
+        run: |
+          git clone --depth 1 https://github.com/biglinux/big-gtk-kit.git "$RUNNER_TEMP/big-gtk-kit"
+          echo "PYTHONPATH=$RUNNER_TEMP/big-gtk-kit/python" >> "$GITHUB_ENV"
       - name: Record native versions
         run: |
           /usr/bin/python3 --version | tee evidence/python.txt

@@ -1,4 +1,4 @@
-"""Short native tooltips with weak widget ownership and no custom timers."""
+"""Help tooltips by key, shown as the shared BigLinux card while enabled."""
 
 import gettext
 import weakref
@@ -60,7 +60,7 @@ class TooltipHelper:
         )
 
     def add_tooltip(self, widget, tooltip_key):
-        """GTK owns placement, timing, keyboard help and high-contrast styling."""
+        """big_gtk_kit.tooltip draws the card; GTK keeps the accessible text."""
         if not self.closed:
             self.widgets[widget] = TOOLTIPS[tooltip_key]
             widget.set_tooltip_text(
