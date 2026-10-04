@@ -377,6 +377,9 @@ class MainWindow(
         }
         .queue-pane > revealer > windowhandle > headerbar,
         .queue-pane headerbar { background: none; box-shadow: none; }
+        /* A spin row outlines itself while its number is being edited; in
+           this dense list the caret already shows where typing goes. */
+        .compact-options row.spin.focused { outline-color: transparent; }
         /* Rows at the height of the original compact list. */
         /* Only the list's own rows: a dropdown's popup is a descendant too. */
         .compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }

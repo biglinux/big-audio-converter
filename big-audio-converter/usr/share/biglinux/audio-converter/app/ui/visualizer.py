@@ -1405,7 +1405,8 @@ class SeekBar(Gtk.DrawingArea):
             ),
         )
         self.add_controller(keys)
-        self.connect("notify::has-focus", lambda widget, _pspec: widget.queue_draw())
+        # FOCUS_VISIBLE comes and goes with keyboard use, not only with focus.
+        self.connect("state-flags-changed", lambda widget, _old: widget.queue_draw())
         self.duration = 0.0
         self._position = 0.0
         self._zoom_level = 1.0
@@ -1567,7 +1568,8 @@ class SeekBar(Gtk.DrawingArea):
         color = self.get_color()
         fg = (color.red, color.green, color.blue)
         bg = (0.15, 0.15, 0.17) if sum(fg) > 1.5 else (0.97, 0.97, 0.98)
-        if self.has_focus():
+        # The ring marks keyboard focus; a click to seek is not one.
+        if self.get_state_flags() & Gtk.StateFlags.FOCUS_VISIBLE:
             cr.set_source_rgb(*fg)
             cr.set_line_width(2)
             cr.rectangle(1, 1, width - 2, height - 2)
