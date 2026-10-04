@@ -39,8 +39,8 @@ The **Voice filter** in the playback bar, beside volume and speed, reduces sound
 
 | Mode | Installation | Plugin |
 |---|---|---|
-| Light — DeepFilterNet3 | `deepfilternet3-native` | `libdfn3_ladspa.so`, the standard model without LL |
-| Higher quality — DPDFNet-2 48 kHz | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
+| Light (DeepFilterNet3 16 kHz) | `deepfilternet3-native` | `libdfn3_ladspa.so`, the standard model without LL |
+| Higher quality (DPDFNet-2 48 kHz) | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
 The light mode is selected initially and the filter starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% only what is detected as a human voice is kept. Changing the strength during playback retunes the running filter without interrupting the sound. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
 

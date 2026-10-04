@@ -365,10 +365,12 @@ class MainWindow(
            background; flat controls follow currentColor. */
         .playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
         .playback-panel frame { border-color: rgba(255, 255, 255, 0.08); }
-        /* At fractional scales the arrow no longer covers the content's
-           border, which then crosses the arrow's base; the shadow alone
-           outlines the slider. */
-        popover.bar-slider > contents, popover.bar-slider > arrow { border: none; }
+        /* At fractional scales the content and the arrow end on different
+           fractions of a pixel, leaving a seam at the arrow's base that their
+           borders and the arrow's shadow darken. The content reaches a pixel
+           into the arrow so the two solid fills overlap. */
+        popover.bar-slider > contents { border: none; margin-bottom: -1px; }
+        popover.bar-slider > arrow { border: none; box-shadow: none; }
         .playback-controls button:checked {
             background-color: alpha(@accent_bg_color, 0.55);
             color: #ffffff;
@@ -674,9 +676,7 @@ class MainWindow(
             "volume",
             "audio-volume-high-symbolic",
             _("Volume"),
-            _(
-                "Changes preview and export volume. Values above 100% can distort the audio."
-            ),
+            None,
             self.volume_scale,
             self.volume_value_label,
             2,
@@ -697,8 +697,8 @@ class MainWindow(
         speed_box, self.speed_btn = self._bar_control(
             "speed",
             "preferences-system-time-symbolic",
-            _("Playback speed"),
-            _("Changes preview and export speed while preserving pitch."),
+            _("Speed"),
+            None,
             self.speed_scale,
             self.speed_value_label,
             2,

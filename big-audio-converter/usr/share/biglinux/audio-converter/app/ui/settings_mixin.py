@@ -215,17 +215,26 @@ class SettingsManagerMixin:
             "value-changed", weak_callback(self._on_noise_strength_changed)
         )
         self.noise_engine_buttons = []
-        for label in (
-            _("Light — DeepFilterNet3"),
-            _("Higher quality — DPDFNet-2 48 kHz"),
+        # The quality in words, the model under it: two short lines keep the
+        # slider narrow.
+        for quality, model in (
+            (_("Light"), "DeepFilterNet3 16 kHz"),
+            (_("Higher quality"), "DPDFNet-2 48 kHz"),
         ):
-            # Wrapped to the description's width, so the slider stays narrow.
+            lines = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            lines.append(Gtk.Label(label=quality, xalign=0))
+            lines.append(
+                Gtk.Label(label=model, xalign=0, css_classes=["caption", "dim-label"])
+            )
             button = Gtk.CheckButton(
-                child=Gtk.Label(label=label, wrap=True, max_width_chars=16, xalign=0),
+                child=lines,
                 active=not self.noise_engine_buttons,
                 group=self.noise_engine_buttons[0]
                 if self.noise_engine_buttons
                 else None,
+            )
+            button.update_property(
+                [Gtk.AccessibleProperty.LABEL], [f"{quality}, {model}"]
             )
             button.connect("toggled", weak_callback(self._on_noise_model_changed))
             self.noise_engine_buttons.append(button)
