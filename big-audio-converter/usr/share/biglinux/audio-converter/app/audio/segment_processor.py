@@ -148,8 +148,14 @@ class SegmentProcessor:
         progress=None,
         speed=1,
         temp_dir=None,
+        joined=(),
     ):
-        """Write the whole track, or validated ``cuts`` joined in order."""
+        """Write the whole track, or validated ``cuts`` joined in order.
+
+        ``joined`` continues the timeline with other sources, given as
+        ``(path, stream index, cut or None, seconds)``; tags and artwork come
+        from ``source``. Joining requires ``-ar`` and ``-ac`` in ``params``.
+        """
         filters, params, index = list(filters), list(params), stream["index"]
         if params[params.index("-c:a") + 1] == "copy":
             if filters:
@@ -163,32 +169,31 @@ class SegmentProcessor:
                     source, info, stream, output, cuts, params, temp_dir
                 )
         inputs = [(source, index, cut) for cut in cuts or [None]]
-        count, metadata = len(inputs), 0
-        if count > CUTS_PER_RUN:
-            parts = []
-            for first in range(0, count, CUTS_PER_RUN):
-                part = str(Path(temp_dir) / f"part-{first:06d}.nut")
-                self.render(
-                    source,
-                    info,
-                    stream,
-                    part,
-                    cuts[first : first + CUTS_PER_RUN],
-                    params=["-f", "nut", "-c:a", pcm_codec(stream)],
-                )
-                parts.append((part, 0, None))
-            # The source follows the parts only for its tags and artwork.
-            inputs = parts + [(source, index, cuts[0])]
-            count = metadata = len(parts)
+        inputs += [(path, track, cut) for path, track, cut, _seconds in joined]
+        channels = str(stream["channels"])
+        # The concat filter takes the first input's format: a stereo file
+        # after a mono one would be folded down. Joined sources take the
+        # output's format first.
+        shape = None
+        if joined:
+            rate, channels = (
+                params[params.index("-ar") + 1],
+                params[params.index("-ac") + 1],
+            )
+            layout = "mono" if channels == "1" else "stereo"
+            shape = f"aformat=sample_rates={rate}:channel_layouts={layout}"
         duration = (
             sum(cut["stop"] - cut["start"] for cut in cuts)
             if cuts
-            else audio_duration(info, stream)
-        )
+            else audio_duration(info, stream) or 0
+        ) + sum(seconds for *_rest, seconds in joined)
 
-        def ffmpeg(chain, level="error", report=True):
+        def ffmpeg(chain, level="error", report=True, chunk=None):
+            sources = chunk or inputs
+            # Inputs after the first ``metadata`` only supply tags and artwork.
+            count = metadata or len(sources)
             argv = [self.ffmpeg_path, "-hide_banner", "-nostdin", "-n", "-v", level]
-            for path, _track, cut in inputs:
+            for path, _track, cut in sources:
                 if cut:
                     length = f"{cut['stop'] - cut['start']:.9f}"
                     argv += ["-ss", cut["start_str"], "-t", length]
@@ -201,26 +206,53 @@ class SegmentProcessor:
             if count > 1:
                 chain = [f"concat=n={count}:v=0:a=1"] + chain
             if chain:
-                labels = "".join(
+                labels = [
                     f"[{number}:{track}]"
-                    for number, (_path, track, _cut) in enumerate(inputs[:count])
-                )
-                argv += ["-filter_complex", labels + ",".join(chain) + "[out]"]
+                    for number, (_path, track, _cut) in enumerate(sources[:count])
+                ]
+                shaped = ""
+                if shape and count > 1:
+                    shaped = "".join(
+                        f"{label}{shape}[s{number}];"
+                        for number, label in enumerate(labels)
+                    )
+                    labels = [f"[s{number}]" for number in range(count)]
+                argv += [
+                    "-filter_complex",
+                    shaped + "".join(labels) + ",".join(chain) + "[out]",
+                ]
                 argv += ["-map", "[out]"]
             else:
-                argv += ["-map", f"0:{index}"]
+                argv += ["-map", f"0:{sources[0][1]}"]
             return argv + (["-nostats", "-progress", "pipe:1"] if report else [])
+
+        metadata = 0
+        if len(inputs) > CUTS_PER_RUN:
+            parts = []
+            # Parts of several sources share the output's format, in float.
+            codec = "pcm_f32le" if joined else pcm_codec(stream)
+            for first in range(0, len(inputs), CUTS_PER_RUN):
+                part = str(Path(temp_dir) / f"part-{first:06d}.nut")
+                chunk = inputs[first : first + CUTS_PER_RUN]
+                self._run(
+                    ffmpeg([], report=False, chunk=chunk)
+                    + ["-map_metadata", "-1", "-f", "nut", "-c:a", codec, part]
+                )
+                self.validate_output(part)
+                parts.append((part, 0, None))
+            # The first source follows the parts only for its tags and artwork.
+            inputs = parts + inputs[:1]
+            metadata = len(parts)
 
         denoise = next((f for f in filters if isinstance(f, OfflineDenoise)), None)
         if denoise:
             at = filters.index(denoise)
             denoised = str(Path(temp_dir) / f"{Path(output).stem}-denoised.nut")
-            channels = str(stream["channels"])
             decode = ffmpeg(filters[:at] + ["aresample=48000"], report=False)
             result = self.runner.run(
                 ["bash", "-o", "pipefail", "-c", DENOISE_PIPELINE, "bash"]
                 + decode
-                + ["-c:a", "pcm_f32le", "-f", "f32le", "pipe:1"],
+                + ["-ac", channels, "-c:a", "pcm_f32le", "-f", "f32le", "pipe:1"],
                 stdout_callback=progress_consumer(
                     progress and (lambda fraction: progress(fraction / 2)),
                     duration,
@@ -239,8 +271,7 @@ class SegmentProcessor:
                 raise command_error(result.stderr)
             # The source follows the denoised audio only for its tags and artwork.
             inputs = [(denoised, 0, None), (source, index, cuts[0] if cuts else None)]
-            count = metadata = 1
-            index = 0
+            metadata = 1
             filters = filters[at + 1 :]
             progress = progress and (lambda fraction, p=progress: p(0.5 + fraction / 2))
 
@@ -265,7 +296,7 @@ class SegmentProcessor:
         extension = Path(output).suffix.lstrip(".").lower()
         # Skip the audio mapping; ffmpeg() already mapped the rendered audio.
         argv = ffmpeg(filters) + metadata_args(info, stream, extension, metadata)[2:]
-        if cuts:
+        if cuts or joined:
             # Source chapters would keep their unedited times.
             argv += ["-map_chapters", "-1"]
         self._run(

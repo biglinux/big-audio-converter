@@ -148,7 +148,9 @@ def test_all_rejected_segments_are_not_success(tone, tmp_path):
 
 def test_removing_marked_parts_keeps_the_rest_in_order(tone, tmp_path):
     out = tmp_path / "rest.wav"
-    assert converter().convert_file(str(tone), str(out), settings(tone, cut_remove=True))
+    assert converter().convert_file(
+        str(tone), str(out), settings(tone, cut_remove=True)
+    )
     source = pcm(tone)
     assert np.array_equal(pcm(out), np.concatenate([source[:24000], source[72000:]]))
 

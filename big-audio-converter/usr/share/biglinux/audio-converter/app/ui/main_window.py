@@ -838,13 +838,20 @@ class MainWindow(
             "suggested-action"
         )
         self.pause_play_btn.set_sensitive(has_files)
-        self.convert_button.set_label(
-            gettext.ngettext("Convert %d file", "Convert %d files", count) % count
-        )
+        self.join_row.set_visible(has_multiple_files)
+        self._update_convert_label()
 
         self.segment_edit_button.set_visible(has_files)
         self.zoom_box.set_visible(has_files)
         self._set_waveform_visible(has_files)
+
+    def _update_convert_label(self):
+        count = len(self.file_queue.files)
+        if count > 1 and self._joining():
+            label = gettext.ngettext("Join %d file", "Join %d files", count)
+        else:
+            label = gettext.ngettext("Convert %d file", "Convert %d files", count)
+        self.convert_button.set_label(label % count)
 
     def _set_waveform_visible(self, visible):
         if visible == self.visualizer_frame.get_visible():
@@ -996,6 +1003,7 @@ class MainWindow(
             "cut_enabled": True,
             "cut_merge": self.cut_output_row.get_selected() == 1,
             "cut_remove": self.cut_mode_row.get_selected() == 1,
+            "join_files": self._joining(),
             # The converter orders each file's segments by number or by time.
             "order_by_segment_number": self.cut_order_row.get_selected() == 1,
             # Files without an entry here are converted in full.

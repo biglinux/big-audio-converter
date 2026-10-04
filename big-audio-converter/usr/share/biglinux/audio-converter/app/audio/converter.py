@@ -102,8 +102,16 @@ class AudioConverter:
 
     def _run_batch(self, files, settings, progress_callback, finish_callback, runner):
         batch = BatchResult()
+        # Joined files become one output, named and tagged after the first.
+        joined = files[1:] if settings.get("join_files") else ()
+
+        def joined_progress(fraction):
+            # One run covers every file; show the file it has reached.
+            current = min(int(fraction * len(files)), len(files) - 1)
+            progress_callback(current, files[current], fraction * len(files) - current)
+
         try:
-            for index, source in enumerate(files):
+            for index, source in enumerate(files[:1] if joined else files):
                 if runner.cancelled.is_set():
                     batch.items.append(
                         ConversionResult(
@@ -118,6 +126,7 @@ class AudioConverter:
                         source,
                         settings.get("format", "mp3"),
                         settings.get("track_metadata"),
+                        bool(joined),
                     )
                     if settings.get("output_directory"):
                         target = str(
@@ -137,17 +146,34 @@ class AudioConverter:
                     )
                     continue
                 callback = (
-                    (
+                    None
+                    if not progress_callback
+                    else joined_progress
+                    if joined
+                    else (
                         lambda fraction, i=index, p=source: progress_callback(
                             i, p, fraction
                         )
                     )
-                    if progress_callback
-                    else None
                 )
                 batch.items.append(
-                    self._convert_result(source, target, settings, callback, runner)
+                    self._convert_result(
+                        source, target, settings, callback, runner, joined
+                    )
                 )
+            if joined and batch.items:
+                [result] = batch.items
+                name = os.path.basename(result.outputs[0]) if result.outputs else ""
+                batch.items += [
+                    ConversionResult(
+                        path,
+                        result.status,
+                        message=gettext.gettext("Joined into {name}").format(name=name)
+                        if result.successful
+                        else result.message,
+                    )
+                    for path in joined
+                ]
         except Exception as exc:
             logger.exception("Unexpected batch failure")
             handled = len(batch.items)
@@ -179,8 +205,49 @@ class AudioConverter:
         finally:
             self._end()
 
+    def _open(self, input_path, settings, runner):
+        """Probe one source and plan its cuts: a list, empty for all of it."""
+        source = MediaSource.resolve(input_path, settings.get("track_metadata"))
+        source_stat = os.stat(source.path)
+        info = probe_media(source.path, runner, self.ffmpeg_path)
+        stream = audio_stream(info, source.stream_index)
+        duration = audio_duration(info, stream)
+        rate = int(stream["sample_rate"])
+        segments = []
+        if settings.get("cut_enabled"):
+            # A file without marked segments is converted in full.
+            raw = settings.get("file_markers", {}).get(input_path, [])
+            # Players measure the container, which may outlast the audio;
+            # audio_duration without a stream reads the container's.
+            end = max(duration or 0, audio_duration(info, {}) or 0) or None
+            segments = [Segment.from_mapping(s, end, rate).as_mapping() for s in raw]
+            if segments and settings.get("cut_remove"):
+                if end is None:
+                    raise MediaError(
+                        gettext.gettext(
+                            "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
+                        )
+                    )
+                # What lies between the marked parts, as one file.
+                segments = [
+                    Segment.from_mapping(s, end, rate).as_mapping()
+                    for s in complement(segments, end)
+                    if round(s["stop"] * rate) > round(s["start"] * rate)
+                ]
+                if not segments:
+                    raise MediaError(
+                        gettext.gettext(
+                            "Every part of this file is marked for removal."
+                        )
+                    )
+            elif settings.get("order_by_segment_number"):
+                segments.sort(key=lambda s: s["segment_index"])
+            else:
+                segments.sort(key=lambda s: s["start"])
+        return source, source_stat, info, stream, duration, segments
+
     def _convert_result(
-        self, input_path, output_path, settings, progress_callback, runner
+        self, input_path, output_path, settings, progress_callback, runner, joined=()
     ):
         try:
             if not self.ffmpeg_path:
@@ -190,13 +257,30 @@ class AudioConverter:
                     )
                 )
             settings = validate_settings(settings)
-            source = MediaSource.resolve(input_path, settings.get("track_metadata"))
-            source_stat = os.stat(source.path)
-            info = probe_media(source.path, runner, self.ffmpeg_path)
-            stream = audio_stream(info, source.stream_index)
-            duration = audio_duration(info, stream)
+            source, source_stat, info, stream, _duration, segments = self._open(
+                input_path, settings, runner
+            )
+            others = [self._open(path, settings, runner) for path in joined]
             rate = int(stream["sample_rate"])
             format_name = settings["format"]
+            channels = settings.get("channels")
+            if others:
+                if format_name == "copy":
+                    raise MediaError(
+                        gettext.gettext(
+                            "Fast Copy cannot join files. Select an audio format."
+                        )
+                    )
+                if channels is None:
+                    # One output layout fits every file; mono joins stay mono.
+                    channels = max(int(opened[3]["channels"]) for opened in others)
+                    channels = max(channels, int(stream["channels"]))
+                    if channels > 2:
+                        raise MediaError(
+                            gettext.gettext(
+                                "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
+                            )
+                        )
             warnings, notes = [], []
             if format_name == "copy":
                 effects = (
@@ -233,7 +317,12 @@ class AudioConverter:
                 )
             else:
                 extension = format_name
-                params = codec_args(settings, settings.get("channels"), stream)
+                params = codec_args(settings, channels, stream)
+                if others:
+                    # The tags come from the first file; its title and track
+                    # number do not describe the whole.
+                    for option in ("-metadata", "-metadata:s:a:0"):
+                        params += [option, "title=", option, "track="]
                 filters = build_audio_filters(
                     settings, self.noise_plugins, self.offline_denoiser
                 )
@@ -285,39 +374,16 @@ class AudioConverter:
                 notes.append(
                     gettext.gettext("Artwork is not preserved by this output profile.")
                 )
-            segments = []
-            if settings.get("cut_enabled"):
-                # A file without marked segments is converted in full.
-                raw = settings.get("file_markers", {}).get(input_path, [])
-                # Players measure the container, which may outlast the audio;
-                # audio_duration without a stream reads the container's.
-                end = max(duration or 0, audio_duration(info, {}) or 0) or None
-                segments = [
-                    Segment.from_mapping(s, end, rate).as_mapping() for s in raw
-                ]
-                if segments and settings.get("cut_remove"):
-                    if end is None:
-                        raise MediaError(
-                            gettext.gettext(
-                                "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
-                            )
-                        )
-                    # What lies between the marked parts, as one file.
-                    segments = [
-                        Segment.from_mapping(s, end, rate).as_mapping()
-                        for s in complement(segments, end)
-                        if round(s["stop"] * rate) > round(s["start"] * rate)
-                    ]
-                    if not segments:
-                        raise MediaError(
-                            gettext.gettext(
-                                "Every part of this file is marked for removal."
-                            )
-                        )
-                elif settings.get("order_by_segment_number"):
-                    segments.sort(key=lambda s: s["segment_index"])
-                else:
-                    segments.sort(key=lambda s: s["start"])
+            pieces = [
+                (
+                    opened[0].path,
+                    opened[3]["index"],
+                    cut,
+                    cut["stop"] - cut["start"] if cut else opened[4] or 0,
+                )
+                for opened in others
+                for cut in opened[5] or [None]
+            ]
             processor = SegmentProcessor(self.ffmpeg_path, runner)
             speed = settings.get("speed", 1) if format_name != "copy" else 1
             with staging_directory(output_path) as directory:
@@ -325,6 +391,7 @@ class AudioConverter:
                     len(segments) > 1
                     and not settings.get("cut_merge", True)
                     and not settings.get("cut_remove")
+                    and not others
                 ):
                     destination = Path(output_path)
                     jobs = [
@@ -359,15 +426,16 @@ class AudioConverter:
                         ),
                         speed,
                         directory,
+                        pieces,
                     )
                     self._validate_encoding(
                         processor.last_output_info, format_name, params
                     )
                     staged.append((target, destination))
-                current_stat = os.stat(source.path)
                 fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns")
                 if any(
-                    getattr(source_stat, field) != getattr(current_stat, field)
+                    getattr(before, field) != getattr(os.stat(opened.path), field)
+                    for opened, before, *_rest in ((source, source_stat), *others)
                     for field in fields
                 ):
                     raise MediaError(
@@ -450,7 +518,9 @@ class AudioConverter:
                     )
                 )
 
-    def _get_output_path(self, input_path, output_format, track_metadata=None):
+    def _get_output_path(
+        self, input_path, output_format, track_metadata=None, joined=False
+    ):
         path = Path(input_path)
         entry = (track_metadata or {}).get(input_path)
         if entry and (str(input_path).startswith("bac-track:") or not path.is_file()):
@@ -467,7 +537,9 @@ class AudioConverter:
         if not extension or not extension.isalnum():
             raise MediaError(gettext.gettext("Select a supported output format."))
         suffix = (
-            "-copy"
+            "-joined"
+            if joined
+            else "-copy"
             if output_format == "copy"
             else "-converted"
             if path.suffix.lower() == "." + extension

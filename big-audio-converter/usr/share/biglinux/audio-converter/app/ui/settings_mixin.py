@@ -385,6 +385,9 @@ class SettingsManagerMixin:
             "notify::selected", weak_callback(self._on_cut_output_changed)
         )
         options.add(self.cut_output_row)
+        self.join_row = Adw.SwitchRow(title=_("Join into one file"), visible=False)
+        self.join_row.connect("notify::active", weak_callback(self._on_join_changed))
+        options.add(self.join_row)
 
         self.destination_row = Adw.ActionRow(
             title=_("Save to"), subtitle=_("Same folder as each source")
@@ -962,7 +965,17 @@ class SettingsManagerMixin:
         self.cut_mode_row.set_visible(has_segments)
         self.play_selection_switch.set_visible(has_segments)
         self.cut_order_row.set_visible(has_segments and keeping)
-        self.cut_output_row.set_visible(has_segments and keeping)
+        # Joining makes one file of everything, segments included.
+        self.cut_output_row.set_visible(
+            has_segments and keeping and not self._joining()
+        )
+
+    def _joining(self):
+        return self.join_row.get_active() and self.join_row.get_sensitive()
+
+    def _on_join_changed(self, *_args):
+        self._update_cut_rows()
+        self._update_convert_label()
 
     def _on_cut_output_changed(self, row, pspec):
         """Handle cut output mode change (separate files vs merge)."""
@@ -991,6 +1004,12 @@ class SettingsManagerMixin:
             self._format_list[self.format_row.get_selected()] == "flac"
         )
         self.advanced_row.set_visible(not is_copy_mode)
+        self.join_row.set_sensitive(not is_copy_mode)
+        self.join_row.set_subtitle(
+            _("Fast Copy cannot join files")
+            if is_copy_mode
+            else _("In queue order, named after the first file")
+        )
         # Copy keeps the encoded audio, so nothing that processes it applies.
         for row in (
             self.volume_spin,
@@ -1008,6 +1027,7 @@ class SettingsManagerMixin:
         )
         if not bar_ready:
             return
+        self._on_join_changed()
         for widget in (
             self.original_preview,
             self._bar_popovers["volume"].get_parent(),
@@ -1097,6 +1117,7 @@ class SettingsManagerMixin:
         self.precision_row.set_active(False)
         self._set_output_folder("")
         self.cut_mode_row.set_selected(0)
+        self.join_row.set_active(False)
         self.cut_order_row.set_selected(0)
         self.cut_output_row.set_selected(0)
         self._set_processing_volume(100)

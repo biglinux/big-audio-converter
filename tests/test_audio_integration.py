@@ -762,3 +762,88 @@ def test_batch_cuts_only_the_file_that_has_markers(source, tmp_path):
     engine.cleanup()
     assert duration(first.outputs[0]) == pytest.approx(0.5)
     assert duration(second.outputs[0]) == pytest.approx(duration(other))
+
+
+def tone(path, *filters):
+    command(
+        "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+        *filters, "-ar", "48000", str(path),
+    )  # fmt: skip
+    return path
+
+
+@pytest.mark.parametrize("cuts_per_run", [None, 2])
+def test_joined_queue_is_one_file_in_queue_order(
+    source, tmp_path, monkeypatch, cuts_per_run
+):
+    if cuts_per_run:
+        # Three inputs then pass through lossless parts.
+        monkeypatch.setattr("app.audio.segment_processor.CUTS_PER_RUN", cuts_per_run)
+    other = tone(tmp_path / "other.wav")
+    cuts = [{"start": 1.5, "stop": 2}, {"start": 0.25, "stop": 0.5}]
+    engine = AudioConverter()
+    engine.start_batch(
+        [str(source), str(other)],
+        {
+            "format": "flac",
+            "output_directory": str(tmp_path / "output"),
+            "cut_enabled": True,
+            "order_by_segment_number": False,
+            "file_markers": {str(source): cuts},
+            "join_files": True,
+        },
+        None,
+        lambda: None,
+    ).join(30)
+    first, second = engine.last_batch_result.items
+    engine.cleanup()
+    [output] = first.outputs
+    assert output.endswith("/source-joined.flac")
+    assert (second.status, second.outputs) == ("success", ())
+    assert second.message == "Joined into source-joined.flac"
+    original = pcm(source, "s16le")
+    expected = original[24000:48000] + original[144000:192000] + pcm(other, "s16le")
+    assert pcm(output, "s16le") == expected
+    tags = probe(output)["format"]["tags"]
+    assert "title" not in {key.lower() for key in tags}
+    assert tags["artist"] == "Artist"
+
+
+def test_joining_keeps_a_stereo_file_after_a_mono_one(source, tmp_path):
+    import numpy as np
+
+    stereo = tone(tmp_path / "wide.wav", "-af", "pan=stereo|c0=c0|c1=-1*c0")
+    engine = AudioConverter()
+    engine.start_batch(
+        [str(source), str(stereo)],
+        {"format": "wav", "output_directory": str(tmp_path), "join_files": True},
+        None,
+        lambda: None,
+    ).join(30)
+    [output] = engine.last_batch_result.items[0].outputs
+    engine.cleanup()
+    audio = np.frombuffer(pcm(output, "f32le"), "<f4").reshape(-1, 2)
+    wide = audio[96000:]
+    assert len(wide) == 48000
+    # Folding the file to mono first would cancel its opposite channels.
+    assert np.abs(wide[:, 0]).max() > 0.1
+    assert np.allclose(wide[:, 0], -wide[:, 1], atol=1e-4)
+
+
+def test_fast_copy_refuses_to_join(source, tmp_path):
+    engine = AudioConverter()
+    engine.start_batch(
+        [str(source), str(tone(tmp_path / "other.wav"))],
+        {
+            "format": "copy",
+            "output_directory": str(tmp_path / "out"),
+            "join_files": True,
+        },
+        None,
+        lambda: None,
+    ).join(30)
+    items = engine.last_batch_result.items
+    engine.cleanup()
+    assert [item.status for item in items] == ["failed", "failed"]
+    assert "Fast Copy cannot join" in items[1].message
+    assert not (tmp_path / "out").exists()

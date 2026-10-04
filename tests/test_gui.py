@@ -112,6 +112,30 @@ def test_queue_probe_lifecycle_and_numeric_editor(window, audio):
     assert not queue.pending
 
 
+def test_join_offered_for_several_files_and_not_in_fast_copy(window, audio, tmp_path):
+    queue = window.file_queue
+    second = tmp_path / "second.wav"
+    second.write_bytes(audio.read_bytes())
+    assert queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    assert not window.join_row.get_visible()
+    assert queue.add_file(str(second))
+    pump(lambda: not queue.pending)
+    assert window.join_row.get_visible()
+    window.join_row.set_active(True)
+    assert window.convert_button.get_label() == "Join 2 files"
+    assert window._collect_conversion_settings()["join_files"]
+    window.format_row.set_selected(window._format_list.index("copy"))
+    assert not window.join_row.get_sensitive()
+    assert window.convert_button.get_label() == "Convert 2 files"
+    assert not window._collect_conversion_settings()["join_files"]
+    window.format_row.set_selected(window._format_list.index("flac"))
+    window.on_convert(None)
+    pump(lambda: window.conversion.last_batch is not None)
+    [output] = window.conversion.last_batch.outputs
+    assert output.endswith("-joined.flac")
+
+
 def test_handed_over_cuts_follow_each_track_of_a_multi_track_file(window, tmp_path):
     video = tmp_path / "multi.mkv"
     subprocess.run(
