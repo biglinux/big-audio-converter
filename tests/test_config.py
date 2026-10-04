@@ -63,10 +63,16 @@ class TestAppConfigPersistence:
         # Missing keys should be filled from defaults
         assert loaded["noise_engine"] == "dfn3"
 
+    def test_saved_raw_aac_becomes_m4a(self, config):
+        with open(config.config_file, "w") as f:
+            json.dump({"conversion_format": "aac"}, f)
+
+        assert config.load_config()["conversion_format"] == "m4a"
+
 
 class TestAppConfigDebounce:
     def test_debounce_batches_writes(self, config):
-        config.set("conversion_format", "aac")
+        config.set("conversion_format", "m4a")
         config.set("conversion_format", "opus")
         config.set("conversion_format", "flac")
         # Wait for debounce

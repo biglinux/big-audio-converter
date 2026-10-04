@@ -247,11 +247,10 @@ class ConversionController:
                 )
                 row.add_suffix(reveal)
                 group.add(row)
-            if item.details:
+            technical = "\n\n".join((*item.notes, item.details[-16384:])).strip()
+            if technical:
                 details = Gtk.Expander(label=_("Technical details"))
-                text = Gtk.Label(
-                    label=item.details[-16384:], selectable=True, wrap=True, xalign=0
-                )
+                text = Gtk.Label(label=technical, selectable=True, wrap=True, xalign=0)
                 details.set_child(text)
                 group.add(details)
             entries.append(group)

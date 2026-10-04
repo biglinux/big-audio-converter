@@ -37,7 +37,6 @@ TOOLTIPS = {
     "pause_play_btn": _("Play or pause. Keyboard shortcut: Ctrl+Space."),
     "next_audio_btn": _("Preview the next file."),
     "play_selection_switch": _("Preview only the marked segments."),
-    "auto_advance_switch": _("Preview the next track after the current track ends."),
     "eq_toggle_btn": _("Show the equalizer. Its settings affect exported audio."),
     "play_this_file": _("Preview this audio file."),
     "remove_from_queue": _("Remove this entry without deleting the source file."),

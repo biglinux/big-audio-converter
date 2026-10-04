@@ -151,8 +151,8 @@ class HeaderBar(Gtk.Box):
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         center_box.set_halign(Gtk.Align.CENTER)
 
-        # Add Files button
-        add_files_button = Gtk.Button(label=_("Add Files"))
+        # Blue until the queue has files; then Convert is the next step.
+        add_files_button = self.add_files_button = Gtk.Button(label=_("Add Files"))
         add_files_button.connect(
             "clicked", weak_callback(self.main_window.on_add_files)
         )
@@ -490,10 +490,12 @@ class MainWindow(
         bar.set_end_widget(end_box)
 
         # Add "Only the Selected Area" toggle button — icon-only, like play controls
-        self.play_selection_switch = Gtk.ToggleButton()
-        self.play_selection_switch.set_icon_name("selection-mode-symbolic")
+        self.play_selection_switch = Gtk.ToggleButton(
+            child=Adw.ButtonContent(
+                icon_name="selection-mode-symbolic", label=_("Selection only")
+            )
+        )
         self.play_selection_switch.add_css_class("flat")
-        self.play_selection_switch.add_css_class("circular")
         self.play_selection_switch.set_active(False)
         self.play_selection_switch.connect(
             "toggled", weak_callback(self._on_play_selection_switch_toggled)
@@ -515,23 +517,15 @@ class MainWindow(
         )
         end_box.append(self.segment_edit_button)
 
-        # Add "Auto-Advance" toggle button — icon-only
-        self.auto_advance_switch = Gtk.ToggleButton()
-        self.auto_advance_switch.set_icon_name("media-playlist-consecutive-symbolic")
-        self.auto_advance_switch.add_css_class("flat")
-        self.auto_advance_switch.add_css_class("circular")
-        auto_advance_enabled = self.app.config.get("auto_advance_enabled", True)
-        self.auto_advance_switch.set_active(auto_advance_enabled)
+        # Rarely changed; it lives in the playback options menu below.
+        self.auto_advance_switch = Adw.SwitchRow(
+            title=_("Play the next file automatically"),
+            active=self.app.config.get("auto_advance_enabled", True) is True,
+        )
         self.auto_advance_switch.connect(
-            "toggled", weak_callback(self._on_auto_advance_switch_toggled)
+            "notify::active",
+            lambda row, _pspec: owner._on_auto_advance_switch_toggled(row),
         )
-        self.auto_advance_switch.set_valign(Gtk.Align.CENTER)
-        self.auto_advance_switch.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Auto-advance to next track")],
-        )
-
-        end_box.append(self.auto_advance_switch)
 
         # Add Equalizer toggle button — icon-only
         self.eq_toggle_btn = Gtk.ToggleButton()
@@ -539,13 +533,15 @@ class MainWindow(
             Path(__file__).resolve().parents[4]
             / "icons/hicolor/symbolic/actions/equalizer-symbolic.svg"
         )
-        self.eq_toggle_btn.set_child(
+        equalizer_content = Gtk.Box(spacing=6)
+        equalizer_content.append(
             Gtk.Image.new_from_gicon(
                 Gio.FileIcon.new(Gio.File.new_for_path(str(equalizer_icon)))
             )
         )
+        equalizer_content.append(Gtk.Label(label=_("Equalizer")))
+        self.eq_toggle_btn.set_child(equalizer_content)
         self.eq_toggle_btn.add_css_class("flat")
-        self.eq_toggle_btn.add_css_class("circular")
         self.eq_toggle_btn.add_css_class("eq-icon-btn")
         self.eq_toggle_btn.set_active(False)
         self._eq_toggle_btn_handler = self.eq_toggle_btn.connect(
@@ -571,15 +567,17 @@ class MainWindow(
         )
         end_box.append(self.original_preview)
 
-        self.audio_output_button = Gtk.MenuButton(icon_name="audio-headphones-symbolic")
-        self.audio_output_button.set_tooltip_text(_("Audio output"))
+        self.audio_output_button = Gtk.MenuButton(
+            icon_name="view-more-symbolic", css_classes=["flat"]
+        )
+        self.audio_output_button.set_tooltip_text(_("More playback options"))
         self.audio_output_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Audio output")]
+            [Gtk.AccessibleProperty.LABEL], [_("More playback options")]
         )
         output_popover = Gtk.Popover()
         output_group = Adw.PreferencesGroup(
-            title=_("Listen through"),
-            description=_("Only affects playback. Converted files stay unchanged."),
+            title=_("Playback"),
+            description=_("Only affects listening. Converted files stay unchanged."),
             width_request=320,
             margin_top=12,
             margin_bottom=12,
@@ -593,6 +591,7 @@ class MainWindow(
         self._audio_output_row_handler = self.audio_output_row.connect(
             "notify::selected", weak_callback(self._on_audio_output_changed)
         )
+        output_group.add(self.auto_advance_switch)
         output_group.add(self.audio_output_row)
         refresh_outputs = Gtk.Button(label=_("Refresh audio outputs"), margin_top=6)
         refresh_outputs.connect(
@@ -711,7 +710,7 @@ class MainWindow(
         voice_box, self.voice_btn = self._bar_control(
             "voice",
             "audio-input-microphone-symbolic",
-            _("Voice filter"),
+            _("Clean voice"),
             _(
                 "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
             ),
@@ -834,6 +833,10 @@ class MainWindow(
         self.prev_audio_btn.set_visible(has_multiple_files)
         self.next_audio_btn.set_visible(has_multiple_files)
         self.convert_button.set_visible(has_files)
+        add_files = self.right_header.add_files_button
+        (add_files.remove_css_class if has_files else add_files.add_css_class)(
+            "suggested-action"
+        )
         self.pause_play_btn.set_sensitive(has_files)
         self.convert_button.set_label(
             gettext.ngettext("Convert %d file", "Convert %d files", count) % count
@@ -938,7 +941,6 @@ class MainWindow(
             (self.pause_play_btn, "pause_play_btn"),
             (self.next_audio_btn, "next_audio_btn"),
             (self.play_selection_switch, "play_selection_switch"),
-            (self.auto_advance_switch, "auto_advance_switch"),
             (self.eq_toggle_btn, "eq_toggle_btn"),
             (self.visualizer, "waveform_visualizer"),
         ):

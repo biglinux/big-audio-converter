@@ -13,6 +13,7 @@ Usage:
 """
 
 import gettext
+import locale
 import logging
 import math
 import weakref
@@ -63,7 +64,11 @@ def _show_check(item, *_args):
 
 
 def _short_label_factory(labels):
-    """Button text for a dropdown whose list entries carry an explanation."""
+    """Button text for a dropdown whose list entries carry an explanation.
+
+    ``labels`` is read at bind time, so replacing its items with the model's
+    relabels the button.
+    """
     factory = Gtk.SignalListItemFactory()
     factory.connect("setup", lambda _f, item: item.set_child(Gtk.Label(xalign=0)))
     factory.connect(
@@ -71,6 +76,44 @@ def _short_label_factory(labels):
         lambda _f, item: item.get_child().set_label(labels[item.get_position()]),
     )
     return factory
+
+
+# Quality in words by bitrate. Opus reaches each level at a lower bitrate.
+QUALITY_WORDS = {
+    "opus": {32: "voice", 64: "good", 96: "very good", 128: "very good"},
+    "other": {
+        32: "voice",
+        64: "voice",
+        96: "fair",
+        128: "good",
+        160: "very good",
+        192: "very good",
+    },
+}
+
+
+def quality_labels(format_name, bitrates):
+    """List entries and button texts for the quality choices of a format."""
+    words = {
+        "voice": _("Voice only"),
+        "fair": _("Fair"),
+        "good": _("Good"),
+        "very good": _("Very good"),
+        "best": _("Best"),
+    }
+    table = QUALITY_WORDS["opus" if format_name == "opus" else "other"]
+    entries, buttons = [], []
+    for bitrate in bitrates:
+        kbps = int(bitrate.rstrip("k"))
+        word = words[table.get(kbps, "best")]
+        megabytes = locale.format_string("%.1f", kbps * 60 / 8 / 1000)
+        entries.append(
+            _("{quality} — {kbps} kbps, about {size} MB per minute").format(
+                quality=word, kbps=kbps, size=megabytes
+            )
+        )
+        buttons.append(f"{word} · {kbps} kbps")
+    return entries, buttons
 
 
 class ChoiceRow(Adw.ActionRow):
@@ -88,8 +131,9 @@ class ChoiceRow(Adw.ActionRow):
             model=Gtk.StringList.new(labels), valign=Gtk.Align.CENTER
         )
         self.dropdown.set_list_factory(_untruncated_list_factory())
+        self.short_labels = list(short_labels or ())
         if short_labels:
-            self.dropdown.set_factory(_short_label_factory(short_labels))
+            self.dropdown.set_factory(_short_label_factory(self.short_labels))
         self.dropdown.update_property([Gtk.AccessibleProperty.LABEL], [title])
         self.bind_property(
             "selected",
@@ -109,7 +153,9 @@ class ChoiceRow(Adw.ActionRow):
     def get_selected_item(self):
         return self.dropdown.get_selected_item()
 
-    def set_model(self, model):
+    def set_model(self, model, short_labels=None):
+        if short_labels is not None:
+            self.short_labels[:] = short_labels
         self.dropdown.set_model(model)
 
 
@@ -154,28 +200,32 @@ class SettingsManagerMixin:
             (parent.add_row if isinstance(parent, Adw.ExpanderRow) else parent.add)(row)
             return row, control
 
-        self._format_list = ["copy", "mp3", "ogg", "flac", "wav", "aac", "opus"]
+        # Most requests name the format, so the common ones come first and the
+        # packet copy, which ignores every other choice, comes last.
+        self._format_list = ["mp3", "m4a", "opus", "flac", "wav", "ogg", "copy"]
         self.format_row = ChoiceRow(
             _("Format"),
             [
-                _("Copy without changing quality"),
-                _("MP3 — widely compatible"),
-                _("Ogg Vorbis — open format"),
+                _("MP3 — plays everywhere"),
+                _("M4A — good quality in small files"),
+                _("Opus — smallest files, great for voice"),
                 _("FLAC — lossless, smaller than WAV"),
                 _("WAV — uncompressed"),
-                _("AAC — good quality in small files"),
-                _("Opus — smallest files, great for voice"),
+                _("Ogg Vorbis — open format"),
+                _("Keep the original format — no conversion, no effects"),
             ],
-            [_("Copy"), "MP3", "Ogg", "FLAC", "WAV", "AAC", "Opus"],
+            ["MP3", "M4A", "Opus", "FLAC", "WAV", "Ogg", _("Original")],
         )
-        self.format_row.set_selected(1)
+        self.format_row.set_selected(0)
         self.format_row.connect(
             "notify::selected", weak_callback(self._on_format_changed)
         )
         options.add(self.format_row)
 
         self._bitrate_list = list(BITRATES["mp3"])
-        self.bitrate_row = ChoiceRow(_("Bitrate"), self._bitrate_list)
+        self.bitrate_row = ChoiceRow(
+            _("Quality"), *quality_labels("mp3", self._bitrate_list)
+        )
         self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
         self.bitrate_row.connect(
             "notify::selected", weak_callback(self._on_bitrate_changed)
@@ -188,7 +238,6 @@ class SettingsManagerMixin:
         self.volume_spin.connect(
             "notify::value", lambda row, _pspec: owner._on_volume_spin_changed(row)
         )
-        options.add(self.volume_spin)
         self.speed_spin = Adw.SpinRow.new_with_range(0.10, 5.0, 0.05)
         self.speed_spin.set_title(_("Speed (×)"))
         self.speed_spin.set_digits(2)
@@ -196,13 +245,12 @@ class SettingsManagerMixin:
         self.speed_spin.connect(
             "notify::value", lambda row, _pspec: owner._on_speed_spin_changed(row)
         )
-        options.add(self.speed_spin)
 
         # The voice filter sits in the playback bar, which is built later; its
         # controls exist now so the saved settings can be restored into them.
         # Strength 0 is off.
         self.noise_engines = ("dfn3", "dpdfnet")
-        self.noise_value_label = Gtk.Label(label="0", css_classes=["caption"])
+        self.noise_value_label = Gtk.Label(css_classes=["caption"])
         self.noise_status = Gtk.Label(
             wrap=True,
             max_width_chars=16,
@@ -245,7 +293,6 @@ class SettingsManagerMixin:
         configure.connect("clicked", lambda *_: owner.eq_toggle_btn.set_active(True))
         equalizer_row.add_suffix(configure)
         equalizer_row.set_activatable_widget(configure)
-        options.add(equalizer_row)
 
         self._cut_list = [
             _("Keep the whole audio"),
@@ -258,7 +305,7 @@ class SettingsManagerMixin:
         )
         options.add(self.cut_row)
         self.cut_output_row = ChoiceRow(
-            _("Save segments"), [_("Separate Files"), _("Merge into One")]
+            _("Save segments"), [_("Separate files"), _("Join this file's segments")]
         )
         self.cut_output_row.set_visible(False)
         self.cut_output_row.connect(
@@ -298,19 +345,29 @@ class SettingsManagerMixin:
         # Most conversions change nothing below; each closed row names what is on.
         effects = self.effects_expander = Adw.ExpanderRow(title=_("Adjust sound"))
         options.add(effects)
+        for row in (self.volume_spin, self.speed_spin, equalizer_row):
+            effects.add_row(row)
+        self.normalize_row = Adw.SwitchRow(
+            title=_("Even volume"),
+            subtitle=_("Brings every file to the same loudness (−16 LUFS)"),
+        )
+        self.normalize_row.connect(
+            "notify::active", weak_callback(self._on_normalize_switch_changed)
+        )
+        effects.add_row(self.normalize_row)
         for prefix, title, subtitle, initial, handler, intensity_handler in (
             (
                 "gate",
-                _("Noise Gate"),
-                _("Silences the background between words"),
+                _("Silence pauses"),
+                _("Mutes the background between words"),
                 0.5,
                 self._on_gate_switch_changed,
                 self._on_gate_intensity_changed,
             ),
             (
                 "compressor",
-                _("Compressor"),
-                _("Evens out loud and quiet parts"),
+                _("Balance loud and quiet parts"),
+                _("Brings quiet passages closer to the loud ones"),
                 1,
                 self._on_compressor_switch_changed,
                 self._on_compressor_intensity_changed,
@@ -328,7 +385,8 @@ class SettingsManagerMixin:
             setattr(self, prefix + "_intensity_scale", spin)
 
         self.hpf_row = Adw.SwitchRow(
-            title=_("High-Pass Filter"), subtitle=_("Removes low-frequency rumble")
+            title=_("Remove low rumble"),
+            subtitle=_("Cuts hum and handling noise below the voice"),
         )
         self.hpf_row.connect(
             "notify::active", weak_callback(self._on_hpf_switch_changed)
@@ -345,17 +403,9 @@ class SettingsManagerMixin:
             0,
         )
         self.hpf_freq_row.set_visible(False)
-        self.normalize_row = Adw.SwitchRow(
-            title=_("Loudness Normalization"),
-            subtitle=_("Target: −16 LUFS; changes the original volume"),
-        )
-        self.normalize_row.connect(
-            "notify::active", weak_callback(self._on_normalize_switch_changed)
-        )
-        effects.add_row(self.normalize_row)
         self.clipping_row = Adw.SwitchRow(
-            title=_("Clipping protection"),
-            subtitle=_("Limit peaks explicitly; may change dynamics"),
+            title=_("Prevent distortion"),
+            subtitle=_("Keeps loud peaks from clipping"),
         )
         self.clipping_row.connect(
             "notify::active", weak_callback(self._on_clipping_changed)
@@ -487,7 +537,8 @@ class SettingsManagerMixin:
         self._updating_profile = True
         saved_bitrate = self.app.config.get("conversion_bitrate", "192k")
         self._bitrate_list = list(BITRATES.get(format_name, ("192k",)))
-        self.bitrate_row.set_model(Gtk.StringList.new(self._bitrate_list))
+        entries, buttons = quality_labels(format_name, self._bitrate_list)
+        self.bitrate_row.set_model(Gtk.StringList.new(entries), buttons)
         self.bitrate_row.set_selected(
             self._bitrate_list.index(saved_bitrate)
             if saved_bitrate in self._bitrate_list
@@ -570,6 +621,7 @@ class SettingsManagerMixin:
         self.gain_notice.set_visible(
             self.volume_spin.get_value() > 100.001 or boosted_eq
         )
+        self._update_effects_summary()
 
     def _on_speed_spin_changed(self, spin):
         self._set_processing_speed(spin.get_value())
@@ -587,6 +639,7 @@ class SettingsManagerMixin:
             self.player.set_playback_speed(speed)
             self.player.set_pitch_correction(True)
             self.app.config.set("conversion_speed", str(speed))
+            self._update_effects_summary()
         finally:
             self._syncing_speed = False
 
@@ -617,7 +670,11 @@ class SettingsManagerMixin:
 
     def _show_noise_strength(self):
         strength = self.noise_scale.get_value() if self._noise_active() else 0
-        self.noise_value_label.set_text(f"{strength:.0f}")
+        self.noise_value_label.set_text(
+            _("Clean voice · {percent}%").format(percent=f"{strength:.0f}")
+            if strength
+            else _("Clean voice · off")
+        )
 
     def _on_noise_strength_changed(self, scale):
         percent = scale.get_value()
@@ -636,20 +693,32 @@ class SettingsManagerMixin:
             scale.set_value(0)
 
     def _update_effects_summary(self):
-        """Name the active effects so a closed list still shows its state."""
-        active = [
+        """Name what differs from the original so a closed list shows it."""
+        if not hasattr(self, "effects_expander"):
+            return
+        active = []
+        volume, speed = self.volume_spin.get_value(), self.speed_spin.get_value()
+        if abs(volume - 100) > 0.001:
+            active.append(_("Volume {percent}%").format(percent=f"{volume:.0f}"))
+        if abs(speed - 1) > 0.001:
+            active.append(_("Speed {factor}×").format(factor=f"{speed:.2f}"))
+        if hasattr(self, "eq_panel") and any(
+            scale.get_value() != 0 for scale in self.eq_panel.band_scales.values()
+        ):
+            active.append(self.equalizer_row.get_title())
+        active += [
             row.get_title()
             for row in (
+                self.normalize_row,
                 self.gate_row,
                 self.compressor_row,
                 self.hpf_row,
-                self.normalize_row,
                 self.clipping_row,
             )
             if row.get_active()
         ]
         self.effects_expander.set_subtitle(
-            ", ".join(active) or _("Filters and loudness")
+            ", ".join(active) or _("Volume, speed, equalizer and effects")
         )
 
     def _on_noise_model_changed(self, button):
@@ -916,7 +985,7 @@ class SettingsManagerMixin:
         setup_conversion_options then applies the format-dependent rows.
         """
         self.format_row.set_selected(
-            self._config_list_index("conversion_format", self._format_list, 1)
+            self._config_list_index("conversion_format", self._format_list, 0)
         )
         self.channels_row.set_selected(
             self._config_int("audio_channels", 0, lo=0, hi=2)

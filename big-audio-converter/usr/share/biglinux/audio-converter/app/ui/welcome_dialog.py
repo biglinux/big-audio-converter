@@ -16,7 +16,7 @@ class WelcomeDialog:
         self.parent_window = parent_window
         self.config = parent_window.app.config
         self.dialog = Adw.Dialog(
-            title=_("Welcome"), content_width=560, content_height=600
+            title=_("Welcome"), content_width=520, content_height=500
         )
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(Adw.HeaderBar())
@@ -37,39 +37,17 @@ class WelcomeDialog:
         for title, description in (
             (
                 _("1. Add your files"),
-                _(
-                    "Add audio or video files. Videos with several audio tracks show one entry for each track."
-                ),
+                _("Audio or video. Each audio track of a video becomes its own entry."),
             ),
             (
-                _("2. Choose the output"),
+                _("2. Choose what to make"),
                 _(
-                    "Choose MP3, FLAC, Ogg Vorbis, WAV, AAC or Opus and a destination folder. Original files are never replaced."
+                    "Pick a format and, if you want, clean the voice, cut parts or adjust the sound."
                 ),
             ),
             (
                 _("3. Convert"),
-                _(
-                    "The results list each output and any files that need another attempt. Your queue stays available for repeating an operation."
-                ),
-            ),
-            (
-                _("Editing and effects"),
-                _(
-                    "Edit Segments provides start and end times and keyboard controls. Volume, speed, equalizer and other enabled effects also change exported audio."
-                ),
-            ),
-            (
-                _("Fast Copy"),
-                _(
-                    "Copy encoded audio without re-encoding. Cut boundaries are approximate; effects are bypassed. Container support determines which tags and artwork can be kept."
-                ),
-            ),
-            (
-                _("Speech cleanup"),
-                _(
-                    "Neural noise reduction requires the optional DeepFilterNet3 or DPDFNet-2 plugin and is intended for speech, not music. Unavailable effects are identified in settings."
-                ),
+                _("New files appear next to the originals, which are never changed."),
             ),
         ):
             block = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -94,6 +72,9 @@ class WelcomeDialog:
         start.add_css_class("suggested-action")
         start.connect("clicked", lambda button: button.get_ancestor(Adw.Dialog).close())
         content.append(start)
+        # Focus on the switch at the end used to open the dialog scrolled down.
+        self.dialog.set_default_widget(start)
+        self.dialog.set_focus(start)
         scrolled.set_child(content)
         toolbar.set_content(scrolled)
         self.dialog.set_child(toolbar)

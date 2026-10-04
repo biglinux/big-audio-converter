@@ -341,7 +341,7 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     window.noise_engine_buttons[0].set_active(True)
     assert window.noise_scale.get_sensitive()
     assert player.noise_reduction and player.noise_engine == "dfn3"
-    assert window.noise_value_label.get_text() == "25"
+    assert window.noise_value_label.get_text() == "Clean voice · 25%"
 
 
 def test_reset_settings_restores_first_run_values(window, tmp_path):
@@ -378,7 +378,9 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
     assert window.auto_advance_switch.get_active()
     assert not window.player.normalize
-    assert window.effects_expander.get_subtitle() == "Filters and loudness"
+    assert (
+        window.effects_expander.get_subtitle() == "Volume, speed, equalizer and effects"
+    )
     for key, value in (
         ("conversion_format", "mp3"),
         ("audio_channels", "0"),

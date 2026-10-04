@@ -103,7 +103,7 @@ class AppConfig:
             except (ValueError, TypeError, OverflowError):
                 return False
         if key == "conversion_format":
-            return value in ("copy", "mp3", "flac", "ogg", "wav", "aac", "opus")
+            return value in ("copy", "mp3", "m4a", "flac", "ogg", "wav", "opus")
         return (
             value is None
             or isinstance(value, (str, bool, int))
@@ -114,6 +114,9 @@ class AppConfig:
     def _sanitize(self, values):
         if not isinstance(values, dict):
             raise TypeError("Configuration must be a JSON object")
+        # Raw .aac output became .m4a; keep the choice of people who saved it.
+        if values.get("conversion_format") == "aac":
+            values = values | {"conversion_format": "m4a"}
         return {key: value for key, value in values.items() if self._valid(key, value)}
 
     @staticmethod

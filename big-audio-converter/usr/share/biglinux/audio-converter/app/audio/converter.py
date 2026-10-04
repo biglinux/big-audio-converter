@@ -196,7 +196,7 @@ class AudioConverter:
             duration = audio_duration(info, stream)
             rate = int(stream["sample_rate"])
             format_name = settings["format"]
-            warnings = []
+            warnings, notes = [], []
             if format_name == "copy":
                 effects = (
                     "noise_reduction",
@@ -225,7 +225,7 @@ class AudioConverter:
                 output_path = str(Path(output_path).with_suffix("." + extension))
                 params = ["-f", muxer, "-c:a", "copy"]
                 filters = []
-                warnings.append(
+                notes.append(
                     gettext.gettext(
                         "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
                     )
@@ -239,20 +239,20 @@ class AudioConverter:
                 if format_name == "flac" and stream.get("codec_name", "").startswith(
                     ("pcm_f32", "pcm_f64")
                 ):
-                    warnings.append(
+                    notes.append(
                         gettext.gettext(
                             "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
                         )
                     )
                 if format_name == "opus" and rate != 48000:
-                    warnings.append(
+                    notes.append(
                         gettext.gettext(
                             "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
                         )
                     )
                 final_rate = int(params[params.index("-ar") + 1])
                 if final_rate != rate:
-                    warnings.append(
+                    notes.append(
                         gettext.gettext(
                             "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
                         ).format(rate=rate, final_rate=final_rate)
@@ -273,7 +273,7 @@ class AudioConverter:
                         )
                     )
             if extension in ("aac", "ac3", "eac3", "dts"):
-                warnings.append(
+                notes.append(
                     gettext.gettext(
                         "This raw audio format cannot preserve all tags or artwork."
                     )
@@ -281,7 +281,7 @@ class AudioConverter:
             elif extension not in ("mp3", "flac", "m4a") and any(
                 s.get("disposition", {}).get("attached_pic") for s in info["streams"]
             ):
-                warnings.append(
+                notes.append(
                     gettext.gettext("Artwork is not preserved by this output profile.")
                 )
             segments = []
@@ -355,7 +355,11 @@ class AudioConverter:
             if progress_callback:
                 progress_callback(1.0)
             return ConversionResult(
-                input_path, "success", outputs, warnings=tuple(warnings)
+                input_path,
+                "success",
+                outputs,
+                warnings=tuple(warnings),
+                notes=tuple(notes),
             )
         except CancelledError:
             return ConversionResult(

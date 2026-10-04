@@ -103,7 +103,10 @@ class ConversionResult:
     outputs: tuple[str, ...] = ()
     message: str = ""
     details: str = ""
+    # Shown to everyone: problems the person can hear, such as distortion.
     warnings: tuple[str, ...] = ()
+    # Shown under technical details: how the file was made.
+    notes: tuple[str, ...] = ()
 
     @property
     def successful(self):

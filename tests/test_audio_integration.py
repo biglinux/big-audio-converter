@@ -139,7 +139,7 @@ def test_float_to_flac_requires_explicit_precision_reduction(tmp_path, codec):
         source, output, {"format": "flac", "allow_precision_reduction": True}
     )
     assert int(probe(output)["streams"][0]["bits_per_raw_sample"]) == 24
-    assert result.warnings
+    assert result.notes
 
 
 @pytest.mark.parametrize(
@@ -149,7 +149,7 @@ def test_float_to_flac_requires_explicit_precision_reduction(tmp_path, codec):
         ("flac", "flac"),
         ("ogg", "vorbis"),
         ("wav", "pcm_s16le"),
-        ("aac", "aac"),
+        ("m4a", "aac"),
         ("opus", "opus"),
     ],
 )
@@ -162,9 +162,8 @@ def test_every_advertised_encoding_profile(source, tmp_path, format, codec):
     assert audio["codec_name"] == codec and audio["channels"] == 1
     assert audio["sample_rate"] == "48000"
     assert abs(float(output["format"]["duration"]) - 2) < 0.15
-    if format != "aac":
-        tags = output["format"].get("tags", {}) | audio.get("tags", {})
-        assert {k.lower(): v for k, v in tags.items()}["title"] == "Title 東京 🎵"
+    tags = output["format"].get("tags", {}) | audio.get("tags", {})
+    assert {k.lower(): v for k, v in tags.items()}["title"] == "Title 東京 🎵"
 
 
 @pytest.mark.parametrize("format,codec", [("mp3", "libmp3lame"), ("flac", "flac")])

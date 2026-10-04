@@ -42,7 +42,8 @@ class SegmentEditor(Adw.Dialog):
         )
         position_row = Gtk.Box(spacing=8)
         label = Gtk.Label(label=_("Position (seconds)"))
-        self.position = self._spin(window.player._position)
+        # Where the bar shows the listener, also after a seek before playback.
+        self.position = self._spin(window.visualizer.position)
         self.position.update_property(
             [Gtk.AccessibleProperty.LABEL], [_("Playback position in seconds")]
         )
@@ -63,9 +64,7 @@ class SegmentEditor(Adw.Dialog):
         box.append(scrolled)
         add = Gtk.Button.new_with_mnemonic(_("_Add Segment"))
         add.set_halign(Gtk.Align.START)
-        add.connect(
-            "clicked", lambda button: owner.add_segment(0, min(owner.duration, 1))
-        )
+        add.connect("clicked", lambda button: owner._add_at_position())
         box.append(add)
         self.add_button = add
         for segment in window.visualizer.get_marker_pairs():
@@ -81,6 +80,11 @@ class SegmentEditor(Adw.Dialog):
         box.append(buttons)
         toolbar.set_content(box)
         self.set_child(toolbar)
+
+    def _add_at_position(self):
+        """A one-second segment where the listener is, kept inside the file."""
+        start = min(self.position.get_value(), max(self.duration - 1, 0))
+        self.add_segment(start, min(self.duration, start + 1))
 
     def _spin(self, value):
         spin = Gtk.SpinButton.new_with_range(0, max(self.duration, 1), 0.01)

@@ -55,19 +55,20 @@ FORMATS = {
     "flac": ("flac", "flac"),
     "ogg": ("ogg", "libvorbis"),
     "wav": ("wav", "pcm_s16le"),
-    "aac": ("adts", "aac"),
+    # AAC in an MPEG-4 file: tags, artwork and players handle it, unlike raw ADTS.
+    "m4a": ("ipod", "aac"),
     "opus": ("opus", "libopus"),
 }
 BITRATES = {
     "mp3": ("32k", "64k", "96k", "128k", "160k", "192k", "256k", "320k"),
-    "aac": ("32k", "64k", "96k", "128k", "160k", "192k", "256k", "320k"),
+    "m4a": ("32k", "64k", "96k", "128k", "160k", "192k", "256k", "320k"),
     "ogg": ("64k", "96k", "128k", "160k", "192k", "256k", "320k"),
     "opus": ("32k", "64k", "96k", "128k", "160k", "192k", "256k", "320k"),
 }
 SAMPLE_RATES = {
     "mp3": (8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000),
     "opus": (8000, 12000, 16000, 24000, 48000),
-    "aac": (
+    "m4a": (
         7350,
         8000,
         11025,
