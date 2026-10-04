@@ -427,3 +427,33 @@ def test_panning_the_waveform_moves_the_seek_bar_window(window):
     assert window.seekbar._viewport_offset == 0.5
     window.visualizer.viewport_offset = 0.25
     assert window.seekbar._viewport_offset == 0.25
+
+
+def test_purposes_set_the_controls_and_name_a_manual_change(window):
+    from app.ui.settings_mixin import PURPOSES
+
+    keys = [key for key, _settings in PURPOSES]
+    custom = len(PURPOSES)
+    # The first-run settings are what plays on any device.
+    assert window.purpose_row.get_selected() == keys.index("anywhere")
+
+    window.purpose_row.set_selected(keys.index("whatsapp"))
+    assert window._format_list[window.format_row.get_selected()] == "m4a"
+    assert window._bitrate_list[window.bitrate_row.get_selected()] == "64k"
+    assert window.channels_row.get_selected() == 1
+    assert window.normalize_row.get_active()
+    assert window.noise_scale.get_value() == 70
+    assert window.app.config.get("conversion_format") == "m4a"
+    assert window.purpose_row.get_selected() == keys.index("whatsapp")
+
+    window.gate_row.set_active(True)
+    assert window.purpose_row.get_selected() == custom
+    window.gate_row.set_active(False)
+    assert window.purpose_row.get_selected() == keys.index("whatsapp")
+
+    # Keeping the original sets only the format; the effects stay as chosen.
+    window.purpose_row.set_selected(keys.index("original"))
+    assert window._format_list[window.format_row.get_selected()] == "copy"
+    assert window.normalize_row.get_active()
+    window.purpose_row.set_selected(custom)
+    assert window._format_list[window.format_row.get_selected()] == "copy"

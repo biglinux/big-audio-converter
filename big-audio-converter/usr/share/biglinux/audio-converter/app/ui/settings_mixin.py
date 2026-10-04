@@ -116,6 +116,63 @@ def quality_labels(format_name, bitrates):
     return entries, buttons
 
 
+# Everything a purpose sets; a purpose names only what differs from this.
+NEUTRAL = {
+    "channels": 0,
+    "sample_rate": "original",
+    "volume": 100,
+    "speed": 1.0,
+    "flat_eq": True,
+    "normalize": False,
+    "gate": False,
+    "compressor": False,
+    "hpf": False,
+    "clipping": False,
+    "voice": 0,
+}
+# Keep the original copies the audio, so nothing else applies to it.
+PURPOSES = (
+    ("anywhere", NEUTRAL | {"format": "mp3", "bitrate": "192k"}),
+    (
+        "whatsapp",
+        NEUTRAL
+        | {
+            "format": "m4a",
+            "bitrate": "64k",
+            "channels": 1,
+            "normalize": True,
+            "voice": 70,
+        },
+    ),
+    (
+        "lecture",
+        NEUTRAL
+        | {
+            "format": "mp3",
+            "bitrate": "64k",
+            "channels": 1,
+            "normalize": True,
+            "compressor": True,
+        },
+    ),
+    ("music", NEUTRAL | {"format": "mp3", "bitrate": "320k"}),
+    ("lossless", NEUTRAL | {"format": "flac"}),
+    ("original", {"format": "copy"}),
+)
+
+
+def purpose_labels():
+    names = {
+        "anywhere": _("Play on any device"),
+        "whatsapp": _("Voice for WhatsApp"),
+        "lecture": _("Lecture: louder and smaller"),
+        "music": _("High-quality music"),
+        "lossless": _("Lossless"),
+        "original": _("Keep the original"),
+    }
+    return [names[key] for key, _settings in PURPOSES] + [_("Custom")]
+
+
 class ChoiceRow(Adw.ActionRow):
     """A titled row whose value is a dropdown button, as in the compact list.
 
@@ -175,6 +232,14 @@ class SettingsManagerMixin:
             css_classes=["compact-options"],
         )
         parent_box.append(options)
+
+        # Rows built later fire their handlers first; match purposes after.
+        self._applying_purpose = True
+        self.purpose_row = ChoiceRow(_("What is it for?"), purpose_labels())
+        self.purpose_row.connect(
+            "notify::selected", weak_callback(self._on_purpose_changed)
+        )
+        options.add(self.purpose_row)
 
         def numeric_row(parent, title, value, lower, upper, step, callback, digits=2):
             row = Adw.ActionRow(title=title)
@@ -479,6 +544,87 @@ class SettingsManagerMixin:
         self._update_effects_summary()
         self._on_format_changed(self.format_row, None)
         self._update_gain_notice()
+        self._applying_purpose = False
+        self._sync_purpose()
+
+    # --- Purposes ---
+
+    def _purpose_state(self):
+        """The current value of everything a purpose sets."""
+        state = {
+            "format": self._format_list[self.format_row.get_selected()],
+            "channels": self.channels_row.get_selected(),
+            "sample_rate": self._sample_rate_list[self.sample_rate_row.get_selected()],
+            "volume": round(self.volume_spin.get_value()),
+            "speed": round(self.speed_spin.get_value(), 2),
+            "flat_eq": not hasattr(self, "eq_panel")
+            or all(s.get_value() == 0 for s in self.eq_panel.band_scales.values()),
+            "normalize": self.normalize_row.get_active(),
+            "gate": self.gate_row.get_active(),
+            "compressor": self.compressor_row.get_active(),
+            "hpf": self.hpf_row.get_active(),
+            "clipping": self.clipping_row.get_active(),
+            "voice": round(self.noise_scale.get_value()),
+        }
+        if self.bitrate_row.get_visible():
+            state["bitrate"] = self._bitrate_list[self.bitrate_row.get_selected()]
+        return state
+
+    def _sync_purpose(self):
+        """Show the purpose the settings match, or Custom."""
+        if self._applying_purpose:
+            return
+        state = self._purpose_state()
+        index = next(
+            (
+                number
+                for number, (_key, settings) in enumerate(PURPOSES)
+                if all(state.get(key) == value for key, value in settings.items())
+            ),
+            len(PURPOSES),
+        )
+        self._applying_purpose = True
+        self.purpose_row.set_selected(index)
+        self._applying_purpose = False
+
+    def _on_purpose_changed(self, row, _pspec):
+        if self._applying_purpose or row.get_selected() >= len(PURPOSES):
+            return
+        self._apply_purpose(PURPOSES[row.get_selected()][1])
+
+    def _apply_purpose(self, settings):
+        """Set each control; its own handler saves it and updates the preview."""
+        self._applying_purpose = True
+        try:
+            self.format_row.set_selected(self._format_list.index(settings["format"]))
+            if "bitrate" in settings:
+                self.bitrate_row.set_selected(
+                    self._bitrate_list.index(settings["bitrate"])
+                )
+            if "channels" not in settings:
+                return
+            self.channels_row.set_selected(settings["channels"])
+            self.sample_rate_row.set_selected(
+                self._sample_rate_list.index(settings["sample_rate"])
+            )
+            self._set_processing_volume(settings["volume"])
+            self._set_processing_speed(settings["speed"])
+            if settings["flat_eq"] and hasattr(self, "eq_panel"):
+                self.eq_panel.preset_dropdown.set_selected(
+                    self.eq_panel.PRESET_KEYS.index("flat")
+                )
+            for row, key in (
+                (self.normalize_row, "normalize"),
+                (self.gate_row, "gate"),
+                (self.compressor_row, "compressor"),
+                (self.hpf_row, "hpf"),
+                (self.clipping_row, "clipping"),
+            ):
+                row.set_active(settings[key])
+            self.noise_scale.set_value(settings["voice"])
+        finally:
+            self._applying_purpose = False
+            self._sync_purpose()
 
     def _choose_output_folder(self, _button):
         dialog = Gtk.FileDialog(title=_("Choose output folder"))
@@ -569,6 +715,7 @@ class SettingsManagerMixin:
             self.app.config.set(
                 "conversion_bitrate", self._bitrate_list[row.get_selected()]
             )
+        self._sync_purpose()
 
     def _on_channels_changed(self, row, pspec):
         """Handle channels selection change and save setting."""
@@ -583,6 +730,7 @@ class SettingsManagerMixin:
             if row.get_selected() > 0
         ]
         self.advanced_row.set_subtitle(" · ".join(changed) or self._advanced_subtitle)
+        self._sync_purpose()
 
     def _on_volume_spin_changed(self, spin):
         self._set_processing_volume(spin.get_value())
@@ -675,6 +823,7 @@ class SettingsManagerMixin:
             if strength
             else _("Clean voice · off")
         )
+        self._sync_purpose()
 
     def _on_noise_strength_changed(self, scale):
         percent = scale.get_value()
@@ -720,6 +869,7 @@ class SettingsManagerMixin:
         self.effects_expander.set_subtitle(
             ", ".join(active) or _("Volume, speed, equalizer and effects")
         )
+        self._sync_purpose()
 
     def _on_noise_model_changed(self, button):
         if not button.get_active():

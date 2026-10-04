@@ -6,14 +6,14 @@ import weakref
 _ = gettext.gettext
 
 TOOLTIPS = {
-    "format": _("Choose the output format. Fast Copy does not apply effects."),
+    "purpose": _(
+        "Sets the format, quality and sound for a common use. Changing any of them shows Custom."
+    ),
+    "format": _(
+        "Choose the output format. Keeping the original format applies no effects."
+    ),
     "bitrate": _(
-        "Higher values sound better and make larger files.\n"
-        "96k: speech, smallest files\n"
-        "128k: podcasts and audiobooks\n"
-        "192k: music, a good balance\n"
-        "320k: highest MP3 quality\n"
-        "Available values depend on the format."
+        "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
     ),
     "volume": _(
         "Changes preview and export volume. Values above 100% can distort the audio."
@@ -23,7 +23,9 @@ TOOLTIPS = {
         "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
     ),
     "noise_gate": _("Reduce quiet background sound between spoken phrases."),
-    "normalize": _("Adjust loudness to −16 LUFS. This changes the original volume."),
+    "normalize": _(
+        "Brings every file to the same loudness. This changes the original volume."
+    ),
     "cut": _("Choose the order in which marked segments are exported."),
     "cut_output": _("Export each segment separately or join the selected segments."),
     "channels": _("Keep the original layout or explicitly downmix to mono or stereo."),

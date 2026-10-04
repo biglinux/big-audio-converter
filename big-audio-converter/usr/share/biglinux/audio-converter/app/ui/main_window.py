@@ -927,6 +927,7 @@ class MainWindow(
     def _apply_tooltips(self):
         """Register every help tooltip; the helper shows them only when enabled."""
         for widget, key in (
+            (self.purpose_row, "purpose"),
             (self.format_row, "format"),
             (self.bitrate_row, "bitrate"),
             (self.volume_spin, "volume"),
