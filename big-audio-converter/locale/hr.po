@@ -2,12 +2,11 @@
 # Distributed under the same license as the package.
 # Original catalogs: BigLinux contributors.
 # Completed with AI assistance; see TRANSLATION-REPORT.md.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: big-audio-converter\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-audio-converter/issues\n"
-"POT-Creation-Date: 2026-10-03 00:00+0000\n"
+"POT-Creation-Date: 2026-10-04 00:00+0000\n"
 "PO-Revision-Date: 2026-10-03 00:00+0000\n"
 "Last-Translator: AI-assisted localization\n"
 "Language-Team: hr\n"
@@ -19,7 +18,7 @@ msgstr ""
 "X-Generator: Contextual translation and automated validation\n"
 
 #: usr/share/biglinux/audio-converter/main.py:86
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1403
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1318
 msgid "Local files only"
 msgstr "Samo lokalne datoteke"
 
@@ -27,8 +26,8 @@ msgstr "Samo lokalne datoteke"
 msgid "Download this file to a local folder before adding it."
 msgstr "Prije dodavanja preuzmite ovu datoteku u lokalnu mapu."
 
-#: usr/share/biglinux/audio-converter/main.py:216
 #: usr/share/biglinux/audio-converter/main.py:192
+#: usr/share/biglinux/audio-converter/main.py:216
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:213
 msgid "Audio Converter"
 msgstr "Pretvornik zvuka"
@@ -38,137 +37,445 @@ msgstr "Pretvornik zvuka"
 msgid "BigLinux Team"
 msgstr "Tim BigLinuxa"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:9
-msgid "Choose the output format. Fast Copy does not apply effects."
-msgstr "Odaberite izlazni format. Brzo kopiranje ne primjenjuje efekte."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:61
+msgid "The application is closing."
+msgstr "Aplikacija se zatvara."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
-msgid ""
-"Higher values sound better and make larger files.\n"
-"96k: speech, smallest files\n"
-"128k: podcasts and audiobooks\n"
-"192k: music, a good balance\n"
-"320k: highest MP3 quality\n"
-"Available values depend on the format."
-msgstr ""
-"Veće vrijednosti daju kvalitetniji zvuk i veće datoteke.\n"
-"96k: govor, najmanje datoteke\n"
-"128k: podcasti i audioknjige\n"
-"192k: glazba, dobar omjer kvalitete i veličine\n"
-"320k: najviša kvaliteta MP3-a\n"
-"Dostupne vrijednosti ovise o formatu."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:65
+msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
+msgstr "Pretvorba još traje. Prije pokretanja nove pričekajte da se otkazivanje dovrši."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:18
-#, no-python-format
-msgid "Changes preview and export volume. Values above 100% can distort the audio."
-msgstr "Mijenja glasnoću pretpregleda i izvezenog zvuka. Vrijednosti iznad 100 % mogu izobličiti zvuk."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:111
+msgid "Conversion cancelled."
+msgstr "Pretvorba je otkazana."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
-msgid "Changes preview and export speed while preserving pitch."
-msgstr "Mijenja brzinu pretpregleda i izvezenog zvuka uz očuvanje visine tona."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:132
+msgid "The output path is invalid. Check the source filename and destination."
+msgstr "Izlazna putanja nije valjana. Provjerite naziv izvorne datoteke i odredište."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:22
-msgid "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
-msgstr "Smanjuje šum u govoru pomoću DeepFilterNet3 ili DPDFNet. Nije namijenjeno glazbi."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:159
+msgid "An unexpected error stopped this conversion."
+msgstr "Neočekivana pogreška zaustavila je ovu pretvorbu."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
-msgid "Reduce quiet background sound between spoken phrases."
-msgstr "Smanjuje tihe pozadinske zvukove između izgovorenih rečenica."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:188
+msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
+msgstr "FFmpeg nije instaliran. Instalirajte paket FFmpeg i pokušajte ponovno."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:26
-msgid "Adjust loudness to −16 LUFS. This changes the original volume."
-msgstr "Prilagođava glasnoću na −16 LUFS. Time se mijenja izvorna glasnoća."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:219
+msgid "Fast Copy cannot apply effects, change channels or resample. Select an encoding format."
+msgstr "Brzo kopiranje ne može primjenjivati efekte, mijenjati kanale ni frekvenciju uzorkovanja. Odaberite format kodiranja."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
-msgid "Choose the order in which marked segments are exported."
-msgstr "Odaberite redoslijed izvoza označenih odsječaka."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:230
+msgid "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
+msgstr "Brzo kopiranje čuva kodirane zvučne pakete; granice rezova su približne. Efekti se ne primjenjuju."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:28
-msgid "Export each segment separately or join the selected segments."
-msgstr "Izvezite svaki odsječak zasebno ili spojite odabrane odsječke."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:244
+msgid "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
+msgstr "Zvuk s pomičnim zarezom uz izričito je dopuštenje pretvoren u 24-bitni cjelobrojni PCM za FLAC; kopija nije identična bit po bit."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:29
-msgid "Keep the original layout or explicitly downmix to mono or stereo."
-msgstr "Zadržava izvorni raspored kanala ili na izričit zahtjev miješa zvuk u mono ili stereo."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:250
+msgid "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
+msgstr "Opus pri reprodukciji upotrebljava takt uzorkovanja od 48 kHz. Izvornu frekvenciju uzorkovanja nije moguće nepromijenjenu prikazati u izlaznom spremniku."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:30
-msgid "Click the waveform to mark cuts, or drag markers to adjust them. Use the seek bar to preview. Edit Segments provides numeric and keyboard controls."
-msgstr "Kliknite valni oblik da biste označili rezove ili povucite oznake da biste ih prilagodili. Za pretpregled upotrijebite traku položaja. Uređivač odsječaka omogućuje unos brojčanih vrijednosti i upravljanje tipkovnicom."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:257
+#, python-brace-format
+msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
+msgstr "Izlazni kodek zahtijeva promjenu frekvencije uzorkovanja s {rate} Hz na {final_rate} Hz."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:33
-msgid "Remove all entries from the queue without deleting source files."
-msgstr "Uklanja sve stavke iz reda bez brisanja izvornih datoteka."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:272
+msgid "Positive gain may clip. Enable clipping protection or reduce the gain."
+msgstr "Pozitivno pojačanje može uzrokovati izobličenje zbog preopterećenja. Omogućite zaštitu ili smanjite pojačanje."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
-msgid "Preview the previous file."
-msgstr "Preslušajte prethodnu datoteku."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:278
+msgid "This raw audio format cannot preserve all tags or artwork."
+msgstr "Ovaj sirovi zvučni format ne može sačuvati sve oznake ni omote."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
-msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
-msgstr "Reproducirajte ili pauzirajte. Tipkovnički prečac: Ctrl+Space."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:285
+msgid "Artwork is not preserved by this output profile."
+msgstr "Ovaj izlazni profil ne čuva omote."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
-msgid "Preview the next file."
-msgstr "Preslušajte sljedeću datoteku."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:351
+msgid "The source changed during conversion. No output was published; add the file again."
+msgstr "Izvor se promijenio tijekom pretvorbe. Nije spremljena konačna izlazna datoteka; ponovno dodajte datoteku."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:39
-msgid "Preview only the marked segments."
-msgstr "Preslušajte samo označene odsječke."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:369
+msgid "Conversion cancelled. No incomplete output was published."
+msgstr "Pretvorba je otkazana. Nije spremljena nijedna nedovršena izlazna datoteka."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
-msgid "Preview the next track after the current track ends."
-msgstr "Nakon završetka trenutačnog zapisa preslušajte sljedeći."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:383
+msgid "The file or destination could not be accessed. Check permissions and free disk space."
+msgstr "Nije moguće pristupiti datoteci ili odredištu. Provjerite dozvole i slobodan prostor na disku."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:41
-msgid "Show the equalizer. Its settings affect exported audio."
-msgstr "Prikazuje ekvilizator. Njegove postavke utječu na izvezeni zvuk."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:392
+msgid "The media information or conversion settings are invalid."
+msgstr "Informacije o mediju ili postavke pretvorbe nisu valjane."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:42
-msgid "Preview this audio file."
-msgstr "Preslušajte ovu zvučnu datoteku."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:409
+msgid "The encoder changed the requested sample rate. No output was published."
+msgstr "Koder je promijenio zatraženu frekvenciju uzorkovanja. Nije spremljena konačna izlazna datoteka."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:43
-msgid "Remove this entry without deleting the source file."
-msgstr "Uklanja ovu stavku bez brisanja izvorne datoteke."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:417
+msgid "The encoder changed the requested channel count. No output was published."
+msgstr "Koder je promijenio zatraženi broj kanala. Nije spremljena konačna izlazna datoteka."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:44
-msgid "More actions are available from the adjacent menu button."
-msgstr "Dodatne radnje dostupne su putem susjednog gumba izbornika."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:425
+msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
+msgstr "Ova inačica FFmpega ne može sačuvati zatraženu preciznost FLAC-a. Odaberite WAV ili instalirajte kompatibilan paket FFmpeg."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
-msgid "Delete All Segments"
-msgstr "Izbriši sve odsječke"
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:444
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:172
+msgid "Select a supported output format."
+msgstr "Odaberite podržani izlazni format."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
-msgid "Delete all marked segments? Source files will not be changed."
-msgstr "Izbrisati sve označene odsječke? Izvorne datoteke neće se promijeniti."
+#: usr/share/biglinux/audio-converter/app/audio/media.py:24
+msgid "Select a valid local media file."
+msgstr "Odaberite valjanu lokalnu medijsku datoteku."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:894
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1259
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1278
+#: usr/share/biglinux/audio-converter/app/audio/media.py:32
+msgid "The source file is missing or is not a regular file."
+msgstr "Izvorna datoteka nedostaje ili nije obična datoteka."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:39
+msgid "The selected audio track is invalid. Add the file again."
+msgstr "Odabrani zvučni zapis nije valjan. Ponovno dodajte datoteku."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:44
+msgid "The source video is missing. Add the file again."
+msgstr "Izvorni videozapis nedostaje. Ponovno dodajte datoteku."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:65
+msgid "A segment has invalid start or end times."
+msgstr "Odsječak ima nevaljano početno ili završno vrijeme."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:70
+msgid "Every segment must have a finite end time after its start."
+msgstr "Svaki odsječak mora imati konačno završno vrijeme nakon početnog vremena."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:79
+msgid "A segment extends beyond the source audio. Adjust its end time."
+msgstr "Odsječak se proteže izvan izvornog zvuka. Prilagodite njegovo završno vrijeme."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:85
+msgid "A segment must contain at least one audio sample."
+msgstr "Odsječak mora sadržavati barem jedan zvučni uzorak."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:171
+msgid "FFprobe is not installed. Install the FFmpeg package and try again."
+msgstr "FFprobe nije instaliran. Instalirajte paket FFmpeg i pokušajte ponovno."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:198
+msgid "The media file could not be read. It may be damaged or unsupported."
+msgstr "Medijsku datoteku nije moguće pročitati. Možda je oštećena ili nepodržana."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:206
+msgid "FFprobe returned invalid media information."
+msgstr "FFprobe je vratio nevaljane informacije o mediju."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:211
+msgid "FFprobe returned incomplete media information."
+msgstr "FFprobe je vratio nepotpune informacije o mediju."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:224
+msgid "This file does not contain the selected audio track."
+msgstr "Ova datoteka ne sadrži odabrani zvučni zapis."
+
+#: usr/share/biglinux/audio-converter/app/audio/media.py:269
+msgid "This PCM precision cannot be preserved by the selected WAV encoder."
+msgstr "Odabrani WAV koder ne može sačuvati ovu preciznost PCM-a."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:157
+msgid "Audio preview is unavailable. Install mpv and python-mpv, then reopen the application."
+msgstr "Pretpregled zvuka nije dostupan. Instalirajte mpv i python-mpv, a zatim ponovno otvorite aplikaciju."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:184
+msgid "Audio outputs could not be listed. Try reopening the output selector."
+msgstr "Nije moguće dohvatiti popis zvučnih izlaza. Pokušajte ponovno otvoriti odabir izlaza."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:206
+msgid "The selected audio output was disconnected. Playback is paused. Choose an output or resume using the system default."
+msgstr "Odabrani zvučni izlaz je odspojen. Reprodukcija je pauzirana. Odaberite izlaz ili nastavite sa zadanim izlazom sustava."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:219
+msgid "This audio output is no longer available. Choose another output."
+msgstr "Ovaj zvučni izlaz više nije dostupan. Odaberite drugi."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:231
+msgid "The audio output could not be selected. Choose another output."
+msgstr "Zvučni izlaz nije moguće odabrati. Odaberite drugi."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:257
+msgid "The selected audio track is unavailable. Add the file again."
+msgstr "Odabrani zvučni zapis nije dostupan. Ponovno dodajte datoteku."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:289
+msgid "The audio could not be played. Check the file and audio output device."
+msgstr "Zvuk nije moguće reproducirati. Provjerite datoteku i izlazni zvučni uređaj."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:415
+msgid "This audio position could not be reached."
+msgstr "Nije moguće prijeći na ovaj položaj u zvuku."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:467
+msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
+msgstr "Efekt pretpregleda nije moguće primijeniti. Provjerite odabrane efekte i instalirane dodatke."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:59
+msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
+msgstr "Previše datoteka čeka analizu. Pričekajte da analiza nekih datoteka završi pa dodajte nove."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:80
+msgid "Select a regular local media file, not a folder or device."
+msgstr "Odaberite običnu lokalnu medijsku datoteku, a ne mapu ili uređaj."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:100
+msgid "The file changed during inspection. Add it again."
+msgstr "Datoteka se promijenila tijekom analize. Ponovno je dodajte."
+
+#: usr/share/biglinux/audio-converter/app/audio/process.py:116
+#: usr/share/biglinux/audio-converter/app/audio/process.py:144
+msgid "The media command timed out."
+msgstr "Isteklo je vrijeme čekanja na medijsku naredbu."
+
+#: usr/share/biglinux/audio-converter/app/audio/process.py:134
+msgid "The media information is too large to process safely."
+msgstr "Informacije o mediju prevelike su za sigurnu obradu."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:130
+#, python-brace-format
+msgid "Invalid value for {key}."
+msgstr "Nevaljana vrijednost za {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:134
+#, python-brace-format
+msgid "{key} must be between {low} and {high}."
+msgstr "Vrijednost {key} mora biti između {low} i {high}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:142
+#, python-brace-format
+msgid "Invalid switch value for {key}."
+msgstr "Nevaljana vrijednost prekidača za {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:152
+msgid "The equalizer bands are invalid."
+msgstr "Pojasevi ekvilizatora nisu valjani."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:159
+msgid "The equalizer needs ten finite gains between -40 and 40 dB."
+msgstr "Ekvilizator zahtijeva deset konačnih vrijednosti pojačanja između -40 i 40 dB."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:163
+msgid "Select a supported noise reduction mode."
+msgstr "Odaberite podržani način smanjenja šuma."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:188
+msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
+msgstr "FLAC ne može sačuvati ovaj prikaz PCM-a. Odaberite WAV ili u naprednom kodiranju izričito dopustite pretvorbu u 24-bitni PCM."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:213
+msgid "The selected bitrate is not supported by this output profile."
+msgstr "Ovaj izlazni profil ne podržava odabranu brzinu prijenosa."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:220
+msgid "Select original, mono or stereo channels."
+msgstr "Odaberite izvorne kanale, mono ili stereo."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:228
+msgid "MP3 supports mono or stereo. Select stereo channels or another format."
+msgstr "MP3 podržava mono i stereo. Odaberite stereo kanale ili drugi format."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:235
+msgid "Select a valid output sample rate."
+msgstr "Odaberite valjanu izlaznu frekvenciju uzorkovanja."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:242
+msgid "The selected codec does not support that sample rate."
+msgstr "Odabrani kodek ne podržava tu frekvenciju uzorkovanja."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:316
+msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
+msgstr "Odabrani dodatak za smanjenje šuma nije dostupan. Instalirajte ga ili isključite smanjenje šuma."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:350
+msgid "The audio plugin path is unsupported."
+msgstr "Putanja zvučnog dodatka nije podržana."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:40
+msgid "There is not enough free disk space. Free some space and try again."
+msgstr "Nema dovoljno slobodnog prostora na disku. Oslobodite prostor i pokušajte ponovno."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:47
+msgid "The file or destination is not accessible. Check its permissions."
+msgstr "Datoteka ili odredište nije dostupno. Provjerite dozvole."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:54
+msgid "The required audio encoder is unavailable. Install a compatible FFmpeg package."
+msgstr "Potreban zvučni koder nije dostupan. Instalirajte kompatibilan paket FFmpeg."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:61
+msgid "A selected audio effect is unavailable in this FFmpeg installation."
+msgstr "Odabrani zvučni efekt nije dostupan u ovoj instalaciji FFmpega."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:67
+msgid "The audio could not be processed. Check the file and selected output settings."
+msgstr "Zvuk nije moguće obraditi. Provjerite datoteku i odabrane izlazne postavke."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:158
+msgid "Effects require re-encoding. Select an audio format instead of Fast Copy."
+msgstr "Efekti zahtijevaju ponovno kodiranje. Umjesto brzog kopiranja odaberite zvučni format."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:289
+msgid "An intermediate segment has an unsafe path."
+msgstr "Privremeni odsječak ima nesigurnu putanju."
+
+#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:372
+msgid "The output contains no readable audio. No file was published."
+msgstr "Izlaz ne sadrži čitljiv zvuk. Nije spremljena konačna datoteka."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:56
+msgid "The audio contains non-finite samples."
+msgstr "Zvuk sadrži uzorke s beskonačnim ili nebrojčanim vrijednostima."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:98
+msgid "The decoded audio ends with an incomplete sample frame."
+msgstr "Dekodirani zvuk završava nepotpunim okvirom uzoraka."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:101
+msgid "The file contains no readable audio samples."
+msgstr "Datoteka ne sadrži čitljive zvučne uzorke."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:239
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:164
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:202
+msgid "Generating waveform..."
+msgstr "Stvaranje valnog oblika…"
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:247
+msgid "FFmpeg is not installed."
+msgstr "FFmpeg nije instaliran."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:300
+msgid "The waveform could not be generated."
+msgstr "Valni oblik nije moguće stvoriti."
+
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:319
+msgid "The source changed while its waveform was being generated."
+msgstr "Izvor se promijenio tijekom stvaranja valnog oblika."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
+msgid "Inspecting audio"
+msgstr "Analiziranje zvuka"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:39
+msgid "Files are still being inspected. Conversion will be available when inspection finishes."
+msgstr "Analiza datoteka još traje. Pretvorba će biti dostupna nakon završetka analize."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
+msgid "No files to convert"
+msgstr "Nema datoteka za pretvorbu"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
+msgid "Please add at least one file to convert."
+msgstr "Dodajte barem jednu datoteku za pretvorbu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:57
+msgid "Check conversion settings"
+msgstr "Provjerite postavke pretvorbe"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:63
+msgid "Converting Files"
+msgstr "Pretvaranje datoteka"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77
+msgid "Preparing conversion…"
+msgstr "Priprema pretvorbe…"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
+msgid "Overall conversion progress"
+msgstr "Ukupni napredak pretvorbe"
+
 #: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:894
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1174
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1193
 #: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
 #: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:258
 msgid "Cancel"
 msgstr "Odustani"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:196
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:261
-msgid "Delete All"
-msgstr "Izbriši sve"
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
+msgid "Conversion could not start"
+msgstr "Pretvorbu nije moguće pokrenuti"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:255
-msgid "Delete Segment"
-msgstr "Izbriši odsječak"
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:107
+msgid "Cancelling…"
+msgstr "Otkazivanje…"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:256
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:109
+msgid "Stopping the current operation and removing incomplete outputs…"
+msgstr "Zaustavljanje trenutačne radnje i uklanjanje nedovršenih izlaznih datoteka…"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:127
 #, python-brace-format
-msgid "Delete segment {number}?"
-msgstr "Izbrisati odsječak {number}?"
+msgid ""
+"File {current} of {total}\n"
+"{name}"
+msgstr ""
+"Datoteka {current} od {total}\n"
+"{name}"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:259
-msgid "Delete"
-msgstr "Izbriši"
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:158
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:218
+msgid "Converted"
+msgstr "Pretvoreno"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:159
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:219
+msgid "Failed"
+msgstr "Neuspješno"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:160
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:220
+msgid "Cancelled"
+msgstr "Otkazano"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:180
+msgid "Conversion Results"
+msgstr "Rezultati pretvorbe"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:193
+#, python-brace-format
+msgid "Converted: {success} · Failed: {failed} · Cancelled: {cancelled}"
+msgstr "Pretvoreno: {success} · Neuspješno: {failed} · Otkazano: {cancelled}"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:199
+msgid "Existing files were not replaced. Inputs remain in the queue."
+msgstr "Postojeće datoteke nisu zamijenjene. Ulazne datoteke ostaju u redu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:240
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:243
+msgid "Show output file"
+msgstr "Prikaži izlaznu datoteku"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:252
+msgid "Technical details"
+msgstr "Tehničke pojedinosti"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:264
+msgid "Retry unfinished files"
+msgstr "Ponovno pokušaj s nedovršenim datotekama"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:269
+msgid "Close"
+msgstr "Zatvori"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:290
+msgid "Folder could not be opened"
+msgstr "Mapu nije moguće otvoriti"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:291
+#, python-brace-format
+msgid "Open your file manager and navigate to: {path}"
+msgstr "Otvorite upravitelj datoteka i prijeđite na: {path}"
 
 #: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:98
 msgid "Default Voice"
@@ -211,8 +518,9 @@ msgid "Custom"
 msgstr "Prilagođeno"
 
 #: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:158
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:546
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:542
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:553
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
 msgid "Equalizer"
 msgstr "Ekvilizator"
 
@@ -254,6 +562,44 @@ msgstr "Otvori mapu s datotekom"
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:154
 msgid "More Information..."
 msgstr "Više informacija…"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
+msgid "Size"
+msgstr "Veličina"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
+msgid "Unknown"
+msgstr "Nepoznato"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:277
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:282
+msgid "Duration"
+msgstr "Trajanje"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:293
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:207
+msgid "Format"
+msgstr "Format"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:301
+msgid "Bitrate"
+msgstr "Brzina prijenosa"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:312
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:431
+msgid "Sample rate"
+msgstr "Frekvencija uzorkovanja"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:321
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:421
+msgid "Channels"
+msgstr "Kanali"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:324
+msgid "Bit Depth"
+msgstr "Bitna dubina"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:355
 msgid "File Information"
@@ -322,7 +668,7 @@ msgstr "Odaberite valjanu lokalnu medijsku datoteku."
 msgid "Inspecting audio…"
 msgstr "Analiziranje zvuka…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:845
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:846
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "Ograničenje reda je 10 000 datoteka. Prije dodavanja novih pretvorite ovu skupinu."
 
@@ -334,7 +680,7 @@ msgstr[0] "{count} datoteka"
 msgstr[1] "{count} datoteke"
 msgstr[2] "{count} datoteka"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:882
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:883
 msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
 msgstr "Prije premještanja ulazne datoteke u smeće otkažite pretvorbu ili pričekajte da završi."
 
@@ -342,128 +688,21 @@ msgstr "Prije premještanja ulazne datoteke u smeće otkažite pretvorbu ili pri
 msgid "Move File to Trash?"
 msgstr "Premjestiti datoteku u smeće?"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:890
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:891
 #, python-brace-format
 msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
 msgstr "Premjestiti „{name}” u smeće? Svi njezini zapisi uklonit će se iz reda."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:908
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:909
 msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
 msgstr "Datoteka se upotrebljava u pretvorbi. Otkažite pretvorbu prije premještanja ulazne datoteke u smeće."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:921
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:922
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "Datoteku nije moguće premjestiti u smeće. Nije izbrisana."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
-msgid "Inspecting audio"
-msgstr "Analiziranje zvuka"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:38
-msgid "Files are still being inspected. Conversion will be available when inspection finishes."
-msgstr "Analiza datoteka još traje. Pretvorba će biti dostupna nakon završetka analize."
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "No files to convert"
-msgstr "Nema datoteka za pretvorbu"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "Please add at least one file to convert."
-msgstr "Dodajte barem jednu datoteku za pretvorbu."
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:57
-msgid "Check conversion settings"
-msgstr "Provjerite postavke pretvorbe"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:63
-msgid "Converting Files"
-msgstr "Pretvaranje datoteka"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77
-msgid "Preparing conversion…"
-msgstr "Priprema pretvorbe…"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
-msgid "Overall conversion progress"
-msgstr "Ukupni napredak pretvorbe"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
-msgid "Conversion could not start"
-msgstr "Pretvorbu nije moguće pokrenuti"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:107
-msgid "Cancelling…"
-msgstr "Otkazivanje…"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:109
-msgid "Stopping the current operation and removing incomplete outputs…"
-msgstr "Zaustavljanje trenutačne radnje i uklanjanje nedovršenih izlaznih datoteka…"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:127
-#, python-brace-format
-msgid ""
-"File {current} of {total}\n"
-"{name}"
-msgstr ""
-"Datoteka {current} od {total}\n"
-"{name}"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:218
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:158
-msgid "Converted"
-msgstr "Pretvoreno"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:219
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:159
-msgid "Failed"
-msgstr "Neuspješno"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:220
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:160
-msgid "Cancelled"
-msgstr "Otkazano"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:180
-msgid "Conversion Results"
-msgstr "Rezultati pretvorbe"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:192
-#, python-brace-format
-msgid "Converted: {success} · Failed: {failed} · Cancelled: {cancelled}"
-msgstr "Pretvoreno: {success} · Neuspješno: {failed} · Otkazano: {cancelled}"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:198
-msgid "Existing files were not replaced. Inputs remain in the queue."
-msgstr "Postojeće datoteke nisu zamijenjene. Ulazne datoteke ostaju u redu."
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:240
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:243
-msgid "Show output file"
-msgstr "Prikaži izlaznu datoteku"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:251
-msgid "Technical details"
-msgstr "Tehničke pojedinosti"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:265
-msgid "Retry unfinished files"
-msgstr "Ponovno pokušaj s nedovršenim datotekama"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:270
-msgid "Close"
-msgstr "Zatvori"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:291
-msgid "Folder could not be opened"
-msgstr "Mapu nije moguće otvoriti"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:292
-#, python-brace-format
-msgid "Open your file manager and navigate to: {path}"
-msgstr "Otvorite upravitelj datoteka i prijeđite na: {path}"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:86
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:75
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:86
 msgid "Clear queue"
 msgstr "Isprazni red"
 
@@ -499,98 +738,89 @@ msgstr "Dodaj datoteke"
 msgid "Convert"
 msgstr "Pretvori"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:493
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:495
+msgid "Selection only"
+msgstr "Samo odabir"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:506
 msgid "Play only selected area"
 msgstr "Reproduciraj samo odabrano područje"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
 msgid "Edit Segments…"
 msgstr "Uredi odsječke…"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:520
-msgid "Auto-advance to next track"
-msgstr "Automatski prijeđi na sljedeći zapis"
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:522
+msgid "Play the next file automatically"
+msgstr "Automatski reproduciraj sljedeću datoteku"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:557
 msgid "Listen to original"
 msgstr "Poslušaj izvornik"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:552
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:559
 msgid "Temporarily listen without effects. Export settings stay unchanged."
 msgstr "Privremeno slušanje bez efekata. Postavke izvoza ostaju nepromijenjene."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:564
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:566
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:573
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:575
+msgid "More playback options"
+msgstr "Više mogućnosti reprodukcije"
+
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+msgid "Playback"
+msgstr "Reprodukcija"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:580
+msgid "Only affects listening. Converted files stay unchanged."
+msgstr "Utječe samo na slušanje. Pretvorene datoteke ostaju nepromijenjene."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:588
 msgid "Audio output"
 msgstr "Zvučni izlaz"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:570
-msgid "Listen through"
-msgstr "Slušaj putem"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:571
-msgid "Only affects playback. Converted files stay unchanged."
-msgstr "Utječe samo na reprodukciju. Pretvorene datoteke ostaju nepromijenjene."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:993
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:588
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:910
 msgid "System default"
 msgstr "Zadani izlaz sustava"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:586
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:596
 msgid "Refresh audio outputs"
 msgstr "Osvježi zvučne izlaze"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:617
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:625
 msgid "Previous track"
 msgstr "Prethodni zapis"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:633
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:641
 msgid "Play or pause"
 msgstr "Reproduciraj ili pauziraj"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:647
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:655
 msgid "Next track"
 msgstr "Sljedeći zapis"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:671
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:672
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:684
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:680
 msgid "Volume"
 msgstr "Glasnoća"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:697
-msgid "Volume level"
-msgstr "Razina glasnoće"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:724
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:726
-msgid "Playback speed"
-msgstr "Brzina reprodukcije"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:739
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:702
 msgid "Speed"
 msgstr "Brzina"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:752
-msgid "Playback speed level"
-msgstr "Razina brzine reprodukcije"
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:713
+msgid "Clean voice"
+msgstr "Čišćenje glasa"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:782
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:784
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:715
+msgid "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
+msgstr "Ističe glas i smanjuje ostale zvukove. Na 100 % primjenjuje najveće smanjenje modela."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:736
 msgid "Waveform zoom"
 msgstr "Uvećanje valnog oblika"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:799
-msgid "Zoom"
-msgstr "Uvećanje"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:812
-msgid "Waveform zoom level"
-msgstr "Razina uvećanja valnog oblika"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:925
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:842
 #, python-format
 msgid "Convert %d file"
 msgid_plural "Convert %d files"
@@ -598,420 +828,436 @@ msgstr[0] "Pretvori %d datoteku"
 msgstr[1] "Pretvori %d datoteke"
 msgstr[2] "Pretvori %d datoteka"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1108
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1209
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1023
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1124
 msgid "OK"
 msgstr "U redu"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1152
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1067
 msgid "No audio selected"
 msgstr "Nije odabran zvuk"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1153
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1068
 msgid "Add a file and select it before editing segments."
 msgstr "Prije uređivanja odsječaka dodajte datoteku i odaberite je."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1158
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1073
 msgid "Audio duration unavailable"
 msgstr "Trajanje zvuka nije dostupno"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1159
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1075
 msgid "Enable cutting and wait for the waveform to finish before editing this file."
 msgstr "Prije uređivanja ove datoteke omogućite rezanje i pričekajte dovršetak valnog oblika."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1202
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1118
 msgid "Other valid files remain in the queue. Check these files and add them again."
 msgstr "Ostale valjane datoteke ostaju u redu. Provjerite ove datoteke i ponovno ih dodajte."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1207
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1122
 msgid "Some files could not be added"
 msgstr "Neke datoteke nije moguće dodati"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1223
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1138
 msgid "Audio preview"
 msgstr "Pretpregled zvuka"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1253
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1168
 msgid "Reset all settings?"
 msgstr "Vratiti sve postavke?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1254
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1170
 msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
 msgstr "Format, kvaliteta, izlazna mapa, rezanje, efekti i ekvilizator vraćaju se na zadane vrijednosti. Red i izvorne datoteke ostaju sačuvani."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1260
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1175
 msgid "Reset"
 msgstr "Vrati"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1279
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1273
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1188
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1194
 msgid "Clear Queue"
 msgstr "Isprazni red"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1274
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1190
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
 msgstr "Ukloniti stavke iz reda i njihove izmjene? Izvorne datoteke neće se izbrisati."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1323
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1238
 msgid "Select Audio or Video Files"
 msgstr "Odaberite zvučne ili videodatoteke"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1327
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1242
 msgid "Audio and Video files"
 msgstr "Zvučne i videodatoteke"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1377
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1292
 msgid "All files"
 msgstr "Sve datoteke"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1404
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1320
 msgid "Some selected files are remote. Download them before adding them."
 msgstr "Neke odabrane datoteke nalaze se na udaljenoj lokaciji. Preuzmite ih prije dodavanja."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1416
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1331
 msgid "Files could not be selected"
 msgstr "Datoteke nije moguće odabrati"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
-msgid "Welcome"
-msgstr "Dobro došli"
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
+msgid "Delete All Segments"
+msgstr "Izbriši sve odsječke"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:33
-msgid "Convert audio in three steps"
-msgstr "Pretvorite zvuk u tri koraka"
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
+msgid "Delete all marked segments? Source files will not be changed."
+msgstr "Izbrisati sve označene odsječke? Izvorne datoteke neće se promijeniti."
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:39
-msgid "1. Add your files"
-msgstr "1. Dodajte datoteke"
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:196
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:261
+msgid "Delete All"
+msgstr "Izbriši sve"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:40
-msgid "Add audio or video files. Videos with several audio tracks show one entry for each track."
-msgstr "Dodajte zvučne ili videodatoteke. Za videozapise s više zvučnih zapisa svaki se zapis prikazuje kao zasebna stavka."
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:255
+msgid "Delete Segment"
+msgstr "Izbriši odsječak"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:45
-msgid "2. Choose the output"
-msgstr "2. Odaberite izlaz"
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:256
+#, python-brace-format
+msgid "Delete segment {number}?"
+msgstr "Izbrisati odsječak {number}?"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:46
-msgid "Choose MP3, FLAC, Ogg Vorbis, WAV, AAC or Opus and a destination folder. Original files are never replaced."
-msgstr "Odaberite MP3, FLAC, Ogg Vorbis, WAV, AAC ili Opus te odredišnu mapu. Izvorne datoteke nikada se ne zamjenjuju."
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:259
+msgid "Delete"
+msgstr "Izbriši"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:51
-msgid "3. Convert"
-msgstr "3. Pokrenite pretvorbu"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
+msgid "Edit Segments"
+msgstr "Uredi odsječke"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:52
-msgid "The results list each output and any files that need another attempt. Your queue stays available for repeating an operation."
-msgstr "Rezultati prikazuju svaku izlaznu datoteku i datoteke za koje treba pokušati ponovno. Red ostaje dostupan za ponavljanje radnje."
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:37
+msgid "Set start and end times in seconds. Changes are applied only when you press Apply."
+msgstr "Postavite početno i završno vrijeme u sekundama. Promjene se primjenjuju tek nakon pritiska na Primijeni."
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:57
-msgid "Editing and effects"
-msgstr "Uređivanje i efekti"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:44
+msgid "Position (seconds)"
+msgstr "Položaj (sekunde)"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:58
-msgid "Edit Segments provides start and end times and keyboard controls. Volume, speed, equalizer and other enabled effects also change exported audio."
-msgstr "Uređivač odsječaka omogućuje unos početnog i završnog vremena te upravljanje tipkovnicom. Glasnoća, brzina, ekvilizator i drugi omogućeni efekti također mijenjaju izvezeni zvuk."
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:47
+msgid "Playback position in seconds"
+msgstr "Položaj reprodukcije u sekundama"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:63
-msgid "Fast Copy"
-msgstr "Brzo kopiranje"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:49
+msgid "_Seek"
+msgstr "_Prijeđi"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:64
-msgid "Copy encoded audio without re-encoding. Cut boundaries are approximate; effects are bypassed. Container support determines which tags and artwork can be kept."
-msgstr "Kopira kodirani zvuk bez ponovnog kodiranja. Granice rezova su približne, a efekti se zaobilaze. Podrška spremnika određuje koje je oznake i omote moguće sačuvati."
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:64
+msgid "_Add Segment"
+msgstr "_Dodaj odsječak"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:69
-msgid "Speech cleanup"
-msgstr "Čišćenje govora"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:72
+msgid "_Cancel"
+msgstr "_Odustani"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:70
-msgid "Neural noise reduction requires the optional DeepFilterNet3 or DPDFNet-2 plugin and is intended for speech, not music. Unavailable effects are identified in settings."
-msgstr "Neuronsko smanjenje šuma zahtijeva neobavezni dodatak DeepFilterNet3 ili DPDFNet-2 i namijenjeno je govoru, a ne glazbi. Nedostupni efekti označeni su u postavkama."
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:74
+msgid "_Apply"
+msgstr "P_rimijeni"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:82
-msgid "Show dialog on startup"
-msgstr "Prikaži dijaloški okvir pri pokretanju"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:100
+msgid "Start (seconds)"
+msgstr "Početak (sekunde)"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:93
-msgid "Let's Start"
-msgstr "Započnimo"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:102
+msgid "End (seconds)"
+msgstr "Kraj (sekunde)"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:293
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:159
-msgid "Format"
-msgstr "Format"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:110
+msgid "Move segment up"
+msgstr "Pomakni odsječak gore"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:161
-msgid "Copy without changing quality"
-msgstr "Kopiraj bez promjene kvalitete"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:118
+msgid "Move segment down"
+msgstr "Pomakni odsječak dolje"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:162
-msgid "MP3 — widely compatible"
-msgstr "MP3 — široka kompatibilnost"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:126
+msgid "Remove segment"
+msgstr "Ukloni odsječak"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:163
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — otvoreni format"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:146
+#, python-brace-format
+msgid "Segment {number}"
+msgstr "Odsječak {number}"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:164
-msgid "FLAC — lossless, smaller than WAV"
-msgstr "FLAC — bez gubitaka, manji od WAV-a"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:149
+#, python-brace-format
+msgid "Segment {number} start in seconds"
+msgstr "Početak odsječka {number} u sekundama"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:165
-msgid "WAV — uncompressed"
-msgstr "WAV — nekomprimiran"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:153
+#, python-brace-format
+msgid "Segment {number} end in seconds"
+msgstr "Kraj odsječka {number} u sekundama"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:166
-msgid "AAC — good quality in small files"
-msgstr "AAC — dobra kvaliteta u malim datotekama"
+#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:197
+msgid "The active file changed. Reopen the segment editor for the current file."
+msgstr "Aktivna datoteka se promijenila. Ponovno otvorite uređivač odsječaka za trenutačnu datoteku."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:167
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:98
+msgid "Voice only"
+msgstr "Samo govor"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:99
+msgid "Fair"
+msgstr "Prihvatljiva"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:100
+msgid "Good"
+msgstr "Dobra"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:101
+msgid "Very good"
+msgstr "Vrlo dobra"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:102
+msgid "Best"
+msgstr "Najbolja"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:111
+#, python-brace-format
+msgid "{quality} — {kbps} kbps, about {size} MB per minute"
+msgstr "{quality} — {kbps} kbps, oko {size} MB po minuti"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:209
+msgid "MP3 — plays everywhere"
+msgstr "MP3 — reproducira se svugdje"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:210
+msgid "M4A — good quality in small files"
+msgstr "M4A — dobra kvaliteta u malim datotekama"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:211
 msgid "Opus — smallest files, great for voice"
 msgstr "Opus — najmanje datoteke, odličan za govor"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:169
-msgid "Copy"
-msgstr "Kopiranje"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:301
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:178
-msgid "Bitrate"
-msgstr "Brzina prijenosa"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:186
-#, no-python-format
-msgid "Volume (%)"
-msgstr "Glasnoća (%)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:193
-msgid "Speed (×)"
-msgstr "Brzina (×)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:202
-msgid "Noise Reduction"
-msgstr "Smanjenje šuma"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:707
-msgid "Voice filter"
-msgstr "Filtar glasa"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:221
-msgid "Light"
-msgstr "Lagani"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
-msgid "Higher quality"
-msgstr "Viša kvaliteta"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:713
-msgid "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
-msgstr "Ističe glas i smanjuje ostale zvukove. Na 100 % primjenjuje najveće smanjenje modela."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:209
-msgid "Noise reduction mode"
-msgstr "Način smanjenja šuma"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:211
-msgid "Light — DeepFilterNet3"
-msgstr "Lagani — DeepFilterNet3"
-
 #: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
-msgid "Higher quality — DPDFNet-2 48 kHz"
-msgstr "Viša kvaliteta — DPDFNet-2 48 kHz"
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — bez gubitaka, manji od WAV-a"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
-#, no-python-format
-msgid "Noise reduction strength (%)"
-msgstr "Jačina smanjenja šuma (%)"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:213
+msgid "WAV — uncompressed"
+msgstr "WAV — nekomprimiran"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
-msgid "Lower values keep more background sound; 0 leaves it unchanged"
-msgstr "Niže vrijednosti zadržavaju više pozadinskog zvuka; 0 ga ostavlja nepromijenjenim"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — otvoreni format"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:236
-msgid "Configure…"
-msgstr "Podesi…"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+msgid "Keep the original format — no conversion, no effects"
+msgstr "Zadrži izvorni format — bez pretvorbe i efekata"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
-msgid "Keep the whole audio"
-msgstr "Zadrži cijeli zvuk"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
-msgid "Cut in timeline order"
-msgstr "Reži redoslijedom na vremenskoj crti"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:245
-msgid "Cut in the order marked"
-msgstr "Reži redoslijedom označavanja"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:247
-msgid "Cut audio"
-msgstr "Izreži zvuk"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Save segments"
-msgstr "Spremi odsječke"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Separate Files"
-msgstr "Zasebne datoteke"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:253
-msgid "Merge into One"
-msgstr "Spoji u jednu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:261
-msgid "Show waveform"
-msgstr "Prikaži valni oblik"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
-msgid "Save to"
-msgstr "Spremi u"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:454
-msgid "Same folder as each source"
-msgstr "Ista mapa kao za svaku izvornu datoteku"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:272
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:274
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:426
-msgid "Choose output folder"
-msgstr "Odaberi izlaznu mapu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:280
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:281
-msgid "Use source folders"
-msgstr "Upotrijebi izvorne mape"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
-msgid "Adjust sound"
-msgstr "Prilagodi zvuk"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:296
-msgid "Noise Gate"
-msgstr "Vrata šuma"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:297
-msgid "Silences the background between words"
-msgstr "Utišavaju pozadinu između riječi"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:304
-msgid "Compressor"
-msgstr "Kompresor"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:305
-msgid "Evens out loud and quiet parts"
-msgstr "Ujednačava glasne i tihe dijelove"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:315
-msgid "Intensity"
-msgstr "Intenzitet"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
-msgid "High-Pass Filter"
-msgstr "Visokopropusni filtar"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
-msgid "Removes low-frequency rumble"
-msgstr "Uklanja niskofrekvencijsku tutnjavu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:331
-msgid "Frequency (Hz)"
-msgstr "Frekvencija (Hz)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:341
-msgid "Loudness Normalization"
-msgstr "Normalizacija glasnoće"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
-msgid "Target: −16 LUFS; changes the original volume"
-msgstr "Cilj: −16 LUFS; mijenja izvornu glasnoću"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:349
-msgid "Clipping protection"
-msgstr "Zaštita od izobličenja zbog preopterećenja"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:350
-msgid "Limit peaks explicitly; may change dynamics"
-msgstr "Izričito ograničava vrhove; može promijeniti dinamiku"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:358
-msgid "Advanced encoding"
-msgstr "Napredno kodiranje"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:359
-msgid "Keep original properties when supported"
-msgstr "Zadrži izvorna svojstva ako su podržana"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:321
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-msgid "Channels"
-msgstr "Kanali"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:374
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:496
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:217
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:421
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:432
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:555
 msgid "Original"
 msgstr "Izvorno"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:227
+msgid "Quality"
+msgstr "Kvaliteta"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:236
+msgid "Volume (%)"
+msgstr "Glasnoća (%)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:242
+msgid "Speed (×)"
+msgstr "Brzina (×)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:269
+msgid "Light"
+msgstr "Lagani"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270
+msgid "Higher quality"
+msgstr "Viša kvaliteta"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
+msgid "Configure…"
+msgstr "Podesi…"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:298
+msgid "Keep the whole audio"
+msgstr "Zadrži cijeli zvuk"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:299
+msgid "Cut in timeline order"
+msgstr "Reži redoslijedom na vremenskoj crti"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
+msgid "Cut in the order marked"
+msgstr "Reži redoslijedom označavanja"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
+msgid "Cut audio"
+msgstr "Izreži zvuk"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
+msgid "Save segments"
+msgstr "Spremi odsječke"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
+msgid "Separate files"
+msgstr "Zasebne datoteke"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
+msgid "Join this file's segments"
+msgstr "Spoji odsječke ove datoteke"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:316
+msgid "Show waveform"
+msgstr "Prikaži valni oblik"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:324
+msgid "Save to"
+msgstr "Spremi u"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:324
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:512
+msgid "Same folder as each source"
+msgstr "Ista mapa kao za svaku izvornu datoteku"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:327
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:329
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:484
+msgid "Choose output folder"
+msgstr "Odaberi izlaznu mapu"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:335
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:336
+msgid "Use source folders"
+msgstr "Upotrijebi izvorne mape"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:346
+msgid "Adjust sound"
+msgstr "Prilagodi zvuk"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:351
+msgid "Even volume"
+msgstr "Ujednačena glasnoća"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:352
+msgid "Brings every file to the same loudness (−16 LUFS)"
+msgstr "Ujednačuje glasnoću svih datoteka (−16 LUFS)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:361
+msgid "Silence pauses"
+msgstr "Utišavanje stanki"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:362
+msgid "Mutes the background between words"
+msgstr "Utišava pozadinu između riječi"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:369
+msgid "Balance loud and quiet parts"
+msgstr "Ujednačavanje glasnih i tihih dijelova"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
+msgid "Brings quiet passages closer to the loud ones"
+msgstr "Približava tihe dijelove glasnima"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
+msgid "Intensity"
+msgstr "Intenzitet"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
+msgid "Remove low rumble"
+msgstr "Uklanjanje duboke tutnjave"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:389
+msgid "Cuts hum and handling noise below the voice"
+msgstr "Uklanja brujanje i šumove rukovanja ispod glasa"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:397
+msgid "Frequency (Hz)"
+msgstr "Frekvencija (Hz)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:407
+msgid "Prevent distortion"
+msgstr "Sprječavanje izobličenja"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:408
+msgid "Keeps loud peaks from clipping"
+msgstr "Sprječava preopterećenje glasnih vrhova"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:416
+msgid "Advanced encoding"
+msgstr "Napredno kodiranje"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:417
+msgid "Keep original properties when supported"
+msgstr "Zadrži izvorna svojstva ako su podržana"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:421
 msgid "Mono"
 msgstr "Mono"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:363
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:421
 msgid "Stereo"
 msgstr "Stereo"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:312
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
-msgid "Sample rate"
-msgstr "Frekvencija uzorkovanja"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:439
 msgid "Allow conversion to 24-bit PCM"
 msgstr "Dopusti pretvorbu u 24-bitni PCM"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:382
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:441
 msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
 msgstr "Za zvuk s pomičnim zarezom koji se izvozi u FLAC. Smanjuje preciznost; WAV čuva izvorni prikaz."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:399
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458
 msgid "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
 msgstr "Brzo kopiranje čuva kodirani zvuk. Rezovi slijede granice paketa i možda neće odgovarati točnim vremenima. Efekti se zaobilaze u pretpregledu i izvozu."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:469
 msgid "Boosting volume or equalizer bands can distort audio. Reduce gain or enable clipping protection."
 msgstr "Povećanje glasnoće ili pojačanja pojasa ekvilizatora može izobličiti zvuk. Smanjite pojačanje ili omogućite zaštitu od izobličenja zbog preopterećenja."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:440
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:498
 msgid "Local folder required"
 msgstr "Potrebna je lokalna mapa"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:441
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:499
 msgid "Choose a folder on the local filesystem."
 msgstr "Odaberite mapu na lokalnom datotečnom sustavu."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:596
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:663
 #, python-brace-format
 msgid "Unavailable: install {package}"
 msgstr "Nedostupno: instalirajte {package}"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:634
-msgid "Filters and loudness"
-msgstr "Filtri i glasnoća"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:674
+#, python-brace-format
+msgid "Clean voice · {percent}%"
+msgstr "Čišćenje glasa · {percent} %"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:676
+msgid "Clean voice · off"
+msgstr "Čišćenje glasa · isključeno"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:702
+#, python-brace-format
+msgid "Volume {percent}%"
+msgstr "Glasnoća {percent} %"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:704
+#, python-brace-format
+msgid "Speed {factor}×"
+msgstr "Brzina {factor}×"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:721
+msgid "Volume, speed, equalizer and effects"
+msgstr "Glasnoća, brzina, ekvilizator i efekti"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:52
 msgid "Audio waveform visualizer"
 msgstr "Prikaz valnog oblika zvuka"
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:239
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:164
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:202
-msgid "Generating waveform..."
-msgstr "Stvaranje valnog oblika…"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1267
 msgid "Waveform could not be generated"
@@ -1037,394 +1283,137 @@ msgstr "Nije učitan zvuk"
 msgid "Audio position seekbar"
 msgstr "Klizač položaja u zvuku"
 
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
-msgid "Edit Segments"
-msgstr "Uredi odsječke"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:36
-msgid "Set start and end times in seconds. Changes are applied only when you press Apply."
-msgstr "Postavite početno i završno vrijeme u sekundama. Promjene se primjenjuju tek nakon pritiska na Primijeni."
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:44
-msgid "Position (seconds)"
-msgstr "Položaj (sekunde)"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:47
-msgid "Playback position in seconds"
-msgstr "Položaj reprodukcije u sekundama"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:49
-msgid "_Seek"
-msgstr "_Prijeđi"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:64
-msgid "_Add Segment"
-msgstr "_Dodaj odsječak"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:74
-msgid "_Cancel"
-msgstr "_Odustani"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:76
-msgid "_Apply"
-msgstr "P_rimijeni"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:97
-msgid "Start (seconds)"
-msgstr "Početak (sekunde)"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:99
-msgid "End (seconds)"
-msgstr "Kraj (sekunde)"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:107
-msgid "Move segment up"
-msgstr "Pomakni odsječak gore"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:115
-msgid "Move segment down"
-msgstr "Pomakni odsječak dolje"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:123
-msgid "Remove segment"
-msgstr "Ukloni odsječak"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:143
-#, python-brace-format
-msgid "Segment {number}"
-msgstr "Odsječak {number}"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:146
-#, python-brace-format
-msgid "Segment {number} start in seconds"
-msgstr "Početak odsječka {number} u sekundama"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:150
-#, python-brace-format
-msgid "Segment {number} end in seconds"
-msgstr "Kraj odsječka {number} u sekundama"
-
-#: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:193
-msgid "The active file changed. Reopen the segment editor for the current file."
-msgstr "Aktivna datoteka se promijenila. Ponovno otvorite uređivač odsječaka za trenutačnu datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:59
-msgid "The application is closing."
-msgstr "Aplikacija se zatvara."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:62
-msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
-msgstr "Pretvorba još traje. Prije pokretanja nove pričekajte da se otkazivanje dovrši."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:109
-msgid "Conversion cancelled."
-msgstr "Pretvorba je otkazana."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:129
-msgid "The output path is invalid. Check the source filename and destination."
-msgstr "Izlazna putanja nije valjana. Provjerite naziv izvorne datoteke i odredište."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:156
-msgid "An unexpected error stopped this conversion."
-msgstr "Neočekivana pogreška zaustavila je ovu pretvorbu."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:185
-msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
-msgstr "FFmpeg nije instaliran. Instalirajte paket FFmpeg i pokušajte ponovno."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:216
-msgid "Fast Copy cannot apply effects, change channels or resample. Select an encoding format."
-msgstr "Brzo kopiranje ne može primjenjivati efekte, mijenjati kanale ni frekvenciju uzorkovanja. Odaberite format kodiranja."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:227
-msgid "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
-msgstr "Brzo kopiranje čuva kodirane zvučne pakete; granice rezova su približne. Efekti se ne primjenjuju."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:239
-msgid "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
-msgstr "Zvuk s pomičnim zarezom uz izričito je dopuštenje pretvoren u 24-bitni cjelobrojni PCM za FLAC; kopija nije identična bit po bit."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:245
-msgid "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
-msgstr "Opus pri reprodukciji upotrebljava takt uzorkovanja od 48 kHz. Izvornu frekvenciju uzorkovanja nije moguće nepromijenjenu prikazati u izlaznom spremniku."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:252
-#, python-brace-format
-msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
-msgstr "Izlazni kodek zahtijeva promjenu frekvencije uzorkovanja s {rate} Hz na {final_rate} Hz."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:267
-msgid "Positive gain may clip. Enable clipping protection or reduce the gain."
-msgstr "Pozitivno pojačanje može uzrokovati izobličenje zbog preopterećenja. Omogućite zaštitu ili smanjite pojačanje."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:273
-msgid "This raw audio format cannot preserve all tags or artwork."
-msgstr "Ovaj sirovi zvučni format ne može sačuvati sve oznake ni omote."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:281
-msgid "Artwork is not preserved by this output profile."
-msgstr "Ovaj izlazni profil ne čuva omote."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:346
-msgid "The source changed during conversion. No output was published; add the file again."
-msgstr "Izvor se promijenio tijekom pretvorbe. Nije spremljena konačna izlazna datoteka; ponovno dodajte datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:360
-msgid "Conversion cancelled. No incomplete output was published."
-msgstr "Pretvorba je otkazana. Nije spremljena nijedna nedovršena izlazna datoteka."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:374
-msgid "The file or destination could not be accessed. Check permissions and free disk space."
-msgstr "Nije moguće pristupiti datoteci ili odredištu. Provjerite dozvole i slobodan prostor na disku."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:383
-msgid "The media information or conversion settings are invalid."
-msgstr "Informacije o mediju ili postavke pretvorbe nisu valjane."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:400
-msgid "The encoder changed the requested sample rate. No output was published."
-msgstr "Koder je promijenio zatraženu frekvenciju uzorkovanja. Nije spremljena konačna izlazna datoteka."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:408
-msgid "The encoder changed the requested channel count. No output was published."
-msgstr "Koder je promijenio zatraženi broj kanala. Nije spremljena konačna izlazna datoteka."
-
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:416
-msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
-msgstr "Ova inačica FFmpega ne može sačuvati zatraženu preciznost FLAC-a. Odaberite WAV ili instalirajte kompatibilan paket FFmpeg."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:153
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:436
-msgid "Select a supported output format."
-msgstr "Odaberite podržani izlazni format."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:24
-msgid "Select a valid local media file."
-msgstr "Odaberite valjanu lokalnu medijsku datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:32
-msgid "The source file is missing or is not a regular file."
-msgstr "Izvorna datoteka nedostaje ili nije obična datoteka."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:38
-msgid "The selected audio track is invalid. Add the file again."
-msgstr "Odabrani zvučni zapis nije valjan. Ponovno dodajte datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:44
-msgid "The source video is missing. Add the file again."
-msgstr "Izvorni videozapis nedostaje. Ponovno dodajte datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:65
-msgid "A segment has invalid start or end times."
-msgstr "Odsječak ima nevaljano početno ili završno vrijeme."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:69
-msgid "Every segment must have a finite end time after its start."
-msgstr "Svaki odsječak mora imati konačno završno vrijeme nakon početnog vremena."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:78
-msgid "A segment extends beyond the source audio. Adjust its end time."
-msgstr "Odsječak se proteže izvan izvornog zvuka. Prilagodite njegovo završno vrijeme."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:85
-msgid "A segment must contain at least one audio sample."
-msgstr "Odsječak mora sadržavati barem jedan zvučni uzorak."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:167
-msgid "FFprobe is not installed. Install the FFmpeg package and try again."
-msgstr "FFprobe nije instaliran. Instalirajte paket FFmpeg i pokušajte ponovno."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:194
-msgid "The media file could not be read. It may be damaged or unsupported."
-msgstr "Medijsku datoteku nije moguće pročitati. Možda je oštećena ili nepodržana."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:203
-msgid "FFprobe returned invalid media information."
-msgstr "FFprobe je vratio nevaljane informacije o mediju."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:208
-msgid "FFprobe returned incomplete media information."
-msgstr "FFprobe je vratio nepotpune informacije o mediju."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:221
-msgid "This file does not contain the selected audio track."
-msgstr "Ova datoteka ne sadrži odabrani zvučni zapis."
-
-#: usr/share/biglinux/audio-converter/app/audio/media.py:265
-msgid "This PCM precision cannot be preserved by the selected WAV encoder."
-msgstr "Odabrani WAV koder ne može sačuvati ovu preciznost PCM-a."
-
-#: usr/share/biglinux/audio-converter/app/audio/process.py:109
-#: usr/share/biglinux/audio-converter/app/audio/process.py:137
-msgid "The media command timed out."
-msgstr "Isteklo je vrijeme čekanja na medijsku naredbu."
-
-#: usr/share/biglinux/audio-converter/app/audio/process.py:126
-msgid "The media information is too large to process safely."
-msgstr "Informacije o mediju prevelike su za sigurnu obradu."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:31
-msgid "There is not enough free disk space. Free some space and try again."
-msgstr "Nema dovoljno slobodnog prostora na disku. Oslobodite prostor i pokušajte ponovno."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:38
-msgid "The file or destination is not accessible. Check its permissions."
-msgstr "Datoteka ili odredište nije dostupno. Provjerite dozvole."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:45
-msgid "The required audio encoder is unavailable. Install a compatible FFmpeg package."
-msgstr "Potreban zvučni koder nije dostupan. Instalirajte kompatibilan paket FFmpeg."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:52
-msgid "A selected audio effect is unavailable in this FFmpeg installation."
-msgstr "Odabrani zvučni efekt nije dostupan u ovoj instalaciji FFmpega."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:58
-msgid "The audio could not be processed. Check the file and selected output settings."
-msgstr "Zvuk nije moguće obraditi. Provjerite datoteku i odabrane izlazne postavke."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:149
-msgid "Effects require re-encoding. Select an audio format instead of Fast Copy."
-msgstr "Efekti zahtijevaju ponovno kodiranje. Umjesto brzog kopiranja odaberite zvučni format."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:248
-msgid "An intermediate segment has an unsafe path."
-msgstr "Privremeni odsječak ima nesigurnu putanju."
-
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:330
-msgid "The output contains no readable audio. No file was published."
-msgstr "Izlaz ne sadrži čitljiv zvuk. Nije spremljena konačna datoteka."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:56
-msgid "The audio contains non-finite samples."
-msgstr "Zvuk sadrži uzorke s beskonačnim ili nebrojčanim vrijednostima."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:98
-msgid "The decoded audio ends with an incomplete sample frame."
-msgstr "Dekodirani zvuk završava nepotpunim okvirom uzoraka."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:101
-msgid "The file contains no readable audio samples."
-msgstr "Datoteka ne sadrži čitljive zvučne uzorke."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:247
-msgid "FFmpeg is not installed."
-msgstr "FFmpeg nije instaliran."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:300
-msgid "The waveform could not be generated."
-msgstr "Valni oblik nije moguće stvoriti."
-
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:318
-msgid "The source changed while its waveform was being generated."
-msgstr "Izvor se promijenio tijekom stvaranja valnog oblika."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:58
-msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
-msgstr "Previše datoteka čeka analizu. Pričekajte da analiza nekih datoteka završi pa dodajte nove."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:79
-msgid "Select a regular local media file, not a folder or device."
-msgstr "Odaberite običnu lokalnu medijsku datoteku, a ne mapu ili uređaj."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:100
-msgid "The file changed during inspection. Add it again."
-msgstr "Datoteka se promijenila tijekom analize. Ponovno je dodajte."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:152
-msgid "Audio preview is unavailable. Install mpv and python-mpv, then reopen the application."
-msgstr "Pretpregled zvuka nije dostupan. Instalirajte mpv i python-mpv, a zatim ponovno otvorite aplikaciju."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:179
-msgid "Audio outputs could not be listed. Try reopening the output selector."
-msgstr "Nije moguće dohvatiti popis zvučnih izlaza. Pokušajte ponovno otvoriti odabir izlaza."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:201
-msgid "The selected audio output was disconnected. Playback is paused. Choose an output or resume using the system default."
-msgstr "Odabrani zvučni izlaz je odspojen. Reprodukcija je pauzirana. Odaberite izlaz ili nastavite sa zadanim izlazom sustava."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:214
-msgid "This audio output is no longer available. Choose another output."
-msgstr "Ovaj zvučni izlaz više nije dostupan. Odaberite drugi."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:226
-msgid "The audio output could not be selected. Choose another output."
-msgstr "Zvučni izlaz nije moguće odabrati. Odaberite drugi."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:252
-msgid "The selected audio track is unavailable. Add the file again."
-msgstr "Odabrani zvučni zapis nije dostupan. Ponovno dodajte datoteku."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:284
-msgid "The audio could not be played. Check the file and audio output device."
-msgstr "Zvuk nije moguće reproducirati. Provjerite datoteku i izlazni zvučni uređaj."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:411
-msgid "This audio position could not be reached."
-msgstr "Nije moguće prijeći na ovaj položaj u zvuku."
-
-#: usr/share/biglinux/audio-converter/app/audio/player.py:459
-msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
-msgstr "Efekt pretpregleda nije moguće primijeniti. Provjerite odabrane efekte i instalirane dodatke."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:111
-#, python-brace-format
-msgid "Invalid value for {key}."
-msgstr "Nevaljana vrijednost za {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:115
-#, python-brace-format
-msgid "{key} must be between {low} and {high}."
-msgstr "Vrijednost {key} mora biti između {low} i {high}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:123
-#, python-brace-format
-msgid "Invalid switch value for {key}."
-msgstr "Nevaljana vrijednost prekidača za {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:133
-msgid "The equalizer bands are invalid."
-msgstr "Pojasevi ekvilizatora nisu valjani."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:139
-msgid "The equalizer needs ten finite gains between -40 and 40 dB."
-msgstr "Ekvilizator zahtijeva deset konačnih vrijednosti pojačanja između -40 i 40 dB."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:144
-msgid "Select a supported noise reduction mode."
-msgstr "Odaberite podržani način smanjenja šuma."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:168
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC ne može sačuvati ovaj prikaz PCM-a. Odaberite WAV ili u naprednom kodiranju izričito dopustite pretvorbu u 24-bitni PCM."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:193
-msgid "The selected bitrate is not supported by this output profile."
-msgstr "Ovaj izlazni profil ne podržava odabranu brzinu prijenosa."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:201
-msgid "Select original, mono or stereo channels."
-msgstr "Odaberite izvorne kanale, mono ili stereo."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:208
-msgid "MP3 supports mono or stereo. Select stereo channels or another format."
-msgstr "MP3 podržava mono i stereo. Odaberite stereo kanale ili drugi format."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:216
-msgid "Select a valid output sample rate."
-msgstr "Odaberite valjanu izlaznu frekvenciju uzorkovanja."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:222
-msgid "The selected codec does not support that sample rate."
-msgstr "Odabrani kodek ne podržava tu frekvenciju uzorkovanja."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:289
-msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
-msgstr "Odabrani dodatak za smanjenje šuma nije dostupan. Instalirajte ga ili isključite smanjenje šuma."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:319
-msgid "The audio plugin path is unsupported."
-msgstr "Putanja zvučnog dodatka nije podržana."
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
+msgid "Welcome"
+msgstr "Dobro došli"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:33
+msgid "Convert audio in three steps"
+msgstr "Pretvorite zvuk u tri koraka"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:39
+msgid "1. Add your files"
+msgstr "1. Dodajte datoteke"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:40
+msgid "Audio or video. Each audio track of a video becomes its own entry."
+msgstr "Zvuk ili videozapis. Svaki zvučni zapis videozapisa postaje zasebna stavka."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:43
+msgid "2. Choose what to make"
+msgstr "2. Odaberite što želite dobiti"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:45
+msgid "Pick a format and, if you want, clean the voice, cut parts or adjust the sound."
+msgstr "Odaberite format i po želji očistite glas, izrežite dijelove ili prilagodite zvuk."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:49
+msgid "3. Convert"
+msgstr "3. Pokrenite pretvorbu"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:50
+msgid "New files appear next to the originals, which are never changed."
+msgstr "Nove datoteke pojavljuju se uz izvorne, koje se nikad ne mijenjaju."
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:60
+msgid "Show dialog on startup"
+msgstr "Prikaži dijaloški okvir pri pokretanju"
+
+#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:71
+msgid "Let's Start"
+msgstr "Započnimo"
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:9
+msgid "Choose the output format. Fast Copy does not apply effects."
+msgstr "Odaberite izlazni format. Brzo kopiranje ne primjenjuje efekte."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:11
+msgid ""
+"Higher values sound better and make larger files.\n"
+"96k: speech, smallest files\n"
+"128k: podcasts and audiobooks\n"
+"192k: music, a good balance\n"
+"320k: highest MP3 quality\n"
+"Available values depend on the format."
+msgstr ""
+"Veće vrijednosti daju kvalitetniji zvuk i veće datoteke.\n"
+"96k: govor, najmanje datoteke\n"
+"128k: podcasti i audioknjige\n"
+"192k: glazba, dobar omjer kvalitete i veličine\n"
+"320k: najviša kvaliteta MP3-a\n"
+"Dostupne vrijednosti ovise o formatu."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:19
+msgid "Changes preview and export volume. Values above 100% can distort the audio."
+msgstr "Mijenja glasnoću pretpregleda i izvezenog zvuka. Vrijednosti iznad 100 % mogu izobličiti zvuk."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
+msgid "Changes preview and export speed while preserving pitch."
+msgstr "Mijenja brzinu pretpregleda i izvezenog zvuka uz očuvanje visine tona."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:23
+msgid "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
+msgstr "Smanjuje šum u govoru pomoću DeepFilterNet3 ili DPDFNet. Nije namijenjeno glazbi."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
+msgid "Reduce quiet background sound between spoken phrases."
+msgstr "Smanjuje tihe pozadinske zvukove između izgovorenih rečenica."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:26
+msgid "Adjust loudness to −16 LUFS. This changes the original volume."
+msgstr "Prilagođava glasnoću na −16 LUFS. Time se mijenja izvorna glasnoća."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
+msgid "Choose the order in which marked segments are exported."
+msgstr "Odaberite redoslijed izvoza označenih odsječaka."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:28
+msgid "Export each segment separately or join the selected segments."
+msgstr "Izvezite svaki odsječak zasebno ili spojite odabrane odsječke."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:29
+msgid "Keep the original layout or explicitly downmix to mono or stereo."
+msgstr "Zadržava izvorni raspored kanala ili na izričit zahtjev miješa zvuk u mono ili stereo."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:31
+msgid "Click the waveform to mark cuts, or drag markers to adjust them. Use the seek bar to preview. Edit Segments provides numeric and keyboard controls."
+msgstr "Kliknite valni oblik da biste označili rezove ili povucite oznake da biste ih prilagodili. Za pretpregled upotrijebite traku položaja. Uređivač odsječaka omogućuje unos brojčanih vrijednosti i upravljanje tipkovnicom."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:34
+msgid "Remove all entries from the queue without deleting source files."
+msgstr "Uklanja sve stavke iz reda bez brisanja izvornih datoteka."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
+msgid "Preview the previous file."
+msgstr "Preslušajte prethodnu datoteku."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
+msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
+msgstr "Reproducirajte ili pauzirajte. Tipkovnički prečac: Ctrl+Space."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
+msgid "Preview the next file."
+msgstr "Preslušajte sljedeću datoteku."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:39
+msgid "Preview only the marked segments."
+msgstr "Preslušajte samo označene odsječke."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
+msgid "Show the equalizer. Its settings affect exported audio."
+msgstr "Prikazuje ekvilizator. Njegove postavke utječu na izvezeni zvuk."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:41
+msgid "Preview this audio file."
+msgstr "Preslušajte ovu zvučnu datoteku."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:42
+msgid "Remove this entry without deleting the source file."
+msgstr "Uklanja ovu stavku bez brisanja izvorne datoteke."
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:44
+msgid "More actions are available from the adjacent menu button."
+msgstr "Dodatne radnje dostupne su putem susjednog gumba izbornika."
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Extract Audio"
@@ -1446,24 +1435,6 @@ msgstr "Preuzmite udaljene datoteke prije pretvorbe."
 msgid "Application Launch Error"
 msgstr "Pogreška pri pokretanju aplikacije"
 
-#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:69
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
 msgid "Big Audio Converter could not be started. Check that it is installed."
 msgstr "Big Audio Converter nije moguće pokrenuti. Provjerite je li instaliran."
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
-msgid "Size"
-msgstr "Veličina"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:277
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:282
-msgid "Duration"
-msgstr "Trajanje"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
-msgid "Unknown"
-msgstr "Nepoznato"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:324
-msgid "Bit Depth"
-msgstr "Bitna dubina"
-
