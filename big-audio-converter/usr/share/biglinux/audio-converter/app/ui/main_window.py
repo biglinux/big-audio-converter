@@ -814,11 +814,10 @@ class MainWindow(
         # Seekbar and controls bar stay visible
         self.visualizer_frame.set_visible(False)
 
-        # Set initial visibility for cut-mode-dependent elements
-        cut_enabled = self.cut_row.get_selected() > 0
-        self.play_selection_switch.set_visible(cut_enabled)
-        self.segment_edit_button.set_visible(cut_enabled)
-        self.zoom_box.set_visible(cut_enabled)
+        # Editing tools appear with the first file, cut rows with a segment.
+        self.segment_edit_button.set_visible(False)
+        self.zoom_box.set_visible(False)
+        self._update_cut_rows()
         self.seekbar.set_visible(True)
 
         # Apply tooltips to all UI elements (must be after all widgets are created)
@@ -842,8 +841,9 @@ class MainWindow(
             gettext.ngettext("Convert %d file", "Convert %d files", count) % count
         )
 
-        # Show the waveform only while cutting; seekbar and controls stay visible.
-        self._set_waveform_visible(has_files and self.cut_row.get_selected() > 0)
+        self.segment_edit_button.set_visible(has_files)
+        self.zoom_box.set_visible(has_files)
+        self._set_waveform_visible(has_files)
 
     def _set_waveform_visible(self, visible):
         if visible == self.visualizer_frame.get_visible():
@@ -934,7 +934,7 @@ class MainWindow(
             (self.speed_spin, "speed"),
             (self.gate_row, "noise_gate"),
             (self.normalize_row, "normalize"),
-            (self.cut_row, "cut"),
+            (self.cut_order_row, "cut"),
             (self.cut_output_row, "cut_output"),
             (self.channels_row, "channels"),
             (self.clear_queue_button, "clear_queue_button"),
@@ -991,10 +991,11 @@ class MainWindow(
                 for _, f in self.eq_panel.BANDS
             ),
             "normalize": self.normalize_row.get_active(),
-            "cut_enabled": self.cut_row.get_selected() > 0,
+            # A file is cut where it has segments and converted whole otherwise.
+            "cut_enabled": True,
             "cut_merge": self.cut_output_row.get_selected() == 1,
             # The converter orders each file's segments by number or by time.
-            "order_by_segment_number": self.cut_row.get_selected() == 2,
+            "order_by_segment_number": self.cut_order_row.get_selected() == 1,
             # Files without an entry here are converted in full.
             "file_markers": self.file_markers,
             # Pass track metadata from file queue for video track extraction
@@ -1083,18 +1084,15 @@ class MainWindow(
         editor.connect("closed", lambda dialog: setattr(owner, "segment_editor", None))
         editor.present(self)
 
-    def _request_waveform(self, file_path, enabled=None):
+    def _request_waveform(self, file_path):
         if self._closed or file_path not in self.file_queue.files:
             return
-        if enabled is None:
-            enabled = self.cut_row.get_selected() > 0 and self.waveform_row.get_active()
         self.waveform_generator.request(
             file_path,
             self.converter,
             self.visualizer,
             self.file_markers,
             track_metadata=self.file_queue.track_metadata,
-            enabled=enabled,
         )
 
     def _on_pending_changed(self, pending):
@@ -1160,8 +1158,6 @@ class MainWindow(
 
     def _restore_geometry(self):
         """Restore the visualizer height after the window is shown."""
-        self.visualizer.set_markers_enabled(self.cut_row.get_selected() > 0)
-
         self._fit_bottom_panel()
 
     def _confirm_reset_settings(self):

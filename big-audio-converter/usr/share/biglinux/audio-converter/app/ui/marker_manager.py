@@ -9,7 +9,6 @@ drawing markers and related UI dialogs.
 
 import gettext
 import logging
-from enum import Enum, auto
 
 import cairo
 from gi.repository import Adw
@@ -25,13 +24,6 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
-class MarkerMode(Enum):
-    """Defines the state of the marker interaction system."""
-
-    START = auto()
-    STOP = auto()
-
-
 class MarkerManagerMixin:
     """Mixin providing marker management to AudioVisualizer.
 
@@ -43,10 +35,7 @@ class MarkerManagerMixin:
     def _init_marker_state(self):
         """Initialize all marker-related state variables."""
         self._marker_dialog = None
-        self.markers_enabled = False
-        self.marker_mode = MarkerMode.START  # Use Enum for state
         self.marker_pairs = []  # List of {start, stop} pairs
-        self.current_pair_index = -1  # Index of currently active pair
         self.highlighted_pair = -1  # Index of pair being highlighted
 
         # Marker drag state
@@ -60,6 +49,9 @@ class MarkerManagerMixin:
         # Potential drag tracking - helps distinguish between click and drag
         self.potential_drag_segment = None
         self.drag_threshold = 3  # Pixels of movement required to initiate drag
+        # Time under a press that may still become a click or a new segment.
+        self.pending_press = None
+        self.new_segment_anchor = None
 
         # Callbacks
         self.marker_updated_callback = None
@@ -71,20 +63,6 @@ class MarkerManagerMixin:
         # Track if hovering over delete button for cursor change
         self.hovering_delete_button = False
         self.delete_button_bounds = None  # Store (x, y, radius) for hit detection
-
-    def set_markers_enabled(self, enabled):
-        """Enable or disable marker system.
-
-        Note: Disabling markers only prevents creating new markers,
-        it does NOT delete existing markers to avoid accidental data loss.
-        """
-        self.markers_enabled = enabled
-
-        # Don't clear markers when disabling - just prevent new ones from being created
-        # This prevents accidental deletion when user switches cut mode
-
-        # Redraw to update UI
-        self.queue_draw()
 
     def _is_over_delete_button(self, x, y):
         """Check if the mouse position is over the delete button."""
@@ -126,7 +104,7 @@ class MarkerManagerMixin:
 
     def _find_marker_at_position(self, x, y):
         """Find if the given x,y position is on a marker edge."""
-        if not self.markers_enabled or self.duration <= 0:
+        if self.duration <= 0:
             return None
 
         width = self.get_width()
@@ -221,8 +199,6 @@ class MarkerManagerMixin:
         # Clear all markers
         self._close_marker_dialog()
         self.marker_pairs = []
-        self.current_pair_index = -1
-        self.marker_mode = MarkerMode.START
         self.highlighted_pair = -1
 
         # Notify listeners
@@ -231,19 +207,6 @@ class MarkerManagerMixin:
 
         # Redraw
         self.queue_draw()
-
-    def _confirm_current_segment(self):
-        """Confirm the current segment and prepare for next one."""
-        if self.current_pair_index >= 0:
-            # Reset to start mode for next segment
-            self.marker_mode = MarkerMode.START
-            self.current_pair_index = -1
-
-            # Notify listener
-            if self.marker_updated_callback:
-                self.marker_updated_callback(self.get_marker_pairs())
-
-            self.queue_draw()
 
     def _prompt_delete_segment(self, pair_index):
         if not 0 <= pair_index < len(self.marker_pairs):
@@ -282,65 +245,10 @@ class MarkerManagerMixin:
         self._marker_dialog = dialog
         dialog.present(self.get_root())
 
-    def add_start_marker(self, position):
-        """Add a start marker at the given position."""
-        # Ensure valid position
-        position = max(0, min(position, self.duration))
-        position = round(position, 3)  # Consistent precision
-
-        # Create new pair if needed
-        if self.current_pair_index < 0 or self.current_pair_index >= len(
-            self.marker_pairs
-        ):
-            self.marker_pairs.append({"start": position, "stop": None})
-            self.current_pair_index = len(self.marker_pairs) - 1
-        else:
-            # Update existing pair
-            self.marker_pairs[self.current_pair_index]["start"] = position
-
-        # Auto-switch to stop mode after setting start
-        self.marker_mode = MarkerMode.STOP
-        self.queue_draw()
-
-    def add_stop_marker(self, position):
-        """Add a stop marker at the given position."""
-        if self.current_pair_index >= 0 and self.current_pair_index < len(
-            self.marker_pairs
-        ):
-            # Ensure valid position
-            position = max(0, min(position, self.duration))
-            position = round(position, 3)  # Consistent precision
-
-            # Make sure stop is after start
-            start = self.marker_pairs[self.current_pair_index]["start"]
-            if position < start:
-                # If clicked before start, swap (use click as start, old start as stop)
-                self.marker_pairs[self.current_pair_index]["start"] = position
-                self.marker_pairs[self.current_pair_index]["stop"] = start
-            else:
-                # Normal case - stop marker is after start
-                self.marker_pairs[self.current_pair_index]["stop"] = position
-
-            if position == start:
-                self.marker_pairs[self.current_pair_index]["stop"] = None
-                return
-
-            # Commit only a nonempty segment.
-            self._confirm_current_segment()
-            self.queue_draw()
-
     def remove_marker_pair(self, index):
         """Remove a marker pair by index."""
         if 0 <= index < len(self.marker_pairs):
             self.marker_pairs.pop(index)
-
-            # Reset current pair index if it was removed
-            if self.current_pair_index == index:
-                self.current_pair_index = -1
-                self.marker_mode = MarkerMode.START
-            # Adjust index if needed
-            elif self.current_pair_index > index:
-                self.current_pair_index -= 1
 
             # Reset highlight
             self.highlighted_pair = -1
@@ -357,8 +265,6 @@ class MarkerManagerMixin:
         logger.debug("Clearing all markers")
         self._close_marker_dialog()
         self.marker_pairs = []
-        self.current_pair_index = -1
-        self.marker_mode = MarkerMode.START
         self.highlighted_pair = -1
         # Notify listener if any
         if self.marker_updated_callback:
@@ -432,18 +338,14 @@ class MarkerManagerMixin:
             return False
         self._close_marker_dialog()
         self.marker_pairs = validated
-        self.current_pair_index = -1
-        self.marker_mode = MarkerMode.START
         self.highlighted_pair = -1
         self.queue_draw()
+        if self.marker_updated_callback:
+            self.marker_updated_callback(self.get_marker_pairs())
         return True
 
     def _draw_markers(self, cr, width, height):
-        """Draw all marker pairs on the waveform.
-
-        Note: Markers are drawn even when markers_enabled is False,
-        to show existing markers. The enabled flag only controls creating new markers.
-        """
+        """Draw all marker pairs on the waveform."""
         if not self.duration > 0:
             return
 

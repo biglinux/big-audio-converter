@@ -77,7 +77,7 @@ class PlaybackControllerMixin:
             self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
             if not same_file_as_active:
-                self._request_waveform(file_path, enabled=None)
+                self._request_waveform(file_path)
             else:
                 logger.debug(f"Same file, skipping waveform generation: {file_path}")
 
@@ -125,14 +125,8 @@ class PlaybackControllerMixin:
 
         self.file_queue.set_active_file(index)
 
-        markers_enabled = self.visualizer.markers_enabled
         self.visualizer.clear_all_markers()
-        self.visualizer.markers_enabled = markers_enabled
-
-        if self.cut_row.get_selected() > 0:
-            self._request_waveform(file_path, enabled=None)
-        else:
-            self._request_waveform(file_path, enabled=False)
+        self._request_waveform(file_path)
 
     def _load_file_for_visualization(self, file_path, index, play_audio=True):
         """Load a file for visualization and optional playback."""
@@ -372,6 +366,7 @@ class PlaybackControllerMixin:
 
     def _on_markers_updated(self, markers):
         """Handle marker updates from visualizer."""
+        self._update_cut_rows()
         if self._play_selection_mode:
             self._load_selection_segments()
 
@@ -580,7 +575,7 @@ class PlaybackControllerMixin:
 
     def _load_selection_segments(self):
         """Load segments from markers."""
-        order_by_number = self.cut_row.get_selected() == 2
+        order_by_number = self.cut_order_row.get_selected() == 1
         marker_pairs = self.visualizer.get_ordered_marker_pairs(order_by_number)
 
         segments = []

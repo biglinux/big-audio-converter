@@ -13,7 +13,7 @@ import gi
 import numpy as np
 
 from app.ui.cairo_text import show_text, text_extents
-from app.ui.marker_manager import MarkerManagerMixin, MarkerMode
+from app.ui.marker_manager import MarkerManagerMixin
 from app.utils.time_formatter import format_time_ruler, format_time_short
 
 gi.require_version("Gtk", "4.0")
@@ -329,7 +329,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def on_right_click(self, gesture, n_press, x, y):
         """Handle right-click for context menu on segments."""
-        if not self.markers_enabled or not self.duration > 0:
+        if not self.duration > 0:
             return
 
         # Check if right-clicking on a segment
@@ -339,11 +339,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self._prompt_delete_segment(segment_index)
 
     def on_click_handler(self, gesture, n_press, x, y):
-        """Unified handler for clicks on the waveform.
-
-        The waveform is now exclusively for marker/segment manipulation.
-        All time-seeking is handled by the SeekBar widget.
-        """
+        """A press on the waveform: grab a marker or segment, or wait to see
+        whether the press becomes a click (seek) or a drag (new segment)."""
         if not self.duration > 0:
             return
 
@@ -362,38 +359,34 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             f"CLICK: x={x:.1f}, width={width}, duration={self.duration:.6f}, visible_dur={visible_duration:.6f}, start={start_time:.6f}, position={position:.6f}"
         )
 
-        # Marker/segment interactions (only when markers are enabled)
-        if self.markers_enabled:
-            # Check delete button
-            if self.hovering_delete_button and self.hovered_segment_index >= 0:
-                self._prompt_delete_segment(self.hovered_segment_index)
-                return
+        # Check delete button
+        if self.hovering_delete_button and self.hovered_segment_index >= 0:
+            self._prompt_delete_segment(self.hovered_segment_index)
+            return
 
-            # Check marker edge for drag
-            marker_info = self._find_marker_at_position(x, y)
-            if marker_info:
-                self.is_dragging_marker = True
-                self.dragging_pair_index = marker_info["index"]
-                self.dragging_marker_type = marker_info["type"]
-                if self.marker_drag_callback:
-                    self.marker_drag_callback(True)
-                return
+        # Check marker edge for drag
+        marker_info = self._find_marker_at_position(x, y)
+        if marker_info:
+            self.is_dragging_marker = True
+            self.dragging_pair_index = marker_info["index"]
+            self.dragging_marker_type = marker_info["type"]
+            if self.marker_drag_callback:
+                self.marker_drag_callback(True)
+            return
 
-            # Check segment body for drag
-            segment_body_index = self._find_segment_body_at_position(x, y)
-            if segment_body_index >= 0:
-                self.potential_drag_segment = {
-                    "index": segment_body_index,
-                    "start_x": x,
-                }
-                self.drag_start_pos = None
-                return
+        # Check segment body for drag
+        segment_body_index = self._find_segment_body_at_position(x, y)
+        if segment_body_index >= 0:
+            self.potential_drag_segment = {
+                "index": segment_body_index,
+                "start_x": x,
+            }
+            self.drag_start_pos = None
+            self.pending_press = position
+            return
 
-            # Handle marker placement based on mode
-            if self.marker_mode == MarkerMode.START:
-                self.add_start_marker(position)
-            elif self.marker_mode == MarkerMode.STOP:
-                self.add_stop_marker(position)
+        # Empty waveform: a click seeks, a drag marks a new segment.
+        self.pending_press = position
 
     def on_release_handler(self, gesture, n_press, x, y):
         """Handle mouse release events."""
@@ -405,6 +398,11 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # If we were dragging, notify about the marker update
         if self.is_dragging_marker:
+            if self.dragging_marker_type == "new":
+                pair = self.marker_pairs[self.dragging_pair_index]
+                if pair["stop"] - pair["start"] < 0.1:
+                    del self.marker_pairs[self.dragging_pair_index]
+                self.queue_draw()
             if self.marker_updated_callback:
                 self.marker_updated_callback(self.get_marker_pairs())
 
@@ -557,6 +555,23 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.queue_draw()
             return
 
+        # A drag from empty waveform draws a new segment, in either direction.
+        if (
+            not self.is_dragging_marker
+            and self.potential_drag_segment is None
+            and self.pending_press is not None
+            and abs(offset_x) > self.drag_threshold
+        ):
+            self.marker_pairs.append(
+                {"start": self.pending_press, "stop": self.pending_press}
+            )
+            self.is_dragging_marker = True
+            self.dragging_pair_index = len(self.marker_pairs) - 1
+            self.dragging_marker_type = "new"
+            self.new_segment_anchor = self.pending_press
+            if self.marker_drag_callback:
+                self.marker_drag_callback(True)
+
         # Check if we need to activate a potential segment drag
         if (
             not self.is_dragging_marker and self.potential_drag_segment is not None
@@ -594,6 +609,16 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self._drag_update_single_marker(pair, current_x, width, "stop")
         elif self.dragging_marker_type == "segment" and self.drag_start_pos is not None:
             self._drag_update_segment(pair, offset_x, width)
+        elif self.dragging_marker_type == "new":
+            visible_duration = self.duration / self.zoom_level
+            start_time = self.viewport_offset * self.duration
+            here = start_time + (current_x / width) * visible_duration
+            here = round(max(0, min(here, self.duration)), 3)
+            pair["start"] = min(self.new_segment_anchor, here)
+            pair["stop"] = max(self.new_segment_anchor, here)
+            self.queue_draw()
+            if self.seek_position_callback:
+                self.seek_position_callback(here, False)
 
     def on_drag_end(self, gesture, offset_x, offset_y):
         """Handle end of drag operation."""
@@ -607,6 +632,16 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if self.pan_gesture_active:
             self.pan_gesture_active = False
             self.set_cursor(None)
+
+        # A press that never moved is a click: listen from there.
+        if (
+            self.pending_press is not None
+            and not self.is_dragging_marker
+            and abs(offset_x) <= self.drag_threshold
+            and self.seek_position_callback
+        ):
+            self.seek_position_callback(self.pending_press, False)
+        self.pending_press = None
 
         # Reset tracking variables
         self.potential_drag_segment = None
@@ -711,7 +746,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 return True
 
         # Delete/Backspace key - delete hovered segment
-        if (self.markers_enabled and self.hovered_segment_index >= 0) and (
+        if self.hovered_segment_index >= 0 and (
             keyval == Gdk.KEY_Delete or keyval == Gdk.KEY_BackSpace
         ):
             self._prompt_delete_segment(self.hovered_segment_index)
@@ -873,7 +908,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             ):
                 self.queue_draw()
 
-        if not self.markers_enabled or self.duration <= 0:
+        if self.duration <= 0:
             # Check if Ctrl is pressed for pan cursor
             if self.zoom_level > 1.0:
                 event = controller.get_current_event()
@@ -1010,6 +1045,20 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.arc(x + radius, y + height - radius, radius, 90 * degrees, 180 * degrees)
         cr.arc(x + radius, y + radius, radius, 180 * degrees, 270 * degrees)
         cr.close_path()
+
+    def _draw_hint(self, cr):
+        """How to use the waveform, until the first segment exists."""
+        text = _("Click to listen from there · Drag to mark a part")
+        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        cr.set_font_size(12)
+        extents = text_extents(cr, text)
+        # The waveform's peaks reach the top; the text keeps its own backdrop.
+        cr.set_source_rgba(*self.bg_color, 0.85)
+        self._draw_rounded_rect(cr, 6, 6, extents.width + 12, 20, 4)
+        cr.fill()
+        cr.set_source_rgba(1, 1, 1, 0.85)
+        cr.move_to(12, 20)
+        show_text(cr, text)
 
     def _draw_hover_time(self, cr, width, height):
         """Draw vertical guide line at hover position."""
@@ -1267,8 +1316,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             text = _("Waveform could not be generated")
             subtitle = _("Numeric segment editing is still available.")
         elif self.duration > 0:
-            text = _("Waveform visualization disabled")
-            subtitle = _("Enable in settings to see waveform")
+            text = _("Generating waveform...")
+            subtitle = None
         else:
             text = _("No audio loaded")
             subtitle = None
@@ -1368,6 +1417,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Draw markers after waveform
         self._draw_markers(cr, width, height)
+        if self.waveform_data is not None and not self.marker_pairs:
+            self._draw_hint(cr)
 
         # Position time removed - now only showing in top-left display
 

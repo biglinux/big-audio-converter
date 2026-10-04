@@ -42,8 +42,6 @@ class AppConfig:
         "normalize_enabled",
         "prevent_clipping",
         "allow_precision_reduction",
-        "generate_waveforms",
-        "cut_audio_enabled",
         "show_mouseover_tips",
         "window_maximized",
     }

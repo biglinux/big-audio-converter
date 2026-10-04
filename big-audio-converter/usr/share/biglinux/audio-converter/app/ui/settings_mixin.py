@@ -359,16 +359,16 @@ class SettingsManagerMixin:
         equalizer_row.add_suffix(configure)
         equalizer_row.set_activatable_widget(configure)
 
-        self._cut_list = [
-            _("Keep the whole audio"),
-            _("Cut in timeline order"),
-            _("Cut in the order marked"),
-        ]
-        self.cut_row = ChoiceRow(_("Cut audio"), self._cut_list)
-        self.cut_row.connect(
-            "notify::selected", weak_callback(self._on_cut_combo_changed)
+        # Files are cut wherever segments are marked on the waveform; these
+        # rows appear once there is something to order or join.
+        self.cut_order_row = ChoiceRow(
+            _("Segment order"), [_("In timeline order"), _("In the order marked")]
         )
-        options.add(self.cut_row)
+        self.cut_order_row.set_visible(False)
+        self.cut_order_row.connect(
+            "notify::selected", weak_callback(self._on_cut_order_changed)
+        )
+        options.add(self.cut_order_row)
         self.cut_output_row = ChoiceRow(
             _("Save segments"), [_("Separate files"), _("Join this file's segments")]
         )
@@ -377,13 +377,6 @@ class SettingsManagerMixin:
             "notify::selected", weak_callback(self._on_cut_output_changed)
         )
         options.add(self.cut_output_row)
-        self.waveform_row = Adw.SwitchRow(
-            title=_("Show waveform"), active=True, visible=False
-        )
-        self.waveform_row.connect(
-            "notify::active", weak_callback(self._on_waveform_switch_changed)
-        )
-        options.add(self.waveform_row)
 
         self.destination_row = Adw.ActionRow(
             title=_("Save to"), subtitle=_("Same folder as each source")
@@ -936,44 +929,23 @@ class SettingsManagerMixin:
         self.player.set_normalize(state)
         self._update_effects_summary()
 
-    def _on_waveform_switch_changed(self, row, pspec):
-        enabled = row.get_active()
-        self.app.config.set("generate_waveforms", str(enabled).lower())
-        if self.active_audio_id:
-            self._request_waveform(
-                self.active_audio_id,
-                enabled=enabled and self.cut_row.get_selected() > 0,
-            )
+    def _on_cut_order_changed(self, row, _pspec):
+        # Saved as the former cut mode: 2 was "in the order marked".
+        self.app.config.set("cut_audio_mode", "2" if row.get_selected() else "0")
 
-    def _on_cut_combo_changed(self, row, pspec):
-        """Handle cut audio combo box changes."""
-        active = row.get_selected()
-        # Enable markers and show options when any option except "Off" is selected
-        enabled = active > 0
-
-        # Show/hide segment output option
-        self.cut_output_row.set_visible(enabled)
-        self.waveform_row.set_visible(enabled)
-
-        # Settings are restored before setup_ui builds the waveform and bottom
-        # bar (the seekbar last); setup_ui then applies the same visibility.
-        if hasattr(self, "seekbar"):
-            self.visualizer.set_markers_enabled(enabled)
-            self.play_selection_switch.set_visible(enabled)
-            self.segment_edit_button.set_visible(enabled)
-            self.zoom_box.set_visible(enabled)
-            self._set_waveform_visible(enabled and bool(self.file_queue.files))
-
-        # Generate waveform if enabling cut and active file has no waveform data
-        if enabled and self.active_audio_id and self.visualizer.waveform_data is None:
-            self._request_waveform(self.active_audio_id, enabled=None)
-
-        if not enabled and self.active_audio_id:
-            self._request_waveform(self.active_audio_id, enabled=False)
-
-        # Save setting
-        self.app.config.set("cut_audio_enabled", str(enabled).lower())
-        self.app.config.set("cut_audio_mode", str(active))
+    def _update_cut_rows(self):
+        """Offer ordering, joining and preview while any file has segments."""
+        has_segments = bool(self.visualizer.get_marker_pairs()) or any(
+            segments
+            for path, segments in self.file_markers.items()
+            if path != self.active_audio_id
+        )
+        for widget in (
+            self.cut_order_row,
+            self.cut_output_row,
+            self.play_selection_switch,
+        ):
+            widget.set_visible(has_segments)
 
     def _on_cut_output_changed(self, row, pspec):
         """Handle cut output mode change (separate files vs merge)."""
@@ -1107,9 +1079,8 @@ class SettingsManagerMixin:
         self.sample_rate_row.set_selected(0)
         self.precision_row.set_active(False)
         self._set_output_folder("")
-        self.cut_row.set_selected(0)
+        self.cut_order_row.set_selected(0)
         self.cut_output_row.set_selected(0)
-        self.waveform_row.set_active(True)
         self._set_processing_volume(100)
         self._set_processing_speed(1.0)
         self.noise_engine_buttons[0].set_active(True)
@@ -1171,12 +1142,10 @@ class SettingsManagerMixin:
         # Restore normalization
         self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
-        # Cut mode; its change handler shows the dependent rows.
-        mode = self._config_int("cut_audio_mode", -1, lo=0, hi=2)
-        if mode < 0:
-            # Legacy key fallback
-            mode = 1 if self._config_bool("cut_audio_enabled") else 0
-        self.cut_row.set_selected(mode)
+        # The former cut mode 2 was "in the order marked".
+        self.cut_order_row.set_selected(
+            int(self._config_int("cut_audio_mode", 1, lo=0, hi=2) == 2)
+        )
         self.cut_output_row.set_selected(
             self._config_int("cut_output_mode", 0, lo=0, hi=1)
         )

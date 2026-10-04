@@ -218,7 +218,6 @@ def test_information_dialog_is_nonblocking_and_preserves_rate(window, audio):
 
 def test_bitrate_preview_and_waveform_marks(window, audio):
     assert window.format_row.get_selected_item().get_string()
-    assert window.cut_row.get_selected_item().get_string()
     assert window._bitrate_list[window.bitrate_row.get_selected()] == "192k"
     window.bitrate_row.set_selected(window._bitrate_list.index("128k"))
     assert window.app.config.get("conversion_bitrate") == "128k"
@@ -239,18 +238,33 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     window.original_preview.set_active(False)
     assert not window.player.effects_bypassed
     window.file_queue.add_file(str(audio))
-    window.cut_row.set_selected(1)
-    pump(lambda: window.visualizer.duration > 0 and not window.file_queue.pending)
+    vis = window.visualizer
+    pump(lambda: vis.waveform_data is not None and vis.get_width() > 0)
     assert window.segment_edit_button.get_visible()
-    window.visualizer.add_start_marker(0.2)
-    window.visualizer.add_stop_marker(0.8)
+    assert not window.cut_order_row.get_visible()
+    width, duration = vis.get_width(), vis.duration
+
+    # A press that does not move is a click: listening moves there.
+    vis.on_click_handler(None, 1, width * 0.5, 20)
+    vis.on_drag_end(None, 0, 0)
+    assert vis.position == pytest.approx(duration * 0.5, abs=0.01)
+    assert not vis.marker_pairs
+
+    # A drag marks a segment, here from right to left.
+    class Drag:
+        def get_start_point(self):
+            return True, width * 0.8, 20
+
+    vis.on_click_handler(None, 1, width * 0.8, 20)
+    vis.on_drag_update(Drag(), -width * 0.6, 0)
+    vis.on_release_handler(None, 1, width * 0.2, 20)
+    vis.on_drag_end(None, -width * 0.6, 0)
+    assert window.cut_order_row.get_visible()
+    assert window.play_selection_switch.get_visible()
     settings = window._collect_conversion_settings()
-    assert settings["file_markers"][window.active_audio_id][0][
-        "start"
-    ] == pytest.approx(0.2)
-    assert settings["file_markers"][window.active_audio_id][0]["stop"] == pytest.approx(
-        0.8
-    )
+    [segment] = settings["file_markers"][window.active_audio_id]
+    assert segment["start"] == pytest.approx(duration * 0.2, abs=0.01)
+    assert segment["stop"] == pytest.approx(duration * 0.8, abs=0.01)
 
 
 @pytest.mark.skipif(
@@ -350,7 +364,7 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     window.bitrate_row.set_selected(window._bitrate_list.index("128k"))
     window.channels_row.set_selected(1)
     window._set_output_folder(str(tmp_path))
-    window.cut_row.set_selected(2)
+    window.cut_order_row.set_selected(1)
     window.volume_spin.set_value(250)
     window.speed_spin.set_value(1.5)
     window.gate_row.set_active(True)
@@ -368,7 +382,7 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert window.bitrate_row.get_visible()
     assert window.channels_row.get_selected() == 0
     assert window.output_directory == ""
-    assert window.cut_row.get_selected() == 0
+    assert window.cut_order_row.get_selected() == 0
     assert window.volume_spin.get_value() == 100
     assert window.speed_spin.get_value() == 1.0
     assert not window.gate_row.get_active()

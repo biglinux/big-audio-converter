@@ -126,8 +126,7 @@ class Application(Adw.Application):
                     # A file already on screen keeps its old markers until redrawn.
                     if entry == win.active_audio_id:
                         win.visualizer.restore_markers(win.file_markers[entry])
-            # Cut on, in timeline order; join/split stays the user's choice here.
-            win.cut_row.set_selected(1)
+            win._update_cut_rows()
         return 0
 
     def _create_actions(self):

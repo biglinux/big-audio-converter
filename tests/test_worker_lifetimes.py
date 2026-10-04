@@ -45,7 +45,7 @@ def test_waveform_worker_releases_completed_snapshot(monkeypatch):
         pass
 
     def execute(*job):
-        references.append(weakref.ref(job[-3]))
+        references.append(weakref.ref(job[-2]))  # the markers snapshot
         finished.set()
 
     worker = WaveformGenerator()

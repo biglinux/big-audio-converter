@@ -193,7 +193,6 @@ def test_waveform_represents_right_channel(tmp_path):
     )
 
     class Sink:
-        markers_enabled = False
         data = None
 
         def set_loading(self, *args):

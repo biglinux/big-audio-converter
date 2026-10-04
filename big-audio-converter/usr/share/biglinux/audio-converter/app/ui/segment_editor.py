@@ -219,8 +219,6 @@ class SegmentEditor(Adw.Dialog):
             self.error.set_visible(True)
             return
         window.file_markers[self.source] = segments
-        if window.cut_row.get_selected() == 0:
-            window.cut_row.set_selected(1)
         window.visualizer.restore_markers(segments)
         window._update_play_selection_button()
         self.close()

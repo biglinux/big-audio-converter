@@ -137,8 +137,6 @@ class WaveformGenerator:
         visualizer,
         file_markers=None,
         track_metadata=None,
-        *,
-        enabled=True,
     ):
         """Called on the GTK thread; only one worker and one pending job exist."""
         with self._condition:
@@ -157,7 +155,6 @@ class WaveformGenerator:
                 weakref.ref(visualizer),
                 deepcopy(file_markers or {}),
                 deepcopy(track_metadata or {}),
-                enabled,
             )
             if self._worker is None:
                 self._worker = threading.Thread(
@@ -204,7 +201,6 @@ class WaveformGenerator:
             weakref.ref(visualizer),
             deepcopy(file_markers or {}),
             deepcopy(track_metadata or {}),
-            True,
         )
 
     def _schedule(self, generation, callback):
@@ -229,14 +225,12 @@ class WaveformGenerator:
             holder.append(identifier)
             self._sources.add(identifier)
 
-    def _execute(
-        self, generation, runner, path, ffmpeg, target_ref, markers, metadata, enabled
-    ):
+    def _execute(self, generation, runner, path, ffmpeg, target_ref, markers, metadata):
         def loading():
             target = target_ref()
             if target is not None:
                 target.waveform_error = None
-                target.set_loading(enabled, _("Generating waveform..."))
+                target.set_loading(True, _("Generating waveform..."))
 
         self._schedule(generation, loading)
         duration = 0
@@ -255,80 +249,78 @@ class WaveformGenerator:
                     stat.st_mtime_ns,
                     source.stream_index,
                 )
-                if enabled and identity in self._cache:
+                if identity in self._cache:
                     payload, duration = self._cache[identity]
                     self._cache.move_to_end(identity)
                 else:
                     info = probe_media(source.path, runner, ffmpeg)
                     stream = audio_stream(info, source.stream_index)
                     duration = audio_duration(info, stream)
-                    payload = None
-                    if enabled:
-                        rate = int(stream["sample_rate"])
-                        block = max(
-                            64, math.ceil((duration or 60) * rate / self.MAX_POINTS)
+                    rate = int(stream["sample_rate"])
+                    block = max(
+                        64, math.ceil((duration or 60) * rate / self.MAX_POINTS)
+                    )
+                    collector = PeakCollector(
+                        block, rate, self.MAX_POINTS, int(stream["channels"])
+                    )
+                    result = runner.run(
+                        [
+                            ffmpeg,
+                            "-hide_banner",
+                            "-nostdin",
+                            "-v",
+                            "error",
+                            "-protocol_whitelist",
+                            "file,pipe",
+                            "-i",
+                            source.path,
+                            "-map",
+                            f"0:{stream['index']}",
+                            "-vn",
+                            "-sn",
+                            "-dn",
+                            "-c:a",
+                            "pcm_f32le",
+                            "-f",
+                            "f32le",
+                            "pipe:1",
+                        ],
+                        stdout_callback=collector.consume,
+                    )
+                    if result.returncode:
+                        raise MediaError(
+                            gettext.gettext("The waveform could not be generated."),
+                            result.stderr,
                         )
-                        collector = PeakCollector(
-                            block, rate, self.MAX_POINTS, int(stream["channels"])
+                    payload, duration = collector.finish()
+                    runner.check_cancelled()
+                    current = os.stat(source.path)
+                    if (
+                        stat.st_dev,
+                        stat.st_ino,
+                        stat.st_size,
+                        stat.st_mtime_ns,
+                    ) != (
+                        current.st_dev,
+                        current.st_ino,
+                        current.st_size,
+                        current.st_mtime_ns,
+                    ):
+                        raise MediaError(
+                            gettext.gettext(
+                                "The source changed while its waveform was being generated."
+                            )
                         )
-                        result = runner.run(
-                            [
-                                ffmpeg,
-                                "-hide_banner",
-                                "-nostdin",
-                                "-v",
-                                "error",
-                                "-protocol_whitelist",
-                                "file,pipe",
-                                "-i",
-                                source.path,
-                                "-map",
-                                f"0:{stream['index']}",
-                                "-vn",
-                                "-sn",
-                                "-dn",
-                                "-c:a",
-                                "pcm_f32le",
-                                "-f",
-                                "f32le",
-                                "pipe:1",
-                            ],
-                            stdout_callback=collector.consume,
+                    self._cache[identity] = payload, duration
+                    self._cache_bytes += payload["levels"][0].nbytes
+                    while (
+                        self._cache_bytes > self.CACHE_BYTES
+                        or len(self._cache) > self.CACHE_ENTRIES
+                    ):
+                        _evicted_key, (old, _evicted_duration) = self._cache.popitem(
+                            last=False
                         )
-                        if result.returncode:
-                            raise MediaError(
-                                gettext.gettext("The waveform could not be generated."),
-                                result.stderr,
-                            )
-                        payload, duration = collector.finish()
-                        runner.check_cancelled()
-                        current = os.stat(source.path)
-                        if (
-                            stat.st_dev,
-                            stat.st_ino,
-                            stat.st_size,
-                            stat.st_mtime_ns,
-                        ) != (
-                            current.st_dev,
-                            current.st_ino,
-                            current.st_size,
-                            current.st_mtime_ns,
-                        ):
-                            raise MediaError(
-                                gettext.gettext(
-                                    "The source changed while its waveform was being generated."
-                                )
-                            )
-                        self._cache[identity] = payload, duration
-                        self._cache_bytes += payload["levels"][0].nbytes
-                        while (
-                            self._cache_bytes > self.CACHE_BYTES
-                            or len(self._cache) > self.CACHE_ENTRIES
-                        ):
-                            _evicted_key, (old, _evicted_duration) = (
-                                self._cache.popitem(last=False)
-                            )
-                            self._cache_bytes -= old["levels"][0].nbytes
+                        self._cache_bytes -= old["levels"][0].nbytes
                 runner.check_cancelled()
 
             def deliver():
@@ -338,11 +330,7 @@ class WaveformGenerator:
                 # Give the UI its own container. Arrays are immutable and can
                 # safely be shared with the bounded cache.
                 target.set_waveform(dict(payload) if payload else None, duration or 0)
-                if (
-                    markers.get(path)
-                    and target.markers_enabled
-                    and not target.get_marker_pairs()
-                ):
+                if markers.get(path) and not target.get_marker_pairs():
                     target.restore_markers(markers[path])
 
             self._schedule(generation, deliver)

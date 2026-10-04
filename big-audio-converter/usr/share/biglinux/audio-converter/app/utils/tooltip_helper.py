@@ -30,7 +30,7 @@ TOOLTIPS = {
     "cut_output": _("Export each segment separately or join the selected segments."),
     "channels": _("Keep the original layout or explicitly downmix to mono or stereo."),
     "waveform_visualizer": _(
-        "Click the waveform to mark cuts, or drag markers to adjust them. Use the seek bar to preview. Edit Segments provides numeric and keyboard controls."
+        "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
     ),
     "clear_queue_button": _(
         "Remove all entries from the queue without deleting source files."
