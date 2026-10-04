@@ -24,7 +24,7 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, GLib, GObject, Gtk
+from gi.repository import Adw, GLib, GObject, Gtk, Pango
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 
@@ -63,17 +63,25 @@ def _show_check(item, *_args):
     item.get_child().get_last_child().set_opacity(1.0 if item.get_selected() else 0.0)
 
 
-def _short_label_factory(labels):
-    """Button text for a dropdown whose list entries carry an explanation.
+def _button_label_factory(labels):
+    """Button text: the short label when entries carry an explanation.
 
     ``labels`` is read at bind time, so replacing its items with the model's
-    relabels the button.
+    relabels the button. The text ellipsizes so a long choice narrows the
+    button instead of wrapping the row title.
     """
     factory = Gtk.SignalListItemFactory()
-    factory.connect("setup", lambda _f, item: item.set_child(Gtk.Label(xalign=0)))
+    factory.connect(
+        "setup",
+        lambda _f, item: item.set_child(
+            Gtk.Label(xalign=0, ellipsize=Pango.EllipsizeMode.END)
+        ),
+    )
     factory.connect(
         "bind",
-        lambda _f, item: item.get_child().set_label(labels[item.get_position()]),
+        lambda _f, item: item.get_child().set_label(
+            labels[item.get_position()] if labels else item.get_item().get_string()
+        ),
     )
     return factory
 
@@ -189,8 +197,7 @@ class ChoiceRow(Adw.ActionRow):
         )
         self.dropdown.set_list_factory(_untruncated_list_factory())
         self.short_labels = list(short_labels or ())
-        if short_labels:
-            self.dropdown.set_factory(_short_label_factory(self.short_labels))
+        self.dropdown.set_factory(_button_label_factory(self.short_labels))
         self.dropdown.update_property([Gtk.AccessibleProperty.LABEL], [title])
         self.bind_property(
             "selected",
