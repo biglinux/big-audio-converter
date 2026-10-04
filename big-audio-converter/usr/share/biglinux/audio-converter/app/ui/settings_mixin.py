@@ -198,38 +198,37 @@ class SettingsManagerMixin:
         )
         options.add(self.speed_spin)
 
-        # Each switch is followed by the settings it enables, shown only while on.
-        self.noise_row = Adw.SwitchRow(title=_("Noise Reduction"))
-        self.noise_row.connect(
-            "notify::active", weak_callback(self._on_noise_switch_changed)
-        )
-        options.add(self.noise_row)
+        # The voice filter sits in the playback bar, which is built later; its
+        # controls exist now so the saved settings can be restored into them.
+        # Strength 0 is off.
         self.noise_engines = ("dfn3", "dpdfnet")
-        self.noise_model_row = ChoiceRow(
-            _("Noise reduction mode"),
-            [
-                _("Light — DeepFilterNet3"),
-                _("Higher quality — DPDFNet-2 48 kHz"),
-            ],
-            ["DeepFilterNet3", "DPDFNet-2"],
+        self.noise_value_label = Gtk.Label(label="0", css_classes=["caption"])
+        self.noise_status = Gtk.Label(
+            wrap=True,
+            max_width_chars=16,
+            justify=Gtk.Justification.CENTER,
+            css_classes=["caption", "warning"],
         )
-        self.noise_model_row.connect(
-            "notify::selected", weak_callback(self._on_noise_model_changed)
+        self.noise_scale = Gtk.Scale.new_with_range(Gtk.Orientation.VERTICAL, 0, 100, 1)
+        self.noise_scale.add_mark(50, Gtk.PositionType.RIGHT, None)
+        self.noise_scale.connect(
+            "value-changed", weak_callback(self._on_noise_strength_changed)
         )
-        options.add(self.noise_model_row)
-        self.noise_strength_row, self.noise_strength_scale = numeric_row(
-            options,
-            _("Noise reduction strength (%)"),
-            100,
-            0,
-            100,
-            5,
-            self._on_noise_strength_changed,
-            0,
-        )
-        self.noise_strength_row.set_subtitle(
-            _("Lower values keep more background sound; 0 leaves it unchanged")
-        )
+        self.noise_engine_buttons = []
+        for label in (
+            _("Light — DeepFilterNet3"),
+            _("Higher quality — DPDFNet-2 48 kHz"),
+        ):
+            # Wrapped to the description's width, so the slider stays narrow.
+            button = Gtk.CheckButton(
+                child=Gtk.Label(label=label, wrap=True, max_width_chars=16, xalign=0),
+                active=not self.noise_engine_buttons,
+                group=self.noise_engine_buttons[0]
+                if self.noise_engine_buttons
+                else None,
+            )
+            button.connect("toggled", weak_callback(self._on_noise_model_changed))
+            self.noise_engine_buttons.append(button)
         self._update_noise_availability()
 
         equalizer_row = self.equalizer_row = Adw.ActionRow(title=_("Equalizer"))
@@ -582,40 +581,50 @@ class SettingsManagerMixin:
         finally:
             self._syncing_speed = False
 
-    def _update_noise_availability(self):
-        engine = self.noise_engines[self.noise_model_row.get_selected()]
-        self.noise_available = engine in self.player.noise_plugins
-        self.noise_row.set_sensitive(
-            self.noise_available
-            and self._format_list[self.format_row.get_selected()] != "copy"
+    def _noise_engine(self):
+        return next(
+            engine
+            for engine, button in zip(self.noise_engines, self.noise_engine_buttons)
+            if button.get_active()
         )
+
+    def _noise_active(self):
+        return self.noise_available and self.noise_scale.get_value() > 0
+
+    def _update_noise_availability(self):
+        engine = self._noise_engine()
+        self.noise_available = engine in self.player.noise_plugins
+        is_copy = self._format_list[self.format_row.get_selected()] == "copy"
+        self.noise_scale.set_sensitive(self.noise_available and not is_copy)
+        package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
+        self.noise_status.set_label(
+            _("Unavailable: install {package}").format(package=package)
+        )
+        # A missing engine keeps the modes reachable so another can be chosen.
+        self.noise_status.set_visible(not self.noise_available)
         if not self.noise_available:
-            self.noise_row.set_active(False)
-            package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
-            self.noise_row.set_subtitle(
-                _("Unavailable: install {package}").format(package=package)
-            )
-        else:
-            self.noise_row.set_subtitle("")
-        self._show_noise_rows()
-
-    def _show_noise_rows(self):
-        active = self.noise_row.get_active()
-        # A missing engine keeps the mode reachable so another can be chosen.
-        self.noise_model_row.set_visible(active or not self.noise_available)
-        self.noise_strength_row.set_visible(active)
-
-    def _on_noise_switch_changed(self, row, _pspec):
-        state = row.get_active()
-        if state and not (
-            self.noise_available and self.player.set_noise_reduction(True)
-        ):
-            row.set_active(False)
-            return
-        if not state:
             self.player.set_noise_reduction(False)
-        self.app.config.set("noise_reduction_enabled", str(state).lower())
-        self._show_noise_rows()
+        self._show_noise_strength()
+
+    def _show_noise_strength(self):
+        strength = self.noise_scale.get_value() if self._noise_active() else 0
+        self.noise_value_label.set_text(f"{strength:.0f}")
+
+    def _on_noise_strength_changed(self, scale):
+        percent = scale.get_value()
+        self.app.config.set("noise_strength", str(percent))
+        self.app.config.set("noise_reduction_enabled", str(percent > 0).lower())
+        self._show_noise_strength()
+        if not self.noise_available:
+            return
+        if percent == 0:
+            self.player.set_noise_reduction(False)
+            return
+        self.player.set_noise_strength(percent)
+        if not self.player.noise_reduction and not self.player.set_noise_reduction(
+            True
+        ):
+            scale.set_value(0)
 
     def _update_effects_summary(self):
         """Name the active effects so a closed list still shows its state."""
@@ -634,18 +643,17 @@ class SettingsManagerMixin:
             ", ".join(active) or _("Filters and loudness")
         )
 
-    def _on_noise_strength_changed(self, scale):
-        percent = scale.get_value()
-        self.app.config.set("noise_strength", str(percent))
-        self.player.set_noise_strength(percent)
-
-    def _on_noise_model_changed(self, row, pspec):
-        engine = self.noise_engines[row.get_selected()]
+    def _on_noise_model_changed(self, button):
+        if not button.get_active():
+            return
+        engine = self._noise_engine()
         if engine not in self.player.noise_plugins:
-            self.noise_row.set_active(False)
+            self.player.set_noise_reduction(False)
         self.player.set_noise_engine(engine)
         self.app.config.set("noise_engine", engine)
         self._update_noise_availability()
+        if self._noise_active():
+            self.player.set_noise_reduction(True)
 
     def _on_gate_switch_changed(self, row, _pspec):
         """Handle noise gate toggle."""
@@ -770,8 +778,6 @@ class SettingsManagerMixin:
         for row in (
             self.volume_spin,
             self.speed_spin,
-            self.noise_model_row,
-            self.noise_strength_row,
             self.equalizer_row,
             self.effects_expander,
         ):
@@ -787,14 +793,15 @@ class SettingsManagerMixin:
             return
         for widget in (
             self.original_preview,
-            self.volume_btn,
-            self.speed_btn,
+            self._bar_popovers["volume"].get_parent(),
+            self._bar_popovers["speed"].get_parent(),
+            self._bar_popovers["voice"].get_parent(),
             self.eq_toggle_btn,
         ):
             widget.set_sensitive(not is_copy_mode)
         if is_copy_mode:
-            self.volume_popover.popdown()
-            self.speed_popover.popdown()
+            for name in ("volume", "speed", "voice"):
+                self._bar_popovers[name].popdown()
             self.eq_revealer.set_reveal_child(False)
 
     # --- Slider / value conversion utilities ---
@@ -877,9 +884,8 @@ class SettingsManagerMixin:
         self.waveform_row.set_active(True)
         self._set_processing_volume(100)
         self._set_processing_speed(1.0)
-        self.noise_row.set_active(False)
-        self.noise_model_row.set_selected(0)
-        self.noise_strength_scale.set_value(100)
+        self.noise_engine_buttons[0].set_active(True)
+        self.noise_scale.set_value(0)
         self.gate_row.set_active(False)
         self.gate_intensity_scale.set_value(0.5)
         self.compressor_row.set_active(False)
@@ -911,11 +917,13 @@ class SettingsManagerMixin:
 
         # Legacy GTCRN settings stay on disk but never enable a different model.
         engine = self.app.config.get("noise_engine", "dfn3")
-        self.noise_model_row.set_selected(self.noise_engines.index(engine))
-        self._on_noise_model_changed(self.noise_model_row, None)
-        self.noise_strength_scale.set_value(self._config_float("noise_strength", 100))
-        self.noise_row.set_active(
-            self.noise_available and self._config_bool("noise_reduction_enabled")
+        button = self.noise_engine_buttons[self.noise_engines.index(engine)]
+        button.set_active(True)
+        self._on_noise_model_changed(button)
+        self.noise_scale.set_value(
+            self._config_float("noise_strength", 100)
+            if self._config_bool("noise_reduction_enabled")
+            else 0
         )
 
         # Restore noise gate settings (intensity slider)

@@ -225,12 +225,12 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     assert not window.bitrate_row.get_visible()
     window.format_row.set_selected(window._format_list.index("copy"))
     assert not window.volume_spin.get_sensitive()
-    assert not window.noise_row.get_sensitive()
+    assert not window.noise_scale.get_sensitive()
     assert window.format_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("flac"))
     assert window.volume_spin.get_sensitive()
     # Back on when the noise plugin is installed, which CI machines lack.
-    assert window.noise_row.get_sensitive() == window.noise_available
+    assert window.noise_scale.get_sensitive() == window.noise_available
     window.original_preview.set_active(True)
     assert window.player.effects_bypassed
     window.format_row.set_selected(window._format_list.index("mp3"))
@@ -306,9 +306,8 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     assert player.load(str(audio))
     pump(lambda: player._loaded)
     for index, engine in enumerate(window.noise_engines):
-        window.noise_model_row.set_selected(index)
-        window.noise_row.set_active(True)
-        window.noise_strength_scale.set_value(25)
+        window.noise_engine_buttons[index].set_active(True)
+        window.noise_scale.set_value(25)
         # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
         attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
         pump(
@@ -334,16 +333,14 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     # A missing heavy plugin must not trap the user behind a disabled chooser.
     del player.noise_plugins["dpdfnet"]
     window._update_noise_availability()
-    assert not window.noise_row.get_active()
     assert not player.noise_reduction
-    assert not window.noise_row.get_sensitive()
-    assert "dpdfnet-native" in window.noise_row.get_subtitle()
-    assert window.noise_model_row.get_visible()
-    window.noise_model_row.set_selected(0)
-    assert window.noise_row.get_sensitive()
-    window.noise_row.set_active(True)
+    assert not window.noise_scale.get_sensitive()
+    assert "dpdfnet-native" in window.noise_status.get_label()
+    assert window.noise_status.get_visible()
+    window.noise_engine_buttons[0].set_active(True)
+    assert window.noise_scale.get_sensitive()
     assert player.noise_reduction and player.noise_engine == "dfn3"
-    assert window.noise_strength_row.get_visible()
+    assert window.noise_value_label.get_text() == "25"
 
 
 def test_reset_settings_restores_first_run_values(window, tmp_path):

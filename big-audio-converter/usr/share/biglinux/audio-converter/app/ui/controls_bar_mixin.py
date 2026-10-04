@@ -1,15 +1,9 @@
 # app/ui/controls_bar_mixin.py
 
-"""
-Controls Bar Mixin for MainWindow.
+"""The playback bar's sliders and the waveform viewport they follow.
 
-Extracts all bottom controls bar related methods (zoom popover, volume popover,
-speed popover, visualizer viewport sync) from
-MainWindow into a reusable mixin.
-
-Usage:
-    class MainWindow(ControlsBarMixin, SettingsManagerMixin, PlaybackControllerMixin, Adw.ApplicationWindow):
-        ...
+Volume, speed, voice filter and zoom open their slider as the pointer reaches
+them, as in the video player, and close a moment after it leaves.
 """
 
 import logging
@@ -20,11 +14,163 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from gi.repository import Gtk
+
+from app.utils.main_loop import weak_callback
+
 logger = logging.getLogger(__name__)
+
+# Long enough to cross the gap between a control and its slider.
+CLOSE_DELAY_MS = 800
 
 
 class ControlsBarMixin:
-    """Mixin handling bottom controls bar interactions: zoom, volume, speed popovers and visualizer sync."""
+    """The bar's hover sliders and the visualizer viewport sync."""
+
+    def _bar_control(
+        self, name, icon_name, title, description, scale, value_label, step, extra=()
+    ):
+        """A button and readout whose slider opens on hover.
+
+        The heading says what the slider changes, in place of a tooltip.
+        Clicking opens it for the keyboard: focused, and closed by Escape or a
+        click elsewhere. Returns the hover area and the button.
+        """
+        if not hasattr(self, "_bar_popovers"):
+            self._bar_popovers, self._bar_pointers, self._bar_scales = {}, {}, {}
+            self._bar_closing, self._bar_keyboard = {}, {}
+        button = Gtk.Button(
+            icon_name=icon_name,
+            valign=Gtk.Align.CENTER,
+            css_classes=["flat", "circular"],
+        )
+        button.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        box = Gtk.Box(spacing=2)
+        box.append(button)
+        box.append(value_label)
+
+        scale.set_inverted(True)
+        scale.set_draw_value(False)
+        scale.set_size_request(-1, 200)
+        scale.set_halign(Gtk.Align.CENTER)
+        scale.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        content = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=6,
+            margin_top=8,
+            margin_bottom=8,
+            margin_start=8,
+            margin_end=8,
+        )
+        content.append(Gtk.Label(label=title, css_classes=["heading"]))
+        if description:
+            content.append(
+                Gtk.Label(
+                    label=description,
+                    wrap=True,
+                    max_width_chars=16,
+                    justify=Gtk.Justification.CENTER,
+                    css_classes=["caption", "dim-label"],
+                )
+            )
+        content.append(scale)
+        for widget in extra:
+            content.append(widget)
+        popover = Gtk.Popover(
+            child=content,
+            position=Gtk.PositionType.TOP,
+            autohide=False,
+            css_classes=["bar-slider"],
+        )
+        popover.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        popover.set_parent(box)
+        self._bar_popovers[name] = popover
+        self._bar_scales[name] = scale
+        self._bar_keyboard[name] = False
+
+        hover = Gtk.EventControllerMotion()
+        hover.connect("enter", weak_callback(self._on_bar_enter), name)
+        hover.connect("leave", weak_callback(self._on_bar_leave), name)
+        box.add_controller(hover)
+        pointer = Gtk.EventControllerMotion()
+        pointer.connect("enter", weak_callback(self._on_bar_slider_enter), name)
+        pointer.connect("leave", weak_callback(self._on_bar_leave), name)
+        popover.add_controller(pointer)
+        self._bar_pointers[name] = pointer
+        focus = Gtk.EventControllerFocus()
+        focus.connect("enter", weak_callback(self._on_bar_focus_enter), name)
+        focus.connect("leave", weak_callback(self._on_bar_focus_leave), name)
+        popover.add_controller(focus)
+        popover.connect("closed", weak_callback(self._on_bar_closed), name)
+        button.connect("clicked", weak_callback(self._on_bar_clicked), name)
+
+        # The wheel over the control moves its slider without opening it.
+        wheel = Gtk.EventControllerScroll(
+            flags=Gtk.EventControllerScrollFlags.VERTICAL
+            | Gtk.EventControllerScrollFlags.DISCRETE
+        )
+        wheel.connect("scroll", weak_callback(self._on_bar_scroll), scale, step)
+        box.add_controller(wheel)
+        return box, button
+
+    def _open_bar_slider(self, name):
+        self._cancel_bar_close(name)
+        for other, popover in self._bar_popovers.items():
+            if other != name:
+                popover.popdown()
+        self._bar_popovers[name].popup()
+
+    def _cancel_bar_close(self, name):
+        source = self._bar_closing.pop(name, None)
+        if source is not None:
+            self._sources.cancel(source)
+
+    def _on_bar_enter(self, _controller, _x, _y, name):
+        self._open_bar_slider(name)
+
+    def _on_bar_slider_enter(self, _controller, _x, _y, name):
+        self._cancel_bar_close(name)
+
+    def _on_bar_leave(self, _controller, name):
+        popover = self._bar_popovers[name]
+        if self._bar_keyboard[name] or popover.get_autohide():
+            return
+        self._cancel_bar_close(name)
+        self._bar_closing[name] = self._sources.later(
+            CLOSE_DELAY_MS, self._close_bar_slider, name
+        )
+
+    def _close_bar_slider(self, name):
+        self._bar_closing.pop(name, None)
+        if not self._bar_keyboard[name]:
+            self._bar_popovers[name].popdown()
+
+    def _on_bar_focus_enter(self, _controller, name):
+        # Focus brought by a click or drag on the slider is the pointer's.
+        self._bar_keyboard[name] = not self._bar_pointers[name].contains_pointer()
+        self._cancel_bar_close(name)
+
+    def _on_bar_focus_leave(self, controller, name):
+        self._bar_keyboard[name] = False
+        self._on_bar_leave(controller, name)
+
+    def _on_bar_clicked(self, _button, name):
+        popover = self._bar_popovers[name]
+        popover.popdown()
+        popover.set_autohide(True)
+        self._open_bar_slider(name)
+        self._bar_scales[name].grab_focus()
+
+    def _on_bar_closed(self, popover, name):
+        self._cancel_bar_close(name)
+        self._bar_keyboard[name] = False
+        popover.set_autohide(False)
+
+    def _on_bar_scroll(self, _controller, _dx, dy, scale, step):
+        if dy == 0 or not scale.get_sensitive():
+            return False
+        scale.set_value(scale.get_value() - math.copysign(step, dy))
+        return True
 
     # --- Zoom popover ---
 
@@ -55,30 +201,10 @@ class ControlsBarMixin:
         # Keep the label and seekbar on the clamped level actually applied.
         self._on_visualizer_zoom_changed(self.visualizer.zoom_level)
 
-    def _on_zoom_btn_clicked(self, button):
-        """Open the zoom popover."""
-        self._close_all_bar_popovers(except_name="zoom")
-        self.zoom_popover.popup()
-
-    # --- Volume popover ---
-
-    def _close_all_bar_popovers(self, except_name=None):
-        for name in ("volume", "speed", "zoom"):
-            if name != except_name:
-                getattr(self, name + "_popover").popdown()
-
-    def _on_volume_btn_clicked(self, button):
-        self._close_all_bar_popovers(except_name="volume")
-        self.volume_popover.popup()
-
     def _on_volume_scale_changed(self, scale):
         self._set_processing_volume(self._slider_to_volume(scale.get_value()))
 
     # --- Speed popover ---
-
-    def _on_speed_btn_clicked(self, button):
-        self._close_all_bar_popovers(except_name="speed")
-        self.speed_popover.popup()
 
     def _on_speed_scale_changed(self, scale):
         self._set_processing_speed(self._slider_to_speed(scale.get_value()))

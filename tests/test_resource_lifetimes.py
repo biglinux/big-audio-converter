@@ -213,9 +213,9 @@ def test_main_windows_finalize_while_application_lives(tmp_path, census):
         window = MainWindow(application=app)
         app._main_window = window
         track(window)
-        track(window.volume_popover)
-        track(window.speed_popover)
-        track(window.zoom_popover)
+        for popover in window._bar_popovers.values():
+            track(popover)
+        del popover  # the loop variable would keep the last one alive
         track(window._css_provider)
         window.present()
         settle()
@@ -225,7 +225,7 @@ def test_main_windows_finalize_while_application_lives(tmp_path, census):
         assert app._main_window is None
     app.config.close()
     app.quit()
-    assert counts["new"] == counts["fin"] == 25
+    assert counts["new"] == counts["fin"] == 30
 
 
 def test_queue_and_drag_controllers_finalize(parent, census, tmp_path):

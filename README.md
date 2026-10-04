@@ -35,14 +35,14 @@ The bottom controls play the selected file. **Audio output** lists available pla
 
 Volume, speed, equalizer, normalization and other enabled effects affect both preview and exported audio. **Listen to original** temporarily bypasses processing without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or enable clipping protection.
 
-Speech noise reduction offers exactly two modes:
+The **Voice filter** in the playback bar, beside volume and speed, reduces sounds other than speech. Its slider opens as the pointer reaches the control and offers exactly two modes:
 
 | Mode | Installation | Plugin |
 |---|---|---|
 | Light — DeepFilterNet3 | `deepfilternet3-native` | `libdfn3_ladspa.so`, the standard model without LL |
 | Higher quality — DPDFNet-2 48 kHz | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
-The light mode is selected initially; noise reduction starts disabled. It is intended for speech, not music. Lower attenuation retains more background sound; 0 dB leaves it unchanged. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
+The light mode is selected initially and the filter starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% only what is detected as a human voice is kept. Changing the strength during playback retunes the running filter without interrupting the sound. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
 
 Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`. The plugin supports a `DPDFNET_NATIVE_MODEL` environment override; keep it unset to use the intended DPDFNet-2 model.
 

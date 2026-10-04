@@ -365,6 +365,10 @@ class MainWindow(
            background; flat controls follow currentColor. */
         .playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
         .playback-panel frame { border-color: rgba(255, 255, 255, 0.08); }
+        /* At fractional scales the arrow no longer covers the content's
+           border, which then crosses the arrow's base; the shadow alone
+           outlines the slider. */
+        popover.bar-slider > contents, popover.bar-slider > arrow { border: none; }
         .playback-controls button:checked {
             background-color: alpha(@accent_bg_color, 0.55);
             color: #ffffff;
@@ -472,11 +476,13 @@ class MainWindow(
         visualizer_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         visualizer_container.add_css_class("playback-panel")
 
-        # Create zoom control bar
-        zoom_control_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        zoom_control_box.set_margin_start(0)
-        zoom_control_box.set_margin_end(0)
-        zoom_control_box.add_css_class("playback-controls")
+        # The video player's bar: what shapes the sound on the left, playback
+        # in the middle, the waveform and preview tools on the right.
+        bar = Gtk.CenterBox(css_classes=["playback-controls"])
+        start_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+        end_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+        bar.set_start_widget(start_box)
+        bar.set_end_widget(end_box)
 
         # Add "Only the Selected Area" toggle button — icon-only, like play controls
         self.play_selection_switch = Gtk.ToggleButton()
@@ -493,7 +499,7 @@ class MainWindow(
             [_("Play only selected area")],
         )
 
-        zoom_control_box.append(self.play_selection_switch)
+        end_box.append(self.play_selection_switch)
 
         # Next to the waveform it edits; cutting has to be on to use it.
         self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"))
@@ -502,7 +508,7 @@ class MainWindow(
         self.segment_edit_button.connect(
             "clicked", weak_callback(self.on_edit_segments)
         )
-        zoom_control_box.append(self.segment_edit_button)
+        end_box.append(self.segment_edit_button)
 
         # Add "Auto-Advance" toggle button — icon-only
         self.auto_advance_switch = Gtk.ToggleButton()
@@ -520,7 +526,7 @@ class MainWindow(
             [_("Auto-advance to next track")],
         )
 
-        zoom_control_box.append(self.auto_advance_switch)
+        end_box.append(self.auto_advance_switch)
 
         # Add Equalizer toggle button — icon-only
         self.eq_toggle_btn = Gtk.ToggleButton()
@@ -545,7 +551,7 @@ class MainWindow(
             [Gtk.AccessibleProperty.LABEL],
             [_("Equalizer")],
         )
-        zoom_control_box.append(self.eq_toggle_btn)
+        end_box.append(self.eq_toggle_btn)
 
         self.original_preview = Gtk.ToggleButton(label=_("Listen to original"))
         self.original_preview.set_tooltip_text(
@@ -558,7 +564,7 @@ class MainWindow(
                 or owner._format_list[owner.format_row.get_selected()] == "copy"
             ),
         )
-        zoom_control_box.append(self.original_preview)
+        end_box.append(self.original_preview)
 
         self.audio_output_button = Gtk.MenuButton(icon_name="audio-headphones-symbolic")
         self.audio_output_button.set_tooltip_text(_("Audio output"))
@@ -597,15 +603,13 @@ class MainWindow(
         )
         self.audio_output_button.set_popover(output_popover)
         self.player.devices_callback = weak_callback(self._refresh_audio_outputs)
-        zoom_control_box.append(self.audio_output_button)
+        end_box.append(self.audio_output_button)
 
         # MIDDLE: Playback control buttons (centered)
         # Create a container for playback buttons
         playback_controls_box = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL, spacing=4
         )
-        playback_controls_box.set_halign(Gtk.Align.CENTER)
-        playback_controls_box.set_hexpand(True)
 
         # Previous audio button (left side)
         self.prev_audio_btn = Gtk.Button()
@@ -652,181 +656,88 @@ class MainWindow(
         self.next_audio_btn.set_visible(False)  # Initially hidden
         playback_controls_box.append(self.next_audio_btn)
 
-        # Add the centered playback controls to the main box
-        zoom_control_box.append(playback_controls_box)
+        bar.set_center_widget(playback_controls_box)
 
-        # RIGHT: Volume, Speed, and Zoom controls with popover sliders
-        right_controls_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        right_controls_box.set_halign(Gtk.Align.END)
-
-        # --- Volume button with popover ---
-        vol_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        self.volume_value_label = Gtk.Label(label="100")
-        self.volume_value_label.add_css_class("caption")
-
-        self.volume_btn = Gtk.Button()
-        self.volume_btn.set_icon_name("audio-volume-high-symbolic")
-        self.volume_btn.add_css_class("flat")
-        self.volume_btn.add_css_class("circular")
-        self.volume_btn.set_tooltip_text(_("Volume"))
-        self.volume_btn.update_property([Gtk.AccessibleProperty.LABEL], [_("Volume")])
-
-        self.volume_popover = Gtk.Popover()
-        self.volume_popover.set_parent(self.volume_btn)
-        self.volume_popover.set_position(Gtk.PositionType.TOP)
-
-        vol_popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        vol_popover_box.set_margin_start(8)
-        vol_popover_box.set_margin_end(8)
-        vol_popover_box.set_margin_top(8)
-        vol_popover_box.set_margin_bottom(8)
-
-        vol_title = Gtk.Label(label=_("Volume"))
-        vol_title.add_css_class("caption")
-        vol_popover_box.append(vol_title)
-
+        # The sliders open as the pointer reaches their control.
+        self.volume_value_label = Gtk.Label(label="100%", css_classes=["caption"])
         self.volume_scale = Gtk.Scale.new_with_range(
             Gtk.Orientation.VERTICAL, 0.0, 100.0, 0.5
         )
-        self.volume_scale.set_inverted(True)
         self.volume_scale.set_value(self._volume_to_slider(100.0))
-        self.volume_scale.set_draw_value(False)
-        self.volume_scale.set_size_request(-1, 300)
-        self.volume_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Volume level")],
-        )
         self.volume_scale.add_mark(
             self._volume_to_slider(100.0), Gtk.PositionType.RIGHT, None
         )
         self.volume_scale.connect(
             "value-changed", weak_callback(self._on_volume_scale_changed)
         )
-        vol_popover_box.append(self.volume_scale)
-
-        self.volume_popover.set_child(vol_popover_box)
-
-        self.volume_btn.connect("clicked", weak_callback(self._on_volume_btn_clicked))
-
-        vol_box.append(self.volume_btn)
-        vol_box.append(self.volume_value_label)
-        right_controls_box.append(vol_box)
-
-        # --- Speed button with popover ---
-        speed_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        self.speed_value_label = Gtk.Label(label="1.00x")
-        self.speed_value_label.add_css_class("caption")
-
-        self.speed_btn = Gtk.Button()
-        self.speed_btn.set_icon_name("preferences-system-time-symbolic")
-        self.speed_btn.add_css_class("flat")
-        self.speed_btn.add_css_class("circular")
-        self.speed_btn.set_tooltip_text(_("Playback speed"))
-        self.speed_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Playback speed")]
+        volume_box, self.volume_btn = self._bar_control(
+            "volume",
+            "audio-volume-high-symbolic",
+            _("Volume"),
+            _(
+                "Changes preview and export volume. Values above 100% can distort the audio."
+            ),
+            self.volume_scale,
+            self.volume_value_label,
+            2,
         )
+        start_box.append(volume_box)
 
-        self.speed_popover = Gtk.Popover()
-        self.speed_popover.set_parent(self.speed_btn)
-        self.speed_popover.set_position(Gtk.PositionType.TOP)
-
-        spd_popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        spd_popover_box.set_margin_start(8)
-        spd_popover_box.set_margin_end(8)
-        spd_popover_box.set_margin_top(8)
-        spd_popover_box.set_margin_bottom(8)
-
-        spd_title = Gtk.Label(label=_("Speed"))
-        spd_title.add_css_class("caption")
-        spd_popover_box.append(spd_title)
-
+        self.speed_value_label = Gtk.Label(label="1.00×", css_classes=["caption"])
         self.speed_scale = Gtk.Scale.new_with_range(
             Gtk.Orientation.VERTICAL, 0.0, 100.0, 0.5
         )
-        self.speed_scale.set_inverted(True)
         self.speed_scale.set_value(self._speed_to_slider(1.0))
-        self.speed_scale.set_draw_value(False)
-        self.speed_scale.set_size_request(-1, 300)
-        self.speed_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Playback speed level")],
-        )
         self.speed_scale.add_mark(
             self._speed_to_slider(1.0), Gtk.PositionType.RIGHT, None
         )
         self.speed_scale.connect(
             "value-changed", weak_callback(self._on_speed_scale_changed)
         )
-        spd_popover_box.append(self.speed_scale)
-
-        self.speed_popover.set_child(spd_popover_box)
-
-        self.speed_btn.connect("clicked", weak_callback(self._on_speed_btn_clicked))
-
-        speed_box.append(self.speed_btn)
-        speed_box.append(self.speed_value_label)
-        right_controls_box.append(speed_box)
-
-        # --- Zoom button with popover ---
-        self.zoom_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-
-        # Zoom value label (shows current zoom level)
-        self.zoom_value_label = Gtk.Label(label="1.0x")
-        self.zoom_value_label.add_css_class("caption")
-
-        # Zoom button (opens popover with vertical slider)
-        self.zoom_btn = Gtk.Button()
-        self.zoom_btn.set_icon_name("system-search-symbolic")
-        self.zoom_btn.add_css_class("flat")
-        self.zoom_btn.add_css_class("circular")
-        self.zoom_btn.set_tooltip_text(_("Waveform zoom"))
-        self.zoom_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Waveform zoom")]
+        speed_box, self.speed_btn = self._bar_control(
+            "speed",
+            "preferences-system-time-symbolic",
+            _("Playback speed"),
+            _("Changes preview and export speed while preserving pitch."),
+            self.speed_scale,
+            self.speed_value_label,
+            2,
         )
+        start_box.append(speed_box)
 
-        # Popover with vertical slider
-        self.zoom_popover = Gtk.Popover()
-        self.zoom_popover.set_parent(self.zoom_btn)
-        self.zoom_popover.set_position(Gtk.PositionType.TOP)
+        voice_box, self.voice_btn = self._bar_control(
+            "voice",
+            "audio-input-microphone-symbolic",
+            _("Voice filter"),
+            _(
+                "Highlights the voice and reduces other sounds. At 100%, only what is detected as a human voice is kept."
+            ),
+            self.noise_scale,
+            self.noise_value_label,
+            5,
+            extra=(self.noise_status, *self.noise_engine_buttons),
+        )
+        start_box.append(voice_box)
 
-        # Vertical slider inside popover
-        popover_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        popover_box.set_margin_start(8)
-        popover_box.set_margin_end(8)
-        popover_box.set_margin_top(8)
-        popover_box.set_margin_bottom(8)
-
-        zoom_title = Gtk.Label(label=_("Zoom"))
-        zoom_title.add_css_class("caption")
-        popover_box.append(zoom_title)
-
+        self.zoom_value_label = Gtk.Label(label="1.0x", css_classes=["caption"])
         self.zoom_scale = Gtk.Scale.new_with_range(
             Gtk.Orientation.VERTICAL, 0.0, 150.0, 0.1
         )
-        self.zoom_scale.set_inverted(True)  # Higher values at top
         self.zoom_scale.set_value(0.0)
-        self.zoom_scale.set_draw_value(False)
-        self.zoom_scale.set_size_request(-1, 300)
-        self.zoom_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Waveform zoom level")],
-        )
-
         self.zoom_scale.set_format_value_func(weak_callback(self._format_zoom_value))
         self._zoom_scale_handler = self.zoom_scale.connect(
             "value-changed", weak_callback(self._on_zoom_scale_changed)
         )
-        popover_box.append(self.zoom_scale)
-
-        self.zoom_popover.set_child(popover_box)
-
-        self.zoom_btn.connect("clicked", weak_callback(self._on_zoom_btn_clicked))
-
-        self.zoom_box.append(self.zoom_btn)
-        self.zoom_box.append(self.zoom_value_label)
-        right_controls_box.append(self.zoom_box)
-
-        zoom_control_box.append(right_controls_box)
+        self.zoom_box, self.zoom_btn = self._bar_control(
+            "zoom",
+            "system-search-symbolic",
+            _("Waveform zoom"),
+            None,
+            self.zoom_scale,
+            self.zoom_value_label,
+            5,
+        )
+        end_box.append(self.zoom_box)
         # Settings were restored before these bar controls existed.
         self._set_processing_volume(self.volume_spin.get_value())
         self._set_processing_speed(self.speed_spin.get_value())
@@ -888,7 +799,7 @@ class MainWindow(
 
         visualizer_container.append(self.seekbar)
 
-        visualizer_container.append(zoom_control_box)
+        visualizer_container.append(bar)
 
         # Add visualizer container to the bottom part of the vertical paned
         self.vertical_paned.set_end_child(visualizer_container)
@@ -1014,7 +925,6 @@ class MainWindow(
             (self.bitrate_row, "bitrate"),
             (self.volume_spin, "volume"),
             (self.speed_spin, "speed"),
-            (self.noise_row, "noise_reduction"),
             (self.gate_row, "noise_gate"),
             (self.normalize_row, "normalize"),
             (self.cut_row, "cut"),
@@ -1057,9 +967,9 @@ class MainWindow(
             "prevent_clipping": self.clipping_row.get_active(),
             "allow_precision_reduction": self.precision_row.get_active(),
             "output_directory": self.output_directory,
-            "noise_reduction": self.noise_row.get_active(),
-            "noise_engine": self.noise_engines[self.noise_model_row.get_selected()],
-            "noise_strength": self.noise_strength_scale.get_value(),
+            "noise_reduction": self._noise_active(),
+            "noise_engine": self._noise_engine(),
+            "noise_strength": self.noise_scale.get_value(),
             "gate_enabled": self.gate_row.get_active(),
             "gate_intensity": self.gate_intensity_scale.get_value(),
             "compressor_enabled": self.compressor_row.get_active(),
@@ -1137,7 +1047,7 @@ class MainWindow(
         Gtk.StyleContext.remove_provider_for_display(
             self.get_display(), self._css_provider
         )
-        for popover in (self.volume_popover, self.speed_popover, self.zoom_popover):
+        for popover in self._bar_popovers.values():
             popover.unparent()
         self.seekbar.connect_seek_handler(None)
         self.file_queue._parent_window = None
