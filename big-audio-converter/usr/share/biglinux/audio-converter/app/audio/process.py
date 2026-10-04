@@ -68,7 +68,13 @@ class ProcessRunner:
                 self._signal(self._process, signal.SIGTERM)
 
     def run(
-        self, argv, *, timeout=None, stdout_callback=None, output_limit=8 * 1024 * 1024
+        self,
+        argv,
+        *,
+        timeout=None,
+        stdout_callback=None,
+        output_limit=8 * 1024 * 1024,
+        env=None,
     ):
         """Consume both pipes independently of progress or known duration.
 
@@ -89,6 +95,7 @@ class ProcessRunner:
                 stderr=subprocess.PIPE,
                 start_new_session=True,
                 bufsize=0,
+                env=env,
             )
             self._process = process
         # PIPE guarantees both descriptors; retain the invariant for type checking.

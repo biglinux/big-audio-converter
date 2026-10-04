@@ -418,6 +418,7 @@ def test_missing_noise_plugin_never_publishes_output(tmp_path):
         "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=duration=0.1", str(source)
     )
     converter = AudioConverter(noise_plugins={})
+    converter.offline_denoiser = None
     try:
         target = tmp_path / "output.wav"
         assert not converter.convert_file(
@@ -431,6 +432,57 @@ def test_missing_noise_plugin_never_publishes_output(tmp_path):
         )
         assert "unavailable" in converter.last_result.message
         assert not target.exists()
+    finally:
+        converter.cleanup()
+
+
+@pytest.mark.parametrize("cut", [False, True])
+def test_offline_dpdfnet_export_matches_the_plugin_bit_for_bit(tmp_path, cut):
+    import numpy as np
+    from app.audio.profiles import discover_noise_plugins
+
+    plugins = discover_noise_plugins()
+    converter = AudioConverter(noise_plugins=plugins)
+    if "dpdfnet" not in plugins or not converter.offline_denoiser:
+        converter.cleanup()
+        pytest.skip("DPDFNet plugin and dpdfnet-enhance are not both installed")
+    source = tmp_path / "source.wav"
+    command(
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "aevalsrc=0.2*sin(2*PI*220*t)*sin(2*PI*3*t)+0.05*(random(0)-0.5)"
+        "|0.1*sin(2*PI*330*t)+0.05*(random(1)-0.5):s=44100:d=3",
+        "-c:a",
+        "pcm_f32le",
+        str(source),
+    )
+    settings = {
+        "format": "wav",
+        "noise_reduction": True,
+        "noise_engine": "dpdfnet",
+        "noise_strength": 70,
+        "hpf_enabled": True,
+        "normalize": True,
+        "cut_enabled": cut,
+        "file_markers": {
+            str(source): [{"start": 0.5, "stop": 1.2}, {"start": 2, "stop": 2.8}]
+        },
+    }
+    tool = converter.offline_denoiser
+    outputs = []
+    try:
+        for denoiser in (None, tool):
+            converter.offline_denoiser = denoiser
+            target = tmp_path / f"output-{bool(denoiser)}.wav"
+            assert converter.convert_file(str(source), str(target), settings), (
+                converter.last_result
+            )
+            outputs.append(np.frombuffer(pcm(target, "f32le"), "<f4"))
+        assert outputs[0].size and np.array_equal(outputs[0], outputs[1])
     finally:
         converter.cleanup()
 

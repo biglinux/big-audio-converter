@@ -8,11 +8,19 @@ from pathlib import Path
 
 from .media import audio_duration, audio_stream, pcm_codec, probe_media
 from .process import MediaError, ProcessRunner
-from .profiles import LOUDNORM, metadata_args
+from .profiles import LOUDNORM, OfflineDenoise, metadata_args
 
 # Every input costs FFmpeg a demuxer, a decoder and about 1 MB; near 2,300 it
 # cannot open another decoder. Longer edits are joined through lossless parts.
 CUTS_PER_RUN = 256
+# Decode | denoise | wrap the result for the following passes. Paths and
+# numbers arrive as environment variables, never as shell text.
+DENOISE_PIPELINE = (
+    '"$@" | "$DENOISER" --channels "$CHANNELS" --attenuation "$ATTENUATION" | '
+    '"$FFMPEG" -hide_banner -nostdin -n -v error -f f32le -ar 48000 '
+    '-ac "$CHANNELS" -i pipe:0 -c:a pcm_f32le -f nut -nostats -progress pipe:1 '
+    '"$OUTPUT"'
+)
 # The first pass's JSON keys, and the ranges FFmpeg accepts for them.
 LOUDNESS_MEASUREMENTS = (
     ("measured_I", "input_i", -99, 0),
@@ -178,7 +186,7 @@ class SegmentProcessor:
             else audio_duration(info, stream)
         )
 
-        def ffmpeg(chain, level="error"):
+        def ffmpeg(chain, level="error", report=True):
             argv = [self.ffmpeg_path, "-hide_banner", "-nostdin", "-n", "-v", level]
             for path, _track, cut in inputs:
                 if cut:
@@ -201,7 +209,40 @@ class SegmentProcessor:
                 argv += ["-map", "[out]"]
             else:
                 argv += ["-map", f"0:{index}"]
-            return argv + ["-nostats", "-progress", "pipe:1"]
+            return argv + (["-nostats", "-progress", "pipe:1"] if report else [])
+
+        denoise = next((f for f in filters if isinstance(f, OfflineDenoise)), None)
+        if denoise:
+            at = filters.index(denoise)
+            denoised = str(Path(temp_dir) / f"{Path(output).stem}-denoised.nut")
+            channels = str(stream["channels"])
+            decode = ffmpeg(filters[:at] + ["aresample=48000"], report=False)
+            result = self.runner.run(
+                ["bash", "-o", "pipefail", "-c", DENOISE_PIPELINE, "bash"]
+                + decode
+                + ["-c:a", "pcm_f32le", "-f", "f32le", "pipe:1"],
+                stdout_callback=progress_consumer(
+                    progress and (lambda fraction: progress(fraction / 2)),
+                    duration,
+                    1,
+                ),
+                env=os.environ
+                | {
+                    "DENOISER": denoise.tool,
+                    "CHANNELS": channels,
+                    "ATTENUATION": denoise.attenuation,
+                    "FFMPEG": self.ffmpeg_path,
+                    "OUTPUT": denoised,
+                },
+            )
+            if result.returncode:
+                raise command_error(result.stderr)
+            # The source follows the denoised audio only for its tags and artwork.
+            inputs = [(denoised, 0, None), (source, index, cuts[0] if cuts else None)]
+            count = metadata = 1
+            index = 0
+            filters = filters[at + 1 :]
+            progress = progress and (lambda fraction, p=progress: p(0.5 + fraction / 2))
 
         report = progress
         if LOUDNORM in filters:

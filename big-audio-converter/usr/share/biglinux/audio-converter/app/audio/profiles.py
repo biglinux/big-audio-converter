@@ -2,6 +2,7 @@
 
 import gettext
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 from .media import pcm_codec
@@ -19,6 +20,18 @@ NOISE_PLUGINS = {
 
 # Export measures the timeline first and replaces this with a linear pass.
 LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
+
+
+@dataclass(frozen=True)
+class OfflineDenoise:
+    """Run ``tool`` over the audio between the filters before and after it.
+
+    Export replaces the live plugin with ``dpdfnet-enhance``: the same model and
+    output on several threads, in one pass even when loudness is measured.
+    """
+
+    tool: str
+    attenuation: str
 
 
 def noise_attenuation(engine, percent):
@@ -281,14 +294,21 @@ def metadata_args(info, stream, format_name, input_index=0):
     return args
 
 
-def build_audio_filters(settings, noise_plugins=None):
-    """Use the same effects and denoiser timing for preview and export."""
+def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
+    """Use the same effects and denoiser timing for preview and export.
+
+    With ``offline_denoiser`` (the ``dpdfnet-enhance`` path), DPDFNet becomes
+    an ``OfflineDenoise`` step in the list instead of a filter.
+    """
     settings = validate_settings(settings)
     filters = []
     engine = settings.get("noise_engine", "dfn3")
     plugin = (noise_plugins or {}).get(engine)
-    if settings.get("noise_reduction") and (
-        engine not in NOISE_PLUGINS or not plugin or not Path(plugin).is_file()
+    offline = offline_denoiser if engine == "dpdfnet" else None
+    if (
+        settings.get("noise_reduction")
+        and not offline
+        and (engine not in NOISE_PLUGINS or not plugin or not Path(plugin).is_file())
     ):
         raise MediaError(
             gettext.gettext(
@@ -315,7 +335,13 @@ def build_audio_filters(settings, noise_plugins=None):
             f"acompressor=threshold={threshold_lin:.6f}:ratio={ratio:.1f}:attack=150:release=800:makeup={makeup_lin:.4f}:knee={knee_lin:.4f}:detection=rms"
         )
 
-    if settings.get("noise_reduction"):
+    if settings.get("noise_reduction") and offline:
+        filters.append(
+            OfflineDenoise(
+                offline, noise_attenuation(engine, settings.get("noise_strength", 100))
+            )
+        )
+    elif settings.get("noise_reduction"):
         _filename, label, delay, _full_db = NOISE_PLUGINS[engine]
         attenuation = noise_attenuation(engine, settings.get("noise_strength", 100))
         # System plugin paths are fixed; never interpret a path as filter syntax.

@@ -36,6 +36,8 @@ class AudioConverter:
     def __init__(self, noise_plugins=None):
         self.ffmpeg_path = self._find_ffmpeg()
         self.noise_plugins = dict(noise_plugins or {})
+        # Ships with dpdfnet-native; without it export uses the live plugin.
+        self.offline_denoiser = shutil.which("dpdfnet-enhance")
         self._operation_lock = threading.Lock()
         self._state_lock = threading.Lock()
         self._runner = None
@@ -231,7 +233,9 @@ class AudioConverter:
             else:
                 extension = format_name
                 params = codec_args(settings, settings.get("channels"), stream)
-                filters = build_audio_filters(settings, self.noise_plugins)
+                filters = build_audio_filters(
+                    settings, self.noise_plugins, self.offline_denoiser
+                )
                 if format_name == "flac" and stream.get("codec_name", "").startswith(
                     ("pcm_f32", "pcm_f64")
                 ):
