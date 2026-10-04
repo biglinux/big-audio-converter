@@ -54,6 +54,13 @@ build() {
         mkdir -p "big-audio-converter/usr/share/locale/${language}/LC_MESSAGES"
         msgfmt --check -o "big-audio-converter/usr/share/locale/${language}/LC_MESSAGES/big-audio-converter.mo" "$catalog"
     done
+    # Locale names gettext does not fall back from get the catalog they mean.
+    local alias
+    for alias in nb:no zh_Hans:zh_CN zh_Hans_CN:zh_CN zh_Hant:zh_TW zh_Hant_TW:zh_TW; do
+        mkdir -p "big-audio-converter/usr/share/locale/${alias%%:*}/LC_MESSAGES"
+        cp "big-audio-converter/usr/share/locale/${alias#*:}/LC_MESSAGES/big-audio-converter.mo" \
+            "big-audio-converter/usr/share/locale/${alias%%:*}/LC_MESSAGES/big-audio-converter.mo"
+    done
 }
 
 check() {
