@@ -476,6 +476,7 @@ class MainWindow(
 
         # Give visualizer reference to player for checking playback state
         self.visualizer.player = self.player
+        self.visualizer.remove_marked = self.cut_mode_row.get_selected() == 1
 
         # Create container for visualizer and zoom controls
         visualizer_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -994,6 +995,7 @@ class MainWindow(
             # A file is cut where it has segments and converted whole otherwise.
             "cut_enabled": True,
             "cut_merge": self.cut_output_row.get_selected() == 1,
+            "cut_remove": self.cut_mode_row.get_selected() == 1,
             # The converter orders each file's segments by number or by time.
             "order_by_segment_number": self.cut_order_row.get_selected() == 1,
             # Files without an entry here are converted in full.

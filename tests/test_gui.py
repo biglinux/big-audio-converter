@@ -266,6 +266,16 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     assert segment["start"] == pytest.approx(duration * 0.2, abs=0.01)
     assert segment["stop"] == pytest.approx(duration * 0.8, abs=0.01)
 
+    # Removing the marked part exports and previews what lies around it.
+    window.cut_mode_row.set_selected(1)
+    assert vis.remove_marked
+    assert not window.cut_order_row.get_visible()
+    assert not window.cut_output_row.get_visible()
+    assert window._collect_conversion_settings()["cut_remove"]
+    before, after = window._load_selection_segments()
+    assert before == (0, pytest.approx(duration * 0.2, abs=0.01))
+    assert after == (pytest.approx(duration * 0.8, abs=0.01), duration)
+
 
 @pytest.mark.skipif(
     not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",

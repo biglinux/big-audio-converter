@@ -44,6 +44,7 @@ class AppConfig:
         "allow_precision_reduction",
         "show_mouseover_tips",
         "window_maximized",
+        "cut_remove",
     }
 
     def __init__(self, config_dir=None):

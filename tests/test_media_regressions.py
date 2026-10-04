@@ -146,6 +146,21 @@ def test_all_rejected_segments_are_not_success(tone, tmp_path):
     assert not converter().convert_file(str(tone), str(tmp_path / "none.wav"), st)
 
 
+def test_removing_marked_parts_keeps_the_rest_in_order(tone, tmp_path):
+    out = tmp_path / "rest.wav"
+    assert converter().convert_file(str(tone), str(out), settings(tone, cut_remove=True))
+    source = pcm(tone)
+    assert np.array_equal(pcm(out), np.concatenate([source[:24000], source[72000:]]))
+
+
+def test_removing_every_part_publishes_nothing(tone, tmp_path):
+    st = settings(tone, cut_remove=True)
+    st["file_markers"][str(tone)] = [{"start": 0, "stop": 2}, {"start": 1.5, "stop": 3}]
+    out = tmp_path / "nothing.wav"
+    assert not converter().convert_file(str(tone), str(out), st)
+    assert not out.exists()
+
+
 def test_merge_is_not_silent_partial_success(tone, tmp_path):
     st = settings(tone, cut_merge=True)
     st["file_markers"][str(tone)].append(

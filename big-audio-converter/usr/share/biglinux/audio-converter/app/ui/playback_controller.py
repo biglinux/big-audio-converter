@@ -13,6 +13,8 @@ Usage:
 
 import logging
 
+from app.audio.media import complement
+
 logger = logging.getLogger(__name__)
 
 
@@ -574,9 +576,11 @@ class PlaybackControllerMixin:
         logger.info(f"Auto-advance mode: {'ENABLED' if is_active else 'DISABLED'}")
 
     def _load_selection_segments(self):
-        """Load segments from markers."""
+        """Load segments from markers, or what remains when they are removed."""
         order_by_number = self.cut_order_row.get_selected() == 1
         marker_pairs = self.visualizer.get_ordered_marker_pairs(order_by_number)
+        if self.cut_mode_row.get_selected() == 1:
+            marker_pairs = complement(marker_pairs, self.visualizer.duration)
 
         segments = []
         for marker in marker_pairs:

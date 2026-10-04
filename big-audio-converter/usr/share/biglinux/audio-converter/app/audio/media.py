@@ -49,6 +49,18 @@ class MediaSource:
 END_TOLERANCE = 0.05  # seconds, above one video frame at 25 fps
 
 
+def complement(segments, end):
+    """The parts of 0..end that no segment covers, in timeline order."""
+    kept, cursor = [], 0.0
+    for segment in sorted(segments, key=lambda s: s["start"]):
+        if segment["start"] > cursor:
+            kept.append({"start": cursor, "stop": segment["start"]})
+        cursor = max(cursor, segment["stop"])
+    if cursor < end:
+        kept.append({"start": cursor, "stop": end})
+    return kept
+
+
 @dataclass(frozen=True)
 class Segment:
     start: float

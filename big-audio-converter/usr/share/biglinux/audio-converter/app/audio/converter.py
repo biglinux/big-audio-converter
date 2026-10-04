@@ -17,6 +17,7 @@ from .media import (
     Segment,
     audio_duration,
     audio_stream,
+    complement,
     probe_media,
 )
 from .output import available_path, publish_all, staging_directory
@@ -294,14 +295,37 @@ class AudioConverter:
                 segments = [
                     Segment.from_mapping(s, end, rate).as_mapping() for s in raw
                 ]
-                if settings.get("order_by_segment_number"):
+                if segments and settings.get("cut_remove"):
+                    if end is None:
+                        raise MediaError(
+                            gettext.gettext(
+                                "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
+                            )
+                        )
+                    # What lies between the marked parts, as one file.
+                    segments = [
+                        Segment.from_mapping(s, end, rate).as_mapping()
+                        for s in complement(segments, end)
+                        if round(s["stop"] * rate) > round(s["start"] * rate)
+                    ]
+                    if not segments:
+                        raise MediaError(
+                            gettext.gettext(
+                                "Every part of this file is marked for removal."
+                            )
+                        )
+                elif settings.get("order_by_segment_number"):
                     segments.sort(key=lambda s: s["segment_index"])
                 else:
                     segments.sort(key=lambda s: s["start"])
             processor = SegmentProcessor(self.ffmpeg_path, runner)
             speed = settings.get("speed", 1) if format_name != "copy" else 1
             with staging_directory(output_path) as directory:
-                if len(segments) > 1 and not settings.get("cut_merge", True):
+                if (
+                    len(segments) > 1
+                    and not settings.get("cut_merge", True)
+                    and not settings.get("cut_remove")
+                ):
                     destination = Path(output_path)
                     jobs = [
                         (

@@ -360,7 +360,15 @@ class SettingsManagerMixin:
         equalizer_row.set_activatable_widget(configure)
 
         # Files are cut wherever segments are marked on the waveform; these
-        # rows appear once there is something to order or join.
+        # rows appear once there is something to keep, remove, order or join.
+        self.cut_mode_row = ChoiceRow(
+            _("Marked parts"), [_("Keep them"), _("Remove them")]
+        )
+        self.cut_mode_row.set_visible(False)
+        self.cut_mode_row.connect(
+            "notify::selected", weak_callback(self._on_cut_mode_changed)
+        )
+        options.add(self.cut_mode_row)
         self.cut_order_row = ChoiceRow(
             _("Segment order"), [_("In timeline order"), _("In the order marked")]
         )
@@ -933,19 +941,28 @@ class SettingsManagerMixin:
         # Saved as the former cut mode: 2 was "in the order marked".
         self.app.config.set("cut_audio_mode", "2" if row.get_selected() else "0")
 
+    def _on_cut_mode_changed(self, row, _pspec):
+        remove = row.get_selected() == 1
+        self.app.config.set("cut_remove", remove)
+        if self._applying_purpose:
+            return  # Restoring settings: the waveform does not exist yet.
+        self.visualizer.remove_marked = remove
+        self.visualizer.queue_draw()
+        self._on_markers_updated(self.visualizer.get_marker_pairs())
+
     def _update_cut_rows(self):
-        """Offer ordering, joining and preview while any file has segments."""
+        """Offer keeping or removing, ordering, joining and preview while any
+        file has segments. What remains after removing is one file in order."""
         has_segments = bool(self.visualizer.get_marker_pairs()) or any(
             segments
             for path, segments in self.file_markers.items()
             if path != self.active_audio_id
         )
-        for widget in (
-            self.cut_order_row,
-            self.cut_output_row,
-            self.play_selection_switch,
-        ):
-            widget.set_visible(has_segments)
+        keeping = self.cut_mode_row.get_selected() == 0
+        self.cut_mode_row.set_visible(has_segments)
+        self.play_selection_switch.set_visible(has_segments)
+        self.cut_order_row.set_visible(has_segments and keeping)
+        self.cut_output_row.set_visible(has_segments and keeping)
 
     def _on_cut_output_changed(self, row, pspec):
         """Handle cut output mode change (separate files vs merge)."""
@@ -1079,6 +1096,7 @@ class SettingsManagerMixin:
         self.sample_rate_row.set_selected(0)
         self.precision_row.set_active(False)
         self._set_output_folder("")
+        self.cut_mode_row.set_selected(0)
         self.cut_order_row.set_selected(0)
         self.cut_output_row.set_selected(0)
         self._set_processing_volume(100)
@@ -1142,6 +1160,7 @@ class SettingsManagerMixin:
         # Restore normalization
         self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
+        self.cut_mode_row.set_selected(int(self._config_bool("cut_remove")))
         # The former cut mode 2 was "in the order marked".
         self.cut_order_row.set_selected(
             int(self._config_int("cut_audio_mode", 1, lo=0, hi=2) == 2)

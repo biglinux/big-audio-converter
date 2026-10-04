@@ -52,6 +52,8 @@ class MarkerManagerMixin:
         # Time under a press that may still become a click or a new segment.
         self.pending_press = None
         self.new_segment_anchor = None
+        # Segments the export cuts out are drawn red instead of blue.
+        self.remove_marked = False
 
         # Callbacks
         self.marker_updated_callback = None
@@ -352,7 +354,8 @@ class MarkerManagerMixin:
         # Define colors
         start_color = (0.8, 0.2, 0.2, 0.8)  # Red
         stop_color = (0.2, 0.7, 0.3, 0.8)  # Green
-        region_color = (0.3, 0.6, 1.0, 0.25)  # Light blue, semi-transparent
+        border_rgb = (0.9, 0.25, 0.25) if self.remove_marked else (0.3, 0.6, 1.0)
+        region_color = (*border_rgb, 0.30 if self.remove_marked else 0.25)
         highlight_color = (1.0, 0.8, 0.0, 0.35)  # Gold, highlighted region
 
         # Calculate visible time range
@@ -436,7 +439,7 @@ class MarkerManagerMixin:
                 seg_w = x_stop - x_start
                 if seg_w > 2:
                     border_alpha = 0.45 if is_highlighted else 0.30
-                    cr.set_source_rgba(0.3, 0.6, 1.0, border_alpha)
+                    cr.set_source_rgba(*border_rgb, border_alpha)
                     cr.set_line_width(1)
                     cr.move_to(x_start, 0.5)
                     cr.line_to(x_stop, 0.5)
