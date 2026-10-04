@@ -218,8 +218,8 @@ class SettingsManagerMixin:
         # The quality in words, the model under it: two short lines keep the
         # slider narrow.
         for quality, model in (
-            (_("Light"), "DeepFilterNet3 16 kHz"),
-            (_("Higher quality"), "DPDFNet-2 48 kHz"),
+            (_("Light"), "DeepFilterNet3"),
+            (_("Higher quality"), "DPDFNet-2"),
         ):
             lines = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             lines.append(Gtk.Label(label=quality, xalign=0))

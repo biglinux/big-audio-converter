@@ -710,7 +710,7 @@ class MainWindow(
             "audio-input-microphone-symbolic",
             _("Voice filter"),
             _(
-                "Highlights the voice and reduces other sounds. At 100%, only what is detected as a human voice is kept."
+                "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
             ),
             self.noise_scale,
             self.noise_value_label,
