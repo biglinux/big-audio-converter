@@ -253,8 +253,11 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
 
 
 @pytest.mark.skipif(
-    not shutil.which("xdotool"), reason="xdotool supplies native X11 keys"
+    not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",
+    reason="xdotool supplies native keys to X11 windows",
 )
+# GTK deprecated its whole X11 API without a replacement; xdotool needs the XID.
+@pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
 def test_segment_editor_apply_is_reachable_by_keyboard(window, audio):
     import gi
 
