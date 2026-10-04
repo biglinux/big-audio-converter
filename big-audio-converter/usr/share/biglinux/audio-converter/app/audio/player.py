@@ -9,7 +9,7 @@ from app.utils.main_loop import MainLoopSources
 
 from .media import MediaSource
 from .process import MediaError
-from .profiles import build_audio_filters, validate_settings
+from .profiles import build_audio_filters, noise_attenuation, validate_settings
 
 logger = logging.getLogger(__name__)
 EQ_FREQUENCIES = (31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
@@ -110,6 +110,10 @@ class AudioPlayer:
             @self.mpv_instance.event_callback("file-loaded")
             def loaded(event):
                 self._sources.idle(self._file_loaded, self._native_entry_id)
+
+            @self.mpv_instance.event_callback("playback-restart")
+            def restarted(_event):
+                self._sources.idle(self._restore_live_strength, key="strength")
 
             @self.mpv_instance.event_callback("end-file")
             def ended(event):
@@ -449,8 +453,11 @@ class AudioPlayer:
             )
             if graph != self._last_filter_graph:
                 # Quoted by byte length: [] quoting ends at the first pad label.
+                # The label names the chain for live commands.
                 self.mpv_instance.af = (
-                    f"lavfi=graph=%{len(graph.encode())}%{graph}" if graph else ""
+                    f"@bigfx:lavfi=graph=%{len(graph.encode())}%{graph}"
+                    if graph
+                    else ""
                 )
                 self._last_filter_graph = graph
         except (MediaError, RuntimeError, ValueError) as exc:
@@ -520,7 +527,38 @@ class AudioPlayer:
         self._set_effect("noise_engine", engine)
 
     def set_noise_strength(self, percent):
-        self._set_effect("noise_strength", float(percent))
+        """Retune the running denoiser; rebuilding the chain would cut the sound."""
+        percent = float(percent)
+        validate_settings(self._effect_settings() | {"noise_strength": percent})
+        if self._send_noise_strength(percent):
+            self.noise_strength = percent
+        else:
+            self._set_effect("noise_strength", percent)
+
+    def _send_noise_strength(self, percent):
+        if (
+            self._closed
+            or self.mpv_instance is None
+            or "ladspa=" not in (self._last_filter_graph or "")
+        ):
+            return False
+        try:
+            self.mpv_instance.command(
+                "af-command",
+                "bigfx",
+                "c0",
+                noise_attenuation(self.noise_engine, percent),
+                "ladspa",
+            )
+        except (RuntimeError, SystemError, ValueError) as exc:
+            logger.debug("Live denoiser strength failed: %s", exc)
+            return False
+        return True
+
+    def _restore_live_strength(self):
+        # mpv rebuilds the chain from its text after a seek or a new file,
+        # and that text may still hold an older strength.
+        self._send_noise_strength(self.noise_strength)
 
     def set_hpf_enabled(self, enabled):
         self._set_effect("hpf_enabled", bool(enabled))

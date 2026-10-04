@@ -21,6 +21,11 @@ NOISE_PLUGINS = {
 LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
 
 
+def noise_attenuation(engine, percent):
+    """Strength in percent, linear in dB up to the model's useful cap."""
+    return f"{percent / 100 * NOISE_PLUGINS[engine][3]:.2f}"
+
+
 def discover_noise_plugins():
     plugins = {}
     for engine, (filename, _label, _delay, _full_db) in NOISE_PLUGINS.items():
@@ -311,9 +316,8 @@ def build_audio_filters(settings, noise_plugins=None):
         )
 
     if settings.get("noise_reduction"):
-        _filename, label, delay, full_db = NOISE_PLUGINS[engine]
-        # Strength in percent, linear in dB up to the model's useful cap.
-        attenuation = f"{settings.get('noise_strength', 100) / 100 * full_db:.2f}"
+        _filename, label, delay, _full_db = NOISE_PLUGINS[engine]
+        attenuation = noise_attenuation(engine, settings.get("noise_strength", 100))
         # System plugin paths are fixed; never interpret a path as filter syntax.
         if any(char in str(plugin) for char in "\\'\":;,[]\n\r"):
             raise MediaError(gettext.gettext("The audio plugin path is unsupported."))

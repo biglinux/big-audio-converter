@@ -163,3 +163,28 @@ def test_idle_device_refresh_preserves_preview_effects(player):
     assert "volume=0.5" in str(original_filters)
     player.refresh_audio_devices()
     assert player.mpv_instance.af == original_filters
+
+
+def test_denoiser_strength_changes_without_rebuilding_the_chain(player, tracks):
+    from app.audio.profiles import discover_noise_plugins
+
+    plugins = discover_noise_plugins()
+    if "dfn3" not in plugins:
+        pytest.skip("The optional DFN3 LADSPA plugin is not installed")
+    player.noise_plugins = plugins
+    errors = []
+    player.connect("error", errors.append)
+    assert player.load(str(tracks))
+    pump_until(lambda: player._loaded or errors)
+    assert player.set_noise_reduction(True)
+    pump_until(lambda: "ladspa=" in (player._last_filter_graph or ""))
+    chain = player.mpv_instance.af
+    assert player.play()
+    # Rebuilding the chain drops the audio its filters hold: an audible cut.
+    for percent in (10, 60, 35):
+        player.set_noise_strength(percent)
+    assert player.noise_strength == 35
+    player.seek(1)
+    pump_until(lambda: abs((player.mpv_instance.time_pos or 0) - 1) < 0.1)
+    assert player.mpv_instance.af == chain
+    assert not errors
