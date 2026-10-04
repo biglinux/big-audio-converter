@@ -58,13 +58,12 @@ From the repository root, run the application with:
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
-The tests run real FFmpeg and libmpv. They need `pytest` and `hypothesis`; the GTK tests also need Xvfb and a session bus. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
+The tests run real FFmpeg and libmpv. They need `pytest`; the GTK tests also need Xvfb and a session bus. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
 
 ```sh
 mkdir -p "$HOME/.cache/bac-tests"
-TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q -m "not extended" tests --ignore=tests/test_gui.py
+TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q tests --ignore=tests/test_gui.py
 TMPDIR="$HOME/.cache/bac-tests" xvfb-run -a dbus-run-session -- python3 -m pytest -q tests/test_gui.py
-TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q -m extended tests
 ruff check big-audio-converter/usr/share/biglinux/audio-converter tests
 ruff format --check big-audio-converter/usr/share/biglinux/audio-converter tests
 ```

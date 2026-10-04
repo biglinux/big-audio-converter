@@ -6,7 +6,7 @@ depends=('python>=3.10' 'python-gobject' 'gtk4>=4.12' 'ffmpeg' 'python-cairo' 'p
 optdepends=('deepfilternet3-native: light speech noise reduction (standard DFN3, without LL)'
     'dpdfnet-native: higher-quality speech noise reduction with DPDFNet-2 48 kHz HR')
 makedepends=('git' 'gettext')
-checkdepends=('python-pytest' 'python-hypothesis')
+checkdepends=('python-pytest')
 pkgver=$(date +%y.%m.%d)
 pkgrel=$(date +%H%M)
 arch=('any')
@@ -60,7 +60,7 @@ check() {
     cd "${srcdir}/${pkgname}" || return
     mkdir -p "${srcdir}/test-tmp"
     # Tests that open windows need a display; the quality workflow runs them.
-    TMPDIR="${srcdir}/test-tmp" python -m pytest -q -m "not extended" tests --ignore=tests/test_gui.py \
+    TMPDIR="${srcdir}/test-tmp" python -m pytest -q tests --ignore=tests/test_gui.py \
         --ignore-glob="tests/test_big_gtk_kit_*.py"
 }
 

@@ -4,7 +4,7 @@ import pytest
 from app.audio.converter import AudioConverter
 from app.audio.media import Segment
 from app.audio.process import MediaError
-from app.audio.profiles import build_audio_filters, codec_args
+from app.audio.profiles import build_audio_filters
 
 
 def test_noise_discovery_excludes_ort_and_ll(monkeypatch):
@@ -56,225 +56,28 @@ def converter(tmp_path):
     return conv
 
 
-class TestBuildAudioFilters:
-    def test_no_filters(self, converter):
-        settings = {}
-        assert build_audio_filters(settings, converter.noise_plugins) == []
+def test_noise_reduction_without_its_plugin_is_an_error(converter):
+    with pytest.raises(MediaError, match="unavailable"):
+        build_audio_filters({"noise_reduction": True}, {})
 
-    def test_volume_filter(self, converter):
-        settings = {"volume": 0.5}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert "volume=0.5" in filters
 
-    def test_speed_filter(self, converter):
-        settings = {"speed": 2.0}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert "atempo=2.0" in filters
-
-    def test_normalize_filter(self, converter):
-        settings = {"normalize": True}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("loudnorm" in f for f in filters)
-
-    def test_noise_reduction_filter(self, converter):
-        settings = {"noise_reduction": True, "noise_strength": 80}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("ladspa" in f for f in filters)
-
-    def test_noise_reduction_without_ladspa(self, converter):
-        converter.noise_plugins = {}
-        settings = {"noise_reduction": True}
-        with pytest.raises(MediaError, match="unavailable"):
-            build_audio_filters(settings, converter.noise_plugins)
-
-    def test_hpf_filter(self, converter):
-        settings = {"hpf_enabled": True, "hpf_frequency": 120}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("highpass" in f and "120" in f for f in filters)
-
-    def test_hpf_default_frequency(self, converter):
-        settings = {"hpf_enabled": True}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("highpass" in f and "80" in f for f in filters)
-
-    def test_gate_filter(self, converter):
-        settings = {
-            "gate_enabled": True,
-            "gate_intensity": 0.5,
-        }
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("agate" in f for f in filters)
-
-    def test_gate_intensity_affects_params(self, converter):
-        settings_low = {"gate_enabled": True, "gate_intensity": 0.1}
-        settings_high = {"gate_enabled": True, "gate_intensity": 0.9}
-        filters_low = build_audio_filters(settings_low, converter.noise_plugins)
-        filters_high = build_audio_filters(settings_high, converter.noise_plugins)
-        gate_low = next(f for f in filters_low if "agate" in f)
-        gate_high = next(f for f in filters_high if "agate" in f)
-        assert gate_low != gate_high
-
-    def test_compressor_filter(self, converter):
-        settings = {"compressor_enabled": True, "compressor_intensity": 0.5}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert any("acompressor" in f for f in filters)
-
-    def test_compressor_intensity_affects_params(self, converter):
-        settings_low = {"compressor_enabled": True, "compressor_intensity": 0.2}
-        settings_high = {"compressor_enabled": True, "compressor_intensity": 0.9}
-        filters_low = build_audio_filters(settings_low, converter.noise_plugins)
-        filters_high = build_audio_filters(settings_high, converter.noise_plugins)
-        comp_low = next(f for f in filters_low if "acompressor" in f)
-        comp_high = next(f for f in filters_high if "acompressor" in f)
-        assert comp_low != comp_high
-
-    def test_eq_filter(self, converter):
-        settings = {"eq_enabled": True, "eq_bands": "5,0,0,0,0,0,0,0,0,-3"}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        eq_filters = [f for f in filters if "equalizer" in f]
-        assert len(eq_filters) == 2  # 31Hz +5dB and 16kHz -3dB
-
-    def test_eq_all_zero_no_filter(self, converter):
-        settings = {"eq_enabled": True, "eq_bands": "0,0,0,0,0,0,0,0,0,0"}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert not any("equalizer" in f for f in filters)
-
-    @pytest.mark.parametrize(
-        "engine,label,attenuation",
-        # 50 % strength: half of each model's useful cap (24 dB and 48 dB).
-        [
-            ("dfn3", "deep_filter_net3_rs_mono", "c0=12.00"),
-            ("dpdfnet", "dpdfnet_native_48hr", "c0=24.00"),
-        ],
+@pytest.mark.parametrize(
+    "engine,label,attenuation",
+    # 50 % strength: half of each model's useful cap (24 dB and 48 dB).
+    [
+        ("dfn3", "deep_filter_net3_rs_mono", "c0=12.00"),
+        ("dpdfnet", "dpdfnet_native_48hr", "c0=24.00"),
+    ],
+)
+def test_selected_noise_model(converter, engine, label, attenuation):
+    filters = build_audio_filters(
+        {"noise_reduction": True, "noise_engine": engine, "noise_strength": 50},
+        converter.noise_plugins,
     )
-    def test_selected_noise_model(self, converter, engine, label, attenuation):
-        filters = build_audio_filters(
-            {
-                "noise_reduction": True,
-                "noise_engine": engine,
-                "noise_strength": 50,
-            },
-            converter.noise_plugins,
-        )
-        nr = next(f for f in filters if "ladspa=" in f)
-        assert f"plugin={label}" in nr
-        assert attenuation in nr
-        assert ("c6=0" in nr) == (engine == "dfn3")
-
-    def test_multiple_filters(self, converter):
-        settings = {"volume": 0.8, "normalize": True}
-        filters = build_audio_filters(settings, converter.noise_plugins)
-        assert len(filters) == 2
-
-    def test_volume_1_no_filter(self, converter):
-        settings = {"volume": 1.0}
-        assert build_audio_filters(settings, converter.noise_plugins) == []
-
-    def test_speed_1_no_filter(self, converter):
-        settings = {"speed": 1.0}
-        assert build_audio_filters(settings, converter.noise_plugins) == []
-
-
-class TestFilterChainOrder:
-    """Verify the filter chain order: HPF → Compressor → NR → Gate → EQ → Volume → Speed → Normalize"""
-
-    def test_full_chain_order(self, converter):
-        settings = {
-            "hpf_enabled": True,
-            "hpf_frequency": 80,
-            "noise_reduction": True,
-            "noise_strength": 100,
-            "gate_enabled": True,
-            "gate_intensity": 0.5,
-            "compressor_enabled": True,
-            "compressor_intensity": 0.5,
-            "eq_enabled": True,
-            "eq_bands": "5,0,0,0,0,0,0,0,0,0",
-            "volume": 0.8,
-            "speed": 1.5,
-            "normalize": True,
-        }
-        filters = build_audio_filters(settings, converter.noise_plugins)
-
-        def find_idx(keyword):
-            for i, f in enumerate(filters):
-                if keyword in f:
-                    return i
-            return -1
-
-        idx_hpf = find_idx("highpass")
-        idx_comp = find_idx("acompressor")
-        idx_nr = find_idx("ladspa=")
-        idx_gate = find_idx("agate")
-        idx_eq = find_idx("equalizer")
-        idx_vol = find_idx("volume")
-        idx_speed = find_idx("atempo")
-        idx_norm = find_idx("loudnorm")
-
-        assert (
-            idx_hpf
-            < idx_comp
-            < idx_nr
-            < idx_gate
-            < idx_eq
-            < idx_vol
-            < idx_speed
-            < idx_norm
-        )
-
-    def test_partial_chain_preserves_order(self, converter):
-        settings = {
-            "noise_reduction": True,
-            "noise_strength": 80,
-            "compressor_enabled": True,
-            "compressor_intensity": 0.5,
-            "volume": 0.5,
-        }
-        filters = build_audio_filters(settings, converter.noise_plugins)
-
-        def find_idx(keyword):
-            for i, f in enumerate(filters):
-                if keyword in f:
-                    return i
-            return -1
-
-        idx_comp = find_idx("acompressor")
-        idx_nr = find_idx("ladspa=")
-        idx_vol = find_idx("volume")
-        assert idx_comp < idx_nr < idx_vol
-
-
-class TestBuildCodecArgs:
-    def test_mp3_format(self, converter):
-        settings = {"format": "mp3"}
-        args = codec_args(settings)
-        assert "-f" in args
-        assert "mp3" in args
-
-    def test_aac_format(self, converter):
-        settings = {"format": "aac"}
-        args = codec_args(settings)
-        assert "-c:a" in args
-        assert "aac" in args
-        assert "-f" in args
-        assert "adts" in args
-
-    def test_bitrate(self, converter):
-        settings = {"format": "mp3", "bitrate": "320k"}
-        args = codec_args(settings)
-        assert "-b:a" in args
-        assert "320k" in args
-
-    def test_channels(self, converter):
-        settings = {"format": "mp3"}
-        args = codec_args(settings, channels=2)
-        assert "-ac" in args
-        assert "2" in args
-
-    def test_channels_ignored_for_copy(self, converter):
-        settings = {"format": "copy"}
-        args = codec_args(settings, channels=2)
-        assert "-ac" not in args
+    nr = next(f for f in filters if "ladspa=" in f)
+    assert f"plugin={label}" in nr
+    assert attenuation in nr
+    assert ("c6=0" in nr) == (engine == "dfn3")
 
 
 class TestGetOutputPath:

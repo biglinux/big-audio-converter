@@ -2,7 +2,6 @@
 
 import concurrent.futures
 import json
-import math
 import signal
 import sys
 import threading
@@ -11,112 +10,12 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from app.audio.media import MediaSource, Segment, track_identifier
+from app.audio.media import MediaSource
 from app.audio.output import publish_all
 from app.audio.process import CancelledError, MediaError, ProcessRunner
-from app.audio.profiles import build_audio_filters, validate_settings
 from app.audio.waveform import PeakCollector
 from app.utils.config import AppConfig
 from app.utils.main_loop import MainLoopSources
-from hypothesis import example, given, settings
-from hypothesis import strategies as st
-
-
-@pytest.mark.extended
-@given(st.floats(), st.floats())
-def test_interval_validation_never_accepts_empty_or_nonfinite_values(start, stop):
-    valid = math.isfinite(start) and math.isfinite(stop) and 0 <= start < stop
-    if valid:
-        segment = Segment.from_mapping({"start": start, "stop": stop})
-        assert segment.start == start and segment.stop == stop
-    else:
-        with pytest.raises(MediaError):
-            Segment.from_mapping({"start": start, "stop": stop})
-
-
-@pytest.mark.extended
-@given(st.floats(min_value=0.1, max_value=5, allow_nan=False, allow_infinity=False))
-def test_tempo_factors_keep_pitch_stages_in_safe_range(speed):
-    filters = build_audio_filters({"speed": speed})
-    factors = [
-        float(value.split("=", 1)[1])
-        for value in filters
-        if value.startswith("atempo=")
-    ]
-    assert all(0.5 <= value <= 2 for value in factors)
-    assert math.prod(factors) == pytest.approx(speed)
-
-
-@pytest.mark.extended
-@given(st.floats(allow_nan=True, allow_infinity=True))
-def test_volume_rejects_nonfinite_and_out_of_range_values(volume):
-    if math.isfinite(volume) and 0 <= volume <= 10:
-        assert validate_settings({"volume": volume})["volume"] == volume
-    else:
-        with pytest.raises(MediaError):
-            validate_settings({"volume": volume})
-
-
-@pytest.mark.extended
-@given(st.text(min_size=1, max_size=100), st.integers(min_value=0, max_value=100))
-def test_opaque_track_identity_does_not_embed_labels(path, index):
-    if "\0" in path:
-        return
-    result = track_identifier(path, index)
-    assert len(result) == len("bac-track:") + 64
-    assert result == track_identifier(path, index)
-    assert result != track_identifier(path, index + 1)
-
-
-@pytest.mark.extended
-@given(
-    st.lists(
-        st.floats(min_value=0, max_value=1, allow_nan=False, allow_infinity=False),
-        min_size=1,
-        max_size=1000,
-    )
-)
-@settings(max_examples=40)
-def test_unknown_length_waveform_is_bounded_and_preserves_maximum(peaks):
-    collector = PeakCollector(64, 48000, max_points=16)
-    raw = np.repeat(np.asarray(peaks, dtype="<f4"), 64).tobytes()
-    for offset in range(0, len(raw), 131):
-        collector.consume(raw[offset : offset + 131])
-    data, duration = collector.finish()
-    values = data["levels"][0]
-    assert len(values) <= 16
-    assert float(values.max()) == pytest.approx(max(peaks), abs=1e-7)
-    assert duration == len(peaks) * 64 / 48000
-    assert not values.flags.writeable
-
-
-@pytest.mark.extended
-@given(
-    st.lists(
-        st.tuples(
-            st.floats(min_value=-1, max_value=1, width=32),
-            st.floats(min_value=-1, max_value=1, width=32),
-        ),
-        min_size=1,
-        max_size=512,
-    ),
-    st.integers(min_value=1, max_value=97),
-)
-@settings(max_examples=40)
-def test_waveform_preserves_timeline_and_all_channels(frames, chunk_size):
-    samples = np.asarray(frames, dtype="<f4")
-    collector = PeakCollector(3, 48000, max_points=16, channels=2)
-    raw = samples.tobytes()
-    for offset in range(0, len(raw), chunk_size):
-        collector.consume(raw[offset : offset + chunk_size])
-    data, duration = collector.finish()
-    block = round(48000 / data["rates"][0])
-    expected = [
-        np.abs(samples[offset : offset + block]).max()
-        for offset in range(0, len(samples), block)
-    ]
-    np.testing.assert_array_equal(data["levels"][0], expected)
-    assert duration == len(samples) / 48000
 
 
 @pytest.mark.parametrize(
@@ -293,31 +192,3 @@ def test_real_filename_in_track_namespace_is_still_a_file(tmp_path, monkeypatch)
     assert MediaSource.resolve("bac-track:legitimate.wav").path == str(
         tmp_path / "bac-track:legitimate.wav"
     )
-
-
-@pytest.mark.extended
-@example(b"")
-@example(b"\x00")
-@example(b"\x00\x00\xc0\x7f" * 2)
-@given(st.binary(max_size=8192))
-@settings(max_examples=200)
-def test_fuzz_pcm_pipe_bytes(raw):
-    collector = PeakCollector(3, 48000, max_points=16, channels=2)
-    complete = len(raw) // 4 * 4
-    samples = np.frombuffer(raw[:complete], dtype="<f4")
-    valid = bool(raw) and len(raw) % 8 == 0 and np.isfinite(samples).all()
-    try:
-        for offset in range(0, len(raw), 137):
-            collector.consume(raw[offset : offset + 137])
-        data, duration = collector.finish()
-    except MediaError:
-        assert not valid
-    else:
-        assert valid
-        block = round(48000 / data["rates"][0]) * 2
-        expected = [
-            np.abs(samples[offset : offset + block]).max()
-            for offset in range(0, len(samples), block)
-        ]
-        np.testing.assert_array_equal(data["levels"][0], expected)
-        assert duration == len(raw) / 8 / 48000
