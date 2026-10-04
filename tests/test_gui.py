@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("DISPLAY"), reason="A graphical display is required"
+    not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")),
+    reason="A graphical display is required",
 )
 
 
