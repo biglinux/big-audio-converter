@@ -1,14 +1,13 @@
 # Translation of big-audio-converter.
 # Distributed under the same license as the package.
 # Original catalogs: BigLinux contributors.
-# Completed with AI assistance; see TRANSLATION-REPORT.md.
 msgid ""
 msgstr ""
 "Project-Id-Version: big-audio-converter\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-audio-converter/issues\n"
-"POT-Creation-Date: 2026-10-04 00:00+0000\n"
+"POT-Creation-Date: 2026-10-05 00:00+0000\n"
 "PO-Revision-Date: 2026-10-03 00:00+0000\n"
-"Last-Translator: AI-assisted localization\n"
+"Last-Translator: BigLinux\n"
 "Language-Team: fi\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
@@ -17,136 +16,435 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Contextual translation and automated validation\n"
 
-#: usr/share/biglinux/audio-converter/main.py:86
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1325
+#: usr/share/biglinux/audio-converter/main.py:92
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1268
 msgid "Local files only"
 msgstr "Vain paikalliset tiedostot"
 
-#: usr/share/biglinux/audio-converter/main.py:87
+#: usr/share/biglinux/audio-converter/main.py:93
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:1069
 msgid "Download this file to a local folder before adding it."
 msgstr "Lataa tiedosto paikalliseen kansioon ennen sen lisäämistä."
 
-#: usr/share/biglinux/audio-converter/main.py:191
-#: usr/share/biglinux/audio-converter/main.py:215
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:213
-msgid "Audio Converter"
-msgstr "Äänimuunnin"
-
-#: usr/share/biglinux/audio-converter/main.py:193
-#: usr/share/biglinux/audio-converter/main.py:195
+#: usr/share/biglinux/audio-converter/main.py:201
+#: usr/share/biglinux/audio-converter/main.py:203
 msgid "BigLinux Team"
 msgstr "BigLinux-tiimi"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:62
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:48
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:59
+msgid "Clear queue"
+msgstr "Tyhjennä jono"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:62
+msgid "0 files"
+msgstr "0 tiedostoa"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:71
+msgid "Show help on hover"
+msgstr "Näytä ohje osoitettaessa"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:72
+msgid "Show Welcome Screen"
+msgstr "Näytä tervetulonäkymä"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:74
+msgid "Reset All Settings…"
+msgstr "Palauta kaikki asetukset…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:77
+msgid "About"
+msgstr "Tietoja"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:82
+msgid "Main menu"
+msgstr "Päävalikko"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:111
+msgid "Add Files"
+msgstr "Lisää tiedostoja"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:118
+msgid "Convert"
+msgstr "Muunna"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:230
+msgid "Settings could not be read and were reset"
+msgstr "Asetuksia ei voitu lukea, joten ne palautettiin"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:445
+msgid "Selection only"
+msgstr "Vain valinta"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:456
+msgid "Play only selected area"
+msgstr "Toista vain valittu alue"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:462
+msgid "Edit Segments…"
+msgstr "Muokkaa leikkeitä…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:472
+msgid "Play the next file automatically"
+msgstr "Toista seuraava tiedosto automaattisesti"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:491
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:502
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:169
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
+msgid "Equalizer"
+msgstr "Taajuuskorjain"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:506
+msgid "Listen to original"
+msgstr "Kuuntele alkuperäistä"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:508
+msgid "Temporarily listen without effects. Export settings stay unchanged."
+msgstr "Kuuntele tilapäisesti ilman tehosteita. Vientiasetukset eivät muutu."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:522
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:524
+msgid "More playback options"
+msgstr "Lisää toistoasetuksia"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528
+msgid "Playback"
+msgstr "Toisto"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:529
+msgid "Only affects listening. Converted files stay unchanged."
+msgstr "Vaikuttaa vain kuunteluun. Muunnetut tiedostot eivät muutu."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:537
+msgid "Audio output"
+msgstr "Ääniulostulo"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:537
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:860
+msgid "System default"
+msgstr "Järjestelmän oletus"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:545
+msgid "Refresh audio outputs"
+msgstr "Päivitä ääniulostulot"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:574
+msgid "Previous track"
+msgstr "Edellinen kappale"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:590
+msgid "Play or pause"
+msgstr "Toista tai keskeytä"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:604
+msgid "Next track"
+msgstr "Seuraava kappale"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:629
+msgid "Volume"
+msgstr "Äänenvoimakkuus"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:651
+msgid "Speed"
+msgstr "Nopeus"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:662
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
+msgid "Clean voice"
+msgstr "Puhdista puhe"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:664
+msgid "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
+msgstr "Korostaa puhetta ja vaimentaa muita ääniä. 100 %:ssa malli käyttää suurinta vaimennustaan."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:684
+msgid "Waveform zoom"
+msgstr "Aaltomuodon zoomaus"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:793
+#, python-format
+msgid "Join %d file"
+msgid_plural "Join %d files"
+msgstr[0] "Yhdistä %d tiedosto"
+msgstr[1] "Yhdistä %d tiedostoa"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:795
+#, python-format
+msgid "Convert %d file"
+msgid_plural "Convert %d files"
+msgstr[0] "Muunna %d tiedosto"
+msgstr[1] "Muunna %d tiedostoa"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:975
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1094
+msgid "OK"
+msgstr "OK"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:983
+msgid "Stop the conversion?"
+msgstr "Pysäytetäänkö muunnos?"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:985
+msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
+msgstr "Ikkunan sulkeminen pysäyttää käynnissä olevan muunnoksen. Jo valmiit tiedostot säilyvät."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:989
+msgid "Keep Converting"
+msgstr "Jatka muuntamista"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:990
+msgid "Stop and Close"
+msgstr "Pysäytä ja sulje"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1041
+msgid "No audio selected"
+msgstr "Ääntä ei ole valittu"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1042
+msgid "Add a file and select it before editing segments."
+msgstr "Lisää tiedosto ja valitse se ennen leikkeiden muokkaamista."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1047
+msgid "Audio duration unavailable"
+msgstr "Äänen kesto ei ole saatavilla"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1048
+msgid "Wait for the waveform to finish loading before editing this file."
+msgstr "Odota, että aaltomuoto on ladattu, ennen kuin muokkaat tätä tiedostoa."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1088
+msgid "Other valid files remain in the queue. Check these files and add them again."
+msgstr "Muut kelvolliset tiedostot säilyvät jonossa. Tarkista nämä tiedostot ja lisää ne uudelleen."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1092
+msgid "Some files could not be added"
+msgstr "Joitakin tiedostoja ei voitu lisätä"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1108
+msgid "Audio preview"
+msgstr "Esikuuntelu"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1136
+msgid "Reset all settings?"
+msgstr "Palautetaanko kaikki asetukset?"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1138
+msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
+msgstr "Muoto, laatu, tulostuskansio, leikkaus, tehosteet ja taajuuskorjain palautetaan oletusarvoihin. Jono ja lähdetiedostot säilyvät."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1142
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1161
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:865
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:163
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:194
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:94
+msgid "Cancel"
+msgstr "Peru"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1143
+msgid "Reset"
+msgstr "Palauta"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1156
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1162
+msgid "Clear Queue"
+msgstr "Tyhjennä jono"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1158
+msgid "Remove the queue entries and their edits? Source files will not be deleted."
+msgstr "Poistetaanko jonon kohteet ja niiden muokkaukset? Lähdetiedostoja ei poisteta."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1194
+msgid "Select Audio or Video Files"
+msgstr "Valitse ääni- tai videotiedostoja"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1197
+msgid "Audio and Video files"
+msgstr "Ääni- ja videotiedostot"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1243
+msgid "All files"
+msgstr "Kaikki tiedostot"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1270
+msgid "Some selected files are remote. Download them before adding them."
+msgstr "Osa valituista tiedostoista on etätiedostoja. Lataa ne ennen lisäämistä."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1281
+msgid "Files could not be selected"
+msgstr "Tiedostoja ei voitu valita"
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:63
 msgid "The application is closing."
 msgstr "Sovellusta suljetaan."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:66
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:67
 msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
 msgstr "Muunnos on yhä käynnissä. Odota perumisen valmistumista ennen uuden muunnoksen aloittamista."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:120
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:121
 msgid "Conversion cancelled."
 msgstr "Muunnos peruttiin."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:142
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:143
 msgid "The output path is invalid. Check the source filename and destination."
 msgstr "Tulostuspolku on virheellinen. Tarkista lähdetiedoston nimi ja kohde."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:171
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:172
 #, python-brace-format
 msgid "Joined into {name}"
 msgstr "Yhdistetty tiedostoon {name}"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:186
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:187
 msgid "An unexpected error stopped this conversion."
 msgstr "Odottamaton virhe pysäytti tämän muunnoksen."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:228
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:227
 msgid "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
 msgstr "Tämän tiedoston pituutta ei tiedetä, joten merkittyjä osia ei voi poistaa. Säilytä ne sen sijaan."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:240
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:238
 msgid "Every part of this file is marked for removal."
 msgstr "Tiedoston kaikki osat on merkitty poistettaviksi."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:256
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:253
 msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
 msgstr "FFmpeg ei ole asennettuna. Asenna FFmpeg-paketti ja yritä uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:271
-msgid "Fast Copy cannot join files. Select an audio format."
-msgstr "Suora kopiointi ei voi yhdistää tiedostoja. Valitse äänimuoto."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:268
+msgid "Keeping the original format cannot join files. Select an audio format."
+msgstr "Alkuperäisellä muodolla tiedostoja ei voi yhdistää. Valitse äänimuoto."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:281
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:278
 msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
 msgstr "Yli kaksikanavaiset tiedostot voi yhdistää vain monona tai stereona. Valitse kanavat kohdassa Koodauksen lisäasetukset."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:304
-msgid "Fast Copy cannot apply effects, change channels or resample. Select an encoding format."
-msgstr "Suora kopiointi ei voi käyttää tehosteita, muuttaa kanavia tai näytteistää uudelleen. Valitse koodausmuoto."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:301
+msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
+msgstr "Alkuperäisellä muodolla ei voi käyttää tehosteita, muuttaa kanavia eikä uudelleennäytteistää. Valitse äänimuoto."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:315
-msgid "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
-msgstr "Suora kopiointi säilyttää koodatut äänipaketit; leikkausrajat ovat likimääräisiä. Tehosteita ei käytetä."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:312
+msgid "The original format keeps the encoded audio, so cuts are approximate and effects are not applied."
+msgstr "Alkuperäinen muoto säilyttää koodatun äänen, joten leikkaukset ovat likimääräisiä eikä tehosteita käytetä."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:334
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:331
 msgid "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
 msgstr "Liukulukuääni muunnettiin luvallasi 24-bittiseksi kokonaisluku-PCM:ksi FLAC-muotoa varten; tämä ei ole bittitarkka kopio."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:340
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:337
 msgid "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
 msgstr "Opus käyttää toistossa 48 kHz:n näytteenottokelloa. Lähteen näytteenottotaajuutta ei voi esittää muuttumattomana tulostussäiliössä."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:347
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:344
 #, python-brace-format
 msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
 msgstr "Tulostuskoodekki vaatii uudelleennäytteistyksen taajuudesta {rate} Hz taajuuteen {final_rate} Hz."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:362
-msgid "Positive gain may clip. Enable clipping protection or reduce the gain."
-msgstr "Positiivinen vahvistus voi aiheuttaa yliohjautumista. Ota yliohjaussuoja käyttöön tai pienennä vahvistusta."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:359
+msgid "Raising the volume may distort. Turn on Prevent distortion or lower the volume."
+msgstr "Äänenvoimakkuuden nostaminen voi aiheuttaa säröä. Ota Estä särö käyttöön tai laske äänenvoimakkuutta."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:368
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:365
 msgid "This raw audio format cannot preserve all tags or artwork."
 msgstr "Tämä raakamuotoinen äänimuoto ei voi säilyttää kaikkia tunnisteita tai kansikuvia."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:375
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:372
 msgid "Artwork is not preserved by this output profile."
 msgstr "Tämä tulostusprofiili ei säilytä kansikuvia."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:443
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:438
 msgid "The source changed during conversion. No output was published; add the file again."
 msgstr "Lähdetiedosto muuttui muunnoksen aikana. Tulostiedostoa ei tallennettu; lisää tiedosto uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:461
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:456
 msgid "Conversion cancelled. No incomplete output was published."
 msgstr "Muunnos peruttiin. Keskeneräisiä tulostiedostoja ei tallennettu."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:475
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:470
 msgid "The file or destination could not be accessed. Check permissions and free disk space."
 msgstr "Tiedostoa tai kohdetta ei voitu käyttää. Tarkista käyttöoikeudet ja vapaa levytila."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:484
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:479
 msgid "The media information or conversion settings are invalid."
 msgstr "Mediatiedot tai muunnosasetukset ovat virheellisiä."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:501
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:496
 msgid "The encoder changed the requested sample rate. No output was published."
 msgstr "Kooderi muutti pyydettyä näytteenottotaajuutta. Tulostiedostoa ei tallennettu."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:509
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:504
 msgid "The encoder changed the requested channel count. No output was published."
 msgstr "Kooderi muutti pyydettyä kanavamäärää. Tulostiedostoa ei tallennettu."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:517
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:512
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "Tämä FFmpeg-versio ei voi säilyttää pyydettyä FLAC-tarkkuutta. Valitse WAV tai asenna yhteensopiva FFmpeg-paketti."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:538
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:172
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:530
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:173
 msgid "Select a supported output format."
 msgstr "Valitse tuettu tulostusmuoto."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:131
+#, python-brace-format
+msgid "Invalid value for {key}."
+msgstr "Virheellinen arvo asetukselle {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:135
+#, python-brace-format
+msgid "{key} must be between {low} and {high}."
+msgstr "Asetuksen {key} on oltava välillä {low}–{high}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:143
+#, python-brace-format
+msgid "Invalid switch value for {key}."
+msgstr "Virheellinen päällä/pois-arvo asetukselle {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:153
+msgid "The equalizer bands are invalid."
+msgstr "Taajuuskorjaimen kaistat ovat virheellisiä."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:160
+msgid "The equalizer needs ten finite gains between -40 and 40 dB."
+msgstr "Taajuuskorjain vaatii kymmenen äärellistä vahvistusarvoa väliltä -40–40 dB."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:164
+msgid "Select a supported noise reduction mode."
+msgstr "Valitse tuettu kohinanvaimennustila."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:189
+msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
+msgstr "FLAC ei voi säilyttää tätä PCM-esitystapaa. Valitse WAV tai salli muunnos 24-bittiseksi PCM:ksi koodauksen lisäasetuksissa."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:214
+msgid "The selected bitrate is not supported by this output profile."
+msgstr "Tämä tulostusprofiili ei tue valittua bittinopeutta."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:221
+msgid "Select original, mono or stereo channels."
+msgstr "Valitse alkuperäiset kanavat, mono tai stereo."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:229
+msgid "MP3 supports mono or stereo. Select stereo channels or another format."
+msgstr "MP3 tukee monoa tai stereota. Valitse stereokanavat tai toinen muoto."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:236
+msgid "Select a valid output sample rate."
+msgstr "Valitse kelvollinen tulostuksen näytteenottotaajuus."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:243
+msgid "The selected codec does not support that sample rate."
+msgstr "Valittu koodekki ei tue kyseistä näytteenottotaajuutta."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:317
+msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
+msgstr "Valittu kohinanvaimennuslisäosa ei ole käytettävissä. Asenna se tai poista kohinanvaimennus käytöstä."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:351
+msgid "The audio plugin path is unsupported."
+msgstr "Äänilisäosan polkua ei tueta."
 
 #: usr/share/biglinux/audio-converter/app/audio/media.py:24
 msgid "Select a valid local media file."
@@ -164,79 +462,79 @@ msgstr "Valittu ääniraita on virheellinen. Lisää tiedosto uudelleen."
 msgid "The source video is missing. Add the file again."
 msgstr "Lähdevideo puuttuu. Lisää tiedosto uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:77
+#: usr/share/biglinux/audio-converter/app/audio/media.py:83
 msgid "A segment has invalid start or end times."
 msgstr "Leikkeen alku- tai loppuaika on virheellinen."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:82
+#: usr/share/biglinux/audio-converter/app/audio/media.py:88
 msgid "Every segment must have a finite end time after its start."
 msgstr "Jokaisella leikkeellä on oltava äärellinen loppuaika, joka on alkuajan jälkeen."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:91
+#: usr/share/biglinux/audio-converter/app/audio/media.py:97
 msgid "A segment extends beyond the source audio. Adjust its end time."
 msgstr "Leike ulottuu lähdeäänen loppua pidemmälle. Säädä sen loppuaikaa."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:97
+#: usr/share/biglinux/audio-converter/app/audio/media.py:103
 msgid "A segment must contain at least one audio sample."
 msgstr "Leikkeessä on oltava vähintään yksi ääninäyte."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:183
+#: usr/share/biglinux/audio-converter/app/audio/media.py:189
 msgid "FFprobe is not installed. Install the FFmpeg package and try again."
 msgstr "FFprobe ei ole asennettuna. Asenna FFmpeg-paketti ja yritä uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:210
+#: usr/share/biglinux/audio-converter/app/audio/media.py:216
 msgid "The media file could not be read. It may be damaged or unsupported."
 msgstr "Mediatiedostoa ei voitu lukea. Se voi olla vioittunut tai sen muotoa ei tueta."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:218
+#: usr/share/biglinux/audio-converter/app/audio/media.py:224
 msgid "FFprobe returned invalid media information."
 msgstr "FFprobe palautti virheellisiä mediatietoja."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:223
+#: usr/share/biglinux/audio-converter/app/audio/media.py:229
 msgid "FFprobe returned incomplete media information."
 msgstr "FFprobe palautti puutteellisia mediatietoja."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:236
+#: usr/share/biglinux/audio-converter/app/audio/media.py:242
 msgid "This file does not contain the selected audio track."
 msgstr "Tämä tiedosto ei sisällä valittua ääniraitaa."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:281
+#: usr/share/biglinux/audio-converter/app/audio/media.py:287
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "Valittu WAV-kooderi ei voi säilyttää tätä PCM-tarkkuutta."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:157
+#: usr/share/biglinux/audio-converter/app/audio/player.py:161
 msgid "Audio preview is unavailable. Install mpv and python-mpv, then reopen the application."
 msgstr "Esikuuntelu ei ole käytettävissä. Asenna mpv ja python-mpv ja avaa sovellus uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:184
+#: usr/share/biglinux/audio-converter/app/audio/player.py:188
 msgid "Audio outputs could not be listed. Try reopening the output selector."
 msgstr "Ääniulostuloja ei voitu luetella. Yritä avata ulostulon valitsin uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:206
+#: usr/share/biglinux/audio-converter/app/audio/player.py:210
 msgid "The selected audio output was disconnected. Playback is paused. Choose an output or resume using the system default."
 msgstr "Valittu ääniulostulo irrotettiin. Toisto on keskeytetty. Valitse ulostulo tai jatka järjestelmän oletuksella."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:219
+#: usr/share/biglinux/audio-converter/app/audio/player.py:223
 msgid "This audio output is no longer available. Choose another output."
 msgstr "Tämä ääniulostulo ei ole enää käytettävissä. Valitse toinen ulostulo."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:231
+#: usr/share/biglinux/audio-converter/app/audio/player.py:235
 msgid "The audio output could not be selected. Choose another output."
 msgstr "Ääniulostuloa ei voitu valita. Valitse toinen ulostulo."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:257
+#: usr/share/biglinux/audio-converter/app/audio/player.py:261
 msgid "The selected audio track is unavailable. Add the file again."
 msgstr "Valittu ääniraita ei ole käytettävissä. Lisää tiedosto uudelleen."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:289
+#: usr/share/biglinux/audio-converter/app/audio/player.py:293
 msgid "The audio could not be played. Check the file and audio output device."
 msgstr "Ääntä ei voitu toistaa. Tarkista tiedosto ja äänentoistolaite."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:415
+#: usr/share/biglinux/audio-converter/app/audio/player.py:419
 msgid "This audio position could not be reached."
 msgstr "Tähän äänen kohtaan ei voitu siirtyä."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:467
+#: usr/share/biglinux/audio-converter/app/audio/player.py:471
 msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
 msgstr "Esikuuntelun tehostetta ei voitu käyttää. Tarkista valitut tehosteet ja asennetut lisäosat."
 
@@ -248,9 +546,13 @@ msgstr "Liian moni tiedosto odottaa tutkimista. Odota joidenkin valmistumista ja
 msgid "Select a regular local media file, not a folder or device."
 msgstr "Valitse tavallinen paikallinen mediatiedosto, ei kansiota tai laitetta."
 
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:100
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:94
 msgid "The file changed during inspection. Add it again."
 msgstr "Tiedosto muuttui tutkimisen aikana. Lisää se uudelleen."
+
+#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:129
+msgid "The file could not be inspected. Add it again or choose another file."
+msgstr "Tiedostoa ei voitu tutkia. Lisää se uudelleen tai valitse toinen tiedosto."
 
 #: usr/share/biglinux/audio-converter/app/audio/process.py:116
 #: usr/share/biglinux/audio-converter/app/audio/process.py:144
@@ -260,65 +562,6 @@ msgstr "Mediakomennon aikaraja ylittyi."
 #: usr/share/biglinux/audio-converter/app/audio/process.py:134
 msgid "The media information is too large to process safely."
 msgstr "Mediatiedot ovat liian suuret turvallisesti käsiteltäviksi."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:130
-#, python-brace-format
-msgid "Invalid value for {key}."
-msgstr "Virheellinen arvo asetukselle {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:134
-#, python-brace-format
-msgid "{key} must be between {low} and {high}."
-msgstr "Asetuksen {key} on oltava välillä {low}–{high}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:142
-#, python-brace-format
-msgid "Invalid switch value for {key}."
-msgstr "Virheellinen päällä/pois-arvo asetukselle {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:152
-msgid "The equalizer bands are invalid."
-msgstr "Taajuuskorjaimen kaistat ovat virheellisiä."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:159
-msgid "The equalizer needs ten finite gains between -40 and 40 dB."
-msgstr "Taajuuskorjain vaatii kymmenen äärellistä vahvistusarvoa väliltä -40–40 dB."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:163
-msgid "Select a supported noise reduction mode."
-msgstr "Valitse tuettu kohinanvaimennustila."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:188
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC ei voi säilyttää tätä PCM-esitystapaa. Valitse WAV tai salli muunnos 24-bittiseksi PCM:ksi koodauksen lisäasetuksissa."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:213
-msgid "The selected bitrate is not supported by this output profile."
-msgstr "Tämä tulostusprofiili ei tue valittua bittinopeutta."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:220
-msgid "Select original, mono or stereo channels."
-msgstr "Valitse alkuperäiset kanavat, mono tai stereo."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:228
-msgid "MP3 supports mono or stereo. Select stereo channels or another format."
-msgstr "MP3 tukee monoa tai stereota. Valitse stereokanavat tai toinen muoto."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:235
-msgid "Select a valid output sample rate."
-msgstr "Valitse kelvollinen tulostuksen näytteenottotaajuus."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:242
-msgid "The selected codec does not support that sample rate."
-msgstr "Valittu koodekki ei tue kyseistä näytteenottotaajuutta."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:316
-msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
-msgstr "Valittu kohinanvaimennuslisäosa ei ole käytettävissä. Asenna se tai poista kohinanvaimennus käytöstä."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:350
-msgid "The audio plugin path is unsupported."
-msgstr "Äänilisäosan polkua ei tueta."
 
 #: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:40
 msgid "There is not enough free disk space. Free some space and try again."
@@ -341,8 +584,8 @@ msgid "The audio could not be processed. Check the file and selected output sett
 msgstr "Ääntä ei voitu käsitellä. Tarkista tiedosto ja valitut tulostusasetukset."
 
 #: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:164
-msgid "Effects require re-encoding. Select an audio format instead of Fast Copy."
-msgstr "Tehosteet vaativat uudelleenkoodauksen. Valitse äänimuoto suoran kopioinnin sijaan."
+msgid "Effects need a new encoding. Select an audio format instead of keeping the original."
+msgstr "Tehosteet vaativat uuden koodauksen. Valitse äänimuoto alkuperäisen säilyttämisen sijaan."
 
 #: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:320
 msgid "An intermediate segment has an unsafe path."
@@ -352,36 +595,60 @@ msgstr "Väliaikaisen leikkeen polku ei ole turvallinen."
 msgid "The output contains no readable audio. No file was published."
 msgstr "Tulos ei sisällä luettavaa ääntä. Tiedostoa ei tallennettu."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:56
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:61
 msgid "The audio contains non-finite samples."
 msgstr "Ääni sisältää näytteitä, joiden arvot eivät ole äärellisiä."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:98
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:103
 msgid "The decoded audio ends with an incomplete sample frame."
 msgstr "Dekoodattu ääni päättyy keskeneräiseen näytekehykseen."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:101
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:106
 msgid "The file contains no readable audio samples."
 msgstr "Tiedosto ei sisällä luettavia ääninäytteitä."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:233
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:164
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:202
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1319
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:236
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:154
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:189
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1173
 msgid "Generating waveform..."
 msgstr "Luodaan aaltomuotoa…"
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:241
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:244
 msgid "FFmpeg is not installed."
 msgstr "FFmpeg ei ole asennettuna."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:292
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:291
 msgid "The waveform could not be generated."
 msgstr "Aaltomuotoa ei voitu luoda."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:311
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:299
 msgid "The source changed while its waveform was being generated."
 msgstr "Lähdetiedosto muuttui aaltomuodon luonnin aikana."
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:47
+msgid "Audio waveform visualizer"
+msgstr "Äänen aaltomuotonäkymä"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:938
+msgid "Click to listen from there · Drag to mark a part"
+msgstr "Kuuntele kohdasta napsauttamalla · Merkitse osa vetämällä"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1170
+msgid "Waveform could not be generated"
+msgstr "Aaltomuotoa ei voitu luoda"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1171
+msgid "Numeric segment editing is still available."
+msgstr "Leikkeiden numeerinen muokkaus on edelleen käytettävissä."
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1176
+msgid "No audio loaded"
+msgstr "Ääntä ei ole ladattu"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1265
+msgid "Audio position seekbar"
+msgstr "Äänen sijaintipalkki"
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
 msgid "Inspecting audio"
@@ -414,15 +681,6 @@ msgstr "Valmistellaan muunnosta…"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
 msgid "Overall conversion progress"
 msgstr "Muunnoksen kokonaisedistyminen"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:894
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1181
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1200
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:175
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:223
-msgid "Cancel"
-msgstr "Peru"
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
 msgid "Conversion could not start"
@@ -499,462 +757,523 @@ msgstr "Kansiota ei voitu avata"
 msgid "Open your file manager and navigate to: {path}"
 msgstr "Avaa tiedostonhallinta ja siirry kohteeseen: {path}"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:98
-msgid "Default Voice"
-msgstr "Oletusääni"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:102
-msgid "Natural (No Effects)"
-msgstr "Luonnollinen (ei tehosteita)"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:106
-msgid "Crystal Voice"
-msgstr "Kristallinkirkas ääni"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:110
-msgid "Radio Host"
-msgstr "Radioääni"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:114
-msgid "Velvet Voice"
-msgstr "Samettinen ääni"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:118
-msgid "Extra Brightness"
-msgstr "Lisää kirkkautta"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122
-msgid "Soften 'S' (De-esser)"
-msgstr "Pehmennä s-äänteitä (de-esser)"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:126
-msgid "Remove Rumble"
-msgstr "Poista matala jyrinä"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:130
-msgid "Present Voice"
-msgstr "Läsnä oleva ääni"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:134
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:173
-msgid "Custom"
-msgstr "Mukautettu"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:158
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:543
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:554
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:356
-msgid "Equalizer"
-msgstr "Taajuuskorjain"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:174
-msgid "Equalizer preset"
-msgstr "Taajuuskorjaimen esiasetus"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:188
-msgid "Close equalizer"
-msgstr "Sulje taajuuskorjain"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:227
-#, python-brace-format
-msgid "Equalizer band {} Hz"
-msgstr "Taajuuskorjaimen kaista {} Hz"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:94
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:87
 msgid "Play file"
 msgstr "Toista tiedosto"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:107
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:100
 msgid "Remove from queue"
 msgstr "Poista jonosta"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:125
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:127
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:118
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:120
 msgid "File actions"
 msgstr "Tiedoston toiminnot"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:148
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:895
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:140
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:866
 msgid "Move to Trash"
 msgstr "Siirrä roskakoriin"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:151
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:143
 msgid "Open Containing Folder"
 msgstr "Avaa tiedoston kansio"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:154
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:146
 msgid "More Information..."
 msgstr "Lisätietoja…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:252
 msgid "Size"
 msgstr "Koko"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:272
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:252
 msgid "Unknown"
 msgstr "Tuntematon"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:277
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:282
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:256
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:261
 msgid "Duration"
 msgstr "Kesto"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:293
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:272
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:269
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:271
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
 msgid "Format"
 msgstr "Muoto"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:301
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:274
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:278
 msgid "Bitrate"
 msgstr "Bittinopeus"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:312
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:500
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:288
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:469
 msgid "Sample rate"
 msgstr "Näytteenottotaajuus"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:321
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:490
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
 msgid "Channels"
 msgstr "Kanavat"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:324
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:300
 msgid "Bit Depth"
 msgstr "Bittisyvyys"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:355
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:331
 msgid "File Information"
 msgstr "Tiedoston tiedot"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:363
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:339
 msgid "Copy information to clipboard"
 msgstr "Kopioi tiedot leikepöydälle"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:395
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:371
 msgid "No audio information is available."
 msgstr "Äänitietoja ei ole saatavilla."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:380
 msgid "File Details"
 msgstr "Tiedoston yksityiskohdat"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:380
 msgid "Path"
 msgstr "Polku"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:407
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:383
 msgid "Audio Properties"
 msgstr "Äänen ominaisuudet"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:473
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:449
 msgid "Metadata Tags"
 msgstr "Metatietotunnisteet"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:532
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:538
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:507
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:513
 msgid "Copy value"
 msgstr "Kopioi arvo"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:614
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:583
 msgid "No Audio Files"
 msgstr "Ei äänitiedostoja"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:616
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:585
 msgid "Drag files here or use the Add Files Button"
 msgstr "Vedä tiedostoja tähän tai käytä Lisää tiedostoja -painiketta"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:673
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:641
 #, python-brace-format
 msgid "Track {number}"
 msgstr "Raita {number}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:745
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:695
+msgid "Could not move the file to Trash"
+msgstr "Tiedostoa ei voitu siirtää roskakoriin"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:717
 msgid "This file has no supported audio track."
 msgstr "Tässä tiedostossa ei ole tuettua ääniraitaa."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:803
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:775
 msgid "Unknown duration"
 msgstr "Tuntematon kesto"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:806
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:778
 #, python-brace-format
 msgid "{rate} Hz"
 msgstr "{rate} Hz"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:818
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:790
 msgid "Choose a valid local media file."
 msgstr "Valitse kelvollinen paikallinen ääni- tai videotiedosto."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:827
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:799
 msgid "Inspecting audio…"
 msgstr "Tutkitaan ääntä…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:846
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:818
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "Jonoon mahtuu enintään 10 000 tiedostoa. Muunna tämä erä ennen uusien tiedostojen lisäämistä."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:873
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:845
 #, python-brace-format
 msgid "{count} file"
 msgid_plural "{count} files"
 msgstr[0] "{count} tiedosto"
 msgstr[1] "{count} tiedostoa"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:883
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:854
 msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
 msgstr "Peru muunnos tai odota sen valmistumista ennen lähdetiedoston siirtämistä roskakoriin."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:889
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:860
 msgid "Move File to Trash?"
 msgstr "Siirretäänkö tiedosto roskakoriin?"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:891
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:862
 #, python-brace-format
 msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
 msgstr "Siirretäänkö ”{name}” roskakoriin? Kaikki sen raidat poistetaan jonosta."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:909
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:879
 msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
 msgstr "Tiedosto on muunnoksen käytössä. Peru muunnos ennen lähdetiedoston siirtämistä roskakoriin."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:922
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:891
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "Tiedostoa ei voitu siirtää roskakoriin. Sitä ei ole poistettu."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:75
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:86
-msgid "Clear queue"
-msgstr "Tyhjennä jono"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:89
-msgid "0 files"
-msgstr "0 tiedostoa"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:99
-msgid "Show help on hover"
-msgstr "Näytä ohje osoitettaessa"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:100
-msgid "Show Welcome Screen"
-msgstr "Näytä tervetulonäkymä"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:102
-msgid "Reset All Settings…"
-msgstr "Palauta kaikki asetukset…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:105
-msgid "About"
-msgstr "Tietoja"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:110
-msgid "Main menu"
-msgstr "Päävalikko"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:155
-msgid "Add Files"
-msgstr "Lisää tiedostoja"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:163
-msgid "Convert"
-msgstr "Muunna"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:496
-msgid "Selection only"
-msgstr "Vain valinta"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:507
-msgid "Play only selected area"
-msgstr "Toista vain valittu alue"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:513
-msgid "Edit Segments…"
-msgstr "Muokkaa leikkeitä…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:523
-msgid "Play the next file automatically"
-msgstr "Toista seuraava tiedosto automaattisesti"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:558
-msgid "Listen to original"
-msgstr "Kuuntele alkuperäistä"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:560
-msgid "Temporarily listen without effects. Export settings stay unchanged."
-msgstr "Kuuntele tilapäisesti ilman tehosteita. Vientiasetukset eivät muutu."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:574
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:576
-msgid "More playback options"
-msgstr "Lisää toistoasetuksia"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:580
-msgid "Playback"
-msgstr "Toisto"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:581
-msgid "Only affects listening. Converted files stay unchanged."
-msgstr "Vaikuttaa vain kuunteluun. Muunnetut tiedostot eivät muutu."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:589
-msgid "Audio output"
-msgstr "Ääniulostulo"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:589
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:918
-msgid "System default"
-msgstr "Järjestelmän oletus"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:597
-msgid "Refresh audio outputs"
-msgstr "Päivitä ääniulostulot"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:626
-msgid "Previous track"
-msgstr "Edellinen kappale"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:642
-msgid "Play or pause"
-msgstr "Toista tai keskeytä"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:656
-msgid "Next track"
-msgstr "Seuraava kappale"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:681
-msgid "Volume"
-msgstr "Äänenvoimakkuus"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:703
-msgid "Speed"
-msgstr "Nopeus"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:714
-msgid "Clean voice"
-msgstr "Puhdista puhe"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:716
-msgid "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
-msgstr "Korostaa puhetta ja vaimentaa muita ääniä. 100 %:ssa malli käyttää suurinta vaimennustaan."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:737
-msgid "Waveform zoom"
-msgstr "Aaltomuodon zoomaus"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:851
-#, python-format
-msgid "Join %d file"
-msgid_plural "Join %d files"
-msgstr[0] "Yhdistä %d tiedosto"
-msgstr[1] "Yhdistä %d tiedostoa"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:853
-#, python-format
-msgid "Convert %d file"
-msgid_plural "Convert %d files"
-msgstr[0] "Muunna %d tiedosto"
-msgstr[1] "Muunna %d tiedostoa"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1035
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1133
-msgid "OK"
-msgstr "OK"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1079
-msgid "No audio selected"
-msgstr "Ääntä ei ole valittu"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1080
-msgid "Add a file and select it before editing segments."
-msgstr "Lisää tiedosto ja valitse se ennen leikkeiden muokkaamista."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1085
-msgid "Audio duration unavailable"
-msgstr "Äänen kesto ei ole saatavilla"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1087
-msgid "Enable cutting and wait for the waveform to finish before editing this file."
-msgstr "Ota leikkaaminen käyttöön ja odota aaltomuodon valmistumista ennen tämän tiedoston muokkaamista."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1127
-msgid "Other valid files remain in the queue. Check these files and add them again."
-msgstr "Muut kelvolliset tiedostot säilyvät jonossa. Tarkista nämä tiedostot ja lisää ne uudelleen."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1131
-msgid "Some files could not be added"
-msgstr "Joitakin tiedostoja ei voitu lisätä"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1147
-msgid "Audio preview"
-msgstr "Esikuuntelu"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1175
-msgid "Reset all settings?"
-msgstr "Palautetaanko kaikki asetukset?"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1177
-msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
-msgstr "Muoto, laatu, tulostuskansio, leikkaus, tehosteet ja taajuuskorjain palautetaan oletusarvoihin. Jono ja lähdetiedostot säilyvät."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1182
-msgid "Reset"
-msgstr "Palauta"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1195
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1201
-msgid "Clear Queue"
-msgstr "Tyhjennä jono"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1197
-msgid "Remove the queue entries and their edits? Source files will not be deleted."
-msgstr "Poistetaanko jonon kohteet ja niiden muokkaukset? Lähdetiedostoja ei poisteta."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1245
-msgid "Select Audio or Video Files"
-msgstr "Valitse ääni- tai videotiedostoja"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1249
-msgid "Audio and Video files"
-msgstr "Ääni- ja videotiedostot"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1299
-msgid "All files"
-msgstr "Kaikki tiedostot"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1327
-msgid "Some selected files are remote. Download them before adding them."
-msgstr "Osa valituista tiedostoista on etätiedostoja. Lataa ne ennen lisäämistä."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1338
-msgid "Files could not be selected"
-msgstr "Tiedostoja ei voitu valita"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:172
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:160
 msgid "Delete All Segments"
 msgstr "Poista kaikki leikkeet"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:173
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161
 msgid "Delete all marked segments? Source files will not be changed."
 msgstr "Poistetaanko kaikki merkityt leikkeet? Lähdetiedostoja ei muuteta."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:176
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:226
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:164
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:197
 msgid "Delete All"
 msgstr "Poista kaikki"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:220
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:191
 msgid "Delete Segment"
 msgstr "Poista leike"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:221
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
 #, python-brace-format
 msgid "Delete segment {number}?"
 msgstr "Poistetaanko leike {number}?"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:224
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
 msgid "Delete"
 msgstr "Poista"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:91
+msgid "Default Voice"
+msgstr "Oletusääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:95
+msgid "Natural (No Effects)"
+msgstr "Luonnollinen (ei tehosteita)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:99
+msgid "Crystal Voice"
+msgstr "Kristallinkirkas ääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:103
+msgid "Radio Host"
+msgstr "Radioääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:107
+msgid "Velvet Voice"
+msgstr "Samettinen ääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:111
+msgid "Extra Brightness"
+msgstr "Lisää kirkkautta"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:115
+msgid "Soften 'S' (De-esser)"
+msgstr "Pehmennä s-äänteitä (de-esser)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:119
+msgid "Remove Rumble"
+msgstr "Poista matala jyrinä"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:123
+msgid "Present Voice"
+msgstr "Läsnä oleva ääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:126
+msgid "Custom"
+msgstr "Mukautettu"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:183
+msgid "Equalizer preset"
+msgstr "Taajuuskorjaimen esiasetus"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:196
+msgid "Close equalizer"
+msgstr "Sulje taajuuskorjain"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:235
+#, python-brace-format
+msgid "Equalizer band {} Hz"
+msgstr "Taajuuskorjaimen kaista {} Hz"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:93
+msgid "Voice only"
+msgstr "Vain puhe"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
+msgid "Fair"
+msgstr "Kohtalainen"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
+msgid "Good"
+msgstr "Hyvä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:96
+msgid "Very good"
+msgstr "Erittäin hyvä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:97
+msgid "Best"
+msgstr "Paras"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:106
+#, python-brace-format
+msgid "{quality} — {kbps} kbps, about {size} MB per minute"
+msgstr "{quality} — {kbps} kbps, noin {size} MB minuutissa"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
+msgid "MP3 — plays everywhere"
+msgstr "MP3 — toimii kaikkialla"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
+msgid "M4A — good quality in small files"
+msgstr "M4A — hyvä laatu pienissä tiedostoissa"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:245
+msgid "Opus — smallest files, great for voice"
+msgstr "Opus — pienimmät tiedostot, erinomainen puheelle"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:246
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — häviötön, WAV-muotoa pienempi"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:247
+msgid "WAV — uncompressed"
+msgstr "WAV — pakkaamaton"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:248
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — avoin muoto"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:249
+msgid "Keep the original format — no conversion, no effects"
+msgstr "Säilytä alkuperäinen muoto — ei muunnosta, ei tehosteita"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:470
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:584
+msgid "Original"
+msgstr "Alkuperäinen"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:261
+msgid "Quality"
+msgstr "Laatu"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270
+msgid "Volume (%)"
+msgstr "Äänenvoimakkuus (%)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:276
+msgid "Speed (×)"
+msgstr "Nopeus (×)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
+msgid "Cleaning model"
+msgstr "Puhdistusmalli"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301
+msgid "Light · DeepFilterNet3"
+msgstr "Kevyt · DeepFilterNet3"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301
+msgid "Higher quality · DPDFNet-2"
+msgstr "Parempi laatu · DPDFNet-2"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
+msgid "Light"
+msgstr "Kevyt"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
+msgid "Higher quality"
+msgstr "Parempi laatu"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:309
+msgid "Configure…"
+msgstr "Määritä…"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
+msgid "Marked parts"
+msgstr "Merkityt osat"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
+msgid "Keep them"
+msgstr "Säilytä ne"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
+msgid "Remove them"
+msgstr "Poista ne"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
+msgid "Segment order"
+msgstr "Leikkeiden järjestys"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
+msgid "In timeline order"
+msgstr "Aikajanan järjestyksessä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
+msgid "In the order marked"
+msgstr "Merkintäjärjestyksessä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
+msgid "Save segments"
+msgstr "Tallenna leikkeet"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
+msgid "Separate files"
+msgstr "Erilliset tiedostot"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
+msgid "Join this file's segments"
+msgstr "Yhdistä tämän tiedoston leikkeet"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:340
+msgid "Join into one file"
+msgstr "Yhdistä yhdeksi tiedostoksi"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:345
+msgid "Save to"
+msgstr "Tallenna kansioon"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:345
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:544
+msgid "Same folder as each source"
+msgstr "Kunkin lähdetiedoston oma kansio"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:348
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:350
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:516
+msgid "Choose output folder"
+msgstr "Valitse tulostuskansio"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:356
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:357
+msgid "Use source folders"
+msgstr "Käytä lähdekansioita"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:369
+msgid "Fix the sound"
+msgstr "Korjaa ääni"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:378
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
+msgid "Off"
+msgstr "Pois"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
+msgid "Silence pauses"
+msgstr "Hiljennä tauot"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
+msgid "Mutes the background between words"
+msgstr "Hiljentää taustan sanojen välissä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:391
+msgid "Balance loud and quiet parts"
+msgstr "Tasapainota kovat ja hiljaiset kohdat"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:392
+msgid "Brings quiet passages closer to the loud ones"
+msgstr "Tuo hiljaiset kohdat lähemmäs kovia"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:408
+msgid "Remove low rumble"
+msgstr "Poista matala jyrinä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:411
+msgid "Cuts hum and handling noise below the voice"
+msgstr "Poistaa puhetta matalammat huminat ja käsittelyäänet"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:418
+msgid "Even volume"
+msgstr "Tasainen äänenvoimakkuus"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:419
+msgid "Brings every file to the same loudness (−16 LUFS)"
+msgstr "Tuo kaikki tiedostot samaan äänenvoimakkuuteen (−16 LUFS)"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:426
+msgid "Prevent distortion"
+msgstr "Estä särö"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:427
+msgid "Keeps loud peaks from clipping"
+msgstr "Estää kovia huippuja yliohjautumasta"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:435
+msgid "Adjust sound"
+msgstr "Säädä ääntä"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:454
+msgid "Advanced encoding"
+msgstr "Koodauksen lisäasetukset"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:455
+msgid "Keep original properties when supported"
+msgstr "Säilytä alkuperäiset ominaisuudet, kun niitä tuetaan"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
+msgid "Mono"
+msgstr "Mono"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
+msgid "Stereo"
+msgstr "Stereo"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:477
+msgid "Allow conversion to 24-bit PCM"
+msgstr "Salli muunnos 24-bittiseksi PCM:ksi"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:479
+msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+msgstr "FLAC-muotoon vietävälle liukulukuäänelle. Heikentää tarkkuutta; WAV säilyttää alkuperäisen esitystavan."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:495
+msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+msgstr "Alkuperäinen muoto säilyttää koodatun äänen. Leikkaukset noudattavat pakettien rajoja eivätkä välttämättä osu tarkkoihin aikoihin. Tehosteet ohitetaan esikuuntelussa ja viennissä."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:506
+msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Prevent distortion."
+msgstr "Äänenvoimakkuuden tai taajuuskorjaimen kaistojen nostaminen voi säröyttää äänen. Pienennä vahvistusta tai ota Estä särö käyttöön."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:530
+msgid "Local folder required"
+msgstr "Paikallinen kansio vaaditaan"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:531
+msgid "Choose a folder on the local filesystem."
+msgstr "Valitse kansio paikallisesta tiedostojärjestelmästä."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:66
+#, python-brace-format
+msgid "Unavailable: install {package}"
+msgstr "Ei käytettävissä: asenna {package}"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:702
+#, python-brace-format
+msgid "Clean voice · {percent}%"
+msgstr "Puhdista puhe · {percent} %"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:704
+msgid "Clean voice · off"
+msgstr "Puhdista puhe · pois"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:827
+msgid "The original format cannot join files"
+msgstr "Alkuperäisellä muodolla tiedostoja ei voi yhdistää"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:829
+msgid "In queue order, named after the first file"
+msgstr "Jonon järjestyksessä, nimetään ensimmäisen tiedoston mukaan"
 
 #: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
 msgid "Edit Segments"
@@ -1027,330 +1346,6 @@ msgstr "Leikkeen {number} loppu sekunteina"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "Aktiivinen tiedosto vaihtui. Avaa leikemuokkain uudelleen nykyiselle tiedostolle."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:98
-msgid "Voice only"
-msgstr "Vain puhe"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:99
-msgid "Fair"
-msgstr "Kohtalainen"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:100
-msgid "Good"
-msgstr "Hyvä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:101
-msgid "Very good"
-msgstr "Erittäin hyvä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:102
-msgid "Best"
-msgstr "Paras"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:111
-#, python-brace-format
-msgid "{quality} — {kbps} kbps, about {size} MB per minute"
-msgstr "{quality} — {kbps} kbps, noin {size} MB minuutissa"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:166
-msgid "Play on any device"
-msgstr "Toisto kaikilla laitteilla"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:167
-msgid "Voice for WhatsApp"
-msgstr "Puhe WhatsAppiin"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:168
-msgid "Lecture: louder and smaller"
-msgstr "Luento: kovempi ääni, pienempi tiedosto"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:169
-msgid "High-quality music"
-msgstr "Laadukas musiikki"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:170
-msgid "Lossless"
-msgstr "Häviötön"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:171
-msgid "Keep the original"
-msgstr "Säilytä alkuperäinen"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:238
-msgid "What is it for?"
-msgstr "Mihin käyttöön?"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:274
-msgid "MP3 — plays everywhere"
-msgstr "MP3 — toimii kaikkialla"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:275
-msgid "M4A — good quality in small files"
-msgstr "M4A — hyvä laatu pienissä tiedostoissa"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:276
-msgid "Opus — smallest files, great for voice"
-msgstr "Opus — pienimmät tiedostot, erinomainen puheelle"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:277
-msgid "FLAC — lossless, smaller than WAV"
-msgstr "FLAC — häviötön, WAV-muotoa pienempi"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:278
-msgid "WAV — uncompressed"
-msgstr "WAV — pakkaamaton"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:279
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — avoin muoto"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:280
-msgid "Keep the original format — no conversion, no effects"
-msgstr "Säilytä alkuperäinen muoto — ei muunnosta, ei tehosteita"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:282
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:490
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:501
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:705
-msgid "Original"
-msgstr "Alkuperäinen"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
-msgid "Quality"
-msgstr "Laatu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301
-msgid "Volume (%)"
-msgstr "Äänenvoimakkuus (%)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:307
-msgid "Speed (×)"
-msgstr "Nopeus (×)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:334
-msgid "Light"
-msgstr "Kevyt"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:335
-msgid "Higher quality"
-msgstr "Parempi laatu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:357
-msgid "Configure…"
-msgstr "Määritä…"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:365
-msgid "Marked parts"
-msgstr "Merkityt osat"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:365
-msgid "Keep them"
-msgstr "Säilytä ne"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:365
-msgid "Remove them"
-msgstr "Poista ne"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
-msgid "Segment order"
-msgstr "Leikkeiden järjestys"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
-msgid "In timeline order"
-msgstr "Aikajanan järjestyksessä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:373
-msgid "In the order marked"
-msgstr "Merkintäjärjestyksessä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
-msgid "Save segments"
-msgstr "Tallenna leikkeet"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
-msgid "Separate files"
-msgstr "Erilliset tiedostot"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
-msgid "Join this file's segments"
-msgstr "Yhdistä tämän tiedoston leikkeet"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
-msgid "Join into one file"
-msgstr "Yhdistä yhdeksi tiedostoksi"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:393
-msgid "Save to"
-msgstr "Tallenna kansioon"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:393
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:662
-msgid "Same folder as each source"
-msgstr "Kunkin lähdetiedoston oma kansio"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:396
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:398
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:634
-msgid "Choose output folder"
-msgstr "Valitse tulostuskansio"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:404
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:405
-msgid "Use source folders"
-msgstr "Käytä lähdekansioita"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:415
-msgid "Adjust sound"
-msgstr "Säädä ääntä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:420
-msgid "Even volume"
-msgstr "Tasainen äänenvoimakkuus"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:421
-msgid "Brings every file to the same loudness (−16 LUFS)"
-msgstr "Tuo kaikki tiedostot samaan äänenvoimakkuuteen (−16 LUFS)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:430
-msgid "Silence pauses"
-msgstr "Hiljennä tauot"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:431
-msgid "Mutes the background between words"
-msgstr "Hiljentää taustan sanojen välissä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:438
-msgid "Balance loud and quiet parts"
-msgstr "Tasapainota kovat ja hiljaiset kohdat"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:439
-msgid "Brings quiet passages closer to the loud ones"
-msgstr "Tuo hiljaiset kohdat lähemmäs kovia"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:449
-msgid "Intensity"
-msgstr "Voimakkuus"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:457
-msgid "Remove low rumble"
-msgstr "Poista matala jyrinä"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458
-msgid "Cuts hum and handling noise below the voice"
-msgstr "Poistaa puhetta matalammat huminat ja käsittelyäänet"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:466
-msgid "Frequency (Hz)"
-msgstr "Taajuus (Hz)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:476
-msgid "Prevent distortion"
-msgstr "Estä särö"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:477
-msgid "Keeps loud peaks from clipping"
-msgstr "Estää kovia huippuja yliohjautumasta"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:485
-msgid "Advanced encoding"
-msgstr "Koodauksen lisäasetukset"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:486
-msgid "Keep original properties when supported"
-msgstr "Säilytä alkuperäiset ominaisuudet, kun niitä tuetaan"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:490
-msgid "Mono"
-msgstr "Mono"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:490
-msgid "Stereo"
-msgstr "Stereo"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:508
-msgid "Allow conversion to 24-bit PCM"
-msgstr "Salli muunnos 24-bittiseksi PCM:ksi"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:510
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "FLAC-muotoon vietävälle liukulukuäänelle. Heikentää tarkkuutta; WAV säilyttää alkuperäisen esitystavan."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:527
-msgid "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-msgstr "Suora kopiointi säilyttää koodatun äänen. Leikkaukset noudattavat pakettirajoja eivätkä välttämättä osu täsmällisiin aikoihin. Tehosteet ohitetaan esikuuntelussa ja viennissä."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:538
-msgid "Boosting volume or equalizer bands can distort audio. Reduce gain or enable clipping protection."
-msgstr "Äänenvoimakkuuden tai taajuuskorjaimen kaistojen vahvistaminen voi säröyttää ääntä. Pienennä vahvistusta tai ota yliohjaussuoja käyttöön."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:648
-msgid "Local folder required"
-msgstr "Paikallinen kansio vaaditaan"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:649
-msgid "Choose a folder on the local filesystem."
-msgstr "Valitse kansio paikallisesta tiedostojärjestelmästä."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:815
-#, python-brace-format
-msgid "Unavailable: install {package}"
-msgstr "Ei käytettävissä: asenna {package}"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:826
-#, python-brace-format
-msgid "Clean voice · {percent}%"
-msgstr "Puhdista puhe · {percent} %"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:828
-msgid "Clean voice · off"
-msgstr "Puhdista puhe · pois"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:855
-#, python-brace-format
-msgid "Volume {percent}%"
-msgstr "Äänenvoimakkuus {percent} %"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:857
-#, python-brace-format
-msgid "Speed {factor}×"
-msgstr "Nopeus {factor}×"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:874
-msgid "Volume, speed, equalizer and effects"
-msgstr "Äänenvoimakkuus, nopeus, taajuuskorjain ja tehosteet"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:1009
-msgid "Fast Copy cannot join files"
-msgstr "Suora kopiointi ei voi yhdistää tiedostoja"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:1011
-msgid "In queue order, named after the first file"
-msgstr "Jonon järjestyksessä, nimetään ensimmäisen tiedoston mukaan"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:52
-msgid "Audio waveform visualizer"
-msgstr "Äänen aaltomuotonäkymä"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1051
-msgid "Click to listen from there · Drag to mark a part"
-msgstr "Kuuntele kohdasta napsauttamalla · Merkitse osa vetämällä"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1316
-msgid "Waveform could not be generated"
-msgstr "Aaltomuotoa ei voitu luoda"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1317
-msgid "Numeric segment editing is still available."
-msgstr "Leikkeiden numeerinen muokkaus on edelleen käytettävissä."
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1322
-msgid "No audio loaded"
-msgstr "Ääntä ei ole ladattu"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1446
-msgid "Audio position seekbar"
-msgstr "Äänen sijaintipalkki"
-
 #: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
 msgid "Welcome"
 msgstr "Tervetuloa"
@@ -1392,86 +1387,78 @@ msgid "Let's Start"
 msgstr "Aloita"
 
 #: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
-msgid "Sets the format, quality and sound for a common use. Changing any of them shows Custom."
-msgstr "Asettaa muodon, laadun ja äänen yleiseen käyttöön. Jos muutat niistä mitä tahansa, näkyviin tulee Mukautettu."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
 msgid "Choose the output format. Keeping the original format applies no effects."
 msgstr "Valitse tulostemuoto. Jos alkuperäinen muoto säilytetään, tehosteita ei käytetä."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:16
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
 msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
 msgstr "Parempi laatu kuulostaa paremmalta ja tekee tiedostoista suurempia. Jokaisen valinnan kohdalla näkyy sen koko minuuttia kohden."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:19
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:16
 msgid "Changes preview and export volume. Values above 100% can distort the audio."
 msgstr "Muuttaa esikuuntelun ja viennin äänenvoimakkuutta. Yli 100%:n arvot voivat säröyttää ääntä."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:18
 msgid "Changes preview and export speed while preserving pitch."
 msgstr "Muuttaa esikuuntelun ja viennin nopeutta säilyttäen äänenkorkeuden."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:23
-msgid "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
-msgstr "Vähentää puheen kohinaa DeepFilterNet3:n tai DPDFNetin avulla. Ei ole tarkoitettu musiikille."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:19
 msgid "Reduce quiet background sound between spoken phrases."
 msgstr "Vaimentaa hiljaisia taustaääniä puhuttujen lauseiden välissä."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
 msgid "Brings every file to the same loudness. This changes the original volume."
 msgstr "Tasoittaa kaikki tiedostot samaan äänenvoimakkuuteen. Tämä muuttaa alkuperäistä äänenvoimakkuutta."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:29
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:23
 msgid "Choose the order in which marked segments are exported."
 msgstr "Valitse, missä järjestyksessä merkityt leikkeet viedään."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:30
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:24
 msgid "Export each segment separately or join the selected segments."
 msgstr "Vie kukin leike erikseen tai yhdistä valitut leikkeet."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:31
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
 msgstr "Säilytä alkuperäinen kanavajako tai miksaa kanavat monoksi tai stereoksi."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:33
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
 msgid "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
 msgstr "Kuuntele tietystä kohdasta napsauttamalla. Merkitse osa vetämällä ja säädä sitä sitten vetämällä sen reunoja tai keskiosaa. Muokkaa leikkeitä tarjoaa numerokentät ja näppäimistöohjauksen."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:30
 msgid "Remove all entries from the queue without deleting source files."
 msgstr "Poistaa kaikki kohteet jonosta poistamatta lähdetiedostoja."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:32
 msgid "Preview the previous file."
 msgstr "Kuuntele edellinen tiedosto."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:39
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:33
 msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
 msgstr "Toista tai keskeytä. Pikanäppäin: Ctrl+Välilyönti."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:34
 msgid "Preview the next file."
 msgstr "Kuuntele seuraava tiedosto."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:41
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:35
 msgid "Preview only the marked segments."
 msgstr "Kuuntele vain merkityt leikkeet."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:42
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
 msgid "Show the equalizer. Its settings affect exported audio."
 msgstr "Näyttää taajuuskorjaimen. Sen asetukset vaikuttavat vietävään ääneen."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:43
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
 msgid "Preview this audio file."
 msgstr "Kuuntele tämä äänitiedosto."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:44
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
 msgid "Remove this entry without deleting the source file."
 msgstr "Poistaa tämän kohteen poistamatta lähdetiedostoa."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:46
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
 msgid "More actions are available from the adjacent menu button."
 msgstr "Viereinen valikkopainike sisältää lisää toimintoja."
 
@@ -1498,3 +1485,123 @@ msgstr "Sovelluksen käynnistysvirhe"
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
 msgid "Big Audio Converter could not be started. Check that it is installed."
 msgstr "Big Audio Converteria ei voitu käynnistää. Tarkista, että se on asennettu."
+
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:105
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:197
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:325
+msgid "The pauses could not be measured."
+msgstr "Taukoja ei voitu mitata."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:48
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:150
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:162
+msgid "Remove pauses"
+msgstr "Poista tauot"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:53
+msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
+msgstr "Tarkoitettu puheelle. Tauot etsitään DPDFNetin puhdistamasta äänestä."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:78
+msgid "Takes about a minute for each hour of audio."
+msgstr "Kestää noin minuutin jokaista äänitunti kohden."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:83
+msgid "Find Pauses"
+msgstr "Etsi tauot"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:91
+msgid "Finding pauses"
+msgstr "Etsitään taukoja"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:102
+msgid "Try Again"
+msgstr "Yritä uudelleen"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:108
+msgid "Pauses longer than"
+msgstr "Tauot, jotka ovat pidempiä kuin"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
+msgid "0.5 s"
+msgstr "0,5 s"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
+msgid "1 s"
+msgstr "1 s"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
+msgid "2 s"
+msgstr "2 s"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:129
+msgid "Mark for Removal"
+msgstr "Merkitse poistettavaksi"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:138
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:376
+msgid "Undo"
+msgstr "Kumoa"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:184
+msgid "Open a file to find its pauses"
+msgstr "Avaa tiedosto etsiäksesi sen tauot"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:222
+#, python-brace-format
+msgid "{count} pause · {duration} shorter"
+msgid_plural "{count} pauses · {duration} shorter"
+msgstr[0] "{count} tauko · {duration} lyhyempi"
+msgstr[1] "{count} taukoa · {duration} lyhyempi"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:227
+msgid "No pauses found. Nothing would change."
+msgstr "Taukoja ei löytynyt. Mikään ei muuttuisi."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:233
+#, python-brace-format
+msgid "This replaces the {count} mark already on the file."
+msgid_plural "This replaces the {count} marks already on the file."
+msgstr[0] "Tämä korvaa tiedostossa jo olevan {count} merkinnän."
+msgstr[1] "Tämä korvaa tiedostossa jo olevat {count} merkintää."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:257
+#, python-brace-format
+msgid "{count} pause marked"
+msgid_plural "{count} pauses marked"
+msgstr[0] "{count} tauko merkitty"
+msgstr[1] "{count} taukoa merkitty"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:305
+#, python-brace-format
+msgid "{percent}%"
+msgstr "{percent} %"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:308
+#, python-brace-format
+msgid "Finding pauses: {percent}%"
+msgstr "Etsitään taukoja: {percent} %"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:317
+msgid "Pauses found"
+msgstr "Taukoja löytyi"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:317
+msgid "Review"
+msgstr "Tarkista"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:360
+msgid "The pauses could not be marked"
+msgstr "Taukoja ei voitu merkitä"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:361
+msgid "The file changed after it was measured. Find the pauses again."
+msgstr "Tiedosto muuttui mittauksen jälkeen. Etsi tauot uudelleen."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:372
+#, python-brace-format
+msgid "{count} pause marked for removal"
+msgid_plural "{count} pauses marked for removal"
+msgstr[0] "{count} tauko merkitty poistettavaksi"
+msgstr[1] "{count} taukoa merkitty poistettavaksi"
