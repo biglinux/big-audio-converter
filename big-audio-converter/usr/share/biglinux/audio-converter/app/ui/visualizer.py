@@ -1,25 +1,20 @@
-# app/ui/visualizer.py
-
-"""
-Audio visualization component for displaying waveforms.
-"""
+"""The waveform with its marks, and the seek bar under it."""
 
 import gettext
 import logging
-from threading import Lock
+import math
 
 import cairo
 import gi
 import numpy as np
 
-from app.ui.cairo_text import show_text, text_extents
+from app.ui.cairo_text import rounded_rect, show_text, text_extents
 from app.ui.marker_manager import MarkerManagerMixin
 from app.utils.time_formatter import format_time_ruler, format_time_short
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gtk
 
-gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 logger = logging.getLogger(__name__)
@@ -56,7 +51,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.waveform_data = None
         self.waveform_peak = 1.0
         self.waveform_error = None  # Set by WaveformGenerator on failure
-        self.waveform_data_lock = Lock()
         self.position = 0
         self.duration = 0
         self.duration_changed_callback = None
@@ -70,16 +64,13 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.wave_color = (0.30, 0.65, 1.0)
 
         # Waveform rendering cache for performance
-        self.cached_peaks = None
         self.cached_viewport_key = None  # (start_sample, end_sample, width, height)
         self.cached_waveform_surface = (
             None  # Pre-rendered waveform as Cairo ImageSurface
         )
 
-        # Add listener for position updates
         self.seek_position_callback = None
         self.hover_time_callback = None  # Callback for waveform hover time changes
-        # Initialize marker management state (from MarkerManagerMixin)
         self._init_marker_state()
 
         # Player reference for checking playback state
@@ -101,7 +92,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
         self.add_controller(click_controller)
 
-        # Add drag controller for marker movement
         drag_controller = Gtk.GestureDrag()
         drag_controller.connect(
             "drag-begin",
@@ -163,7 +153,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.is_loading = False
         self.loading_message = _("Generating waveform...")
 
-        # Add scroll controller for zoom and horizontal panning with Shift
         scroll_controller = Gtk.EventControllerScroll()
         scroll_controller.set_flags(Gtk.EventControllerScrollFlags.BOTH_AXES)
         scroll_controller.connect(
@@ -174,7 +163,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
         self.add_controller(scroll_controller)
 
-        # Add key controller for keyboard shortcuts
         key_controller = Gtk.EventControllerKey()
         key_controller.connect(
             "key-pressed",
@@ -184,7 +172,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
         self.add_controller(key_controller)
 
-        # Add right-click context menu support
         right_click_controller = Gtk.GestureClick()
         right_click_controller.set_button(3)  # Right mouse button
         right_click_controller.connect(
@@ -205,50 +192,31 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def set_waveform(self, data, duration):
         """Set the waveform data to visualize."""
-        # Clear loading state when waveform is set
         self.is_loading = False
 
-        with self.waveform_data_lock:
-            # Reset position when setting a new waveform
-            self.position = 0
-
-            # Reset zoom and viewport when loading new audio
-            self.zoom_level = 1.0
-            self.viewport_offset = 0.0
-
-            # Important: Do NOT clear markers here, as it interferes with the
-            # marker restoration process. Markers will be handled by MainWindow.
-
-            # Cached payloads are immutable and may be shared by another view.
-            self.waveform_data = None
-
-            # Clear cached surfaces explicitly to release memory
-            if self.cached_waveform_surface is not None:
-                # Cairo surface cleanup
-                self.cached_waveform_surface.finish()
-                del self.cached_waveform_surface
-                self.cached_waveform_surface = None
-
-            if self.cached_peaks is not None:
-                del self.cached_peaks
-                self.cached_peaks = None
-
-            # A PeakCollector payload: {"levels", "rates", "zoom_thresholds"}.
-            self.waveform_data = data
-            # Scale the drawing to the file's own peak so quiet speech stays
-            # readable for cutting; every level holds the same global peak.
-            self.waveform_peak = 1.0
-            if data and len(data["levels"][0]):
-                self.waveform_peak = float(np.max(data["levels"][0])) or 1.0
-            self.duration = duration
-
-            # Invalidate viewport cache
-            self.cached_viewport_key = None
-
+        self.position = 0
+        self.zoom_level = 1.0
+        self.viewport_offset = 0.0
+        # Marks stay: the window restores each file's own after this.
+        self._drop_cached_surface()
+        # A PeakCollector payload, {"peaks", "rate"}; immutable and possibly
+        # shared with the generator's cache.
+        self.waveform_data = data
+        # Scale the drawing to the file's own peak so quiet speech stays
+        # readable for cutting.
+        self.waveform_peak = 1.0
+        if data and len(data["peaks"]):
+            self.waveform_peak = float(np.max(data["peaks"])) or 1.0
+        self.duration = duration
         if self.duration_changed_callback:
             self.duration_changed_callback(duration)
-        # Queue redraw
         self.queue_draw()
+
+    def _drop_cached_surface(self):
+        if self.cached_waveform_surface is not None:
+            self.cached_waveform_surface.finish()
+            self.cached_waveform_surface = None
+        self.cached_viewport_key = None
 
     def set_position(self, position):
         """Update the current playback position."""
@@ -265,7 +233,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 # Calculate position marker's pixel position
                 marker_pixel_x = ((position - start_time) / visible_duration) * width
 
-                # Check if playing for auto-follow behavior
                 is_playing = self.player and self.player.is_playing()
 
                 # When playing, follow with margin before edge
@@ -301,30 +268,13 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def clear_waveform(self):
         """Clear the current waveform visualization when audio is removed."""
-        # Clear loading state
         self.is_loading = False
 
-        with self.waveform_data_lock:
-            # Cached payloads are immutable and may be shared by another view.
-            self.waveform_data = None
-            self.position = 0
-            self.duration = 0
+        self.waveform_data = None
+        self.position = 0
+        self.duration = 0
+        self._drop_cached_surface()
 
-            # Clear cached surfaces explicitly
-            if self.cached_waveform_surface is not None:
-                self.cached_waveform_surface.finish()
-                del self.cached_waveform_surface
-                self.cached_waveform_surface = None
-
-            if self.cached_peaks is not None:
-                del self.cached_peaks
-                self.cached_peaks = None
-
-            self.cached_viewport_key = None
-
-            # Don't clear markers here, that's handled by MainWindow
-
-        # Queue redraw to display "No audio loaded" message
         self.queue_draw()
 
     def on_right_click(self, gesture, n_press, x, y):
@@ -332,10 +282,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not self.duration > 0:
             return
 
-        # Check if right-clicking on a segment
         segment_index = self._find_segment_at_position(x, y)
         if segment_index >= 0:
-            # Show delete prompt for the right-clicked segment
             self._prompt_delete_segment(segment_index)
 
     def on_click_handler(self, gesture, n_press, x, y):
@@ -355,9 +303,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         start_time = self.viewport_offset * self.duration
         position = start_time + (x / width) * visible_duration
         position = round(position, 3)
-        logger.info(
-            f"CLICK: x={x:.1f}, width={width}, duration={self.duration:.6f}, visible_dur={visible_duration:.6f}, start={start_time:.6f}, position={position:.6f}"
-        )
 
         # Check delete button
         if self.hovering_delete_button and self.hovered_segment_index >= 0:
@@ -406,22 +351,15 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             if self.marker_updated_callback:
                 self.marker_updated_callback(self.get_marker_pairs())
 
-            # Notify that marker dragging ended
             if self.marker_drag_callback:
                 self.marker_drag_callback(False)
 
-            # Reset drag state
             self.is_dragging_marker = False
             self.dragging_marker_type = None
             self.dragging_pair_index = -1
-        else:
-            # If potential drag didn't become a real drag, it's just a click
-            # This is handled in on_drag_end now
-            pass
 
     def on_drag_begin(self, gesture, start_x, start_y):
         """Handle start of drag operation."""
-        # Check if dragging scrollbar
         if self._is_over_scrollbar_thumb(start_x, start_y):
             self.is_dragging_scrollbar = True
             self.scrollbar_drag_start_offset = self.viewport_offset
@@ -572,7 +510,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             if self.marker_drag_callback:
                 self.marker_drag_callback(True)
 
-        # Check if we need to activate a potential segment drag
         if (
             not self.is_dragging_marker and self.potential_drag_segment is not None
         ) and (abs(offset_x) > self.drag_threshold):
@@ -583,7 +520,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             pair = self.marker_pairs[self.dragging_pair_index]
             self.drag_start_pos = {"start": pair["start"], "stop": pair["stop"]}
 
-            # Notify that marker dragging started (whole segment drag)
             if self.marker_drag_callback:
                 self.marker_drag_callback(True)
 
@@ -591,7 +527,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not self.is_dragging_marker or self.dragging_pair_index < 0:
             return
 
-        # Get the start point properly - this returns (success, x, y)
         ok, start_x, _start_y = gesture.get_start_point()
         if not ok:
             return
@@ -600,7 +535,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         current_x = start_x + offset_x
         width = self.get_width()
 
-        # Update the appropriate marker(s)
         pair = self.marker_pairs[self.dragging_pair_index]
 
         if self.dragging_marker_type == "start":
@@ -643,7 +577,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.seek_position_callback(self.pending_press, False)
         self.pending_press = None
 
-        # Reset tracking variables
         self.potential_drag_segment = None
         self.drag_start_pos = None
 
@@ -655,7 +588,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not self.duration > 0:
             return False
 
-        # Update hover position from current event if possible
         event = controller.get_current_event()
         if event:
             result = event.get_position()
@@ -695,7 +627,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Use the unified zoom method (same as slider)
         self.set_zoom_level(new_zoom, use_mouse_position=True)
 
-        # Notify zoom change callback
         if self.zoom_changed_callback:
             self.zoom_changed_callback(self.zoom_level)
 
@@ -785,7 +716,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             visible_duration = self.duration / self.zoom_level
             start_time = self.viewport_offset * self.duration
             end_time = start_time + visible_duration
-            # Check if playback position is in visible range
             if start_time <= self.position <= end_time:
                 # Calculate fraction of playback position in visible area
                 mouse_fraction = (self.position - start_time) / visible_duration
@@ -799,7 +729,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         start_time = self.viewport_offset * self.duration
         anchor_time = start_time + mouse_fraction * visible_duration
 
-        # Update zoom
         self.zoom_level = new_zoom
 
         # Adjust viewport to keep anchor position
@@ -814,31 +743,11 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.queue_draw()
 
     def zoom_in(self, factor=1.2):
-        """Zoom in by the specified factor."""
-        new_zoom = self.zoom_level * factor
-        new_zoom = max(self.min_zoom, min(self.max_zoom, new_zoom))
-
-        if new_zoom != self.zoom_level:
-            # Zoom towards center
-            visible_duration = self.duration / self.zoom_level
-            start_time = self.viewport_offset * self.duration
-            center_time = start_time + visible_duration / 2
-
-            self.zoom_level = new_zoom
-
-            # Adjust viewport to keep center position
-            new_visible_duration = self.duration / self.zoom_level
-            new_start_time = center_time - new_visible_duration / 2
-
-            self.viewport_offset = max(
-                0, min(1.0 - 1.0 / self.zoom_level, new_start_time / self.duration)
-            )
-
-            # Notify zoom change callback
-            if self.zoom_changed_callback:
-                self.zoom_changed_callback(self.zoom_level)
-
-            self.queue_draw()
+        """Zoom by ``factor`` around the playback position, or the middle."""
+        previous = self.zoom_level
+        self.set_zoom_level(self.zoom_level * factor, use_mouse_position=False)
+        if self.zoom_level != previous and self.zoom_changed_callback:
+            self.zoom_changed_callback(self.zoom_level)
 
     def zoom_out(self, factor=1.2):
         """Zoom out by the specified factor."""
@@ -850,7 +759,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.zoom_level = 1.0
             self.viewport_offset = 0.0
 
-            # Notify zoom change callback
             if self.zoom_changed_callback:
                 self.zoom_changed_callback(self.zoom_level)
 
@@ -858,17 +766,14 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def on_motion(self, controller, x, y):
         """Handle mouse motion for hover effects."""
-        # Get dimensions for all cursor checks
         width = self.get_width()
 
-        # Check if hovering over scrollbar (when zoomed)
         was_hovering_scrollbar = self.hovering_scrollbar
         self.hovering_scrollbar = self._is_over_scrollbar(x, y)
 
         if was_hovering_scrollbar != self.hovering_scrollbar:
             self.queue_draw()  # Redraw to show hover effect
 
-        # Set pointer cursor when over scrollbar
         if self.hovering_scrollbar:
             if self._is_over_scrollbar_thumb(x, y):
                 self.set_cursor(
@@ -888,7 +793,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             start_time = self.viewport_offset * self.duration
             self.hover_time = start_time + (x / width) * visible_duration
 
-            # Notify seekbar of hover time
             if self.hover_time_callback:
                 self.hover_time_callback(self.hover_time)
 
@@ -896,11 +800,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             old_hovered = self.hovered_segment_index
             self.hovered_segment_index = self._find_segment_at_position(x, y)
 
-            # Check if hovering over delete button (highest priority for cursor)
             was_hovering_delete = self.hovering_delete_button
             self.hovering_delete_button = self._is_over_delete_button(x, y)
 
-            # Redraw if hover state changed or every movement for hover line
             if (
                 old_hovered != self.hovered_segment_index
                 or was_hovering_delete != self.hovering_delete_button
@@ -909,7 +811,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self.queue_draw()
 
         if self.duration <= 0:
-            # Check if Ctrl is pressed for pan cursor
             if self.zoom_level > 1.0:
                 event = controller.get_current_event()
                 if event:
@@ -944,7 +845,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self.set_cursor(Gdk.Cursor.new_from_name("move"))
                 return
 
-            # Update segment hover highlight
             pair_index = self._find_segment_at_position(x, y)
             if pair_index != self.highlighted_pair:
                 self.highlighted_pair = pair_index
@@ -1033,19 +933,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     show_text(cr, label)
             t += time_per_mark
 
-    def _draw_rounded_rect(self, cr, x, y, width, height, radius):
-        """Draw a rounded rectangle path."""
-        degrees = 3.14159 / 180.0
-
-        cr.new_sub_path()
-        cr.arc(x + width - radius, y + radius, radius, -90 * degrees, 0 * degrees)
-        cr.arc(
-            x + width - radius, y + height - radius, radius, 0 * degrees, 90 * degrees
-        )
-        cr.arc(x + radius, y + height - radius, radius, 90 * degrees, 180 * degrees)
-        cr.arc(x + radius, y + radius, radius, 180 * degrees, 270 * degrees)
-        cr.close_path()
-
     def _draw_hint(self, cr):
         """How to use the waveform, until the first segment exists."""
         text = _("Click to listen from there · Drag to mark a part")
@@ -1054,7 +941,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         extents = text_extents(cr, text)
         # The waveform's peaks reach the top; the text keeps its own backdrop.
         cr.set_source_rgba(*self.bg_color, 0.85)
-        self._draw_rounded_rect(cr, 6, 6, extents.width + 12, 20, 4)
+        rounded_rect(cr, 6, 6, extents.width + 12, 20, 4)
         cr.fill()
         cr.set_source_rgba(1, 1, 1, 0.85)
         cr.move_to(12, 20)
@@ -1079,7 +966,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         scrollbar_width = width - (2 * self.scrollbar_margin)
         scrollbar_x = self.scrollbar_margin
 
-        # Draw scrollbar track (background)
         cr.set_source_rgba(0.2, 0.2, 0.2, 0.3)  # Dark semi-transparent
         cr.rectangle(scrollbar_x, scrollbar_y, scrollbar_width, self.scrollbar_height)
         cr.fill()
@@ -1099,7 +985,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         max_thumb_x = scrollbar_width - thumb_width
         thumb_x = scrollbar_x + (thumb_fraction * max_thumb_x)
 
-        # Draw thumb (handle) with hover effect
         if self.hovering_scrollbar or self.is_dragging_scrollbar:
             cr.set_source_rgba(0.6, 0.7, 0.9, 0.9)  # Brighter when hovering/dragging
         else:
@@ -1108,7 +993,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.rectangle(thumb_x, scrollbar_y + 2, thumb_width, self.scrollbar_height - 4)
         cr.fill()
 
-        # Draw border around thumb for definition
         cr.set_source_rgba(0.7, 0.8, 1.0, 0.5)
         cr.set_line_width(1)
         cr.rectangle(thumb_x, scrollbar_y + 2, thumb_width, self.scrollbar_height - 4)
@@ -1210,28 +1094,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             "viewport_changed_callback",
         ):
             setattr(self, name, None)
-        with self.waveform_data_lock:
-            self.waveform_data = None
-            self.cached_peaks = None
-            if self.cached_waveform_surface is not None:
-                self.cached_waveform_surface.finish()
-                self.cached_waveform_surface = None
+        self.waveform_data = None
+        self._drop_cached_surface()
         self.set_draw_func(lambda *args: None)
-
-    def _select_waveform_level(self):
-        """Select the appropriate waveform LOD level for current zoom.
-
-        Returns (waveform_array, sample_rate, selected_level).
-        """
-        selected_level = 0
-        for i, threshold in enumerate(self.waveform_data["zoom_thresholds"]):
-            if self.zoom_level >= threshold:
-                selected_level = i
-        return (
-            self.waveform_data["levels"][selected_level],
-            self.waveform_data["rates"][selected_level],
-            selected_level,
-        )
 
     def _render_waveform_cache(self, width, height, visible_waveform, viewport_key):
         """Render the waveform to a cached ImageSurface."""
@@ -1245,23 +1110,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             else len(visible_waveform)
         )
 
-        peaks = []
-        for bar_idx in range(render_width):
-            s_start = int(bar_idx * samples_per_bar)
-            s_end = int(min((bar_idx + 1) * samples_per_bar, len(visible_waveform)))
-            if s_end <= s_start:
-                s_end = s_start + 1
-            if s_start >= len(visible_waveform):
-                break
-            pixel_samples = visible_waveform[s_start:s_end]
-            if len(pixel_samples) > 0:
-                # Levels hold absolute peaks; draw them mirrored.
-                peak = float(np.max(pixel_samples))
-                peaks.append((bar_idx, bar_width, -peak, peak))
-            else:
-                peaks.append((bar_idx, bar_width, 0.0, 0.0))
-
-        self.cached_peaks = peaks
+        # The loudest peak under each pixel column.
+        starts = np.minimum(
+            (np.arange(render_width) * samples_per_bar).astype(int),
+            len(visible_waveform) - 1,
+        )
+        peaks = np.maximum.reduceat(visible_waveform, starts) if render_width else []
 
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
         surface_cr = cairo.Context(surface)
@@ -1278,12 +1132,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Waveform bars
         surface_cr.set_source_rgb(*self.wave_color)
-        for pixel_x, bw, sample_min, sample_max in peaks:
-            y_top = y_center - (sample_max * y_scale)
-            y_bottom = y_center - (sample_min * y_scale)
-            rect_height = y_bottom - y_top
-            if rect_height >= 0.5:
-                surface_cr.rectangle(pixel_x, y_top, bw, rect_height)
+        for pixel_x, peak in enumerate(peaks):
+            # Levels hold absolute peaks; draw them mirrored.
+            if 2 * peak * y_scale >= 0.5:
+                surface_cr.rectangle(
+                    pixel_x, y_center - peak * y_scale, bar_width, 2 * peak * y_scale
+                )
         surface_cr.fill()
 
         self.cached_waveform_surface = surface
@@ -1346,72 +1200,41 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def on_draw(self, area, cr, width, height):
         """Draw the waveform visualization."""
-        # Draw background
         cr.set_source_rgb(*self.bg_color)
         cr.rectangle(0, 0, width, height)
         cr.fill()
 
-        # Draw loading indicator if currently loading
         if self.is_loading:
             self._draw_loading_indicator(cr, width, height)
             return
 
-        # Draw waveform if we have data
-        with self.waveform_data_lock:
-            # Calculate visible portion based on zoom
-            visible_duration = (
-                self.duration / self.zoom_level if self.duration > 0 else 0
+        visible_duration = self.duration / self.zoom_level if self.duration > 0 else 0
+        start_time = self.viewport_offset * self.duration if self.duration > 0 else 0
+        end_time = start_time + visible_duration
+
+        if self.waveform_data is None:
+            self._draw_no_waveform_message(
+                cr, width, height, start_time, end_time, visible_duration
             )
-            start_time = (
-                self.viewport_offset * self.duration if self.duration > 0 else 0
+        elif len(self.waveform_data["peaks"]):
+            peaks = self.waveform_data["peaks"]
+            rate = self.waveform_data["rate"]
+            start_sample = max(0, min(len(peaks) - 1, int(start_time * rate)))
+            end_sample = max(start_sample + 1, min(len(peaks), int(end_time * rate)))
+            viewport_key = (start_sample, end_sample, int(width), int(height))
+            if (
+                self.cached_viewport_key != viewport_key
+                or self.cached_waveform_surface is None
+            ):
+                self._render_waveform_cache(
+                    width, height, peaks[start_sample:end_sample], viewport_key
+                )
+            cr.set_source_surface(self.cached_waveform_surface, 0, 0)
+            cr.paint()
+            self._draw_position_marker(
+                cr, width, height, start_time, end_time, visible_duration
             )
-            end_time = start_time + visible_duration
 
-            if self.waveform_data is not None:
-                waveform_array, sample_rate, selected_level = (
-                    self._select_waveform_level()
-                )
-
-                if len(waveform_array) > 0:
-                    # Calculate sample indices based on visible time range
-                    start_sample = int(start_time * sample_rate)
-                    end_sample = int(end_time * sample_rate)
-                    total_samples = len(waveform_array)
-                    start_sample = max(0, min(total_samples - 1, start_sample))
-                    end_sample = max(start_sample + 1, min(total_samples, end_sample))
-
-                    visible_waveform = waveform_array[start_sample:end_sample]
-
-                    if len(visible_waveform) > 0:
-                        viewport_key = (
-                            start_sample,
-                            end_sample,
-                            int(width),
-                            int(height),
-                            selected_level,
-                        )
-
-                        if (
-                            self.cached_viewport_key != viewport_key
-                            or self.cached_waveform_surface is None
-                        ):
-                            self._render_waveform_cache(
-                                width, height, visible_waveform, viewport_key
-                            )
-
-                        cr.set_source_surface(self.cached_waveform_surface, 0, 0)
-                        cr.paint()
-
-                    # Draw position marker
-                    self._draw_position_marker(
-                        cr, width, height, start_time, end_time, visible_duration
-                    )
-            else:
-                self._draw_no_waveform_message(
-                    cr, width, height, start_time, end_time, visible_duration
-                )
-
-        # Draw timeline ruler at bottom of waveform
         if self.duration > 0:
             self._draw_timeline_ruler(cr, width, height)
 
@@ -1420,12 +1243,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if self.waveform_data is not None and not self.marker_pairs:
             self._draw_hint(cr)
 
-        # Position time removed - now only showing in top-left display
-
-        # Draw hover time indicator
         self._draw_hover_time(cr, width, height)
 
-        # Draw simulated scrollbar when zoomed
         if self.zoom_level > 1.0:
             self._draw_scrollbar(cr, width, height)
 
@@ -1510,8 +1329,6 @@ class SeekBar(Gtk.DrawingArea):
         )
         self.add_controller(motion)
 
-    # --- Public API ---
-
     def connect_seek_handler(self, callback):
         self._seek_callback = callback
 
@@ -1540,8 +1357,6 @@ class SeekBar(Gtk.DrawingArea):
         """Set hover time from waveform (None to clear)."""
         self._waveform_hover_time = time
         self.queue_draw()
-
-    # --- Input handlers ---
 
     def _x_to_position(self, x):
         """Convert x coordinate to time position (track-aware)."""
@@ -1601,20 +1416,6 @@ class SeekBar(Gtk.DrawingArea):
         self._seek_callback(target, False)
         return True
 
-    # --- Drawing helpers ---
-
-    def _draw_rounded_rect(self, cr, x, y, w, h, r):
-        """Draw a rounded rectangle path."""
-        deg = 3.14159 / 180.0
-        cr.new_sub_path()
-        cr.arc(x + w - r, y + r, r, -90 * deg, 0)
-        cr.arc(x + w - r, y + h - r, r, 0, 90 * deg)
-        cr.arc(x + r, y + h - r, r, 90 * deg, 180 * deg)
-        cr.arc(x + r, y + r, r, 180 * deg, 270 * deg)
-        cr.close_path()
-
-    # --- Drawing ---
-
     def _draw(self, area, cr, width, height):
         color = self.get_color()
         fg = (color.red, color.green, color.blue)
@@ -1644,7 +1445,6 @@ class SeekBar(Gtk.DrawingArea):
         top_margin = (height - content_h) / 2
         track_y = top_margin + text_h_approx + gap
 
-        # Store bounds for input handlers
         self._track_x = pad
         self._track_w = track_w
 
@@ -1657,7 +1457,6 @@ class SeekBar(Gtk.DrawingArea):
             else 0.0
         )
 
-        # --- Time labels with hundredths precision (above track) ---
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(10)
 
@@ -1708,39 +1507,33 @@ class SeekBar(Gtk.DrawingArea):
             cr.line_to(hover_x, track_y + track_h + 2)
             cr.stroke()
 
-        # --- Zoom viewport indicator (subtle, behind track) ---
         if self._zoom_level > 1.0:
             vp_frac = 1.0 / self._zoom_level
             vp_x = pad + self._viewport_offset * (1.0 - vp_frac) * track_w
             vp_w = vp_frac * track_w
             cr.set_source_rgba(*fg, 0.06)
-            self._draw_rounded_rect(
-                cr, vp_x, track_y - 4, vp_w, track_h + 8, track_r + 2
-            )
+            rounded_rect(cr, vp_x, track_y - 4, vp_w, track_h + 8, track_r + 2)
             cr.fill()
             cr.set_source_rgba(*fg, 0.12)
             cr.set_line_width(1)
-            self._draw_rounded_rect(
+            rounded_rect(
                 cr, vp_x + 0.5, track_y - 3.5, vp_w - 1, track_h + 7, track_r + 2
             )
             cr.stroke()
 
-        # --- Track background ---
         cr.set_source_rgba(*fg, 0.15)
-        self._draw_rounded_rect(cr, pad, track_y, track_w, track_h, track_r)
+        rounded_rect(cr, pad, track_y, track_w, track_h, track_r)
         cr.fill()
 
-        # --- Elapsed portion (accent gradient) ---
         elapsed_w = progress * track_w
         if elapsed_w > 0:
             pat = cairo.LinearGradient(pad, 0, pad + elapsed_w, 0)
             pat.add_color_stop_rgba(0, 0.30, 0.56, 0.92, 0.90)
             pat.add_color_stop_rgba(1, 0.45, 0.72, 1.0, 0.95)
             cr.set_source(pat)
-            self._draw_rounded_rect(cr, pad, track_y, elapsed_w, track_h, track_r)
+            rounded_rect(cr, pad, track_y, elapsed_w, track_h, track_r)
             cr.fill()
 
-        # --- Hover preview line ---
         if (
             self._hover_x >= pad
             and self._hover_x <= width - pad
@@ -1763,7 +1556,7 @@ class SeekBar(Gtk.DrawingArea):
             tip_y = track_y - 8
 
             cr.set_source_rgba(*bg, 0.98)
-            self._draw_rounded_rect(
+            rounded_rect(
                 cr, tip_x - 4, tip_y - ext.height - 2, ext.width + 8, ext.height + 4, 3
             )
             cr.fill()
@@ -1771,21 +1564,20 @@ class SeekBar(Gtk.DrawingArea):
             cr.move_to(tip_x, tip_y)
             show_text(cr, hover_str)
 
-        # --- Thumb ---
         thumb_x = pad + progress * track_w
         thumb_cy = track_y + track_h / 2
         show_thumb = self._is_dragging or (self._hover_x >= 0)
 
         if show_thumb:
             cr.set_source_rgba(0.40, 0.65, 1.0, 0.15)
-            cr.arc(thumb_x, thumb_cy, thumb_r + 4, 0, 2 * 3.14159)
+            cr.arc(thumb_x, thumb_cy, thumb_r + 4, 0, 2 * math.pi)
             cr.fill()
 
         cr.set_source_rgba(*fg, 0.95)
-        cr.arc(thumb_x, thumb_cy, thumb_r if show_thumb else 4, 0, 2 * 3.14159)
+        cr.arc(thumb_x, thumb_cy, thumb_r if show_thumb else 4, 0, 2 * math.pi)
         cr.fill()
 
         if show_thumb:
             cr.set_source_rgba(0.35, 0.60, 0.95, 1.0)
-            cr.arc(thumb_x, thumb_cy, 3, 0, 2 * 3.14159)
+            cr.arc(thumb_x, thumb_cy, 3, 0, 2 * math.pi)
             cr.fill()

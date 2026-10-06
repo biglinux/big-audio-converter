@@ -20,6 +20,7 @@ NOISE_PLUGINS = {
 
 # Export measures the timeline first and replaces this with a linear pass.
 LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
+EQ_FREQUENCIES = (31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
 
 
 @dataclass(frozen=True)
@@ -384,8 +385,7 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
     if settings.get("eq_enabled", False):
         # validate_settings has already checked ten finite gains.
         gains = [float(x) for x in settings.get("eq_bands", "0," * 9 + "0").split(",")]
-        eq_freqs = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-        for freq, gain in zip(eq_freqs, gains):
+        for freq, gain in zip(EQ_FREQUENCIES, gains, strict=True):
             if gain != 0.0:
                 filters.append(f"equalizer=f={freq}:width_type=o:w=1.5:g={gain}")
 

@@ -3,7 +3,6 @@
 import gettext
 import logging
 import math
-import os
 import threading
 import weakref
 from collections import OrderedDict
@@ -11,7 +10,13 @@ from copy import deepcopy
 
 import numpy as np
 
-from .media import MediaSource, audio_duration, audio_stream, probe_media
+from .media import (
+    MediaSource,
+    audio_duration,
+    audio_stream,
+    file_identity,
+    probe_media,
+)
 from .process import CancelledError, MediaError, ProcessRunner
 
 _ = gettext.gettext
@@ -105,12 +110,10 @@ class PeakCollector:
             self._pending_count = 0
         data = self.peaks[: self.count].copy()
         data.flags.writeable = False
-        return {
-            "levels": [data],
-            "rates": [self.sample_rate / self.block_size],
-            "zoom_thresholds": [1.0],
-            "envelope": True,
-        }, self.samples / self.sample_rate
+        # Peaks per second of audio: the block size can double while decoding.
+        return {"peaks": data, "rate": self.sample_rate / self.block_size}, (
+            self.samples / self.sample_rate
+        )
 
 
 class WaveformGenerator:
@@ -240,13 +243,9 @@ class WaveformGenerator:
                 if not ffmpeg:
                     raise MediaError(gettext.gettext("FFmpeg is not installed."))
                 source = MediaSource.resolve(path, metadata)
-                stat = os.stat(source.path)
                 identity = (
                     source.path,
-                    stat.st_dev,
-                    stat.st_ino,
-                    stat.st_size,
-                    stat.st_mtime_ns,
+                    *file_identity(source.path),
                     source.stream_index,
                 )
                 if identity in self._cache:
@@ -294,25 +293,14 @@ class WaveformGenerator:
                         )
                     payload, duration = collector.finish()
                     runner.check_cancelled()
-                    current = os.stat(source.path)
-                    if (
-                        stat.st_dev,
-                        stat.st_ino,
-                        stat.st_size,
-                        stat.st_mtime_ns,
-                    ) != (
-                        current.st_dev,
-                        current.st_ino,
-                        current.st_size,
-                        current.st_mtime_ns,
-                    ):
+                    if file_identity(source.path) != identity[1:5]:
                         raise MediaError(
                             gettext.gettext(
                                 "The source changed while its waveform was being generated."
                             )
                         )
                     self._cache[identity] = payload, duration
-                    self._cache_bytes += payload["levels"][0].nbytes
+                    self._cache_bytes += payload["peaks"].nbytes
                     while (
                         self._cache_bytes > self.CACHE_BYTES
                         or len(self._cache) > self.CACHE_ENTRIES
@@ -320,7 +308,7 @@ class WaveformGenerator:
                         _evicted_key, (old, _evicted_duration) = self._cache.popitem(
                             last=False
                         )
-                        self._cache_bytes -= old["levels"][0].nbytes
+                        self._cache_bytes -= old["peaks"].nbytes
                 runner.check_cancelled()
 
             def deliver():

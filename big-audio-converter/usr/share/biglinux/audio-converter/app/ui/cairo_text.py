@@ -1,5 +1,6 @@
-"""Pango shaping and font fallback for the existing Cairo canvas labels."""
+"""Cairo canvas helpers: Pango-shaped labels with font fallback, rounded paths."""
 
+import math
 from typing import NamedTuple
 
 import cairo
@@ -59,3 +60,13 @@ def show_text(cr, text):
     cr.move_to(x, baseline - layout.get_baseline() / Pango.SCALE)
     PangoCairo.show_layout(cr, layout)
     cr.move_to(x + layout.get_size()[0] / Pango.SCALE, baseline)
+
+
+def rounded_rect(cr, x, y, width, height, radius):
+    """Add a rounded rectangle to the current path."""
+    cr.new_sub_path()
+    cr.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
+    cr.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
+    cr.arc(x + radius, y + height - radius, radius, math.pi / 2, math.pi)
+    cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+    cr.close_path()

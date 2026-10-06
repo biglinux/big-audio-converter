@@ -1,5 +1,3 @@
-# app/utils/time_formatter.py
-
 """
 Utility functions for formatting time values.
 """

@@ -33,6 +33,13 @@ from app.ui.welcome_dialog import WelcomeDialog
 from app.utils.config import AppConfig
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
+APP_NAME = "Big Audio Converter"
+# The package writes its version here; a source checkout has none.
+try:
+    VERSION = Path(__file__).with_name("VERSION").read_text(encoding="utf-8").strip()
+except OSError:
+    VERSION = "development"
+
 
 class Application(Adw.Application):
     """Main application class for Audio Converter."""
@@ -63,7 +70,6 @@ class Application(Adw.Application):
 
     def do_open(self, files, n_files, hint):
         """Handle files opened from command line or file manager."""
-        # Get the active window (MainWindow)
         win = self._main_window
         if win is None or win._closed:
             # If no window exists yet, create one
@@ -101,15 +107,17 @@ class Application(Adw.Application):
             command_line.printerr(f"big-audio-converter: {exc}\n")
             return 2
 
-        paths = [
-            os.path.abspath(arg)
+        # Relative names belong to the caller's directory, not this instance's;
+        # do_open reports what is not a local file.
+        files = [
+            command_line.create_file_for_arg(arg)
             for arg in command_line.get_arguments()[1:]
-            if os.path.isfile(arg)
         ]
-        if not paths:
+        if not files:
             self.activate()
             return 0
-        self.do_open([Gio.File.new_for_path(p) for p in paths], len(paths), "")
+        self.do_open(files, len(files), "")
+        paths = [file.get_path() for file in files if file.get_path()]
         win = self._main_window
         if segments is not None and win is not None:
             tracks = win.file_queue.track_metadata
@@ -188,10 +196,10 @@ class Application(Adw.Application):
     def on_about_action(self, *args):
         """Show the about dialog with the system 'big-audio-converter' icon."""
         about = Adw.AboutDialog(
-            application_name=_("Audio Converter"),
+            application_name=APP_NAME,
             application_icon="big-audio-converter",
             developer_name=_("BigLinux Team"),
-            version="3.0.0",
+            version=VERSION,
             developers=[_("BigLinux Team")],
             website="https://github.com/biglinux/big-audio-converter",
             license_type=Gtk.License.GPL_3_0_ONLY,
@@ -212,7 +220,7 @@ def main():
     )
 
     GLib.set_prgname("big-audio-converter")
-    GLib.set_application_name(_("Audio Converter"))
+    GLib.set_application_name(APP_NAME)
     app = Application()
     return app.run(sys.argv)
 

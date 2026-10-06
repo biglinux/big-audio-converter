@@ -1,4 +1,4 @@
-"""Accessible, adaptive first-run guidance without marketing overclaims."""
+"""First-run guidance, reopened from the main menu."""
 
 import gettext
 
@@ -72,7 +72,7 @@ class WelcomeDialog:
         start.add_css_class("suggested-action")
         start.connect("clicked", lambda button: button.get_ancestor(Adw.Dialog).close())
         content.append(start)
-        # Focus on the switch at the end used to open the dialog scrolled down.
+        # Start on the button: focusing the switch at the end scrolls the dialog down.
         self.dialog.set_default_widget(start)
         self.dialog.set_focus(start)
         scrolled.set_child(content)

@@ -2,7 +2,7 @@
 
 import pytest
 from app.audio.converter import AudioConverter
-from app.audio.media import Segment
+from app.audio.media import Segment, track_identifier
 from app.audio.process import MediaError
 from app.audio.profiles import build_audio_filters
 
@@ -103,11 +103,12 @@ class TestGetOutputPath:
     def test_virtual_track_path(self, converter, tmp_path):
         video_path = str(tmp_path / "video.mkv")
         open(video_path, "w").close()
-        input_path = f"{video_path}::track1.aac"
-        result = converter._get_output_path(input_path, "mp3")
-        assert "video" in result
-        assert "track1" in result
-        assert result.endswith(".mp3")
+        track = track_identifier(video_path, 1)
+        metadata = {
+            track: {"source_video": video_path, "output_name": "video-track1.aac"}
+        }
+        result = converter._get_output_path(track, "mp3", metadata)
+        assert result == str(tmp_path / "video-track1.mp3")
 
     def test_existing_output_increments(self, converter, tmp_path):
         input_path = str(tmp_path / "song.wav")

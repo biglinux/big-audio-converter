@@ -1,6 +1,4 @@
-"""
-File queue UI component for managing files to be converted.
-"""
+"""The queue of files to convert, their probes and the file information dialog."""
 
 import gettext
 import logging
@@ -12,22 +10,18 @@ from pathlib import Path
 
 import gi
 
-from app.audio.media import track_identifier
-
-gettext.textdomain("big-audio-converter")
-_ = gettext.gettext
-
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
-from app.audio.media import audio_duration, audio_stream
+from app.audio.media import audio_duration, audio_stream, track_identifier
 from app.audio.probe_service import ProbeService
 from app.audio.process import MediaError
 from app.audio.profiles import copy_container
 from app.utils.main_loop import MainLoopSources, weak_callback
+from app.utils.time_formatter import format_time_display
 
+_ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
@@ -76,7 +70,6 @@ class FileQueueRow(Adw.ActionRow):
         # Make row activatable
         self.set_activatable(True)
 
-        # Connect activated signal to callback
         if on_activate_callback:
             self.connect(
                 "activated",
@@ -140,7 +133,6 @@ class FileQueueRow(Adw.ActionRow):
     def _setup_context_menu(self, button, *_args):
         """Allocate a row's menu only when it is opened, including by keyboard."""
         owner = weakref.proxy(self)
-        # Create popup menu
         menu = Gtk.PopoverMenu()
         menu_model = Gio.Menu()
 
@@ -155,7 +147,6 @@ class FileQueueRow(Adw.ActionRow):
 
         menu.set_menu_model(menu_model)
 
-        # Create action group
         action_group = Gio.SimpleActionGroup()
 
         # Delete action (with confirmation)
@@ -217,16 +208,6 @@ class FileQueueRow(Adw.ActionRow):
             )
         return None
 
-    @staticmethod
-    def _format_duration(total_secs):
-        """Format seconds into H:MM:SS or M:SS string."""
-        hours = int(total_secs // 3600)
-        minutes = int((total_secs % 3600) // 60)
-        seconds = int(total_secs % 60)
-        if hours > 0:
-            return f"{hours}:{minutes:02d}:{seconds:02d}"
-        return f"{minutes}:{seconds:02d}"
-
     def _get_stream_tag(self, stream, prefixes):
         """Get the first matching tag value from a stream's tags."""
         if not stream or "tags" not in stream:
@@ -245,7 +226,6 @@ class FileQueueRow(Adw.ActionRow):
         """
         props = []
 
-        # --- Size ---
         duration_val = self._get_tag_as_duration(audio_stream)
         if duration_val is None and audio_stream and "duration" in audio_stream:
             try:
@@ -272,27 +252,24 @@ class FileQueueRow(Adw.ActionRow):
             (_("Size"), _("Unknown") if size is None else self._format_size(size))
         )
 
-        # --- Duration ---
         if duration_val is not None:
-            props.append((_("Duration"), self._format_duration(duration_val)))
+            props.append((_("Duration"), format_time_display(duration_val)))
         elif "format" in data and "duration" in data["format"]:
             try:
                 props.append(
                     (
                         _("Duration"),
-                        self._format_duration(float(data["format"]["duration"])),
+                        format_time_display(float(data["format"]["duration"])),
                     )
                 )
             except (ValueError, TypeError):
                 pass
 
-        # --- Format ---
         if audio_stream and "codec_long_name" in audio_stream:
             props.append((_("Format"), audio_stream["codec_long_name"]))
         elif "format" in data and "format_long_name" in data["format"]:
             props.append((_("Format"), data["format"]["format_long_name"]))
 
-        # --- Bitrate ---
         if bitrate_val is not None:
             props.append((_("Bitrate"), f"{bitrate_val // 1000} kbps"))
         elif "format" in data and "bit_rate" in data["format"]:
@@ -303,7 +280,6 @@ class FileQueueRow(Adw.ActionRow):
             except (ValueError, TypeError):
                 pass
 
-        # --- Sample rate, channels, bit depth ---
         if audio_stream:
             if "sample_rate" in audio_stream:
                 try:
@@ -509,7 +485,6 @@ class FileQueueRow(Adw.ActionRow):
         title_label.set_margin_bottom(6)
         group_box.append(title_label)
 
-        # Create list box for items
         listbox = Gtk.ListBox()
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         listbox.add_css_class("boxed-list")
@@ -574,6 +549,7 @@ class FileQueue(Gtk.Box):
         self._import_source = None
         self._closed = False
         self.on_probe_error = None
+        self.on_trash_error = None
         self.on_pending_changed = None
         self.on_queue_size_changed = None
         self._parent_window = None  # Will be set by MainWindow for dialogs
@@ -583,15 +559,12 @@ class FileQueue(Gtk.Box):
         # Key: file_path, Value: dict with 'source_video', 'track_index', 'codec', 'language', etc.
         self.track_metadata = {}
 
-        # Add custom CSS for better visual styling
         self._setup_styles()
 
-        # Create scrolled window for file list
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
 
-        # Create file list using Adwaita's ListBox for better styling
         self.file_list = Gtk.ListBox()
         self.file_list.set_selection_mode(Gtk.SelectionMode.NONE)
         self.file_list.add_css_class("boxed-list")  # Adwaita style
@@ -599,16 +572,12 @@ class FileQueue(Gtk.Box):
         # Enable reordering by drag and drop within the list
         self.file_list.set_can_focus(True)
 
-        # Add drop target for reordering rows within the list
         drop_target_reorder = Gtk.DropTarget.new(FileQueueRow, Gdk.DragAction.MOVE)
         drop_target_reorder.connect("drop", weak_callback(self._on_row_drop))
-        drop_target_reorder.connect("enter", weak_callback(self._on_row_drag_enter))
-        drop_target_reorder.connect("leave", weak_callback(self._on_row_drag_leave))
         self.file_list.add_controller(drop_target_reorder)
 
         scrolled.set_child(self.file_list)
 
-        # Create a simple placeholder
         self.placeholder = Adw.StatusPage()
         self.placeholder.set_icon_name("folder-music-symbolic")
         self.placeholder.set_title(_("No Audio Files"))
@@ -628,12 +597,11 @@ class FileQueue(Gtk.Box):
         drop_target.connect("leave", weak_callback(self._on_drop_leave))
         self.add_controller(drop_target)
 
-        # Initialize with no callbacks
         self.on_stop_playback = None
         self.on_file_added_to_empty_queue = None
         self.on_activate_file = None  # A row was activated (clicked)
+        self.on_play_file = None
 
-        # Add a signal for file removal
         self.file_removed_signal = None  # Will be set by MainWindow
 
     def _setup_styles(self):
@@ -722,6 +690,10 @@ class FileQueue(Gtk.Box):
         if self.on_pending_changed and not self._closed:
             self.on_pending_changed(self.pending)
 
+    def _trash_failed(self, message):
+        if self.on_trash_error and not self._closed:
+            self.on_trash_error(_("Could not move the file to Trash"), message)
+
     def _probe_failed(self, path, message):
         if self.on_probe_error and not self._closed:
             self.on_probe_error(path, message)
@@ -798,7 +770,7 @@ class FileQueue(Gtk.Box):
         duration = audio_duration(info, stream)
         parts = [stream.get("codec_name", "").upper()]
         if duration is not None:
-            parts.append(FileQueueRow._format_duration(duration))
+            parts.append(format_time_display(duration))
         else:
             parts.append(_("Unknown duration"))
         rate = stream.get("sample_rate")
@@ -877,11 +849,10 @@ class FileQueue(Gtk.Box):
 
     def on_delete_file(self, index, file_path):
         if self.converter.busy:
-            self._probe_failed(
-                file_path,
+            self._trash_failed(
                 _(
                     "Cancel the conversion or wait for it to finish before moving its input to Trash."
-                ),
+                )
             )
             return
         actual = self.track_metadata.get(file_path, {}).get("source_video", file_path)
@@ -903,26 +874,23 @@ class FileQueue(Gtk.Box):
         if response != "trash" or self._closed:
             return
         if self.converter.busy:
-            self._probe_failed(
-                path,
+            self._trash_failed(
                 _(
                     "The file is in use by a conversion. Cancel it before moving the input to Trash."
-                ),
+                )
             )
             return
 
         def trashed(file, result):
             try:
                 file.trash_finish(result)
-            except GLib.Error as exc:
+            except GLib.Error:
                 if not self._closed:
-                    self._probe_failed(
-                        path,
+                    self._trash_failed(
                         _(
                             "The file could not be moved to Trash. It has not been deleted."
-                        ),
+                        )
                     )
-                logger.debug("Trash operation failed: %s", exc.message)
                 return
             if not self._closed:
                 for index in reversed(range(len(self.file_rows))):
@@ -1019,7 +987,6 @@ class FileQueue(Gtk.Box):
         if 0 <= index < len(self.file_rows):
             row = self.file_rows[index]
 
-            # Update progress bar
             row.progress_bar.set_fraction(progress)
             row.progress_bar.set_text(f"{int(progress * 100)}%")
 
@@ -1027,7 +994,6 @@ class FileQueue(Gtk.Box):
             if not row.progress_bar.get_visible():
                 row.progress_bar.set_visible(True)
 
-            # Hide progress when complete
             if progress >= 1:
 
                 def hide_progress():
@@ -1036,13 +1002,8 @@ class FileQueue(Gtk.Box):
 
                 self._sources.later(1500, hide_progress)
 
-    def on_play_file(self, file_path, index):
-        """Handle play button click on a file."""
-        # This will be implemented by the main window and connected
-
     def set_currently_playing(self, index):
         """Set the currently playing file and update UI."""
-        # Reset old playing item if any
         if (
             self.currently_playing_index is not None
             and 0 <= self.currently_playing_index < len(self.file_rows)
@@ -1051,7 +1012,6 @@ class FileQueue(Gtk.Box):
             old_row.play_button.set_icon_name("media-playback-start-symbolic")
             # Removed accent color - we use background highlighting for active file instead
 
-        # Set new playing item
         self.currently_playing_index = index
         if 0 <= index < len(self.file_rows):
             new_row = self.file_rows[index]
@@ -1060,24 +1020,17 @@ class FileQueue(Gtk.Box):
 
     def set_active_file(self, index):
         """Set the active file (the one showing its waveform) and update UI."""
-        logger.info(f"Setting active file to index {index}")
 
-        # Reset old active item if any
         if self.active_file_index is not None and 0 <= self.active_file_index < len(
             self.file_rows
         ):
             old_row = self.file_rows[self.active_file_index]
             old_row.remove_css_class("active-waveform-file")
-            logger.debug(
-                f"Removed active highlighting from index {self.active_file_index}"
-            )
 
-        # Set new active item
         self.active_file_index = index
         if index is not None and 0 <= index < len(self.file_rows):
             new_row = self.file_rows[index]
             new_row.add_css_class("active-waveform-file")
-            logger.info(f"Added active highlighting to index {index}")
 
     def update_playing_state(self, is_playing):
         """Update UI based on player state."""
@@ -1097,29 +1050,36 @@ class FileQueue(Gtk.Box):
     def _on_drop(self, drop_target, value, x, y):
         self.placeholder.remove_css_class("drag-highlight")
         self.file_list.remove_css_class("drag-highlight")
+        return self.add_dropped(value)
+
+    def add_dropped(self, value):
+        """Queue the local files of a drop and report the others."""
         if not value:
             return False
         files = value.get_files() if isinstance(value, Gdk.FileList) else value
-        paths = [
-            file.get_path()
-            for file in files
-            if isinstance(file, Gio.File) and file.get_path()
-        ]
+        paths = []
+        for file in files:
+            if not isinstance(file, Gio.File):
+                continue
+            if file.get_path():
+                paths.append(file.get_path())
+            else:
+                self._probe_failed(
+                    file.get_uri(),
+                    _("Download this file to a local folder before adding it."),
+                )
         self.add_files(paths)
         return bool(paths)
 
     def _on_row_drag_prepare(self, drag_source, x, y):
         """Prepare drag operation for a row."""
-        # Set the row as the drag content
         content = Gdk.ContentProvider.new_for_value(drag_source.get_widget())
         return content
 
     def _on_row_drag_begin(self, drag_source, drag):
         """Handle drag begin for a row."""
         row = drag_source.get_widget()
-        # Add visual feedback
         row.add_css_class("drag-row")
-        # Create drag icon from the row
         paintable = Gtk.WidgetPaintable.new(row)
         drag_source.set_icon(paintable, 0, 0)
 
@@ -1130,7 +1090,6 @@ class FileQueue(Gtk.Box):
 
     def _on_row_drop(self, drop_target, value, x, y):
         """Handle drop of a row for reordering."""
-        # Get the dragged row
         dragged_row = value
         if not isinstance(dragged_row, FileQueueRow):
             return False
@@ -1155,7 +1114,6 @@ class FileQueue(Gtk.Box):
 
         # Perform the reordering
         try:
-            # Get indices
             old_index = dragged_row.index
             new_index = target_row.index if target_row else len(self.file_rows)
 
@@ -1178,7 +1136,6 @@ class FileQueue(Gtk.Box):
             row_widget = self.file_rows.pop(old_index)
             self.file_rows.insert(new_index, row_widget)
 
-            # Update row indices
             for i, row in enumerate(self.file_rows):
                 row.index = i
 
@@ -1201,21 +1158,11 @@ class FileQueue(Gtk.Box):
             # Remove drag styling
             dragged_row.remove_css_class("drag-row")
 
-            logger.debug(f"Reordered file from index {old_index} to {new_index}")
             return True
 
         except (ValueError, IndexError, TypeError, RuntimeError) as e:
-            logger.error(f"Error reordering files: {e}")
+            logger.error("Error reordering files: %s", e)
             return False
-
-    def _on_row_drag_enter(self, drop_target, x, y):
-        """Handle drag enter for row reordering."""
-        # Don't add visual feedback to avoid background color change
-        return Gdk.DragAction.MOVE
-
-    def _on_row_drag_leave(self, drop_target):
-        """Handle drag leave for row reordering."""
-        # No cleanup needed since we don't add visual feedback
 
     # Drop zone visual feedback
     def _on_drop_enter(self, drop_target, x, y):

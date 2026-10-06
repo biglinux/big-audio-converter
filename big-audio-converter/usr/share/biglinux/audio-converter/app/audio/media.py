@@ -49,6 +49,12 @@ class MediaSource:
 END_TOLERANCE = 0.05  # seconds, above one video frame at 25 fps
 
 
+def file_identity(path):
+    """What changes when the file is replaced or rewritten."""
+    stat = os.stat(path)
+    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns
+
+
 def complement(segments, end):
     """The parts of 0..end that no segment covers, in timeline order."""
     kept, cursor = [], 0.0

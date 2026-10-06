@@ -1,16 +1,4 @@
-# app/ui/settings_mixin.py
-
-"""
-Settings Manager Mixin for MainWindow.
-
-Extracts all conversion-settings-related methods (format, bitrate, volume,
-speed, noise reduction, gate, waveform, cut mode, equalizer toggle, and
-settings persistence) from MainWindow into a reusable mixin.
-
-Usage:
-    class MainWindow(SettingsManagerMixin, PlaybackControllerMixin, Adw.ApplicationWindow):
-        ...
-"""
+"""The window's conversion settings: rows, their saved values and effects."""
 
 import gettext
 import locale
@@ -24,11 +12,10 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, GLib, GObject, Gtk, Pango
+from gi.repository import Adw, Gdk, GLib, GObject, Gtk, Pango
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 
-gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 logger = logging.getLogger(__name__)
@@ -124,63 +111,6 @@ def quality_labels(format_name, bitrates):
     return entries, buttons
 
 
-# Everything a purpose sets; a purpose names only what differs from this.
-NEUTRAL = {
-    "channels": 0,
-    "sample_rate": "original",
-    "volume": 100,
-    "speed": 1.0,
-    "flat_eq": True,
-    "normalize": False,
-    "gate": False,
-    "compressor": False,
-    "hpf": False,
-    "clipping": False,
-    "voice": 0,
-}
-# Keep the original copies the audio, so nothing else applies to it.
-PURPOSES = (
-    ("anywhere", NEUTRAL | {"format": "mp3", "bitrate": "192k"}),
-    (
-        "whatsapp",
-        NEUTRAL
-        | {
-            "format": "m4a",
-            "bitrate": "64k",
-            "channels": 1,
-            "normalize": True,
-            "voice": 70,
-        },
-    ),
-    (
-        "lecture",
-        NEUTRAL
-        | {
-            "format": "mp3",
-            "bitrate": "64k",
-            "channels": 1,
-            "normalize": True,
-            "compressor": True,
-        },
-    ),
-    ("music", NEUTRAL | {"format": "mp3", "bitrate": "320k"}),
-    ("lossless", NEUTRAL | {"format": "flac"}),
-    ("original", {"format": "copy"}),
-)
-
-
-def purpose_labels():
-    names = {
-        "anywhere": _("Play on any device"),
-        "whatsapp": _("Voice for WhatsApp"),
-        "lecture": _("Lecture: louder and smaller"),
-        "music": _("High-quality music"),
-        "lossless": _("Lossless"),
-        "original": _("Keep the original"),
-    }
-    return [names[key] for key, _settings in PURPOSES] + [_("Custom")]
-
-
 class ChoiceRow(Adw.ActionRow):
     """A titled row whose value is a dropdown button, as in the compact list.
 
@@ -223,10 +153,72 @@ class ChoiceRow(Adw.ActionRow):
         self.dropdown.set_model(model)
 
 
+class LevelRow(Adw.PreferencesRow):
+    """A correction set by how much of it applies; the lowest value is off.
+
+    ``describe`` turns the value into the text beside the title. The wheel
+    scrolls the sidebar instead of moving a slider passing under the pointer.
+    """
+
+    def __init__(self, title, adjustment, describe, subtitle=None):
+        super().__init__(title=title, activatable=False)
+        self.describe = describe
+        self.box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_start=12,
+            margin_end=12,
+            margin_top=8,
+            margin_bottom=4,
+        )
+        header = Gtk.Box(spacing=12)
+        header.append(Gtk.Label(label=title, xalign=0, hexpand=True, wrap=True))
+        self.value_label = Gtk.Label(xalign=1, css_classes=["dim-label", "numeric"])
+        header.append(self.value_label)
+        self.box.append(header)
+        if subtitle:
+            self.box.append(
+                Gtk.Label(
+                    label=subtitle,
+                    xalign=0,
+                    wrap=True,
+                    css_classes=["caption", "dim-label"],
+                )
+            )
+        self.scale = Gtk.Scale(adjustment=adjustment, draw_value=False, digits=0)
+        self.scale.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        self.scale.connect("value-changed", weak_callback(self._show_value))
+        wheel = Gtk.EventControllerScroll(
+            flags=Gtk.EventControllerScrollFlags.VERTICAL,
+            propagation_phase=Gtk.PropagationPhase.CAPTURE,
+        )
+        wheel.connect("scroll", weak_callback(self._scroll_sidebar))
+        self.scale.add_controller(wheel)
+        self.box.append(self.scale)
+        self.set_child(self.box)
+        self._show_value(self.scale)
+
+    def _show_value(self, scale):
+        text = self.describe(scale.get_value())
+        self.value_label.set_text(text)
+        scale.update_property([Gtk.AccessibleProperty.VALUE_TEXT], [text])
+
+    def _scroll_sidebar(self, controller, _dx, dy):
+        scrolled = self.get_ancestor(Gtk.ScrolledWindow)
+        if scrolled is None:
+            return False
+        adjustment = scrolled.get_vadjustment()
+        # GTK's own wheel step for a scrolled window; touchpads report pixels.
+        step = (
+            1
+            if controller.get_unit() == Gdk.ScrollUnit.SURFACE
+            else adjustment.get_page_size() ** (2 / 3)
+        )
+        adjustment.set_value(adjustment.get_value() + dy * step)
+        return True
+
+
 class SettingsManagerMixin:
     """Mixin providing all conversion-settings logic for MainWindow."""
-
-    # --- Conversion options UI setup ---
 
     def setup_conversion_options(self, parent_box):
         """One compact list: common choices first, rare ones in closed rows."""
@@ -240,37 +232,7 @@ class SettingsManagerMixin:
         )
         parent_box.append(options)
 
-        # Rows built later fire their handlers first; match purposes after.
-        self._applying_purpose = True
-        self.purpose_row = ChoiceRow(_("What is it for?"), purpose_labels())
-        self.purpose_row.connect(
-            "notify::selected", weak_callback(self._on_purpose_changed)
-        )
-        options.add(self.purpose_row)
-
-        def numeric_row(parent, title, value, lower, upper, step, callback, digits=2):
-            row = Adw.ActionRow(title=title)
-            row.set_title_lines(2)
-            adjustment = Gtk.Adjustment(
-                value=value,
-                lower=lower,
-                upper=upper,
-                step_increment=step,
-                page_increment=step * 5,
-            )
-            control = Gtk.SpinButton(
-                adjustment=adjustment,
-                digits=digits,
-                numeric=True,
-                valign=Gtk.Align.CENTER,
-                width_chars=5,
-            )
-            control.update_property([Gtk.AccessibleProperty.LABEL], [title])
-            control.connect("value-changed", weak_callback(callback))
-            row.add_suffix(control)
-            row.set_activatable_widget(control)
-            (parent.add_row if isinstance(parent, Adw.ExpanderRow) else parent.add)(row)
-            return row, control
+        # Restoring settings runs handlers before the waveform exists.
 
         # Most requests name the format, so the common ones come first and the
         # packet copy, which ignores every other choice, comes last.
@@ -334,31 +296,14 @@ class SettingsManagerMixin:
         self.noise_scale.connect(
             "value-changed", weak_callback(self._on_noise_strength_changed)
         )
-        self.noise_engine_buttons = []
-        # The quality in words, the model under it: two short lines keep the
-        # slider narrow.
-        for quality, model in (
-            (_("Light"), "DeepFilterNet3"),
-            (_("Higher quality"), "DPDFNet-2"),
-        ):
-            lines = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-            lines.append(Gtk.Label(label=quality, xalign=0))
-            lines.append(
-                Gtk.Label(label=model, xalign=0, css_classes=["caption", "dim-label"])
-            )
-            button = Gtk.CheckButton(
-                child=lines,
-                active=not self.noise_engine_buttons,
-                group=self.noise_engine_buttons[0]
-                if self.noise_engine_buttons
-                else None,
-            )
-            button.update_property(
-                [Gtk.AccessibleProperty.LABEL], [f"{quality}, {model}"]
-            )
-            button.connect("toggled", weak_callback(self._on_noise_model_changed))
-            self.noise_engine_buttons.append(button)
-        self._update_noise_availability()
+        self.noise_model_row = ChoiceRow(
+            _("Cleaning model"),
+            [_("Light · DeepFilterNet3"), _("Higher quality · DPDFNet-2")],
+            [_("Light"), _("Higher quality")],
+        )
+        self.noise_model_row.connect(
+            "notify::selected", weak_callback(self._on_noise_model_changed)
+        )
 
         equalizer_row = self.equalizer_row = Adw.ActionRow(title=_("Equalizer"))
         configure = Gtk.Button(label=_("Configure…"), valign=Gtk.Align.CENTER)
@@ -418,11 +363,57 @@ class SettingsManagerMixin:
         )
         options.add(self.destination_row)
 
-        # Most conversions change nothing below; each closed row names what is on.
-        effects = self.effects_expander = Adw.ExpanderRow(title=_("Adjust sound"))
-        options.add(effects)
-        for row in (self.volume_spin, self.speed_spin, equalizer_row):
-            effects.add_row(row)
+        # Each recording needs its own amount of each correction, so all of
+        # them stay in sight, set by how much; the lowest value is off.
+        corrections = self.corrections_group = Adw.PreferencesGroup(
+            title=_("Fix the sound"),
+            margin_start=12,
+            margin_end=12,
+            margin_top=18,
+            css_classes=["compact-options"],
+        )
+        parent_box.append(corrections)
+
+        def percent(value):
+            return _("Off") if value == 0 else f"{value:.0f}%"
+
+        self.voice_row = LevelRow(
+            _("Clean voice"), self.noise_scale.get_adjustment(), percent
+        )
+        self.voice_row.box.append(self.noise_status)
+        corrections.add(self.voice_row)
+        corrections.add(self.noise_model_row)
+        self._update_noise_availability()
+        for prefix, title, subtitle in (
+            ("gate", _("Silence pauses"), _("Mutes the background between words")),
+            (
+                "compressor",
+                _("Balance loud and quiet parts"),
+                _("Brings quiet passages closer to the loud ones"),
+            ),
+        ):
+            row = LevelRow(
+                title,
+                Gtk.Adjustment(upper=100, step_increment=1, page_increment=10),
+                percent,
+                subtitle,
+            )
+            row.scale.connect(
+                "value-changed", weak_callback(self._on_level_changed), prefix
+            )
+            corrections.add(row)
+            setattr(self, prefix + "_row", row)
+        # The filter starts at 20 Hz; the first steps above off all mean that.
+        self.hpf_row = LevelRow(
+            _("Remove low rumble"),
+            Gtk.Adjustment(upper=300, step_increment=5, page_increment=20),
+            lambda value: _("Off") if value == 0 else f"{max(value, 20):.0f} Hz",
+            _("Cuts hum and handling noise below the voice"),
+        )
+        self.hpf_row.scale.connect(
+            "value-changed", weak_callback(self._on_hpf_level_changed)
+        )
+        corrections.add(self.hpf_row)
         self.normalize_row = Adw.SwitchRow(
             title=_("Even volume"),
             subtitle=_("Brings every file to the same loudness (−16 LUFS)"),
@@ -430,55 +421,7 @@ class SettingsManagerMixin:
         self.normalize_row.connect(
             "notify::active", weak_callback(self._on_normalize_switch_changed)
         )
-        effects.add_row(self.normalize_row)
-        for prefix, title, subtitle, initial, handler, intensity_handler in (
-            (
-                "gate",
-                _("Silence pauses"),
-                _("Mutes the background between words"),
-                0.5,
-                self._on_gate_switch_changed,
-                self._on_gate_intensity_changed,
-            ),
-            (
-                "compressor",
-                _("Balance loud and quiet parts"),
-                _("Brings quiet passages closer to the loud ones"),
-                1,
-                self._on_compressor_switch_changed,
-                self._on_compressor_intensity_changed,
-            ),
-        ):
-            switch_row = Adw.SwitchRow(title=title, subtitle=subtitle)
-            switch_row.connect("notify::active", weak_callback(handler))
-            effects.add_row(switch_row)
-            row, spin = numeric_row(
-                effects, _("Intensity"), initial, 0, 1, 0.05, intensity_handler
-            )
-            row.set_visible(False)
-            setattr(self, prefix + "_row", switch_row)
-            setattr(self, prefix + "_intensity_row", row)
-            setattr(self, prefix + "_intensity_scale", spin)
-
-        self.hpf_row = Adw.SwitchRow(
-            title=_("Remove low rumble"),
-            subtitle=_("Cuts hum and handling noise below the voice"),
-        )
-        self.hpf_row.connect(
-            "notify::active", weak_callback(self._on_hpf_switch_changed)
-        )
-        effects.add_row(self.hpf_row)
-        self.hpf_freq_row, self.hpf_freq_scale = numeric_row(
-            effects,
-            _("Frequency (Hz)"),
-            80,
-            20,
-            500,
-            5,
-            self._on_hpf_freq_changed,
-            0,
-        )
-        self.hpf_freq_row.set_visible(False)
+        corrections.add(self.normalize_row)
         self.clipping_row = Adw.SwitchRow(
             title=_("Prevent distortion"),
             subtitle=_("Keeps loud peaks from clipping"),
@@ -486,7 +429,26 @@ class SettingsManagerMixin:
         self.clipping_row.connect(
             "notify::active", weak_callback(self._on_clipping_changed)
         )
-        effects.add_row(self.clipping_row)
+        corrections.add(self.clipping_row)
+
+        effects = self.effects_group = Adw.PreferencesGroup(
+            title=_("Adjust sound"),
+            margin_start=12,
+            margin_end=12,
+            margin_top=18,
+            css_classes=["compact-options"],
+        )
+        parent_box.append(effects)
+        for row in (self.volume_spin, self.speed_spin, equalizer_row):
+            effects.add(row)
+
+        more = Adw.PreferencesGroup(
+            margin_start=12,
+            margin_end=12,
+            margin_top=18,
+            css_classes=["compact-options"],
+        )
+        parent_box.append(more)
 
         self.advanced_row = Adw.ExpanderRow(
             title=_("Advanced encoding"),
@@ -525,13 +487,12 @@ class SettingsManagerMixin:
             ),
         )
         self.advanced_row.add_row(self.precision_row)
-        options.add(self.advanced_row)
+        more.add(self.advanced_row)
 
-        # A group places plain widgets after its rows: notices and the cut
-        # tools sit under the list.
+        # A group places plain widgets after its rows.
         self.copy_notice = Gtk.Label(
             label=_(
-                "Fast Copy keeps encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+                "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
             ),
             wrap=True,
             xalign=0,
@@ -542,100 +503,14 @@ class SettingsManagerMixin:
         options.add(self.copy_notice)
         self.gain_notice = Gtk.Label(
             label=_(
-                "Boosting volume or equalizer bands can distort audio. Reduce gain or enable clipping protection."
+                "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Prevent distortion."
             ),
             wrap=True,
             xalign=0,
             margin_top=12,
             css_classes=["dim-label", "caption"],
         )
-        options.add(self.gain_notice)
-        self._restore_conversion_settings()
-        self.clipping_row.set_active(self._config_bool("prevent_clipping"))
-        self._update_effects_summary()
-        self._on_format_changed(self.format_row, None)
-        self._update_gain_notice()
-        self._applying_purpose = False
-        self._sync_purpose()
-
-    # --- Purposes ---
-
-    def _purpose_state(self):
-        """The current value of everything a purpose sets."""
-        state = {
-            "format": self._format_list[self.format_row.get_selected()],
-            "channels": self.channels_row.get_selected(),
-            "sample_rate": self._sample_rate_list[self.sample_rate_row.get_selected()],
-            "volume": round(self.volume_spin.get_value()),
-            "speed": round(self.speed_spin.get_value(), 2),
-            "flat_eq": not hasattr(self, "eq_panel")
-            or all(s.get_value() == 0 for s in self.eq_panel.band_scales.values()),
-            "normalize": self.normalize_row.get_active(),
-            "gate": self.gate_row.get_active(),
-            "compressor": self.compressor_row.get_active(),
-            "hpf": self.hpf_row.get_active(),
-            "clipping": self.clipping_row.get_active(),
-            "voice": round(self.noise_scale.get_value()),
-        }
-        if self.bitrate_row.get_visible():
-            state["bitrate"] = self._bitrate_list[self.bitrate_row.get_selected()]
-        return state
-
-    def _sync_purpose(self):
-        """Show the purpose the settings match, or Custom."""
-        if self._applying_purpose:
-            return
-        state = self._purpose_state()
-        index = next(
-            (
-                number
-                for number, (_key, settings) in enumerate(PURPOSES)
-                if all(state.get(key) == value for key, value in settings.items())
-            ),
-            len(PURPOSES),
-        )
-        self._applying_purpose = True
-        self.purpose_row.set_selected(index)
-        self._applying_purpose = False
-
-    def _on_purpose_changed(self, row, _pspec):
-        if self._applying_purpose or row.get_selected() >= len(PURPOSES):
-            return
-        self._apply_purpose(PURPOSES[row.get_selected()][1])
-
-    def _apply_purpose(self, settings):
-        """Set each control; its own handler saves it and updates the preview."""
-        self._applying_purpose = True
-        try:
-            self.format_row.set_selected(self._format_list.index(settings["format"]))
-            if "bitrate" in settings:
-                self.bitrate_row.set_selected(
-                    self._bitrate_list.index(settings["bitrate"])
-                )
-            if "channels" not in settings:
-                return
-            self.channels_row.set_selected(settings["channels"])
-            self.sample_rate_row.set_selected(
-                self._sample_rate_list.index(settings["sample_rate"])
-            )
-            self._set_processing_volume(settings["volume"])
-            self._set_processing_speed(settings["speed"])
-            if settings["flat_eq"] and hasattr(self, "eq_panel"):
-                self.eq_panel.preset_dropdown.set_selected(
-                    self.eq_panel.PRESET_KEYS.index("flat")
-                )
-            for row, key in (
-                (self.normalize_row, "normalize"),
-                (self.gate_row, "gate"),
-                (self.compressor_row, "compressor"),
-                (self.hpf_row, "hpf"),
-                (self.clipping_row, "clipping"),
-            ):
-                row.set_active(settings[key])
-            self.noise_scale.set_value(settings["voice"])
-        finally:
-            self._applying_purpose = False
-            self._sync_purpose()
+        effects.add(self.gain_notice)
 
     def _choose_output_folder(self, _button):
         dialog = Gtk.FileDialog(title=_("Choose output folder"))
@@ -682,9 +557,6 @@ class SettingsManagerMixin:
     def _on_clipping_changed(self, row, _pspec):
         self.app.config.set("prevent_clipping", str(row.get_active()).lower())
         self.player.set_prevent_clipping(row.get_active())
-        self._update_effects_summary()
-
-    # --- Settings change handlers ---
 
     def _on_format_changed(self, row, _pspec):
         if self._updating_profile:
@@ -726,7 +598,6 @@ class SettingsManagerMixin:
             self.app.config.set(
                 "conversion_bitrate", self._bitrate_list[row.get_selected()]
             )
-        self._sync_purpose()
 
     def _on_channels_changed(self, row, pspec):
         """Handle channels selection change and save setting."""
@@ -741,31 +612,29 @@ class SettingsManagerMixin:
             if row.get_selected() > 0
         ]
         self.advanced_row.set_subtitle(" · ".join(changed) or self._advanced_subtitle)
-        self._sync_purpose()
 
     def _on_volume_spin_changed(self, spin):
         self._set_processing_volume(spin.get_value())
 
     def _set_processing_volume(self, volume):
-        if getattr(self, "_syncing_volume", False):
+        if self._syncing_volume:
             return
         self._syncing_volume = True
         try:
             volume = max(0.0, min(1000.0, volume))
             self.volume_spin.set_value(volume)
-            if hasattr(self, "volume_scale"):
-                self.volume_scale.set_value(self._volume_to_slider(volume))
-                self.volume_value_label.set_text(f"{volume:.0f}%")
-                icon = (
-                    "muted"
-                    if volume == 0
-                    else "low"
-                    if volume < 33
-                    else "medium"
-                    if volume <= 100
-                    else "high"
-                )
-                self.volume_btn.set_icon_name(f"audio-volume-{icon}-symbolic")
+            self.volume_scale.set_value(self._volume_to_slider(volume))
+            self.volume_value_label.set_text(f"{volume:.0f}%")
+            icon = (
+                "muted"
+                if volume == 0
+                else "low"
+                if volume < 33
+                else "medium"
+                if volume <= 100
+                else "high"
+            )
+            self.volume_btn.set_icon_name(f"audio-volume-{icon}-symbolic")
             self.player.set_volume(volume / 100)
             self.app.config.set("conversion_volume", str(volume))
             self._update_gain_notice()
@@ -773,41 +642,40 @@ class SettingsManagerMixin:
             self._syncing_volume = False
 
     def _update_gain_notice(self):
-        # The equalizer panel is created after the settings are restored.
-        boosted_eq = hasattr(self, "eq_panel") and any(
+        boosted_eq = any(
             scale.get_value() > 0 for scale in self.eq_panel.band_scales.values()
         )
         self.gain_notice.set_visible(
             self.volume_spin.get_value() > 100.001 or boosted_eq
         )
-        self._update_effects_summary()
+
+    def _show_equalizer_state(self):
+        """Name the preset on the equalizer row; boosted bands may distort."""
+        self.equalizer_row.set_subtitle(
+            self.eq_panel.preset_dropdown.get_selected_item().get_string()
+        )
+        self._update_gain_notice()
 
     def _on_speed_spin_changed(self, spin):
         self._set_processing_speed(spin.get_value())
 
     def _set_processing_speed(self, speed):
-        if getattr(self, "_syncing_speed", False):
+        if self._syncing_speed:
             return
         self._syncing_speed = True
         try:
             speed = max(0.1, min(5.0, speed))
             self.speed_spin.set_value(speed)
-            if hasattr(self, "speed_scale"):
-                self.speed_scale.set_value(self._speed_to_slider(speed))
-                self.speed_value_label.set_text(f"{speed:.2f}×")
+            self.speed_scale.set_value(self._speed_to_slider(speed))
+            self.speed_value_label.set_text(f"{speed:.2f}×")
             self.player.set_playback_speed(speed)
             self.player.set_pitch_correction(True)
             self.app.config.set("conversion_speed", str(speed))
-            self._update_effects_summary()
         finally:
             self._syncing_speed = False
 
     def _noise_engine(self):
-        return next(
-            engine
-            for engine, button in zip(self.noise_engines, self.noise_engine_buttons)
-            if button.get_active()
-        )
+        return self.noise_engines[self.noise_model_row.get_selected()]
 
     def _noise_active(self):
         return self.noise_available and self.noise_scale.get_value() > 0
@@ -816,7 +684,8 @@ class SettingsManagerMixin:
         engine = self._noise_engine()
         self.noise_available = engine in self.player.noise_plugins
         is_copy = self._format_list[self.format_row.get_selected()] == "copy"
-        self.noise_scale.set_sensitive(self.noise_available and not is_copy)
+        for scale in (self.noise_scale, self.voice_row.scale):
+            scale.set_sensitive(self.noise_available and not is_copy)
         package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
         self.noise_status.set_label(
             _("Unavailable: install {package}").format(package=package)
@@ -834,7 +703,10 @@ class SettingsManagerMixin:
             if strength
             else _("Clean voice · off")
         )
-        self._sync_purpose()
+        # The model matters once the voice is cleaned, or to leave a missing one.
+        self.noise_model_row.set_visible(
+            self.noise_scale.get_value() > 0 or not self.noise_available
+        )
 
     def _on_noise_strength_changed(self, scale):
         percent = scale.get_value()
@@ -852,39 +724,7 @@ class SettingsManagerMixin:
         ):
             scale.set_value(0)
 
-    def _update_effects_summary(self):
-        """Name what differs from the original so a closed list shows it."""
-        if not hasattr(self, "effects_expander"):
-            return
-        active = []
-        volume, speed = self.volume_spin.get_value(), self.speed_spin.get_value()
-        if abs(volume - 100) > 0.001:
-            active.append(_("Volume {percent}%").format(percent=f"{volume:.0f}"))
-        if abs(speed - 1) > 0.001:
-            active.append(_("Speed {factor}×").format(factor=f"{speed:.2f}"))
-        if hasattr(self, "eq_panel") and any(
-            scale.get_value() != 0 for scale in self.eq_panel.band_scales.values()
-        ):
-            active.append(self.equalizer_row.get_title())
-        active += [
-            row.get_title()
-            for row in (
-                self.normalize_row,
-                self.gate_row,
-                self.compressor_row,
-                self.hpf_row,
-                self.clipping_row,
-            )
-            if row.get_active()
-        ]
-        self.effects_expander.set_subtitle(
-            ", ".join(active) or _("Volume, speed, equalizer and effects")
-        )
-        self._sync_purpose()
-
-    def _on_noise_model_changed(self, button):
-        if not button.get_active():
-            return
+    def _on_noise_model_changed(self, _row, _pspec):
         engine = self._noise_engine()
         if engine not in self.player.noise_plugins:
             self.player.set_noise_reduction(False)
@@ -894,71 +734,46 @@ class SettingsManagerMixin:
         if self._noise_active():
             self.player.set_noise_reduction(True)
 
-    def _on_gate_switch_changed(self, row, _pspec):
-        """Handle noise gate toggle."""
-        state = row.get_active()
-        self.app.config.set("gate_enabled", str(state).lower())
-        self.gate_intensity_row.set_visible(state)
-        self.player.set_gate_enabled(state)
-        self._update_effects_summary()
+    def _on_level_changed(self, scale, prefix):
+        """Gate or compressor: off at zero, otherwise that percent of it."""
+        level = scale.get_value()
+        if level:
+            self.app.config.set(prefix + "_intensity", str(level / 100))
+            getattr(self.player, f"set_{prefix}_intensity")(level / 100)
+        self.app.config.set(prefix + "_enabled", str(level > 0).lower())
+        getattr(self.player, f"set_{prefix}_enabled")(level > 0)
 
-    def _on_gate_intensity_changed(self, scale):
-        """Handle gate intensity slider change."""
-        intensity = scale.get_value()
-        self.app.config.set("gate_intensity", str(intensity))
-
-        self.player.set_gate_intensity(intensity)
-
-    def _on_compressor_switch_changed(self, row, _pspec):
-        """Handle compressor toggle."""
-        state = row.get_active()
-        self.app.config.set("compressor_enabled", str(state).lower())
-        self.compressor_intensity_row.set_visible(state)
-        self.player.set_compressor_enabled(state)
-        self._update_effects_summary()
-
-    def _on_compressor_intensity_changed(self, scale):
-        """Handle compressor intensity change."""
-        intensity = scale.get_value()
-        self.app.config.set("compressor_intensity", str(intensity))
-
-        self.player.set_compressor_intensity(intensity)
-
-    def _on_hpf_switch_changed(self, row, pspec):
-        """Handle high-pass filter toggle."""
-        state = row.get_active()
-        self.app.config.set("hpf_enabled", str(state).lower())
-
-        self.hpf_freq_row.set_visible(state)
-
-        self.player.set_hpf_enabled(state)
-        self._update_effects_summary()
-
-    def _on_hpf_freq_changed(self, scale):
-        """Handle HPF frequency change."""
-        freq = int(scale.get_value())
-        self.app.config.set("hpf_frequency", str(freq))
-
-        self.player.set_hpf_frequency(freq)
+    def _on_hpf_level_changed(self, scale):
+        frequency = scale.get_value()
+        if frequency:
+            frequency = max(int(frequency), 20)
+            self.app.config.set("hpf_frequency", str(frequency))
+            self.player.set_hpf_frequency(frequency)
+        self.app.config.set("hpf_enabled", str(frequency > 0).lower())
+        self.player.set_hpf_enabled(frequency > 0)
 
     def _on_normalize_switch_changed(self, row, _pspec):
         state = row.get_active()
         self.app.config.set("normalize_enabled", str(state).lower())
         self.player.set_normalize(state)
-        self._update_effects_summary()
 
     def _on_cut_order_changed(self, row, _pspec):
         # Saved as the former cut mode: 2 was "in the order marked".
         self.app.config.set("cut_audio_mode", "2" if row.get_selected() else "0")
 
     def _on_cut_mode_changed(self, row, _pspec):
-        remove = row.get_selected() == 1
+        remove = self.removes_marked()
         self.app.config.set("cut_remove", remove)
-        if self._applying_purpose:
-            return  # Restoring settings: the waveform does not exist yet.
         self.visualizer.remove_marked = remove
         self.visualizer.queue_draw()
         self._on_markers_updated(self.visualizer.get_marker_pairs())
+
+    def removes_marked(self):
+        """True when the marked parts are cut out rather than kept."""
+        return self.cut_mode_row.get_selected() == 1
+
+    def set_removes_marked(self, remove):
+        self.cut_mode_row.set_selected(int(remove))
 
     def _update_cut_rows(self):
         """Offer keeping or removing, ordering, joining and preview while any
@@ -968,7 +783,7 @@ class SettingsManagerMixin:
             for path, segments in self.file_markers.items()
             if path != self.active_audio_id
         )
-        keeping = self.cut_mode_row.get_selected() == 0
+        keeping = not self.removes_marked()
         self.cut_mode_row.set_visible(has_segments)
         self.play_selection_switch.set_visible(has_segments)
         self.cut_order_row.set_visible(has_segments and keeping)
@@ -988,8 +803,6 @@ class SettingsManagerMixin:
         """Handle cut output mode change (separate files vs merge)."""
         self.app.config.set("cut_output_mode", str(row.get_selected()))
 
-    # --- Equalizer toggle ---
-
     def _on_eq_toggle_clicked(self, button):
         """Toggle the inline equalizer panel visibility (from bottom bar)."""
         self.eq_revealer.set_reveal_child(button.get_active())
@@ -1002,8 +815,6 @@ class SettingsManagerMixin:
             self.eq_toggle_btn.set_active(is_revealed)
             self.eq_toggle_btn.handler_unblock(self._eq_toggle_btn_handler)
 
-    # --- Copy mode UI ---
-
     def _set_copy_mode_ui(self, is_copy_mode):
         """Bypass effects without discarding the user's saved processing choices."""
         self.copy_notice.set_visible(is_copy_mode)
@@ -1013,27 +824,17 @@ class SettingsManagerMixin:
         self.advanced_row.set_visible(not is_copy_mode)
         self.join_row.set_sensitive(not is_copy_mode)
         self.join_row.set_subtitle(
-            _("Fast Copy cannot join files")
+            _("The original format cannot join files")
             if is_copy_mode
             else _("In queue order, named after the first file")
         )
         # Copy keeps the encoded audio, so nothing that processes it applies.
-        for row in (
-            self.volume_spin,
-            self.speed_spin,
-            self.equalizer_row,
-            self.effects_expander,
-        ):
-            row.set_sensitive(not is_copy_mode)
+        for widget in (self.effects_group, self.corrections_group):
+            widget.set_sensitive(not is_copy_mode)
         self._update_noise_availability()
-        # Settings are restored before setup_ui builds the bottom bar (the
-        # seekbar last); setup_ui calls this again once the bar exists.
-        bar_ready = hasattr(self, "seekbar")
         self.player.set_effects_bypassed(
-            is_copy_mode or (bar_ready and self.original_preview.get_active())
+            is_copy_mode or self.original_preview.get_active()
         )
-        if not bar_ready:
-            return
         self._on_join_changed()
         for widget in (
             self.original_preview,
@@ -1047,8 +848,6 @@ class SettingsManagerMixin:
             for name in ("volume", "speed", "voice"):
                 self._bar_popovers[name].popdown()
             self.eq_revealer.set_reveal_child(False)
-
-    # --- Slider / value conversion utilities ---
 
     def _slider_to_volume(self, slider_value):
         """Convert slider position (0-100) to volume (0-1000) with quadratic curve."""
@@ -1069,8 +868,6 @@ class SettingsManagerMixin:
         if speed <= 0.10:
             return 0.0
         return math.log10(speed / 0.10) / math.log10(50.0) * 100.0
-
-    # --- Settings persistence ---
 
     def _config_float(self, key, default):
         """Get a float config value, returning default on missing/invalid."""
@@ -1123,20 +920,20 @@ class SettingsManagerMixin:
         self.sample_rate_row.set_selected(0)
         self.precision_row.set_active(False)
         self._set_output_folder("")
-        self.cut_mode_row.set_selected(0)
+        self.set_removes_marked(False)
         self.join_row.set_active(False)
         self.cut_order_row.set_selected(0)
         self.cut_output_row.set_selected(0)
         self._set_processing_volume(100)
         self._set_processing_speed(1.0)
-        self.noise_engine_buttons[0].set_active(True)
-        self.noise_scale.set_value(0)
-        self.gate_row.set_active(False)
-        self.gate_intensity_scale.set_value(0.5)
-        self.compressor_row.set_active(False)
-        self.compressor_intensity_scale.set_value(1.0)
-        self.hpf_row.set_active(False)
-        self.hpf_freq_scale.set_value(80)
+        self.noise_model_row.set_selected(0)
+        for scale in (
+            self.noise_scale,
+            self.gate_row.scale,
+            self.compressor_row.scale,
+            self.hpf_row.scale,
+        ):
+            scale.set_value(0)
         self.normalize_row.set_active(False)
         self.clipping_row.set_active(False)
         self.eq_panel.preset_dropdown.set_selected(
@@ -1146,11 +943,7 @@ class SettingsManagerMixin:
         self.original_preview.set_active(False)
 
     def _restore_conversion_settings(self):
-        """Restore saved conversion settings from config.
-
-        Runs inside setup_conversion_options, before the bottom bar exists;
-        setup_conversion_options then applies the format-dependent rows.
-        """
+        """Restore saved conversion settings once every control exists."""
         self.format_row.set_selected(
             self._config_list_index("conversion_format", self._format_list, 0)
         )
@@ -1162,33 +955,31 @@ class SettingsManagerMixin:
 
         # Legacy GTCRN settings stay on disk but never enable a different model.
         engine = self.app.config.get("noise_engine", "dfn3")
-        button = self.noise_engine_buttons[self.noise_engines.index(engine)]
-        button.set_active(True)
-        self._on_noise_model_changed(button)
+        self.noise_model_row.set_selected(self.noise_engines.index(engine))
+        self._on_noise_model_changed(self.noise_model_row, None)
         self.noise_scale.set_value(
             self._config_float("noise_strength", 100)
             if self._config_bool("noise_reduction_enabled")
             else 0
         )
 
-        # Restore noise gate settings (intensity slider)
-        self.gate_row.set_active(self._config_bool("gate_enabled"))
-        self.gate_intensity_scale.set_value(self._config_float("gate_intensity", 0.5))
-
-        # Restore compressor
-        self.compressor_row.set_active(self._config_bool("compressor_enabled"))
-        self.compressor_intensity_scale.set_value(
-            self._config_float("compressor_intensity", 1.0)
+        # Off is the lowest value; the strength in between is kept for later.
+        for prefix, default in (("gate", 0.5), ("compressor", 1.0)):
+            getattr(self, prefix + "_row").scale.set_value(
+                100 * self._config_float(prefix + "_intensity", default)
+                if self._config_bool(prefix + "_enabled")
+                else 0
+            )
+        self.hpf_row.scale.set_value(
+            self._config_float("hpf_frequency", 80)
+            if self._config_bool("hpf_enabled")
+            else 0
         )
-
-        # Restore HPF
-        self.hpf_row.set_active(self._config_bool("hpf_enabled"))
-        self.hpf_freq_scale.set_value(self._config_float("hpf_frequency", 80))
 
         # Restore normalization
         self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
-        self.cut_mode_row.set_selected(int(self._config_bool("cut_remove")))
+        self.set_removes_marked(self._config_bool("cut_remove"))
         # The former cut mode 2 was "in the order marked".
         self.cut_order_row.set_selected(
             int(self._config_int("cut_audio_mode", 1, lo=0, hi=2) == 2)

@@ -6,9 +6,6 @@ import weakref
 _ = gettext.gettext
 
 TOOLTIPS = {
-    "purpose": _(
-        "Sets the format, quality and sound for a common use. Changing any of them shows Custom."
-    ),
     "format": _(
         "Choose the output format. Keeping the original format applies no effects."
     ),
@@ -19,9 +16,6 @@ TOOLTIPS = {
         "Changes preview and export volume. Values above 100% can distort the audio."
     ),
     "speed": _("Changes preview and export speed while preserving pitch."),
-    "noise_reduction": _(
-        "Reduce noise in speech with DeepFilterNet3 or DPDFNet. Not intended for music."
-    ),
     "noise_gate": _("Reduce quiet background sound between spoken phrases."),
     "normalize": _(
         "Brings every file to the same loudness. This changes the original volume."

@@ -1,15 +1,4 @@
-# app/ui/playback_controller.py
-
-"""
-Playback Controller Mixin for MainWindow.
-
-Extracts all playback-related methods (play, pause, seek, segment transitions,
-auto-advance, file navigation) from MainWindow into a reusable mixin.
-
-Usage:
-    class MainWindow(PlaybackControllerMixin, Adw.ApplicationWindow):
-        ...
-"""
+"""The window's playback: the shown file, auto-advance and marked-part playback."""
 
 import logging
 
@@ -21,75 +10,49 @@ logger = logging.getLogger(__name__)
 class PlaybackControllerMixin:
     """Mixin providing all playback control logic for MainWindow."""
 
-    # --- Playback lifecycle ---
-
     def on_playback_finished(self, player):
         """Handle playback completion and auto-play next file."""
-        logger.info("Playback finished, checking for next track")
 
         if not self.auto_advance_switch.get_active():
-            logger.info("Auto-advance disabled, stopping playback")
             self._playback_sources.idle(self.file_queue.update_playing_state, False)
             return
 
         current_index = self.file_queue.currently_playing_index
         if current_index is None:
-            logger.debug("No current track index found")
             return
 
         files = self.file_queue.get_files()
         if not files:
-            logger.debug("Queue is empty")
             return
 
         next_index = current_index + 1
         if next_index < len(files):
-            logger.info(f"Auto-playing next file (index {next_index})")
             next_file = files[next_index]
             self._playback_sources.later(
                 300, self._play_next_file, next_file, next_index
             )
         else:
-            logger.info("Reached end of queue, stopping playback")
             self._playback_sources.idle(self.file_queue.update_playing_state, False)
 
     def _play_next_file(self, file_path, index):
         """Helper to play the next file with proper UI updates."""
         if self._closed or file_path not in self.file_queue.files:
-            return False
+            return
         index = self.file_queue.files.index(file_path)
         if self.player.current_file == file_path and self.player.is_playing():
-            return False
-
-        same_file_as_active = file_path == self.active_audio_id
-
-        # Reset visualizer/seekbar BEFORE load/play to avoid stale state
-        if not same_file_as_active:
-            logger.debug(f"Generating waveform for new file in queue: {file_path}")
-            self.visualizer.set_waveform(None, 0)
-            self.seekbar.set_duration(0)
-            self.seekbar.set_position(0)
-            self.active_audio_id = file_path
-
+            return
+        if file_path != self.active_audio_id:
+            # The marks on screen belong to the file that just ended.
+            self._save_current_file_state()
+            self._prepare_visualizer_for_new_file(file_path, index)
         if self.player.load(file_path, self.file_queue.track_metadata):
             self.file_queue.set_currently_playing(index)
             self.player.play()
-
             # Sync button state immediately to avoid race with stop() idle callbacks
             self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
-            if not same_file_as_active:
-                self._request_waveform(file_path)
-            else:
-                logger.debug(f"Same file, skipping waveform generation: {file_path}")
-
-        return False
-
-    # --- File activation and visualization ---
-
     def on_activate_file(self, file_path, index):
         """Handle file row activation (clicked) - show waveform, auto-play if already playing."""
-        logger.info(f"File row activated: {file_path} at index {index}")
         was_playing = self.player.is_playing()
         self._load_file_for_visualization(file_path, index, play_audio=was_playing)
 
@@ -103,12 +66,8 @@ class PlaybackControllerMixin:
         if self.active_audio_id:
             current_markers = self.visualizer.get_marker_pairs()
             if current_markers:
-                logger.debug(
-                    f"Saving {len(current_markers)} markers for {self.active_audio_id}"
-                )
                 self.file_markers[self.active_audio_id] = current_markers
             elif self.active_audio_id in self.file_markers:
-                logger.debug(f"Removing cached markers for {self.active_audio_id}")
                 del self.file_markers[self.active_audio_id]
 
     def _prepare_visualizer_for_new_file(self, file_path, index):
@@ -117,13 +76,11 @@ class PlaybackControllerMixin:
         self._playing_selection = False
         self._is_transitioning_segment = False
         self.waveform_generator.cancel()
-        logger.debug("Preparing a new audio file")
         self.visualizer.set_waveform(None, 0)
         self.seekbar.set_duration(0)
         self.seekbar.set_position(0)
 
         self.active_audio_id = file_path
-        logger.debug(f"Setting active_audio_id to: {file_path}")
 
         self.file_queue.set_active_file(index)
 
@@ -132,9 +89,6 @@ class PlaybackControllerMixin:
 
     def _load_file_for_visualization(self, file_path, index, play_audio=True):
         """Load a file for visualization and optional playback."""
-        logger.debug(
-            f"_load_file_for_visualization: file={file_path}, play={play_audio}, current_playing={self.player.is_playing()}, current_file={self.player.current_file}"
-        )
         if self._closed or file_path not in self.file_queue.files:
             return
         index = self.file_queue.files.index(file_path)
@@ -157,7 +111,7 @@ class PlaybackControllerMixin:
         if self.player.is_playing() and self.player.current_file != file_path:
             self.player.stop()
 
-        # Save state of the previously active file
+        # The marks on screen belong to the file being left.
         self._save_current_file_state()
 
         # New file selected for visualization/playback
@@ -174,14 +128,9 @@ class PlaybackControllerMixin:
             self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
             self.file_queue.update_playing_state(True)
 
-    # --- Position tracking and segment transitions ---
-
     def on_player_position_updated(self, player, position, duration):
         """Handle position updates from player."""
         if duration > 0 and self.visualizer.duration != duration:
-            logger.debug(
-                f"Updating visualizer.duration: {self.visualizer.duration} -> {duration}"
-            )
             self.visualizer.duration = duration
         self.visualizer.set_position(position)
         self.seekbar.set_position(position)
@@ -209,39 +158,26 @@ class PlaybackControllerMixin:
             TOLERANCE = 0.02  # 20ms
 
             if position > stop - TOLERANCE:
-                logger.info(
-                    f"Segment {self._current_segment_index + 1} end detected at {position:.3f}s (target: {stop:.3f}s). Transitioning."
-                )
                 self._is_transitioning_segment = True
                 self._current_segment_index += 1
                 self._playback_sources.idle(self._do_segment_transition)
                 return
 
             if position < start - TOLERANCE:
-                logger.info(
-                    f"Position {position:.3f}s is before segment start {start:.3f}s. Seeking to start."
-                )
                 self.player.seek(start)
                 return
 
     def _do_segment_transition(self):
         """Seek to the next selected segment, or pause after the last one."""
         if not self._playing_selection or not self._selection_segments:
-            logger.debug("Segment transition cancelled - not in selection mode")
             self._is_transitioning_segment = False
             return False
 
         if self._current_segment_index < len(self._selection_segments):
-            next_start, next_stop = self._selection_segments[
-                self._current_segment_index
-            ]
-            logger.info(
-                f"Transitioning to segment {self._current_segment_index + 1}/{len(self._selection_segments)}: {next_start:.3f}-{next_stop:.3f}"
-            )
+            next_start = self._selection_segments[self._current_segment_index][0]
 
             try:
                 if abs(self.player._position - next_start) < 0.01:
-                    logger.debug("Already at target position, skipping seek")
                     if not self.player.is_playing():
                         self.player.play()
                     self._is_transitioning_segment = False
@@ -251,23 +187,18 @@ class PlaybackControllerMixin:
 
                 def ensure_playing():
                     if self._playing_selection and not self.player.is_playing():
-                        logger.info("Resuming playback after segment transition")
                         self.player.play()
                     return False
 
                 self._playback_sources.later(50, ensure_playing)
                 self._is_transitioning_segment = False
-                logger.debug("Transition lock released after successful seek.")
 
             except (ValueError, TypeError, RuntimeError) as e:
-                logger.error(f"Exception during segment transition: {e}")
+                logger.error("Exception during segment transition: %s", e)
                 self._playing_selection = False
                 self._is_transitioning_segment = False
                 return False
         else:
-            logger.info(
-                f"All {len(self._selection_segments)} segments completed - pausing playback"
-            )
             self._playing_selection = False
             self._is_transitioning_segment = False
 
@@ -282,13 +213,8 @@ class PlaybackControllerMixin:
             self.visualizer.duration = duration
             self.seekbar.set_duration(duration)
 
-    # --- Seek handling ---
-
     def on_visualizer_seek(self, position, should_play):
         """Handle seek request from visualizer."""
-        logger.info(
-            f"MAIN_WINDOW: Received seek position={position:.6f}s, should_play={should_play}"
-        )
         # If marker is being dragged/resized, allow free seeking
         if self._marker_dragging:
             self.player.seek(position)
@@ -303,19 +229,16 @@ class PlaybackControllerMixin:
                 if start <= position <= stop:
                     in_segment = True
                     self._current_segment_index = i
-                    logger.debug(f"Seek action sets current segment to index {i}")
                     break
 
             if not in_segment:
-                after_any_selection = False
-                for start, stop in self._selection_segments:
-                    if position > stop:
-                        after_any_selection = True
-                        break
+                after_any_selection = any(
+                    position > stop for _start, stop in self._selection_segments
+                )
 
                 if after_any_selection:
                     next_segment = None
-                    for i, (start, stop) in enumerate(self._selection_segments):
+                    for i, (start, _stop) in enumerate(self._selection_segments):
                         if start > position:
                             next_segment = i
                             break
@@ -323,15 +246,9 @@ class PlaybackControllerMixin:
                     if next_segment is not None:
                         position = self._selection_segments[next_segment][0]
                         self._current_segment_index = next_segment
-                        logger.info(
-                            f"Seek after selection, jumping to next segment {next_segment} at {position:.3f}"
-                        )
                     else:
                         position = self._selection_segments[0][0]
                         self._current_segment_index = 0
-                        logger.info(
-                            f"No segment after, jumping to first segment at {position:.3f}"
-                        )
                 else:
                     nearest_segment = None
                     min_distance = float("inf")
@@ -351,9 +268,6 @@ class PlaybackControllerMixin:
                     if nearest_segment is not None:
                         position = self._selection_segments[nearest_segment][0]
                         self._current_segment_index = nearest_segment
-                        logger.info(
-                            f"Seek before selections, jumping to nearest segment {nearest_segment} at {position:.3f}"
-                        )
 
             self._is_transitioning_segment = False
 
@@ -364,11 +278,10 @@ class PlaybackControllerMixin:
         if should_play:
             self._on_pause_play_clicked(None)
 
-    # --- Marker updates ---
-
     def _on_markers_updated(self, markers):
         """Handle marker updates from visualizer."""
         self._update_cut_rows()
+        self.pause_popover.markers_changed(markers)
         if self._play_selection_mode:
             self._load_selection_segments()
 
@@ -383,101 +296,57 @@ class PlaybackControllerMixin:
 
                 if found_index >= 0:
                     self._current_segment_index = found_index
-                    logger.debug(
-                        f"Updated current segment to {found_index} after marker change"
-                    )
                 else:
-                    for i, (start, stop) in enumerate(self._selection_segments):
+                    for i, (start, _stop) in enumerate(self._selection_segments):
                         if start > current_position:
                             self._current_segment_index = i
-                            logger.debug(
-                                f"Jumped to next segment {i} after marker change"
-                            )
                             break
                     else:
-                        logger.info("No valid segment after marker change, stopping")
                         self._playing_selection = False
                         self.player.stop()
 
     def _on_marker_drag_state_changed(self, is_dragging):
-        """Handle marker drag state changes."""
+        """After a drag, keep playing the part under the playhead, or the next."""
         self._marker_dragging = is_dragging
-        if is_dragging:
-            logger.info("Marker dragging started - DISABLING segment boundary checks")
-        else:
-            logger.info("Marker dragging ended - RE-ENABLING segment boundary checks")
+        # Segment boundaries are not enforced while a mark is being dragged.
+        segments = self._selection_segments
+        if is_dragging or not (self._playing_selection and segments):
+            return
+        position = self.player._position
+        inside = next(
+            (
+                i
+                for i, (start, stop) in enumerate(segments)
+                if start <= position <= stop
+            ),
+            None,
+        )
+        if inside is not None:
+            self._current_segment_index = inside
+            return
+        if position > segments[-1][1]:
+            self._playing_selection = False
+            self._playback_sources.idle(self._stop_if_playing)
+            return
+        index = next(i for i, (start, _stop) in enumerate(segments) if start > position)
+        self._current_segment_index = index
+        self._marker_dragging = True
+        self._playback_sources.idle(self._seek_after_drag, segments[index][0])
 
-            if self._playing_selection and self._selection_segments:
-                current_position = self.player._position
+    def _stop_if_playing(self):
+        if self.player.is_playing():
+            self.player.stop()
 
-                found_segment = -1
-                for i, (start, stop) in enumerate(self._selection_segments):
-                    if start <= current_position <= stop:
-                        found_segment = i
-                        break
-
-                if found_segment >= 0:
-                    self._current_segment_index = found_segment
-                    logger.debug(
-                        f"Position {current_position:.3f}s is in segment {found_segment}"
-                    )
-                else:
-                    if current_position < self._selection_segments[0][0]:
-                        logger.info(
-                            f"Position {current_position:.3f}s is before segments, seeking to first segment"
-                        )
-                        self._current_segment_index = 0
-                        start, _ = self._selection_segments[0]
-                        self._marker_dragging = True
-                        self._playback_sources.idle(
-                            lambda: (
-                                self.player.seek(start)
-                                if self.player.is_playing()
-                                else None,
-                                setattr(self, "_marker_dragging", False),
-                            )[0]
-                        )
-                    elif current_position > self._selection_segments[-1][1]:
-                        logger.info(
-                            f"Position {current_position:.3f}s is after all segments, stopping"
-                        )
-                        self._playing_selection = False
-                        self._playback_sources.idle(
-                            lambda: (
-                                self.player.stop() if self.player.is_playing() else None
-                            )
-                        )
-                    else:
-                        for i, (start, stop) in enumerate(self._selection_segments):
-                            if start > current_position:
-                                logger.info(
-                                    f"Position {current_position:.3f}s is in gap, seeking to next segment {i}"
-                                )
-                                self._current_segment_index = i
-                                self._marker_dragging = True
-
-                                def do_seek_and_reenable(target=start):
-                                    if self.player.is_playing():
-                                        self.player.seek(target)
-                                    self._playback_sources.later(
-                                        150,
-                                        lambda: (
-                                            setattr(self, "_marker_dragging", False),
-                                            False,
-                                        )[1],
-                                    )
-                                    return False
-
-                                self._playback_sources.idle(do_seek_and_reenable)
-                                break
-
-    # --- Player state ---
+    def _seek_after_drag(self, target):
+        if self.player.is_playing():
+            self.player.seek(target)
+        # The seek's own position update must not count as leaving the part.
+        self._playback_sources.later(150, setattr, self, "_marker_dragging", False)
 
     def on_player_state_changed(self, player, is_playing):
         """Handle player state changes to update UI."""
         # Use actual player state to avoid stale callbacks from stop()/play() race
         actual_state = player.is_playing()
-        logger.info(f"State changed: reported={is_playing}, actual={actual_state}")
         is_playing = actual_state
 
         self.file_queue.update_playing_state(is_playing)
@@ -486,8 +355,6 @@ class PlaybackControllerMixin:
             if is_playing
             else "media-playback-start-symbolic"
         )
-
-    # --- Play/Pause/Next/Previous controls ---
 
     def _on_pause_play_clicked(self, button):
         """Handle pause/play button click."""
@@ -506,9 +373,11 @@ class PlaybackControllerMixin:
             if (
                 self.active_audio_id
                 and self.player.current_file != self.active_audio_id
+                and not self.player.load(
+                    self.active_audio_id, self.file_queue.track_metadata
+                )
             ):
-                logger.info(f"Loading active file for playback: {self.active_audio_id}")
-                self.player.load(self.active_audio_id, self.file_queue.track_metadata)
+                return
 
             if active_index is not None:
                 self.file_queue.set_currently_playing(active_index)
@@ -532,7 +401,6 @@ class PlaybackControllerMixin:
         prev_index = (current_index - 1) % len(self.file_queue.files)
 
         prev_file = self.file_queue.files[prev_index]
-        logger.info(f"Going to previous audio: {prev_file}")
         self._load_file_for_visualization(prev_file, prev_index, play_audio=True)
 
     def _on_next_audio_clicked(self):
@@ -549,17 +417,12 @@ class PlaybackControllerMixin:
         next_index = (current_index + 1) % len(self.file_queue.files)
 
         next_file = self.file_queue.files[next_index]
-        logger.info(f"Going to next audio: {next_file}")
         self._load_file_for_visualization(next_file, next_index, play_audio=True)
-
-    # --- Selection playback ---
 
     def _on_play_selection_switch_toggled(self, button):
         """Handle play selection toggle button state change."""
         active = button.get_active()
         self._play_selection_mode = active
-
-        logger.info(f"Play Selection Only mode: {'ENABLED' if active else 'DISABLED'}")
 
         if active:
             if self.player.is_playing():
@@ -567,19 +430,17 @@ class PlaybackControllerMixin:
         else:
             if self._playing_selection:
                 self._playing_selection = False
-                logger.info("Selection playback mode stopped")
 
     def _on_auto_advance_switch_toggled(self, button):
         """Handle auto-advance toggle button state change."""
         is_active = button.get_active()
         self.app.config.set("auto_advance_enabled", is_active)
-        logger.info(f"Auto-advance mode: {'ENABLED' if is_active else 'DISABLED'}")
 
     def _load_selection_segments(self):
         """Load segments from markers, or what remains when they are removed."""
         order_by_number = self.cut_order_row.get_selected() == 1
         marker_pairs = self.visualizer.get_ordered_marker_pairs(order_by_number)
-        if self.cut_mode_row.get_selected() == 1:
+        if self.removes_marked():
             marker_pairs = complement(marker_pairs, self.visualizer.duration)
 
         segments = []
@@ -608,10 +469,7 @@ class PlaybackControllerMixin:
         if self._current_segment_index >= len(segments):
             self._current_segment_index = 0
 
-        start, stop = segments[self._current_segment_index]
-        logger.info(
-            f"Preparing selection playback from segment {self._current_segment_index + 1}/{len(segments)}: {start:.3f}-{stop:.3f}"
-        )
+        start = segments[self._current_segment_index][0]
 
         self.player.seek(start)
 
@@ -628,19 +486,17 @@ class PlaybackControllerMixin:
 
         return False
 
-    # --- File removal ---
-
     def _on_file_removed(self, file_id):
         """Handle when a file is removed from the queue."""
+        self.file_markers.pop(file_id, None)
         if file_id == self.active_audio_id:
-            logger.info(
-                f"Active file {file_id} was removed, clearing visualizer and player"
-            )
             self.visualizer.clear_waveform()
+            self.visualizer.clear_all_markers()
             self.active_audio_id = None
+            self.pause_popover.sync()
+        self._update_cut_rows()
 
         if file_id in (self.player.current_file, self.player.current_actual_file):
-            logger.info("Player had removed file loaded, stopping and clearing")
             self.player.stop()
             self.player.current_file = None
             self.player.current_actual_file = None

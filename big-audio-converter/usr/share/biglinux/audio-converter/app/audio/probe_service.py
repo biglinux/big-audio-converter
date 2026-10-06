@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from app.utils.main_loop import MainLoopSources
 
-from .media import probe_media
+from .media import file_identity, probe_media
 from .process import CancelledError, MediaError, ProcessRunner
 
 
@@ -80,13 +80,7 @@ class ProbeService:
                     "Select a regular local media file, not a folder or device."
                 )
             )
-        return (
-            path,
-            identity.st_dev,
-            identity.st_ino,
-            identity.st_size,
-            identity.st_mtime_ns,
-        )
+        return (path, *file_identity(path))
 
     def _inspect(self, request, runner):
         key = self._identity(request.path)
@@ -131,7 +125,9 @@ class ProbeService:
                 logging.getLogger(__name__).exception(
                     "Unexpected media inspection error"
                 )
-                error = "The file could not be inspected. Add it again or choose another file."
+                error = gettext.gettext(
+                    "The file could not be inspected. Add it again or choose another file."
+                )
             finally:
                 with self._condition:
                     self._current = None

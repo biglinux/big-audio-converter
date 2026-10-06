@@ -1,20 +1,13 @@
-# app/ui/main_window.py
-
-"""
-Main Window for the Audio Converter application.
-"""
+"""The main window: header, settings sidebar, queue and playback panel."""
 
 import gettext
-import weakref
-
-import gi
-
-gettext.textdomain("big-audio-converter")
-_ = gettext.gettext
 import logging
 import os
+import weakref
 from copy import deepcopy
 from pathlib import Path
+
+import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -25,6 +18,7 @@ from app.ui.controls_bar_mixin import ControlsBarMixin
 from app.ui.conversion_controller import ConversionController
 from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
+from app.ui.pause_popover import PausePopover
 from app.ui.playback_controller import PlaybackControllerMixin
 from app.ui.segment_editor import SegmentEditor
 from app.ui.settings_mixin import SettingsManagerMixin
@@ -32,43 +26,22 @@ from app.ui.visualizer import AudioVisualizer, SeekBar
 from app.utils.main_loop import MainLoopSources, weak_callback
 from app.utils.tooltip_helper import TooltipHelper
 
+_ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
 class HeaderBar(Gtk.Box):
-    """
-    Custom header bar with action buttons for file management and conversion.
-    Encapsulates layout logic to ensure proper resizing behavior.
-    """
+    """Queue controls, Add Files and Convert above the queue."""
 
-    def __init__(self, main_window, window_buttons_left=False):
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
+    def __init__(self, main_window):
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True)
         self.main_window = weakref.proxy(main_window)
-        self.window_buttons_left = window_buttons_left
-
-        # Ensure the wrapper box occupies full width
-        self.set_hexpand(True)
-
-        # Create the Adw.HeaderBar
-        self.header_bar = Adw.HeaderBar()
-        # Ensure the inner HeaderBar occupies full width
-        self.header_bar.set_hexpand(True)
-        self.header_bar.set_show_title(True)
-
-        # Configure decoration layout based on window button position
-        if not window_buttons_left:
-            self.header_bar.set_decoration_layout(":minimize,maximize,close")
-        else:
-            self.header_bar.set_decoration_layout("")
-
-        # Add the HeaderBar to this box
+        self.header_bar = Adw.HeaderBar(hexpand=True, show_title=True)
+        self.header_bar.set_decoration_layout(":minimize,maximize,close")
         self.append(self.header_bar)
-
-        # Create UI elements
         self._create_ui_elements()
 
     def _create_ui_elements(self):
-        # Always create queue controls
         # Named in words: the rows' own remove buttons use the delete icon.
         self.clear_queue_button = Gtk.Button(
             child=Adw.ButtonContent(
@@ -94,7 +67,6 @@ class HeaderBar(Gtk.Box):
         self.queue_size_label.set_margin_end(8)
         self.queue_size_label.set_valign(Gtk.Align.CENTER)
 
-        # Create menu button
         menu = Gio.Menu()
         menu.append(_("Show help on hover"), "app.toggle-tips")
         menu.append(_("Show Welcome Screen"), "app.show-welcome")
@@ -110,7 +82,6 @@ class HeaderBar(Gtk.Box):
             [_("Main menu")],
         )
 
-        # Create stateful action for tooltip toggle
         app = self.main_window.app
         tips_enabled = (
             str(app.config.get("show_mouseover_tips", "true")).lower() == "true"
@@ -123,22 +94,8 @@ class HeaderBar(Gtk.Box):
         )
         app.add_action(tips_action)
 
-        # Organize right-side elements
-        if self.window_buttons_left:
-            icon_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-            icon_box.set_halign(Gtk.Align.END)
-            icon_box.set_valign(Gtk.Align.CENTER)
-            icon_box.append(menu_button)
-            app_icon = Gtk.Image.new_from_icon_name("big-audio-converter")
-            app_icon.set_pixel_size(20)
-            app_icon.set_halign(Gtk.Align.END)
-            app_icon.set_valign(Gtk.Align.CENTER)
-            icon_box.append(app_icon)
-            self.header_bar.pack_end(icon_box)
-        else:
-            self.header_bar.pack_end(menu_button)
+        self.header_bar.pack_end(menu_button)
 
-        # Left section for queue controls
         left_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         left_controls.set_margin_start(0)
         left_controls.set_halign(Gtk.Align.START)
@@ -147,7 +104,6 @@ class HeaderBar(Gtk.Box):
 
         self.header_bar.pack_start(left_controls)
 
-        # Center section for buttons
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         center_box.set_halign(Gtk.Align.CENTER)
 
@@ -159,7 +115,6 @@ class HeaderBar(Gtk.Box):
         add_files_button.add_css_class("suggested-action")
         center_box.append(add_files_button)
 
-        # Convert button
         self.convert_button = Gtk.Button(label=_("Convert"))
         self.convert_button.connect(
             "clicked", weak_callback(self.main_window.on_convert)
@@ -208,9 +163,8 @@ class MainWindow(
 
         is_maximized = str(config.get("window_maximized")).lower() == "true"
 
-        # Initialize with loaded or default size
         super().__init__(
-            title=_("Audio Converter"),
+            title="Big Audio Converter",
             default_width=default_width,
             default_height=default_height,
             **kwargs,
@@ -218,7 +172,6 @@ class MainWindow(
 
         self.add_css_class("big-audio-converter")
 
-        # Store whether window should be maximized
         self._should_maximize = is_maximized
 
         self.set_size_request(360, 480)
@@ -234,10 +187,8 @@ class MainWindow(
 
         self.tooltip_helper = TooltipHelper(self.app.config)
 
-        # Initialize components
         self.player = self.app.player
         self.converter = self.app.converter
-        # Add marker cache to remember markers for each file
         self.file_markers = {}  # Dictionary mapping file path to marker pairs
         self.active_audio_id = None  # Queue entry whose waveform is shown
 
@@ -247,9 +198,11 @@ class MainWindow(
         self._current_segment_index = 0
         self._play_selection_mode = False  # Whether switch is on
         self._marker_dragging = False  # Track when user is dragging markers
-        self._is_transitioning_segment = (
-            False  # Lock to prevent transition race conditions
-        )
+        self._is_transitioning_segment = False  # a seek between parts is pending
+        self._syncing_volume = False
+        self._syncing_speed = False
+        self._bar_popovers, self._bar_pointers, self._bar_scales = {}, {}, {}
+        self._bar_closing, self._bar_keyboard = {}, {}
 
         # Default visualizer height - will be overridden by saved value
         self.visualizer_height = 132
@@ -261,21 +214,27 @@ class MainWindow(
             except (ValueError, TypeError):
                 pass
 
-        # Set up GUI first, creating the visualizer
         self.setup_ui()
         self.conversion = ConversionController(self)
         self.file_queue.on_probe_error = self._on_probe_error
+        owner = weakref.proxy(self)
+        self.file_queue.on_trash_error = lambda title, body: owner._show_message(
+            title, body
+        )
         self.file_queue.on_pending_changed = self._on_pending_changed
         self.setup_drop_target()
         self.connect("close-request", weak_callback(self.on_close_request))
+        if self.app.config.load_warning:
+            # The unreadable file is kept until a setting is changed.
+            self.toast_overlay.add_toast(
+                Adw.Toast(title=_("Settings could not be read and were reset"))
+            )
 
-        # Connect to map event for visualizer height restoration
         self.connect("map", weak_callback(self.on_window_mapped))
 
         # Connect window state signals (only maximized, save size on close only)
         self.connect("notify::maximized", weak_callback(self._on_window_state_changed))
 
-        # Connect player signals to UI
         self.player.connect(
             "position-updated", weak_callback(self.on_player_position_updated)
         )
@@ -292,7 +251,6 @@ class MainWindow(
         if self._should_maximize:
             self._sources.later(100, self.maximize)
 
-        # Connect file removal signal
         self.file_queue.connect_file_removed_signal(self._on_file_removed)
 
         # Setup window-level keyboard shortcuts
@@ -300,7 +258,6 @@ class MainWindow(
 
     def _setup_keyboard_shortcuts(self):
         """Register window-level keyboard shortcuts."""
-        # Create window-level actions
         owner = weakref.proxy(self)
         add_files_action = Gio.SimpleAction.new("add-files", None)
         add_files_action.connect("activate", lambda *_: owner.on_add_files(None))
@@ -324,7 +281,6 @@ class MainWindow(
         edit.connect("activate", lambda *_: owner.on_edit_segments())
         self.add_action(edit)
 
-        # Set accelerators at application level
         app = self.get_application()
         app.set_accels_for_action("win.add-files", ["<Control>o"])
         app.set_accels_for_action("win.convert", ["<Control>Return"])
@@ -333,10 +289,10 @@ class MainWindow(
 
     def setup_ui(self):
         """Set up the user interface."""
-        # Create main vertical paned container (root content)
         owner = weakref.proxy(self)
         self.vertical_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        self.set_content(self.vertical_paned)
+        self.toast_overlay = Adw.ToastOverlay(child=self.vertical_paned)
+        self.set_content(self.toast_overlay)
         self.vertical_paned.set_vexpand(True)
 
         # Prevent bottom controls from being cut off when window is resized
@@ -347,14 +303,11 @@ class MainWindow(
         self.split_view = Adw.OverlaySplitView(vexpand=True)
         self.split_view.set_sidebar_position(Gtk.PackType.START)
         self.split_view.set_min_sidebar_width(280)
-        # Wide enough that row subtitles keep to one line; the sidebar no longer
-        # has a drag handle, so the legacy sidebar_width setting is not read.
+        # Wide enough that row subtitles keep to one line.
         self.split_view.set_max_sidebar_width(400)
         self.split_view.set_sidebar_width_fraction(0.34)
-        # Add split_view directly to vertical_paned (top part)
         self.vertical_paned.set_start_child(self.split_view)
 
-        # Create CSS for sidebar styling
         css_provider = self._css_provider = Gtk.CssProvider()
         css_provider.load_from_string("""
         .sidebar { background-color: @sidebar_bg_color; }
@@ -371,6 +324,15 @@ class MainWindow(
            into the arrow so the two solid fills overlap. */
         popover.bar-slider > contents { border: none; margin-bottom: -1px; }
         popover.bar-slider > arrow { border: none; box-shadow: none; }
+        /* A tool on the waveform keeps the panel's own solid fill: the
+           peaks behind a translucent one left its label unreadable. */
+        .waveform-tool > button {
+            background-color: #1c1c21;
+            color: rgba(255, 255, 255, 0.87);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+        .waveform-tool > button:hover { background-color: #2a2a31; }
+        .waveform-tool > button:checked { background-color: mix(#1c1c21, @accent_bg_color, 0.55); }
         .playback-controls button:checked {
             background-color: alpha(@accent_bg_color, 0.55);
             color: #ffffff;
@@ -403,59 +365,49 @@ class MainWindow(
         self.setup_conversion_options(left_content)
         left_box = Gtk.WindowHandle(child=left_scroll)
 
-        # RIGHT SIDE - Now contains file queue (previously on left)
+        # Right side: the queue.
         right_box = Adw.ToolbarView(css_classes=["queue-pane"])
-        # Set minimum width for right content area
         right_box.set_size_request(320, -1)
 
         # Create header bar for right side using the dedicated class
         # This handles proper layout behavior and resizing
-        self.right_header = HeaderBar(self, False)
+        self.right_header = HeaderBar(self)
         right_box.add_top_bar(self.right_header)
 
         self.clear_queue_button = self.right_header.clear_queue_button
         self.convert_button = self.right_header.convert_button
 
-        # Create scrollable container for right content (file queue)
         right_scroll = Gtk.ScrolledWindow()
         right_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         right_scroll.set_vexpand(True)
 
-        # Create right content container for file queue
         right_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         right_content.set_margin_start(10)
         right_content.set_margin_end(10)
         right_content.set_margin_bottom(10)
 
-        # Add the file queue directly to right content (removed queue_controls container)
         self.file_queue = FileQueue(self.converter)
         self.file_queue._parent_window = self  # Set parent window for dialogs
         self.file_queue._tooltip_helper = self.tooltip_helper  # Pass tooltip helper
         right_content.append(self.file_queue)
 
-        # Connect queue size change handler
         self.file_queue.on_queue_size_changed = self.update_queue_size_label
 
-        # Connect play callback for file queue
         self.file_queue.on_play_file = weak_callback(self.on_play_file)
 
-        # Connect stop playback callback to player.stop method
         self.file_queue.on_stop_playback = self.player.stop
 
-        # Connect callback for when file is added to empty queue
         self.file_queue.on_file_added_to_empty_queue = self.on_file_added_to_empty_queue
 
-        # Connect callback for when file row is activated (clicked)
         self.file_queue.on_activate_file = self.on_activate_file
 
-        # Add right content to scroll container
         right_scroll.set_child(right_content)
 
-        # Set the right content
         right_box.set_content(right_scroll)
 
-        # Add inline equalizer panel with Revealer at the bottom of right_box
-        self.eq_panel = EqualizerPanel(self.player)
+        self.eq_panel = EqualizerPanel(self.player, self.app.config)
+        self.eq_panel.on_changed = weak_callback(self._show_equalizer_state)
+        self._show_equalizer_state()
         self.eq_revealer = Gtk.Revealer()
         self.eq_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
         self.eq_revealer.set_transition_duration(200)
@@ -466,7 +418,6 @@ class MainWindow(
         )
         right_box.add_bottom_bar(self.eq_revealer)
 
-        # Add the two views to the paned container (swapped order)
         self.split_view.set_sidebar(left_box)
         self.split_view.set_content(right_box)
 
@@ -476,9 +427,7 @@ class MainWindow(
 
         # Give visualizer reference to player for checking playback state
         self.visualizer.player = self.player
-        self.visualizer.remove_marked = self.cut_mode_row.get_selected() == 1
 
-        # Create container for visualizer and zoom controls
         visualizer_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         visualizer_container.add_css_class("playback-panel")
 
@@ -490,7 +439,7 @@ class MainWindow(
         bar.set_start_widget(start_box)
         bar.set_end_widget(end_box)
 
-        # Add "Only the Selected Area" toggle button — icon-only, like play controls
+        # Plays only the marked parts.
         self.play_selection_switch = Gtk.ToggleButton(
             child=Adw.ButtonContent(
                 icon_name="selection-mode-symbolic", label=_("Selection only")
@@ -528,11 +477,10 @@ class MainWindow(
             lambda row, _pspec: owner._on_auto_advance_switch_toggled(row),
         )
 
-        # Add Equalizer toggle button — icon-only
         self.eq_toggle_btn = Gtk.ToggleButton()
         equalizer_icon = (
             Path(__file__).resolve().parents[4]
-            / "icons/hicolor/symbolic/actions/equalizer-symbolic.svg"
+            / "icons/hicolor/symbolic/actions/big-audio-converter-equalizer-symbolic.svg"
         )
         equalizer_content = Gtk.Box(spacing=6)
         equalizer_content.append(
@@ -718,7 +666,6 @@ class MainWindow(
             self.noise_scale,
             self.noise_value_label,
             5,
-            extra=(self.noise_status, *self.noise_engine_buttons),
         )
         start_box.append(voice_box)
 
@@ -745,10 +692,8 @@ class MainWindow(
         self._set_processing_volume(self.volume_spin.get_value())
         self._set_processing_speed(self.speed_spin.get_value())
 
-        # Store reference to visualizer container
         self.visualizer_container = visualizer_container
 
-        # Create a frame around the visualizer for better appearance
         self.visualizer_frame = Gtk.Frame()
         self.visualizer_frame.set_margin_start(10)
         self.visualizer_frame.set_margin_end(10)
@@ -761,31 +706,30 @@ class MainWindow(
         # Connect seek handler before adding the visualizer to the frame
         self.visualizer.connect_seek_handler(self.on_visualizer_seek)
 
-        # Connect marker drag handler to track when markers are being dragged
         self.visualizer.connect_marker_drag_handler(self._on_marker_drag_state_changed)
 
-        # Connect zoom change handler to update slider
         self.visualizer.zoom_changed_callback = self._on_visualizer_zoom_changed
         # Panning while paused moves the window too; the seek bar follows it.
         self.visualizer.viewport_changed_callback = self._sync_seekbar_viewport
 
-        # Connect marker update handler to refresh selection playback
         self.visualizer.marker_updated_callback = self._on_markers_updated
 
-        # Set a modest minimum height; actual size is determined by GTK Box layout with vexpand
         self.visualizer.set_content_height(100)
 
-        # Make sure the visualizer can receive mouse events and expand with parent
         self.visualizer.set_vexpand(True)  # Allow expansion
         self.visualizer.set_focusable(True)
 
-        # Add the visualizer directly to the frame (no ScrolledWindow for performance)
-        self.visualizer_frame.set_child(self.visualizer)
+        # Add the visualizer directly to the frame (no ScrolledWindow for performance).
+        # Finding pauses sits on the waveform it marks and opens upward,
+        # leaving the preview in view; the playback bar has no room left.
+        self.pause_popover = PausePopover(self)
+        waveform = Gtk.Overlay(child=self.visualizer)
+        waveform.add_overlay(self.pause_popover.button)
+        self.visualizer_frame.set_child(waveform)
 
         # Layout order: waveform (top) → seekbar (middle) → button bar (bottom)
         visualizer_container.append(self.visualizer_frame)
 
-        # Create the dedicated seekbar between waveform and controls
         self.seekbar = SeekBar()
         self.visualizer.duration_changed_callback = self.seekbar.set_duration
         self.seekbar.set_margin_start(4)
@@ -793,18 +737,13 @@ class MainWindow(
         self.seekbar.set_margin_bottom(0)
         self.seekbar.set_margin_top(0)
         self.seekbar.connect_seek_handler(self.on_visualizer_seek)
-        self._set_copy_mode_ui(
-            self._format_list[self.format_row.get_selected()] == "copy"
-        )
 
-        # Connect waveform hover to seekbar display
         self.visualizer.hover_time_callback = self.seekbar.set_waveform_hover_time
 
         visualizer_container.append(self.seekbar)
 
         visualizer_container.append(bar)
 
-        # Add visualizer container to the bottom part of the vertical paned
         self.vertical_paned.set_end_child(visualizer_container)
         self._fit_pending = False
         self.vertical_paned.connect(
@@ -823,6 +762,9 @@ class MainWindow(
 
         # Apply tooltips to all UI elements (must be after all widgets are created)
         self._apply_tooltips()
+        self._restore_conversion_settings()
+        self.clipping_row.set_active(self._config_bool("prevent_clipping"))
+        self._on_format_changed(self.format_row, None)
 
     def update_queue_size_label(self, count, text):
         """Show queue-wide controls for the current number of entries."""
@@ -935,7 +877,6 @@ class MainWindow(
     def _apply_tooltips(self):
         """Register every help tooltip; the helper shows them only when enabled."""
         for widget, key in (
-            (self.purpose_row, "purpose"),
             (self.format_row, "format"),
             (self.bitrate_row, "bitrate"),
             (self.volume_spin, "volume"),
@@ -984,12 +925,13 @@ class MainWindow(
             "noise_reduction": self._noise_active(),
             "noise_engine": self._noise_engine(),
             "noise_strength": self.noise_scale.get_value(),
-            "gate_enabled": self.gate_row.get_active(),
-            "gate_intensity": self.gate_intensity_scale.get_value(),
-            "compressor_enabled": self.compressor_row.get_active(),
-            "compressor_intensity": self.compressor_intensity_scale.get_value(),
-            "hpf_enabled": self.hpf_row.get_active(),
-            "hpf_frequency": int(self.hpf_freq_scale.get_value()),
+            # Each correction is off at zero and otherwise set by its slider.
+            "gate_enabled": self.gate_row.scale.get_value() > 0,
+            "gate_intensity": self.gate_row.scale.get_value() / 100,
+            "compressor_enabled": self.compressor_row.scale.get_value() > 0,
+            "compressor_intensity": self.compressor_row.scale.get_value() / 100,
+            "hpf_enabled": self.hpf_row.scale.get_value() > 0,
+            "hpf_frequency": max(int(self.hpf_row.scale.get_value()), 20),
             "eq_enabled": any(
                 self.eq_panel.band_scales[f].get_value() != 0
                 for _, f in self.eq_panel.BANDS
@@ -999,10 +941,8 @@ class MainWindow(
                 for _, f in self.eq_panel.BANDS
             ),
             "normalize": self.normalize_row.get_active(),
-            # A file is cut where it has segments and converted whole otherwise.
-            "cut_enabled": True,
             "cut_merge": self.cut_output_row.get_selected() == 1,
-            "cut_remove": self.cut_mode_row.get_selected() == 1,
+            "cut_remove": self.removes_marked(),
             "join_files": self._joining(),
             # The converter orders each file's segments by number or by time.
             "order_by_segment_number": self.cut_order_row.get_selected() == 1,
@@ -1038,8 +978,29 @@ class MainWindow(
         dialog.present(self)
 
     def on_close_request(self, window):
+        if not self._closed and self.converter.busy:
+            dialog = Adw.AlertDialog(
+                heading=_("Stop the conversion?"),
+                body=_(
+                    "Closing the window stops the conversion in progress. "
+                    "Files that already finished are kept."
+                ),
+            )
+            dialog.add_response("keep", _("Keep Converting"))
+            dialog.add_response("stop", _("Stop and Close"))
+            dialog.set_response_appearance("stop", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("keep")
+            dialog.set_close_response("keep")
+            dialog.connect("response", weak_callback(self._on_close_while_converting))
+            dialog.present(self)
+            return True
         self.cleanup()
         return False
+
+    def _on_close_while_converting(self, _dialog, response):
+        if response == "stop" and not self._closed:
+            self.cleanup()
+            self.close()
 
     def cleanup(self):
         """The same shutdown path is used by window close, Ctrl+Q, and app quit."""
@@ -1054,6 +1015,7 @@ class MainWindow(
         self._playback_sources.close()
         self.conversion.cleanup()
         self.waveform_generator.cancel()
+        self.pause_popover.cleanup()
         self.converter.cancel_conversion()
         self.file_queue.cleanup()
         self.waveform_generator.cleanup()
@@ -1083,9 +1045,7 @@ class MainWindow(
         if (self.visualizer.duration or self.player.duration) <= 0:
             self._show_message(
                 _("Audio duration unavailable"),
-                _(
-                    "Enable cutting and wait for the waveform to finish before editing this file."
-                ),
+                _("Wait for the waveform to finish loading before editing this file."),
             )
             return
         editor = SegmentEditor(self)
@@ -1097,6 +1057,7 @@ class MainWindow(
     def _request_waveform(self, file_path):
         if self._closed or file_path not in self.file_queue.files:
             return
+        self.pause_popover.sync()
         self.waveform_generator.request(
             file_path,
             self.converter,
@@ -1210,45 +1171,31 @@ class MainWindow(
         if not self._closed and response == "clear":
             # Stop playback if currently playing
             if self.player and self.player.is_playing():
-                logger.info("Stopping playback before clearing queue")
                 self.player.stop()
 
-            # Clear the waveform visualization
-            logger.info("Clearing waveform visualization")
             self.visualizer.clear_waveform()
 
-            # Clear all markers
             self.visualizer.clear_all_markers()
 
-            # Clear the file queue
             self.file_queue.clear_queue()
 
     def setup_drop_target(self):
-        """Set up drag and drop support for files."""
-        drop_target = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
-        drop_target.connect("drop", weak_callback(self.on_drop))
+        """Files dropped anywhere outside the queue join it too."""
+        owner = weakref.proxy(self)
+        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop_target.connect(
+            "drop", lambda _target, value, _x, _y: owner.file_queue.add_dropped(value)
+        )
         self.add_controller(drop_target)
-
-    def on_drop(self, target, value, x, y):
-        """Handle file drop events."""
-        if isinstance(value, Gio.File):
-            path = value.get_path()
-            # Just add file without generating waveform
-            self.file_queue.add_file(path)
-            return True
-        return False
 
     def on_add_files(self, button):
         """Handle adding files through dialog."""
-        # Create the file dialog with native dialog support
         dialog = Gtk.FileDialog()
         dialog.set_title(_("Select Audio or Video Files"))
 
-        # Create file filters
         media_filter = Gtk.FileFilter()
         media_filter.set_name(_("Audio and Video files"))
 
-        # Add common audio file extensions - make them lowercase to ensure matching
         audio_extensions = [
             "mp3",
             "wav",
@@ -1270,7 +1217,6 @@ class MainWindow(
             "wv",
         ]
 
-        # Add common video file extensions (can be converted to audio)
         video_extensions = [
             "mp4",
             "mkv",
@@ -1289,17 +1235,14 @@ class MainWindow(
             "m2ts",
         ]
 
-        # Add all extensions to the filter
         for ext in audio_extensions + video_extensions:
             media_filter.add_suffix(ext)
             media_filter.add_suffix(ext.upper())  # Also add uppercase versions
 
-        # Add all files filter
         all_filter = Gtk.FileFilter()
         all_filter.set_name(_("All files"))
         all_filter.add_pattern("*")
 
-        # Add filters to the dialog
         filters = Gio.ListStore.new(Gtk.FileFilter)
         filters.append(media_filter)
         filters.append(all_filter)
@@ -1338,18 +1281,6 @@ class MainWindow(
                 self._show_message(_("Files could not be selected"), error.message)
 
     def on_file_added_to_empty_queue(self, file_path, index):
-        """Handle file added to empty queue - generate waveform but don't play."""
-        logger.info(
-            f"on_file_added_to_empty_queue called for {file_path}, waveform_data is None: {self.visualizer.waveform_data is None}"
-        )
-
-        # Check if visualizer is currently empty
+        """Show the first file added to an empty queue without playing it."""
         if self.visualizer.waveform_data is None:
-            logger.info(
-                f"Waveform is empty, generating for first file without playing: {file_path}"
-            )
             self._prepare_visualizer_for_new_file(file_path, index)
-        else:
-            logger.info(f"Waveform is not empty, skipping generation for {file_path}")
-
-        return False  # For GLib.idle_add

@@ -1,45 +1,11 @@
 """Real FFmpeg/ffprobe contracts for precision, metadata and editing."""
 
 import json
-import subprocess
 
 import pytest
 from app.audio.converter import AudioConverter
 from app.audio.media import track_identifier
-
-
-def command(*args):
-    return subprocess.run(list(args), check=True, capture_output=True, timeout=15)
-
-
-def probe(path):
-    return json.loads(
-        command(
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_streams",
-            "-show_format",
-            "-of",
-            "json",
-            str(path),
-        ).stdout
-    )
-
-
-def pcm(path, representation="f64le"):
-    return command(
-        "ffmpeg",
-        "-v",
-        "error",
-        "-i",
-        str(path),
-        "-map",
-        "0:a:0",
-        "-f",
-        representation,
-        "-",
-    ).stdout
+from conftest import command, pcm, probe
 
 
 @pytest.fixture
@@ -209,11 +175,12 @@ def test_supported_cover_and_tags_survive_full_cut_and_merged_output(
     )
     options = {
         "format": format,
-        "cut_enabled": cut,
         "cut_merge": merge,
         "file_markers": {
             str(tagged): [{"start": 0.1, "stop": 0.4}, {"start": 0.7, "stop": 1.1}]
-        },
+        }
+        if cut
+        else {},
     }
     result = convert(tagged, tmp_path / f"edited.{format}", options)
     for path in result.outputs:
@@ -255,7 +222,6 @@ def test_reordered_adjacent_overlapping_segments_have_exact_lossless_samples(
         tmp_path / "joined.flac",
         {
             "format": "flac",
-            "cut_enabled": True,
             "cut_merge": True,
             "order_by_segment_number": True,
             "file_markers": {str(source): segments},
@@ -385,7 +351,6 @@ def test_denoiser_preserves_timing_channels_and_cut_tail(
             request = dict(settings)
             if cut:
                 request.update(
-                    cut_enabled=True,
                     file_markers={str(source): [{"start": 0.1, "stop": 0.4}]},
                 )
             target = tmp_path / f"output-{cut}.wav"
@@ -466,10 +431,11 @@ def test_offline_dpdfnet_export_matches_the_plugin_bit_for_bit(tmp_path, cut):
         "noise_strength": 70,
         "hpf_enabled": True,
         "normalize": True,
-        "cut_enabled": cut,
         "file_markers": {
             str(source): [{"start": 0.5, "stop": 1.2}, {"start": 2, "stop": 2.8}]
-        },
+        }
+        if cut
+        else {},
     }
     tool = converter.offline_denoiser
     outputs = []
@@ -508,8 +474,9 @@ def test_dpdfnet_missing_model_never_publishes_output(tmp_path, monkeypatch, cut
                 "format": "wav",
                 "noise_reduction": True,
                 "noise_engine": "dpdfnet",
-                "cut_enabled": cut,
-                "file_markers": {str(source): [{"start": 0.01, "stop": 0.09}]},
+                "file_markers": {str(source): [{"start": 0.01, "stop": 0.09}]}
+                if cut
+                else {},
             },
         )
         assert "could not be processed" in converter.last_result.message
@@ -596,7 +563,6 @@ def test_cut_to_the_container_end_is_accepted_when_the_audio_ends_earlier(tmp_pa
         tmp_path / "end.flac",
         {
             "format": "flac",
-            "cut_enabled": True,
             "file_markers": {str(source): [{"start": 1, "stop": 2.0}]},
         },
     )
@@ -647,7 +613,6 @@ def test_cut_output_drops_source_chapters_at_unedited_times(tmp_path, merge):
         tmp_path / "cut.mp3",
         {
             "format": "mp3",
-            "cut_enabled": True,
             "cut_merge": merge,
             "file_markers": {
                 str(source): [{"start": 1.2, "stop": 1.8}, {"start": 2.2, "stop": 2.5}]
@@ -704,7 +669,6 @@ def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
             "format": "wav",
             "normalize": True,
             "prevent_clipping": True,
-            "cut_enabled": True,
             "file_markers": {
                 str(source): [{"start": 1, "stop": 5}, {"start": 6, "stop": 11}]
             },
@@ -730,7 +694,6 @@ def test_hundreds_of_cuts_are_joined_with_exact_samples(source, tmp_path):
         tmp_path / "many.flac",
         {
             "format": "flac",
-            "cut_enabled": True,
             "file_markers": {str(source): segments},
         },
     )
@@ -752,7 +715,6 @@ def test_batch_cuts_only_the_file_that_has_markers(source, tmp_path):
         {
             "format": "flac",
             "output_directory": str(tmp_path / "output"),
-            "cut_enabled": True,
             "file_markers": {str(source): [{"start": 0.5, "stop": 1}]},
         },
         None,
@@ -787,7 +749,6 @@ def test_joined_queue_is_one_file_in_queue_order(
         {
             "format": "flac",
             "output_directory": str(tmp_path / "output"),
-            "cut_enabled": True,
             "order_by_segment_number": False,
             "file_markers": {str(source): cuts},
             "join_files": True,
@@ -845,5 +806,5 @@ def test_fast_copy_refuses_to_join(source, tmp_path):
     items = engine.last_batch_result.items
     engine.cleanup()
     assert [item.status for item in items] == ["failed", "failed"]
-    assert "Fast Copy cannot join" in items[1].message
+    assert "Keeping the original format cannot join" in items[1].message
     assert not (tmp_path / "out").exists()

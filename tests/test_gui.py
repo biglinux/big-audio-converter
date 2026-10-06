@@ -9,6 +9,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from conftest import pump
 
 pytestmark = pytest.mark.skipif(
     not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")),
@@ -16,25 +17,8 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def pump(predicate, timeout=8):
-    from gi.repository import GLib
-
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        context = GLib.MainContext.default()
-        for _ in range(200):
-            if not context.pending():
-                break
-            context.iteration(False)
-        if predicate():
-            return
-        time.sleep(0.005)
-    raise AssertionError("GTK did not reach the requested state")
-
-
-@pytest.fixture
-def window(tmp_path, monkeypatch):
-    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+def start_window():
+    """A running application window, configured under $XDG_CONFIG_HOME."""
     root = (
         Path(__file__).resolve().parents[1]
         / "big-audio-converter/usr/share/biglinux/audio-converter"
@@ -57,11 +41,23 @@ def window(tmp_path, monkeypatch):
     win.file_queue.on_probe_error = lambda path, message: win._test_errors.append(
         (path, message)
     )
-    yield win
+    return win
+
+
+def stop_window(win):
+    app = win.get_application()
     win.cleanup()
     win.destroy()
     app.config.close()
     app.quit()
+
+
+@pytest.fixture
+def window(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    win = start_window()
+    yield win
+    stop_window(win)
 
 
 @pytest.fixture
@@ -248,11 +244,12 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     window.format_row.set_selected(window._format_list.index("flac"))
     assert not window.bitrate_row.get_visible()
     window.format_row.set_selected(window._format_list.index("copy"))
-    assert not window.volume_spin.get_sensitive()
+    assert not window.volume_spin.is_sensitive()
+    assert not window.gate_row.scale.is_sensitive()
     assert not window.noise_scale.get_sensitive()
     assert window.format_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("flac"))
-    assert window.volume_spin.get_sensitive()
+    assert window.volume_spin.is_sensitive()
     # Back on when the noise plugin is installed, which CI machines lack.
     assert window.noise_scale.get_sensitive() == window.noise_available
     window.original_preview.set_active(True)
@@ -355,7 +352,7 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     assert player.load(str(audio))
     pump(lambda: player._loaded)
     for index, engine in enumerate(window.noise_engines):
-        window.noise_engine_buttons[index].set_active(True)
+        window.noise_model_row.set_selected(index)
         window.noise_scale.set_value(25)
         # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
         attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
@@ -386,7 +383,8 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     assert not window.noise_scale.get_sensitive()
     assert "dpdfnet-native" in window.noise_status.get_label()
     assert window.noise_status.get_visible()
-    window.noise_engine_buttons[0].set_active(True)
+    assert window.noise_model_row.get_visible()
+    window.noise_model_row.set_selected(0)
     assert window.noise_scale.get_sensitive()
     assert player.noise_reduction and player.noise_engine == "dfn3"
     assert window.noise_value_label.get_text() == "Clean voice · 25%"
@@ -401,14 +399,15 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     window.cut_order_row.set_selected(1)
     window.volume_spin.set_value(250)
     window.speed_spin.set_value(1.5)
-    window.gate_row.set_active(True)
-    window.hpf_row.set_active(True)
+    window.gate_row.scale.set_value(40)
+    window.hpf_row.scale.set_value(120)
     window.normalize_row.set_active(True)
     window.eq_panel.band_scales[window.eq_panel.BANDS[0][1]].set_value(6)
     window.auto_advance_switch.set_active(False)
 
+    assert window.equalizer_row.get_subtitle() == "Custom"
     window._on_reset_settings_response(None, "cancel")
-    assert window.gate_row.get_active()
+    assert window.gate_row.scale.get_value() == 40
 
     window._on_reset_settings_response(None, "reset")
     assert window._format_list[window.format_row.get_selected()] == "mp3"
@@ -419,16 +418,13 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert window.cut_order_row.get_selected() == 0
     assert window.volume_spin.get_value() == 100
     assert window.speed_spin.get_value() == 1.0
-    assert not window.gate_row.get_active()
-    assert not window.gate_intensity_row.get_visible()
-    assert not window.hpf_row.get_active()
+    assert window.gate_row.scale.get_value() == 0
+    assert window.hpf_row.scale.get_value() == 0
     assert not window.normalize_row.get_active()
     assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
     assert window.auto_advance_switch.get_active()
     assert not window.player.normalize
-    assert (
-        window.effects_expander.get_subtitle() == "Volume, speed, equalizer and effects"
-    )
+    assert window.equalizer_row.get_subtitle() == "Natural (No Effects)"
     for key, value in (
         ("conversion_format", "mp3"),
         ("audio_channels", "0"),
@@ -477,31 +473,247 @@ def test_panning_the_waveform_moves_the_seek_bar_window(window):
     assert window.seekbar._viewport_offset == 0.25
 
 
-def test_purposes_set_the_controls_and_name_a_manual_change(window):
-    from app.ui.settings_mixin import PURPOSES
+def test_each_correction_is_off_at_zero_and_set_by_its_slider(window):
+    config = window.app.config
+    window.gate_row.scale.set_value(40)
+    window.compressor_row.scale.set_value(75)
+    window.hpf_row.scale.set_value(5)
+    settings = window._collect_conversion_settings()
+    assert settings["gate_enabled"] and settings["gate_intensity"] == 0.4
+    assert settings["compressor_enabled"] and settings["compressor_intensity"] == 0.75
+    # The filter starts at 20 Hz: the first step above off means that.
+    assert settings["hpf_enabled"] and settings["hpf_frequency"] == 20
+    assert window.hpf_row.value_label.get_text() == "20 Hz"
+    assert window.player.gate_enabled
+    assert config.get("compressor_intensity") == "0.75"
 
-    keys = [key for key, _settings in PURPOSES]
-    custom = len(PURPOSES)
-    # The first-run settings are what plays on any device.
-    assert window.purpose_row.get_selected() == keys.index("anywhere")
+    window.gate_row.scale.set_value(0)
+    assert not window._collect_conversion_settings()["gate_enabled"]
+    assert window.gate_row.value_label.get_text() == "Off"
+    assert not window.player.gate_enabled
+    # Off keeps the strength for the next session's restore of a later choice.
+    assert config.get("gate_enabled") == "false"
+    assert config.get("gate_intensity") == "0.4"
 
-    window.purpose_row.set_selected(keys.index("whatsapp"))
-    assert window._format_list[window.format_row.get_selected()] == "m4a"
-    assert window._bitrate_list[window.bitrate_row.get_selected()] == "64k"
-    assert window.channels_row.get_selected() == 1
-    assert window.normalize_row.get_active()
-    assert window.noise_scale.get_value() == 70
-    assert window.app.config.get("conversion_format") == "m4a"
-    assert window.purpose_row.get_selected() == keys.index("whatsapp")
+    window._restore_conversion_settings()
+    assert window.gate_row.scale.get_value() == 0
+    assert window.compressor_row.scale.get_value() == 75
 
-    window.gate_row.set_active(True)
-    assert window.purpose_row.get_selected() == custom
-    window.gate_row.set_active(False)
-    assert window.purpose_row.get_selected() == keys.index("whatsapp")
 
-    # Keeping the original sets only the format; the effects stay as chosen.
-    window.purpose_row.set_selected(keys.index("original"))
-    assert window._format_list[window.format_row.get_selected()] == "copy"
-    assert window.normalize_row.get_active()
-    window.purpose_row.set_selected(custom)
-    assert window._format_list[window.format_row.get_selected()] == "copy"
+def marks(win):
+    return [(m["start"], m["stop"]) for m in win.visualizer.get_marker_pairs()]
+
+
+def two_files(window, audio, tmp_path):
+    second = tmp_path / "second.wav"
+    second.write_bytes(audio.read_bytes())
+    queue = window.file_queue
+    queue.add_files([str(audio), str(second)])
+    pump(lambda: not queue.pending and len(queue.files) == 2)
+    return queue.files
+
+
+def test_auto_advance_keeps_each_files_marks(window, audio, tmp_path):
+    first, second = two_files(window, audio, tmp_path)
+    window.on_activate_file(first, 0)
+    pump(lambda: window.active_audio_id == first and window.visualizer.duration > 0)
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    window.file_markers[second] = [{"start": 1.0, "stop": 1.5}]
+
+    window._play_next_file(second, 1)
+    pump(lambda: window.visualizer.duration > 0 and marks(window))
+
+    assert window.active_audio_id == second
+    assert marks(window) == [(1.0, 1.5)]
+    assert [(m["start"], m["stop"]) for m in window.file_markers[first]] == [(0.2, 0.5)]
+
+
+def test_removed_and_cleared_files_forget_their_cuts(window, audio):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    window._save_current_file_state()
+
+    queue.remove_file(0)
+    assert window.file_markers == {}
+    assert not window.cut_mode_row.get_visible()
+
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    assert marks(window) == []
+
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    window._save_current_file_state()
+    window._on_clear_queue_response(None, "clear")
+    assert window.file_markers == {}
+
+
+def test_play_does_not_resume_another_file_when_loading_fails(
+    window, audio, monkeypatch
+):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    played = []
+    window.player.current_file = None
+    monkeypatch.setattr(window.player, "load", lambda *args: False)
+    monkeypatch.setattr(window.player, "play", lambda: played.append(True))
+    window._on_pause_play_clicked(None)
+    assert played == []
+
+
+def test_command_line_files_resolve_in_the_callers_directory(
+    window, audio, tmp_path, monkeypatch
+):
+    from gi.repository import Gio, GLib
+
+    app = window.get_application()
+    shutil.copyfile(audio, tmp_path / "relative.wav")
+    line = Gio.ApplicationCommandLine(
+        arguments=GLib.Variant(
+            "aay",
+            [b"big-audio-converter\0", b"relative.wav\0", b"bac-test://host/a.wav\0"],
+        ),
+        platform_data=GLib.Variant(
+            "a{sv}", {"cwd": GLib.Variant("ay", str(tmp_path).encode() + b"\0")}
+        ),
+    )
+    opened = []
+    monkeypatch.setattr(app, "do_open", lambda files, count, hint: opened.extend(files))
+    assert app.do_command_line(line) == 0
+    assert [f.get_path() for f in opened] == [str(tmp_path / "relative.wav"), None]
+
+
+def test_files_dropped_on_the_window_are_all_added(window, audio, tmp_path):
+    from gi.repository import Gdk, Gio, Gtk
+
+    second = tmp_path / "second.wav"
+    second.write_bytes(audio.read_bytes())
+    files = Gdk.FileList.new_from_list(
+        [
+            Gio.File.new_for_path(str(audio)),
+            Gio.File.new_for_path(str(second)),
+            Gio.File.new_for_uri("bac-test://host/remote.wav"),
+        ]
+    )
+    target = next(
+        c for c in window.observe_controllers() if isinstance(c, Gtk.DropTarget)
+    )
+    assert target.emit("drop", files, 0, 0)
+    pump(lambda: len(window.file_queue.files) == 2 and not window.file_queue.pending)
+    assert [path for path, _message in window._test_errors] == [
+        "bac-test://host/remote.wav"
+    ]
+
+
+def test_a_failed_trash_is_not_reported_as_a_failed_add(window, audio, monkeypatch):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    shown = []
+    monkeypatch.setattr(window, "_show_message", lambda *args: shown.append(args))
+    audio.unlink()  # Trash then fails: the file is already gone.
+    queue._on_delete_response(None, "trash", str(audio))
+    pump(lambda: shown)
+    assert shown[0][0] == "Could not move the file to Trash"
+    assert window._test_errors == []
+
+
+def test_closing_during_a_conversion_asks_first(window, monkeypatch):
+    monkeypatch.setattr(type(window.converter), "busy", property(lambda self: True))
+    assert window.on_close_request(window) is True
+    assert not window._closed
+    window._on_close_while_converting(None, "keep")
+    assert not window._closed
+    window._on_close_while_converting(None, "stop")
+    assert window._closed
+
+
+def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    win = start_window()
+    try:
+        panel = win.eq_panel
+        panel.preset_dropdown.set_selected(panel.PRESET_KEYS.index("podcast"))
+        panel.preset_dropdown.set_selected(panel.PRESET_KEYS.index("custom"))
+        assert win.equalizer_row.get_subtitle() == "Custom"
+        panel.band_scales[1000].set_value(7)
+    finally:
+        stop_window(win)
+    win = start_window()
+    try:
+        assert win.eq_panel.band_scales[1000].get_value() == 7
+        assert win.eq_panel.band_scales[31].get_value() == 5  # from Radio Host
+        assert win.equalizer_row.get_subtitle() == "Custom"
+    finally:
+        stop_window(win)
+
+
+def test_unreadable_settings_are_announced_once(tmp_path, monkeypatch):
+    from gi.repository import Adw
+
+    config = tmp_path / "config" / "audio-converter"
+    config.mkdir(parents=True)
+    (config / "config.json").write_text("{not json")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    toasts = []
+    monkeypatch.setattr(
+        Adw.ToastOverlay, "add_toast", lambda self, toast: toasts.append(toast)
+    )
+    win = start_window()
+    try:
+        pump(lambda: toasts)
+        assert toasts[0].get_title() == "Settings could not be read and were reset"
+    finally:
+        stop_window(win)
+
+
+def test_found_pauses_say_what_they_replace_and_undo_restores_it(window, audio):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    window.visualizer.restore_markers([{"start": 0.1, "stop": 0.3}])
+    popover = window.pause_popover
+    popover.levels = [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50
+    popover._show_state()
+    assert "replaces the 1 mark" in popover.summary.get_label()
+
+    popover._on_apply(None)
+    assert marks(window) == [(0.65, 1.35)]
+    assert window.removes_marked()
+    popover.undo_apply()
+    assert marks(window) == [(0.1, 0.3)]
+    assert not window.removes_marked()
+
+
+def test_pauses_past_the_end_of_the_file_are_reported(window, audio, monkeypatch):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    shown = []
+    monkeypatch.setattr(window, "_show_message", lambda *args: shown.append(args))
+    popover = window.pause_popover
+    popover.levels = [-6.0] * 300 + [-80.0] * 100  # 4 s measured, 2 s on screen
+    popover._show_state()
+    popover._on_apply(None)
+    assert shown and shown[0][0] == "The pauses could not be marked"
+    assert marks(window) == []
+
+
+def test_installing_the_denoiser_is_noticed_without_a_restart(
+    window, audio, monkeypatch
+):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    popover = window.pause_popover
+    monkeypatch.setattr("shutil.which", lambda _name: None)
+    popover._show_state()
+    assert popover.stack.get_visible_child_name() == "missing"
+
+    monkeypatch.setattr("shutil.which", lambda name: f"/usr/bin/{name}")
+    popover.popup()
+    pump(lambda: popover.get_visible())
+    assert popover.stack.get_visible_child_name() == "start"
+    popover.popdown()

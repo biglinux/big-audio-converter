@@ -1,61 +1,25 @@
 """FFmpeg regressions: real encodes and cuts checked against the files they produce."""
 
-import json
 import subprocess
 from pathlib import Path
 
 import numpy as np
 import pytest
 from app.audio.converter import AudioConverter
-from gi.repository import GLib
+from app.audio.waveform import WaveformGenerator
+from conftest import pcm, probe, pump
 
 
 def converter():
     return AudioConverter()
 
 
-from app.audio.waveform import WaveformGenerator
-
-
 def run(argv):
     return subprocess.run(argv, check=True, capture_output=True, timeout=20)
 
 
-def pcm(path):
-    return np.frombuffer(
-        run(
-            [
-                "ffmpeg",
-                "-v",
-                "error",
-                "-i",
-                str(path),
-                "-map",
-                "0:a:0",
-                "-f",
-                "f32le",
-                "-",
-            ]
-        ).stdout,
-        dtype="<f4",
-    )
-
-
-def probe(path):
-    return json.loads(
-        run(
-            [
-                "ffprobe",
-                "-v",
-                "error",
-                "-show_streams",
-                "-show_format",
-                "-of",
-                "json",
-                str(path),
-            ]
-        ).stdout
-    )
+def samples(path):
+    return np.frombuffer(pcm(path, "f32le"), dtype="<f4")
 
 
 @pytest.fixture
@@ -84,7 +48,6 @@ def tone(tmp_path):
 def settings(path, **kwargs):
     return {
         "format": "wav",
-        "cut_enabled": True,
         "file_markers": {
             str(path): [
                 {
@@ -104,20 +67,20 @@ def test_unmodified_flac_preserves_pcm(tone, tmp_path):
     assert converter().convert_file(
         str(tone), str(out), {"format": "flac"}, lambda _: None
     )
-    assert np.array_equal(pcm(tone), pcm(out))
+    assert np.array_equal(samples(tone), samples(out))
 
 
 def test_cut_respects_zero_volume(tone, tmp_path):
     out = tmp_path / "muted.wav"
     assert converter().convert_file(str(tone), str(out), settings(tone, volume=0))
-    assert np.max(np.abs(pcm(out))) == 0
+    assert np.max(np.abs(samples(out))) == 0
 
 
 def test_cut_respects_double_speed(tone, tmp_path):
     out = tmp_path / "fast.wav"
     assert converter().convert_file(str(tone), str(out), settings(tone, speed=2))
     assert (
-        abs(len(pcm(out)) - 24000) <= 480
+        abs(len(samples(out)) - 24000) <= 480
     )  # atempo has algorithm-dependent end padding.
 
 
@@ -151,8 +114,10 @@ def test_removing_marked_parts_keeps_the_rest_in_order(tone, tmp_path):
     assert converter().convert_file(
         str(tone), str(out), settings(tone, cut_remove=True)
     )
-    source = pcm(tone)
-    assert np.array_equal(pcm(out), np.concatenate([source[:24000], source[72000:]]))
+    source = samples(tone)
+    assert np.array_equal(
+        samples(out), np.concatenate([source[:24000], source[72000:]])
+    )
 
 
 def test_removing_every_part_publishes_nothing(tone, tmp_path):
@@ -223,12 +188,8 @@ def test_waveform_represents_right_channel(tmp_path):
 
     sink = Sink()
     WaveformGenerator().generate(str(source), converter(), sink)
-    context = GLib.MainContext.default()
-    for _ in range(100):
-        if not context.pending():
-            break
-        context.iteration(False)
-    assert np.max(np.abs(sink.data["levels"][0])) > 0.01
+    pump(lambda: sink.data is not None)
+    assert np.max(np.abs(sink.data["peaks"])) > 0.01
 
 
 def test_short_segments_produce_actual_outputs(tone, tmp_path):
@@ -242,7 +203,7 @@ def test_short_segments_produce_actual_outputs(tone, tmp_path):
     assert conv.convert_file(str(tone), str(tmp_path / "short.wav"), st)
     assert len(conv.last_result.outputs) == 2
     for output in conv.last_result.outputs:
-        assert len(pcm(output)) == 480
+        assert len(samples(output)) == 480
 
 
 def test_segments_arg_parses_ordered_ranges():

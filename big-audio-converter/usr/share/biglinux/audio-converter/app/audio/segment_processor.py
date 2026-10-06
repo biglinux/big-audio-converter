@@ -161,7 +161,7 @@ class SegmentProcessor:
             if filters:
                 raise MediaError(
                     gettext.gettext(
-                        "Effects require re-encoding. Select an audio format instead of Fast Copy."
+                        "Effects need a new encoding. Select an audio format instead of keeping the original."
                     )
                 )
             if cuts and len(cuts) > 1:

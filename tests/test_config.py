@@ -2,7 +2,6 @@
 
 import json
 import os
-import time
 
 import pytest
 from app.utils.config import AppConfig
@@ -71,17 +70,17 @@ class TestAppConfigPersistence:
 
 
 class TestAppConfigDebounce:
-    def test_debounce_batches_writes(self, config):
-        config.set("conversion_format", "m4a")
-        config.set("conversion_format", "opus")
-        config.set("conversion_format", "flac")
-        # Wait for debounce
-        time.sleep(0.1)
-
-        if os.path.exists(config.config_file):
-            with open(config.config_file, "r") as f:
-                data = json.load(f)
-            assert data["conversion_format"] == "flac"
+    def test_debounce_batches_writes(self, config, monkeypatch):
+        writes = []
+        save = config.save_config
+        monkeypatch.setattr(config, "save_config", lambda: writes.append(1) or save())
+        for value in ("m4a", "opus", "flac"):
+            config.set("conversion_format", value)
+        assert writes == []
+        config.flush()
+        assert len(writes) == 1
+        with open(config.config_file) as f:
+            assert json.load(f)["conversion_format"] == "flac"
 
 
 def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):

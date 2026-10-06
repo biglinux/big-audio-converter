@@ -26,11 +26,11 @@ class AppConfig:
         "hpf_frequency": (20, 20000),
         "window_width": (320, 32768),
         "window_height": (240, 32768),
-        "sidebar_width": (100, 4096),
         "visualizer_height": (80, 4096),
         "audio_channels": (0, 2),
         "cut_audio_mode": (0, 2),
         "cut_output_mode": (0, 1),
+        "pause_length": (0.5, 2),
     }
     BOOLS: ClassVar = {
         "noise_reduction_enabled",

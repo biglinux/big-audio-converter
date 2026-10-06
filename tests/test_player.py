@@ -2,23 +2,10 @@
 
 import subprocess
 import threading
-import time
 
 import pytest
 from app.audio.player import AudioPlayer
-from gi.repository import GLib
-
-
-def pump_until(predicate, timeout=5):
-    context = GLib.MainContext.default()
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        while context.pending():
-            context.iteration(False)
-        if predicate():
-            return
-        time.sleep(0.005)
-    raise AssertionError("Native playback did not reach the expected state")
+from conftest import pump
 
 
 @pytest.fixture
@@ -76,18 +63,18 @@ def test_native_track_selection_seek_and_cleanup(player, tracks):
     assert player.load(
         identifier, {identifier: {"source_video": str(tracks), "track_index": 1}}
     )
-    pump_until(lambda: player._loaded or errors)
+    pump(lambda: player._loaded or errors)
     assert not errors
     assert player.mpv_instance.aid == 2
     assert player.mpv_instance.pause
     assert callback_threads == [threading.get_ident()]
     player.set_volume(2)
     player.set_playback_speed(0.1)
-    pump_until(lambda: "volume=2.0" in (player._last_filter_graph or ""))
+    pump(lambda: "volume=2.0" in (player._last_filter_graph or ""))
     assert player.mpv_instance.volume == 100
     assert player.mpv_instance.speed == 0.1
     assert player.play()
-    pump_until(
+    pump(
         lambda: (
             player.mpv_instance.time_pos is not None
             and player.mpv_instance.time_pos > 0.02
@@ -98,10 +85,10 @@ def test_native_track_selection_seek_and_cleanup(player, tracks):
     player.refresh_audio_devices()
     assert player.mpv_instance is native_player
     assert not native_player.pause
-    pump_until(lambda: native_player.time_pos > position)
+    pump(lambda: native_player.time_pos > position)
     player.pause()
     player.seek(2)
-    pump_until(lambda: abs((player.mpv_instance.time_pos or 0) - 2) < 0.05)
+    pump(lambda: abs((player.mpv_instance.time_pos or 0) - 2) < 0.05)
     player.cleanup()
     assert player.mpv_instance is None
     assert not player._sources._sources
@@ -115,7 +102,7 @@ def test_repeated_replacement_ignores_old_events(player, tracks):
     player.connect("error", errors.append)
     for _ in range(100):
         assert player.load(str(tracks))
-    pump_until(lambda: player._loaded or errors)
+    pump(lambda: player._loaded or errors)
     assert not errors
     assert player.duration >= 3.9
     current = player._entry_id
@@ -123,7 +110,7 @@ def test_repeated_replacement_ignores_old_events(player, tracks):
     player._file_loaded(current - 1)
     assert player._loaded
     player.cleanup()
-    pump_until(lambda: not player._sources._sources)
+    pump(lambda: not player._sources._sources)
 
 
 def test_missing_input_reports_error(player, tmp_path):
@@ -175,9 +162,9 @@ def test_denoiser_strength_changes_without_rebuilding_the_chain(player, tracks):
     errors = []
     player.connect("error", errors.append)
     assert player.load(str(tracks))
-    pump_until(lambda: player._loaded or errors)
+    pump(lambda: player._loaded or errors)
     assert player.set_noise_reduction(True)
-    pump_until(lambda: "ladspa=" in (player._last_filter_graph or ""))
+    pump(lambda: "ladspa=" in (player._last_filter_graph or ""))
     chain = player.mpv_instance.af
     assert player.play()
     # Rebuilding the chain drops the audio its filters hold: an audible cut.
@@ -185,6 +172,6 @@ def test_denoiser_strength_changes_without_rebuilding_the_chain(player, tracks):
         player.set_noise_strength(percent)
     assert player.noise_strength == 35
     player.seek(1)
-    pump_until(lambda: abs((player.mpv_instance.time_pos or 0) - 1) < 0.1)
+    pump(lambda: abs((player.mpv_instance.time_pos or 0) - 1) < 0.1)
     assert player.mpv_instance.af == chain
     assert not errors

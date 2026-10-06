@@ -9,10 +9,14 @@ from app.utils.main_loop import MainLoopSources
 
 from .media import MediaSource
 from .process import MediaError
-from .profiles import build_audio_filters, noise_attenuation, validate_settings
+from .profiles import (
+    EQ_FREQUENCIES,
+    build_audio_filters,
+    noise_attenuation,
+    validate_settings,
+)
 
 logger = logging.getLogger(__name__)
-EQ_FREQUENCIES = (31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
 
 
 class AudioPlayer:

@@ -1,5 +1,3 @@
-# app/ui/controls_bar_mixin.py
-
 """The playback bar's sliders and the waveform viewport they follow.
 
 Volume, speed, voice filter and zoom open their slider as the pointer reaches
@@ -28,7 +26,7 @@ class ControlsBarMixin:
     """The bar's hover sliders and the visualizer viewport sync."""
 
     def _bar_control(
-        self, name, icon_name, title, description, scale, value_label, step, extra=()
+        self, name, icon_name, title, description, scale, value_label, step
     ):
         """A button and readout whose slider opens on hover.
 
@@ -36,9 +34,6 @@ class ControlsBarMixin:
         Clicking opens it for the keyboard: focused, and closed by Escape or a
         click elsewhere. Returns the hover area and the button.
         """
-        if not hasattr(self, "_bar_popovers"):
-            self._bar_popovers, self._bar_pointers, self._bar_scales = {}, {}, {}
-            self._bar_closing, self._bar_keyboard = {}, {}
         button = Gtk.Button(
             icon_name=icon_name,
             valign=Gtk.Align.CENTER,
@@ -74,8 +69,6 @@ class ControlsBarMixin:
                 )
             )
         content.append(scale)
-        for widget in extra:
-            content.append(widget)
         popover = Gtk.Popover(
             child=content,
             position=Gtk.PositionType.TOP,
@@ -172,8 +165,6 @@ class ControlsBarMixin:
         scale.set_value(scale.get_value() - math.copysign(step, dy))
         return True
 
-    # --- Zoom popover ---
-
     def _format_zoom_value(self, scale, value):
         """Format zoom slider value to show actual zoom level."""
         return f"{self._slider_to_zoom(value):.1f}x"
@@ -204,12 +195,8 @@ class ControlsBarMixin:
     def _on_volume_scale_changed(self, scale):
         self._set_processing_volume(self._slider_to_volume(scale.get_value()))
 
-    # --- Speed popover ---
-
     def _on_speed_scale_changed(self, scale):
         self._set_processing_speed(self._slider_to_speed(scale.get_value()))
-
-    # --- Visualizer/seekbar sync ---
 
     def _on_visualizer_zoom_changed(self, zoom_level):
         """Update zoom slider when zoom changes from visualizer (e.g. mouse wheel)."""

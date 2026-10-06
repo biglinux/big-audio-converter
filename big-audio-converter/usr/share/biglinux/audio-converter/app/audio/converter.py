@@ -18,6 +18,7 @@ from .media import (
     audio_duration,
     audio_stream,
     complement,
+    file_identity,
     probe_media,
 )
 from .output import available_path, publish_all, staging_directory
@@ -208,43 +209,39 @@ class AudioConverter:
     def _open(self, input_path, settings, runner):
         """Probe one source and plan its cuts: a list, empty for all of it."""
         source = MediaSource.resolve(input_path, settings.get("track_metadata"))
-        source_stat = os.stat(source.path)
+        source_identity = file_identity(source.path)
         info = probe_media(source.path, runner, self.ffmpeg_path)
         stream = audio_stream(info, source.stream_index)
         duration = audio_duration(info, stream)
         rate = int(stream["sample_rate"])
-        segments = []
-        if settings.get("cut_enabled"):
-            # A file without marked segments is converted in full.
-            raw = settings.get("file_markers", {}).get(input_path, [])
-            # Players measure the container, which may outlast the audio;
-            # audio_duration without a stream reads the container's.
-            end = max(duration or 0, audio_duration(info, {}) or 0) or None
-            segments = [Segment.from_mapping(s, end, rate).as_mapping() for s in raw]
-            if segments and settings.get("cut_remove"):
-                if end is None:
-                    raise MediaError(
-                        gettext.gettext(
-                            "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
-                        )
+        # A file without marked segments is converted in full.
+        raw = settings.get("file_markers", {}).get(input_path, [])
+        # Players measure the container, which may outlast the audio;
+        # audio_duration without a stream reads the container's.
+        end = max(duration or 0, audio_duration(info, {}) or 0) or None
+        segments = [Segment.from_mapping(s, end, rate).as_mapping() for s in raw]
+        if segments and settings.get("cut_remove"):
+            if end is None:
+                raise MediaError(
+                    gettext.gettext(
+                        "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
                     )
-                # What lies between the marked parts, as one file.
-                segments = [
-                    Segment.from_mapping(s, end, rate).as_mapping()
-                    for s in complement(segments, end)
-                    if round(s["stop"] * rate) > round(s["start"] * rate)
-                ]
-                if not segments:
-                    raise MediaError(
-                        gettext.gettext(
-                            "Every part of this file is marked for removal."
-                        )
-                    )
-            elif settings.get("order_by_segment_number"):
-                segments.sort(key=lambda s: s["segment_index"])
-            else:
-                segments.sort(key=lambda s: s["start"])
-        return source, source_stat, info, stream, duration, segments
+                )
+            # What lies between the marked parts, as one file.
+            segments = [
+                Segment.from_mapping(s, end, rate).as_mapping()
+                for s in complement(segments, end)
+                if round(s["stop"] * rate) > round(s["start"] * rate)
+            ]
+            if not segments:
+                raise MediaError(
+                    gettext.gettext("Every part of this file is marked for removal.")
+                )
+        elif settings.get("order_by_segment_number"):
+            segments.sort(key=lambda s: s["segment_index"])
+        else:
+            segments.sort(key=lambda s: s["start"])
+        return source, source_identity, info, stream, duration, segments
 
     def _convert_result(
         self, input_path, output_path, settings, progress_callback, runner, joined=()
@@ -257,7 +254,7 @@ class AudioConverter:
                     )
                 )
             settings = validate_settings(settings)
-            source, source_stat, info, stream, _duration, segments = self._open(
+            source, source_identity, info, stream, _duration, segments = self._open(
                 input_path, settings, runner
             )
             others = [self._open(path, settings, runner) for path in joined]
@@ -268,7 +265,7 @@ class AudioConverter:
                 if format_name == "copy":
                     raise MediaError(
                         gettext.gettext(
-                            "Fast Copy cannot join files. Select an audio format."
+                            "Keeping the original format cannot join files. Select an audio format."
                         )
                     )
                 if channels is None:
@@ -301,7 +298,7 @@ class AudioConverter:
                 ):
                     raise MediaError(
                         gettext.gettext(
-                            "Fast Copy cannot apply effects, change channels or resample. Select an encoding format."
+                            "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
                         )
                     )
                 extension, muxer = copy_container(
@@ -312,7 +309,7 @@ class AudioConverter:
                 filters = []
                 notes.append(
                     gettext.gettext(
-                        "Fast Copy preserves encoded audio packets; cut boundaries are approximate. Effects are not applied."
+                        "The original format keeps the encoded audio, so cuts are approximate and effects are not applied."
                     )
                 )
             else:
@@ -359,7 +356,7 @@ class AudioConverter:
                 ):
                     warnings.append(
                         gettext.gettext(
-                            "Positive gain may clip. Enable clipping protection or reduce the gain."
+                            "Raising the volume may distort. Turn on Prevent distortion or lower the volume."
                         )
                     )
             if extension in ("aac", "ac3", "eac3", "dts"):
@@ -432,11 +429,9 @@ class AudioConverter:
                         processor.last_output_info, format_name, params
                     )
                     staged.append((target, destination))
-                fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns")
                 if any(
-                    getattr(before, field) != getattr(os.stat(opened.path), field)
-                    for opened, before, *_rest in ((source, source_stat), *others)
-                    for field in fields
+                    before != file_identity(opened.path)
+                    for opened, before, *_rest in ((source, source_identity), *others)
                 ):
                     raise MediaError(
                         gettext.gettext(
@@ -526,9 +521,6 @@ class AudioConverter:
         if entry and (str(input_path).startswith("bac-track:") or not path.is_file()):
             filename = Path(entry.get("output_name", "audio-track.mka")).name
             path = Path(entry["source_video"]).with_name(filename)
-        elif "::" in str(input_path) and not path.is_file():
-            video, track = str(input_path).split("::", 1)
-            path = Path(video).with_name(f"{Path(video).stem}-{Path(track).name}")
         extension = (
             path.suffix.lstrip(".").lower()
             if output_format == "copy"

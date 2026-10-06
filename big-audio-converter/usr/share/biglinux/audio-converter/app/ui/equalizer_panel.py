@@ -8,13 +8,13 @@ from typing import ClassVar
 
 import gi
 
+from app.audio.profiles import EQ_FREQUENCIES
 from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gdk, Gtk
 
-gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 _CSS = """
@@ -67,17 +67,10 @@ def _ensure_css():
 class EqualizerPanel(Gtk.Box):
     """Inline equalizer panel with vertical sliders and preset selector."""
 
+    # Labels as the sliders show them: 1000 Hz is "1k".
     BANDS: ClassVar = [
-        ("31", 31),
-        ("63", 63),
-        ("125", 125),
-        ("250", 250),
-        ("500", 500),
-        ("1k", 1000),
-        ("2k", 2000),
-        ("4k", 4000),
-        ("8k", 8000),
-        ("16k", 16000),
+        (f"{freq // 1000}k" if freq >= 1000 else str(freq), freq)
+        for freq in EQ_FREQUENCIES
     ]
 
     PRESET_KEYS: ClassVar = [
@@ -130,37 +123,54 @@ class EqualizerPanel(Gtk.Box):
             "name": _("Present Voice"),
             "bands": [-5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 15.0, 10.0, 5.0, 0.0],
         },
-        "custom": {
-            "name": _("Custom"),
-            "bands": [0.0] * 10,
-        },
+        "custom": {"name": _("Custom")},
     }
 
-    def __init__(self, player, **kwargs):
+    def __init__(self, player, config, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
         _ensure_css()
         self.add_css_class("eq-panel")
         self.player = player
+        self.config = config
+        self.on_changed = None
         self.band_scales = {}
         self._value_labels = {}
         self._updating_preset = False
         self._build_ui()
+        self._restore()
+
+    def _restore(self):
+        """The preset and bands of the last session; anything unreadable is flat."""
+        key = self.config.get("equalizer_preset", "flat")
+        try:
+            gains = [
+                float(v) for v in self.config.get("equalizer_bands", "").split(",")
+            ]
+        except (AttributeError, ValueError):
+            gains = []
+        if key not in self.PRESET_KEYS or len(gains) != len(self.BANDS):
+            key, gains = "flat", self.PRESETS["flat"]["bands"]
+        self._updating_preset = True
+        for (_, freq), gain in zip(self.BANDS, gains, strict=True):
+            self.band_scales[freq].set_value(gain)
+        self._updating_preset = False
+        self.preset_dropdown.handler_block(self._preset_dropdown_handler)
+        self.preset_dropdown.set_selected(self.PRESET_KEYS.index(key))
+        self.preset_dropdown.handler_unblock(self._preset_dropdown_handler)
+        self._apply_equalizer()
 
     def _build_ui(self):
-        # Header row
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         header.set_margin_start(16)
         header.set_margin_end(8)
         header.set_margin_top(8)
         header.set_margin_bottom(4)
 
-        # Title
         title = Gtk.Label(label=_("Equalizer"))
         title.add_css_class("heading")
         title.set_halign(Gtk.Align.START)
         header.append(title)
 
-        # Spacer
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
         header.append(spacer)
@@ -168,7 +178,6 @@ class EqualizerPanel(Gtk.Box):
         # Preset dropdown
         dropdown_labels = [self.PRESETS[k]["name"] for k in self.PRESET_KEYS]
         self.preset_dropdown = Gtk.DropDown.new_from_strings(dropdown_labels)
-        self.preset_dropdown.set_selected(1)  # Start at "flat"
         self.preset_dropdown.update_property(
             [Gtk.AccessibleProperty.LABEL],
             [_("Equalizer preset")],
@@ -179,7 +188,6 @@ class EqualizerPanel(Gtk.Box):
         self.preset_dropdown.set_valign(Gtk.Align.CENTER)
         header.append(self.preset_dropdown)
 
-        # Close button
         close_btn = Gtk.Button(icon_name="window-close-symbolic")
         close_btn.add_css_class("flat")
         close_btn.add_css_class("circular")
@@ -258,17 +266,15 @@ class EqualizerPanel(Gtk.Box):
             self._apply_equalizer()
 
     def _on_preset_changed(self, dropdown, _pspec):
-        idx = dropdown.get_selected()
-        if idx < len(self.PRESET_KEYS):
-            key = self.PRESET_KEYS[idx]
-            if key != "custom":
-                values = self.PRESETS[key]["bands"]
-                self._updating_preset = True
-                for i, (_, freq) in enumerate(self.BANDS):
-                    if i < len(values):
-                        self.band_scales[freq].set_value(values[i])
-                self._updating_preset = False
-                self._apply_equalizer()
+        key = self.PRESET_KEYS[dropdown.get_selected()]
+        if key != "custom":
+            self._updating_preset = True
+            for (_, freq), gain in zip(
+                self.BANDS, self.PRESETS[key]["bands"], strict=True
+            ):
+                self.band_scales[freq].set_value(gain)
+            self._updating_preset = False
+        self._apply_equalizer()
 
     def _on_close(self, _button):
         parent = self.get_parent()
@@ -276,12 +282,17 @@ class EqualizerPanel(Gtk.Box):
             parent.set_reveal_child(False)
 
     def _apply_equalizer(self):
-        eq_bands = []
-        for _, freq in self.BANDS:
-            gain = self.band_scales[freq].get_value()
-            if gain != 0:
-                eq_bands.append((freq, gain))
-        self.player.set_equalizer_bands(eq_bands)
-        window = self.get_root()
-        if window is not None:
-            window._update_gain_notice()
+        gains = [self.band_scales[freq].get_value() for _, freq in self.BANDS]
+        self.player.set_equalizer_bands(
+            [
+                (freq, gain)
+                for (_, freq), gain in zip(self.BANDS, gains, strict=True)
+                if gain
+            ]
+        )
+        self.config.set(
+            "equalizer_preset", self.PRESET_KEYS[self.preset_dropdown.get_selected()]
+        )
+        self.config.set("equalizer_bands", ",".join(f"{gain:g}" for gain in gains))
+        if self.on_changed:
+            self.on_changed()
