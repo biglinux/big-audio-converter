@@ -13,7 +13,7 @@ Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or 
 ## Convert files
 
 1. Select **Add Files**, or drag local audio or video files into the window. Videos with multiple audio tracks get a separate entry for each track.
-2. Choose **Format** and **Quality**. MP3 is widely compatible. FLAC preserves decoded audio without loss, while WAV stores uncompressed audio. Ogg Vorbis, AAC and Opus are also available.
+2. Choose **Format** and **Quality**. MP3 is widely compatible. FLAC preserves decoded audio without loss, while WAV stores uncompressed audio. M4A, Opus and Ogg Vorbis are also available.
 3. Check **Save to**. By default, each result goes beside its original; you can choose another folder.
 4. Select **Convert**. The results show what succeeded, what failed and which files can be retried. Use each result's folder button to find its output.
 
@@ -23,26 +23,28 @@ The inputs stay in the list. Existing files are never overwritten: conflicting o
 
 ## Cut audio
 
-Select a file and change **Cut audio** from **Keep the whole audio** to the desired ordering. Use **Mark start** and **Mark end** at the current playback position, or open **Edit Segments** to enter times in seconds. The editor supports keyboard navigation, reordering and removal. Its changes take effect when you select **Apply**.
+Drag across the waveform to mark a part; drag its edges or the whole part to adjust it, and press Delete over it to remove it. **Edit Segments…** lists the same parts with their times in seconds, reachable by keyboard; its changes take effect when you select **Apply**.
 
-Save each segment separately or merge the marked segments into one file. Files without marked segments are converted in full. The waveform shows peaks from all channels; numeric editing remains available if waveform decoding fails after the duration has been read.
+Once a file has marks, **Marked parts** chooses whether they are kept or removed. Kept parts can be saved in timeline order or in the order marked (**Segment order**), as separate files or joined (**Save segments**). With several files in the queue, **Join into one file** joins them in queue order. Files without marks are converted in full, and each file keeps its own marks.
 
-**Copy without changing quality** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an encoding format when you need precise cuts or effects.
+**Remove pauses**, on the waveform, marks the pauses in speech for removal. It looks for them in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide a pause. The analysis takes about a minute per hour of audio and runs in the background. Choose the shortest pause to remove, check the dashed preview, then select **Mark for Removal**; it replaces the file's marks, each pause keeps 0.15 s beside the speech, and **Undo** restores the previous marks.
+
+**Keep the original format** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an audio format when you need precise cuts or effects.
 
 ## Listen and adjust
 
 The bottom controls play the selected file. **Audio output** lists available playback devices; **System default** uses the default selected by the audio system. Use **Refresh audio outputs** if a newly connected output is missing. If a specifically selected output disappears, playback pauses and returns to the default selection so that resuming is your choice.
 
-Volume, speed, equalizer, normalization and other enabled effects affect both preview and exported audio. **Listen to original** temporarily bypasses processing without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or enable clipping protection.
+Volume, speed, equalizer, **Even volume** and the other enabled effects affect both preview and exported audio. **Listen to original** temporarily bypasses processing without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or turn on **Prevent distortion**. The equalizer keeps its preset and bands between sessions.
 
-The **Voice filter** in the playback bar, beside volume and speed, reduces sounds other than speech. Its slider opens as the pointer reaches the control and offers exactly two modes:
+**Clean voice**, in the playback bar beside volume and speed, reduces sounds other than speech. Its slider opens as the pointer reaches the control; **Cleaning model** in the sidebar chooses between two models:
 
-| Mode | Installation | Plugin |
+| Model | Installation | Plugin |
 |---|---|---|
 | Light (DeepFilterNet3) | `deepfilternet3-native` | `libdfn3_ladspa.so`, the standard model without LL |
 | Higher quality (DPDFNet-2) | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
-The light mode is selected initially and the filter starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% each model applies its maximum useful reduction (24 dB for DeepFilterNet3, 48 dB for DPDFNet-2). Changing the strength during playback retunes the running filter without interrupting the sound. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
+The light model is selected initially and the slider starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% each model applies its maximum useful reduction (24 dB for DeepFilterNet3, 48 dB for DPDFNet-2). Changing the strength during playback retunes the running filter without interrupting the sound. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
 
 Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`. The plugin supports a `DPDFNET_NATIVE_MODEL` environment override; keep it unset to use the intended DPDFNet-2 model.
 
@@ -58,12 +60,11 @@ From the repository root, run the application with:
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
-The tests run real FFmpeg and libmpv. They need `pytest`; the GTK tests also need Xvfb and a session bus. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
+The tests run real FFmpeg and libmpv and need `pytest`. The GTK tests start their own Xvfb display and session bus, so no window reaches your desktop; set `BAC_TESTS_KEEP_SESSION=1` to use the current one instead. The pause tests also need `dpdfnet-enhance` and `espeak-ng`, and are skipped without them. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
 
 ```sh
 mkdir -p "$HOME/.cache/bac-tests"
-TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q tests --ignore=tests/test_gui.py
-TMPDIR="$HOME/.cache/bac-tests" xvfb-run -a dbus-run-session -- python3 -m pytest -q tests/test_gui.py
+TMPDIR="$HOME/.cache/bac-tests" python3 -m pytest -q tests
 ruff check big-audio-converter/usr/share/biglinux/audio-converter tests
 ruff format --check big-audio-converter/usr/share/biglinux/audio-converter tests
 ```

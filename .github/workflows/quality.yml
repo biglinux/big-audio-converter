@@ -25,8 +25,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y ffmpeg python3-pytest python3-pytest-cov python3-gi python3-gi-cairo python3-cairo python3-numpy python3-mpv gir1.2-gtk-4.0 gir1.2-adw-1 xvfb xauth xdotool dbus-x11 gettext desktop-file-utils appstream
+      - name: Lint
+        run: |
+          pipx run ruff==0.16.6 check big-audio-converter/usr/share/biglinux/audio-converter tests
+          pipx run ruff==0.16.6 format --check big-audio-converter/usr/share/biglinux/audio-converter tests
+      - name: Validate desktop entry and metainfo
+        run: |
+          desktop-file-validate big-audio-converter/usr/share/applications/br.com.biglinux.audio.converter.desktop
+          appstreamcli validate --no-net big-audio-converter/usr/share/metainfo/br.com.biglinux.audio.converter.metainfo.xml
       - name: Test
-        run: xvfb-run -a -s '-screen 0 1366x900x24' dbus-run-session -- /usr/bin/python3 -m pytest -q --junitxml=test-results/tests.xml --cov=big-audio-converter/usr/share/biglinux/audio-converter/app --cov-branch --cov-report=xml:test-results/coverage.xml
+        # The tests start their own Xvfb display and session bus.
+        run: /usr/bin/python3 -m pytest -q --junitxml=test-results/tests.xml --cov=big-audio-converter/usr/share/biglinux/audio-converter/app --cov-branch --cov-report=xml:test-results/coverage.xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
