@@ -1,36 +1,24 @@
-# app/ui/marker_manager.py
-
-"""
-Marker management mixin for AudioVisualizer.
-
-Provides all marker-related logic: creating, editing, deleting,
-drawing markers and related UI dialogs.
-"""
+"""Marked parts on the waveform: their state, drawing and delete dialogs."""
 
 import gettext
 import logging
+import math
 
 import cairo
 from gi.repository import Adw
 
 from app.audio.media import Segment
 from app.audio.process import MediaError
-from app.ui.cairo_text import show_text, text_extents
+from app.ui.cairo_text import rounded_rect, show_text, text_extents
 from app.utils.time_formatter import format_time_short
 
-gettext.textdomain("big-audio-converter")
 _ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
 
 class MarkerManagerMixin:
-    """Mixin providing marker management to AudioVisualizer.
-
-    This mixin is designed to be used with AudioVisualizer via multiple
-    inheritance. It accesses AudioVisualizer attributes (duration, zoom_level,
-    viewport_offset, etc.) through self.
-    """
+    """Marks of AudioVisualizer, which supplies duration, zoom and viewport."""
 
     def _init_marker_state(self):
         """Initialize all marker-related state variables."""
@@ -54,6 +42,8 @@ class MarkerManagerMixin:
         self.new_segment_anchor = None
         # Segments the export cuts out are drawn red instead of blue.
         self.remove_marked = False
+        # Found pauses shown in place of the marks until they are applied.
+        self.proposed_pairs = []
 
         # Callbacks
         self.marker_updated_callback = None
@@ -98,7 +88,6 @@ class MarkerManagerMixin:
                 x_start = ((pair["start"] - start_time) / visible_duration) * width
                 x_stop = ((pair["stop"] - start_time) / visible_duration) * width
 
-                # Check if x is within segment bounds (with a small margin)
                 if x_start - 5 <= x <= x_stop + 5:
                     return i
 
@@ -159,7 +148,6 @@ class MarkerManagerMixin:
                 x_start = ((pair["start"] - start_time) / visible_duration) * width
                 x_stop = ((pair["stop"] - start_time) / visible_duration) * width
 
-                # Check if point is inside segment, but not on edges
                 if (x_start + edge_tolerance) <= x <= (x_stop - edge_tolerance):
                     return i  # Return segment index
 
@@ -181,7 +169,7 @@ class MarkerManagerMixin:
         def responded(dialog, response):
             self._marker_dialog = None
             if self.marker_pairs is pairs and response == "delete":
-                self._delete_all_segments()
+                self.clear_all_markers()
             self.grab_focus()
 
         dialog.connect("response", responded)
@@ -192,23 +180,6 @@ class MarkerManagerMixin:
         if self._marker_dialog is not None:
             dialog, self._marker_dialog = self._marker_dialog, None
             dialog.force_close()
-
-    def _delete_all_segments(self):
-        """Delete all segments."""
-        if not self.marker_pairs:
-            return
-
-        # Clear all markers
-        self._close_marker_dialog()
-        self.marker_pairs = []
-        self.highlighted_pair = -1
-
-        # Notify listeners
-        if self.marker_updated_callback:
-            self.marker_updated_callback([])
-
-        # Redraw
-        self.queue_draw()
 
     def _prompt_delete_segment(self, pair_index):
         if not 0 <= pair_index < len(self.marker_pairs):
@@ -248,31 +219,19 @@ class MarkerManagerMixin:
         dialog.present(self.get_root())
 
     def remove_marker_pair(self, index):
-        """Remove a marker pair by index."""
         if 0 <= index < len(self.marker_pairs):
             self.marker_pairs.pop(index)
-
-            # Reset highlight
             self.highlighted_pair = -1
-
-            # Notify listener
             if self.marker_updated_callback:
                 self.marker_updated_callback(self.get_marker_pairs())
-
-            # Redraw
             self.queue_draw()
 
     def clear_all_markers(self):
-        """Clear all marker pairs."""
-        logger.debug("Clearing all markers")
         self._close_marker_dialog()
         self.marker_pairs = []
         self.highlighted_pair = -1
-        # Notify listener if any
         if self.marker_updated_callback:
             self.marker_updated_callback([])
-
-        # Redraw
         self.queue_draw()
 
     def connect_marker_drag_handler(self, callback):
@@ -314,17 +273,9 @@ class MarkerManagerMixin:
             # Order segments by their display number (as shown in UI)
             # Each marker pair should have a "segment_index" key that was added in get_marker_pairs
             ordered_pairs = sorted(pairs, key=lambda x: x["segment_index"])
-            logger.debug(
-                "Ordering by NUMBER: %s",
-                [(p["segment_index"], p["start_str"]) for p in ordered_pairs],
-            )
         else:
             # Order segments by their start time (chronological order)
             ordered_pairs = sorted(pairs, key=lambda x: x["start"])
-            logger.debug(
-                "Ordering by TIME: %s",
-                [(p["segment_index"], p["start_str"]) for p in ordered_pairs],
-            )
 
         return ordered_pairs
 
@@ -363,8 +314,12 @@ class MarkerManagerMixin:
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
+        if self.proposed_pairs:
+            self._draw_proposed(cr, width, height, start_time, visible_duration)
+            return
+
         # Collect all marker labels for collision-aware placement
-        label_items = []  # list of (x_center, text, color_rgba)
+        label_items = []  # (x_center, text)
 
         # First draw the segments and markers
         for i, pair in enumerate(self.marker_pairs):
@@ -376,10 +331,16 @@ class MarkerManagerMixin:
 
             # Use highlight color if this segment is highlighted
             is_highlighted = i == self.highlighted_pair
-            # Draw start marker with precise positioning (account for zoom)
-            if pair["start"] is not None and start_time <= pair["start"] <= end_time:
+            # Hundreds of found pauses would bury the waveform under edge
+            # lines, times and numbers (112 ms a frame for 600): those show
+            # once zoom makes the part wide enough to read them.
+            detailed = (pair["stop"] - pair["start"]) / visible_duration * width >= 24
+            if (
+                detailed
+                and pair["start"] is not None
+                and start_time <= pair["start"] <= end_time
+            ):
                 x_start = ((pair["start"] - start_time) / visible_duration) * width
-                # Ensure x_start is within bounds
                 x_start = max(0, min(width, x_start))
 
                 # Marker line
@@ -391,12 +352,14 @@ class MarkerManagerMixin:
 
                 # Collect label for deferred drawing (condensed format)
                 time_str = format_time_short(pair["start"])
-                label_items.append((x_start, time_str, start_color))
+                label_items.append((x_start, time_str))
 
-            # Draw stop marker with precise positioning (account for zoom)
-            if pair["stop"] is not None and start_time <= pair["stop"] <= end_time:
+            if (
+                detailed
+                and pair["stop"] is not None
+                and start_time <= pair["stop"] <= end_time
+            ):
                 x_stop = ((pair["stop"] - start_time) / visible_duration) * width
-                # Ensure x_stop is within bounds
                 x_stop = max(0, min(width, x_stop))
 
                 # Marker line
@@ -408,9 +371,8 @@ class MarkerManagerMixin:
 
                 # Collect label for deferred drawing (condensed format)
                 time_str = format_time_short(pair["stop"])
-                label_items.append((x_stop, time_str, stop_color))
+                label_items.append((x_stop, time_str))
 
-            # Draw region between start and stop with bounds checking (account for zoom)
             if pair["start"] is not None and pair["stop"] is not None:
                 # Calculate positions accounting for zoom and viewport
                 if pair["start"] <= end_time and pair["stop"] >= start_time:
@@ -421,7 +383,6 @@ class MarkerManagerMixin:
                     x_start = ((visible_start - start_time) / visible_duration) * width
                     x_stop = ((visible_stop - start_time) / visible_duration) * width
 
-                # Ensure x_start and x_stop are within bounds and in correct order
                 x_start = max(0, min(width, x_start))
                 x_stop = max(0, min(width, x_stop))
                 if x_start > x_stop:
@@ -432,7 +393,7 @@ class MarkerManagerMixin:
                     cr.set_source_rgba(*highlight_color)
                 else:
                     cr.set_source_rgba(*region_color)
-                cr.rectangle(x_start, 0, x_stop - x_start, height)
+                cr.rectangle(x_start, 0, max(1.5, x_stop - x_start), height)
                 cr.fill()
 
                 # Subtle top and bottom borders on segment region
@@ -448,33 +409,52 @@ class MarkerManagerMixin:
                     cr.line_to(x_stop, height - 0.5)
                     cr.stroke()
 
-                # Pill badge for segment number
-                badge_text = f"#{i + 1}"
-                cr.select_font_face(
-                    "Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD
-                )
-                cr.set_font_size(11)
-                ext = text_extents(cr, badge_text)
-                badge_w = ext.width + 12
-                badge_h = 18
-                badge_x = x_start + 4
-                badge_y = height - badge_h - 28  # above ruler
-                # Badge background
-                cr.set_source_rgba(0, 0, 0, 0.55)
-                self._draw_rounded_rect(cr, badge_x, badge_y, badge_w, badge_h, 4)
-                cr.fill()
-                # Badge text
-                cr.set_source_rgba(1, 1, 1, 0.90)
-                cr.move_to(badge_x + 6, badge_y + badge_h - 5)
-                show_text(cr, badge_text)
+                # Pill badge for segment number; removed parts have no order.
+                if detailed and not self.remove_marked:
+                    badge_text = f"#{i + 1}"
+                    cr.select_font_face(
+                        "Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD
+                    )
+                    cr.set_font_size(11)
+                    ext = text_extents(cr, badge_text)
+                    badge_w = ext.width + 12
+                    badge_h = 18
+                    badge_x = x_start + 4
+                    badge_y = height - badge_h - 28  # above ruler
+                    # Badge background
+                    cr.set_source_rgba(0, 0, 0, 0.55)
+                    rounded_rect(cr, badge_x, badge_y, badge_w, badge_h, 4)
+                    cr.fill()
+                    # Badge text
+                    cr.set_source_rgba(1, 1, 1, 0.90)
+                    cr.move_to(badge_x + 6, badge_y + badge_h - 5)
+                    show_text(cr, badge_text)
 
-                # Draw delete button when hovering over this segment
                 if i == self.hovered_segment_index and self._marker_dialog is None:
                     self._draw_segment_delete_button(cr, x_start, x_stop, height, i)
 
-        # Draw marker time labels with collision avoidance
         if label_items:
             self._draw_marker_labels(cr, width, label_items)
+
+    def _draw_proposed(self, cr, width, height, start_time, visible_duration):
+        """Pauses not yet applied: a lighter red, outlined with dashes."""
+        end_time = start_time + visible_duration
+        cr.set_line_width(1)
+        cr.set_dash([4, 3])
+        for pair in self.proposed_pairs:
+            if pair["stop"] < start_time or pair["start"] > end_time:
+                continue
+            x_start = (max(pair["start"], start_time) - start_time) / visible_duration
+            x_stop = (min(pair["stop"], end_time) - start_time) / visible_duration
+            x_start, x_stop = x_start * width, x_stop * width
+            cr.set_source_rgba(0.9, 0.25, 0.25, 0.18)
+            cr.rectangle(x_start, 0, max(1.5, x_stop - x_start), height)
+            cr.fill()
+            if x_stop - x_start > 3:
+                cr.set_source_rgba(0.9, 0.25, 0.25, 0.8)
+                cr.rectangle(x_start + 0.5, 0.5, x_stop - x_start - 1, height - 1)
+                cr.stroke()
+        cr.set_dash([])
 
     def _draw_marker_labels(self, cr, width, label_items):
         """Draw time labels for markers with collision-aware vertical stacking."""
@@ -486,7 +466,7 @@ class MarkerManagerMixin:
         label_items.sort(key=lambda item: item[0])
 
         placed = []  # (x_left, x_right, y_top)
-        for x_center, text, color in label_items:
+        for x_center, text in label_items:
             text_width = text_extents(cr, text).width + 4
             x_left = x_center - text_width / 2
             x_right = x_left + text_width
@@ -529,7 +509,7 @@ class MarkerManagerMixin:
 
         # Shadow
         cr.set_source_rgba(0, 0, 0, 0.35)
-        cr.arc(cx + 1, cy + 1, r + 1, 0, 2 * 3.14159)
+        cr.arc(cx + 1, cy + 1, r + 1, 0, 2 * math.pi)
         cr.fill()
 
         # Background circle
@@ -537,7 +517,7 @@ class MarkerManagerMixin:
             cr.set_source_rgba(0.90, 0.22, 0.22, 0.95)
         else:
             cr.set_source_rgba(0.70, 0.15, 0.15, 0.80)
-        cr.arc(cx, cy, r, 0, 2 * 3.14159)
+        cr.arc(cx, cy, r, 0, 2 * math.pi)
         cr.fill()
 
         # Trash icon (simplified: lid + body)
