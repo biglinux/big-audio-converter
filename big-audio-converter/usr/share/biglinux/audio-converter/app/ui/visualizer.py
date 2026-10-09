@@ -230,7 +230,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if self.duration > 0 and self.zoom_level > 1.0:
             width = self.get_width()
             if width > 0:
-                visible_duration = self.duration / self.zoom_level
+                visible_duration = self.visible_duration
                 start_time = self.viewport_offset * self.duration
                 end_time = start_time + visible_duration
 
@@ -245,13 +245,13 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     if marker_pixel_x > width - edge_threshold:
                         # Shift viewport forward to keep marker visible
                         new_start_time = position - visible_duration * 0.3
-                        max_offset = 1.0 - 1.0 / self.zoom_level
+                        max_offset = self.max_scroll_offset
                         self.viewport_offset = max(
                             0, min(max_offset, new_start_time / self.duration)
                         )
                     elif marker_pixel_x < 0:
                         new_start_time = position - visible_duration * 0.7
-                        max_offset = 1.0 - 1.0 / self.zoom_level
+                        max_offset = self.max_scroll_offset
                         self.viewport_offset = max(
                             0, min(max_offset, new_start_time / self.duration)
                         )
@@ -260,7 +260,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     if position < start_time or position > end_time:
                         # Center the position in the viewport
                         new_start_time = position - visible_duration * 0.5
-                        max_offset = 1.0 - 1.0 / self.zoom_level
+                        max_offset = self.max_scroll_offset
                         self.viewport_offset = max(
                             0, min(max_offset, new_start_time / self.duration)
                         )
@@ -301,7 +301,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         width = self.get_width()
 
         # Account for zoom and pan when calculating position
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         position = start_time + (x / width) * visible_duration
         position = round(position, 3)
@@ -387,7 +387,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def _drag_update_single_marker(self, pair, current_x, width, marker_type):
         """Update a single start/stop marker position during drag."""
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         new_position = start_time + (current_x / width) * visible_duration
         new_position = max(0, min(new_position, self.duration))
@@ -408,7 +408,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def _drag_update_segment(self, pair, offset_x, width):
         """Move a whole segment during drag with collision detection."""
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         time_delta = (offset_x / width) * visible_duration
 
         new_start = self.drag_start_pos["start"] + time_delta
@@ -489,7 +489,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             )
 
             # Clamp to valid range
-            max_offset = 1.0 - 1.0 / self.zoom_level
+            max_offset = self.max_scroll_offset
             self.viewport_offset = max(0, min(max_offset, new_offset))
 
             self.queue_draw()
@@ -546,7 +546,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         elif self.dragging_marker_type == "segment" and self.drag_start_pos is not None:
             self._drag_update_segment(pair, offset_x, width)
         elif self.dragging_marker_type == "new":
-            visible_duration = self.duration / self.zoom_level
+            visible_duration = self.visible_duration
             start_time = self.viewport_offset * self.duration
             here = start_time + (current_x / width) * visible_duration
             here = round(max(0, min(here, self.duration)), 3)
@@ -610,7 +610,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 scroll_delta = dx if abs(dx) > abs(dy) else dy
                 delta_offset = scroll_delta * pan_speed / self.zoom_level
 
-                max_offset = 1.0 - 1.0 / self.zoom_level
+                max_offset = self.max_scroll_offset
                 new_offset = self.viewport_offset + delta_offset
                 self.viewport_offset = max(0, min(max_offset, new_offset))
 
@@ -663,7 +663,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Arrow keys for horizontal panning when zoomed
         if self.zoom_level > 1.0:
             pan_amount = 0.05 / self.zoom_level  # Smaller steps when more zoomed
-            max_offset = 1.0 - 1.0 / self.zoom_level
+            max_offset = self.max_scroll_offset
 
             if keyval == Gdk.KEY_Left:
                 # Pan left
@@ -715,7 +715,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Second priority: Use playback position if available
         if mouse_fraction is None and self.position > 0:
             # Calculate where playback position appears in current view
-            visible_duration = self.duration / self.zoom_level
+            visible_duration = self.visible_duration
             start_time = self.viewport_offset * self.duration
             end_time = start_time + visible_duration
             if start_time <= self.position <= end_time:
@@ -727,19 +727,19 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             mouse_fraction = 0.5
 
         # Calculate anchor time
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         anchor_time = start_time + mouse_fraction * visible_duration
 
         self.zoom_level = new_zoom
 
         # Adjust viewport to keep anchor position
-        new_visible_duration = self.duration / self.zoom_level
+        new_visible_duration = self.visible_duration
         new_start_time = anchor_time - mouse_fraction * new_visible_duration
 
         # Clamp viewport offset
         self.viewport_offset = max(
-            0, min(1.0 - 1.0 / self.zoom_level, new_start_time / self.duration)
+            0, min(self.max_scroll_offset, new_start_time / self.duration)
         )
 
         self.queue_draw()
@@ -791,7 +791,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if self.duration > 0:
             self.hover_x = x
             # Account for zoom and pan
-            visible_duration = self.duration / self.zoom_level
+            visible_duration = self.visible_duration
             start_time = self.viewport_offset * self.duration
             self.hover_time = start_time + (x / width) * visible_duration
 
@@ -873,7 +873,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def _draw_timeline_ruler(self, cr, width, height):
         """Draw subtle integrated timeline ticks at the bottom of the waveform."""
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
@@ -1191,7 +1191,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self._draw_loading_indicator(cr, width, height)
             return
 
-        visible_duration = self.duration / self.zoom_level if self.duration > 0 else 0
+        visible_duration = self.visible_duration if self.duration > 0 else 0
         start_time = self.viewport_offset * self.duration if self.duration > 0 else 0
         end_time = start_time + visible_duration
 

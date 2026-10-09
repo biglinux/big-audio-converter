@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 class MarkerManagerMixin:
     """Marks of AudioVisualizer, which supplies duration, zoom and viewport."""
 
+    @property
+    def visible_duration(self):
+        """Seconds of audio the view spans at the current zoom."""
+        return self.duration / self.zoom_level
+
+    @property
+    def max_scroll_offset(self):
+        """The largest viewport offset, as a fraction of the duration."""
+        return 1.0 - 1.0 / self.zoom_level
+
     def _init_marker_state(self):
         """Initialize all marker-related state variables."""
         self._marker_dialog = None
@@ -72,7 +82,7 @@ class MarkerManagerMixin:
         width = self.get_width()
 
         # Calculate visible time range
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
@@ -105,7 +115,7 @@ class MarkerManagerMixin:
             return None
 
         # Calculate visible time range
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
@@ -130,7 +140,7 @@ class MarkerManagerMixin:
         width = self.get_width()
 
         # Calculate visible time range
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
@@ -309,7 +319,7 @@ class MarkerManagerMixin:
         highlight_color = (1.0, 0.8, 0.0, 0.35)
 
         # Calculate visible time range
-        visible_duration = self.duration / self.zoom_level
+        visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
