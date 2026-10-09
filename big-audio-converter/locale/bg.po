@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-audio-converter\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-audio-converter/issues\n"
-"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"POT-Creation-Date: 2026-10-06 00:00+0000\n"
 "PO-Revision-Date: 2026-10-03 00:00+0000\n"
 "Last-Translator: BigLinux\n"
 "Language-Team: bg\n"
@@ -15,266 +15,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Contextual translation and automated validation\n"
-
-#: usr/share/biglinux/audio-converter/main.py:92
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1268
-msgid "Local files only"
-msgstr "Само локални файлове"
-
-#: usr/share/biglinux/audio-converter/main.py:93
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:1069
-msgid "Download this file to a local folder before adding it."
-msgstr "Изтеглете този файл в локална папка, преди да го добавите."
-
-#: usr/share/biglinux/audio-converter/main.py:201
-#: usr/share/biglinux/audio-converter/main.py:203
-msgid "BigLinux Team"
-msgstr "Екипът на BigLinux"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:48
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:59
-msgid "Clear queue"
-msgstr "Изчистване на опашката"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:62
-msgid "0 files"
-msgstr "0 файла"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:71
-msgid "Show help on hover"
-msgstr "Показване на помощ при посочване"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:72
-msgid "Show Welcome Screen"
-msgstr "Показване на приветстващия екран"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:74
-msgid "Reset All Settings…"
-msgstr "Нулиране на всички настройки…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:77
-msgid "About"
-msgstr "Относно"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:82
-msgid "Main menu"
-msgstr "Главно меню"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:111
-msgid "Add Files"
-msgstr "Добавяне на файлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:118
-msgid "Convert"
-msgstr "Конвертиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:230
-msgid "Settings could not be read and were reset"
-msgstr "Настройките не можаха да бъдат прочетени и бяха нулирани"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:445
-msgid "Selection only"
-msgstr "Само избраното"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:456
-msgid "Play only selected area"
-msgstr "Възпроизвеждане само на избраната област"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:462
-msgid "Edit Segments…"
-msgstr "Редактиране на отрязъци…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:472
-msgid "Play the next file automatically"
-msgstr "Автоматично възпроизвеждане на следващия файл"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:491
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:502
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:169
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
-msgid "Equalizer"
-msgstr "Еквалайзер"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:506
-msgid "Listen to original"
-msgstr "Прослушване на оригинала"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:508
-msgid "Temporarily listen without effects. Export settings stay unchanged."
-msgstr "Временно прослушване без ефекти. Настройките за експортиране остават непроменени."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:522
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:524
-msgid "More playback options"
-msgstr "Още опции за възпроизвеждане"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528
-msgid "Playback"
-msgstr "Възпроизвеждане"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:529
-msgid "Only affects listening. Converted files stay unchanged."
-msgstr "Засяга само прослушването. Конвертираните файлове остават непроменени."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:537
-msgid "Audio output"
-msgstr "Аудиоизход"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:537
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:860
-msgid "System default"
-msgstr "Системен изход по подразбиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:545
-msgid "Refresh audio outputs"
-msgstr "Обновяване на аудиоизходите"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:574
-msgid "Previous track"
-msgstr "Предишна писта"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:590
-msgid "Play or pause"
-msgstr "Възпроизвеждане или пауза"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:604
-msgid "Next track"
-msgstr "Следваща писта"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:629
-msgid "Volume"
-msgstr "Сила на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:651
-msgid "Speed"
-msgstr "Скорост"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:662
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:381
-msgid "Clean voice"
-msgstr "Изчистване на гласа"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:664
-msgid "Highlights the voice and reduces other sounds. At 100%, it applies the model's maximum reduction."
-msgstr "Подчертава гласа и намалява другите звуци. При 100% прилага максималното намаляване на модела."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:684
-msgid "Waveform zoom"
-msgstr "Мащаб на вълновата форма"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:793
-#, python-format
-msgid "Join %d file"
-msgid_plural "Join %d files"
-msgstr[0] "Обединяване на %d файл"
-msgstr[1] "Обединяване на %d файла"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:795
-#, python-format
-msgid "Convert %d file"
-msgid_plural "Convert %d files"
-msgstr[0] "Конвертиране на %d файл"
-msgstr[1] "Конвертиране на %d файла"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:975
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1094
-msgid "OK"
-msgstr "Добре"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:983
-msgid "Stop the conversion?"
-msgstr "Да се спре ли конвертирането?"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:985
-msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
-msgstr "Затварянето на прозореца спира текущото конвертиране. Вече готовите файлове се запазват."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:989
-msgid "Keep Converting"
-msgstr "Продължаване на конвертирането"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:990
-msgid "Stop and Close"
-msgstr "Спиране и затваряне"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1041
-msgid "No audio selected"
-msgstr "Не е избран звук"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1042
-msgid "Add a file and select it before editing segments."
-msgstr "Добавете и изберете файл, преди да редактирате отрязъци."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1047
-msgid "Audio duration unavailable"
-msgstr "Продължителността на звука е недостъпна"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1048
-msgid "Wait for the waveform to finish loading before editing this file."
-msgstr "Изчакайте вълновата форма да се зареди, преди да редактирате този файл."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1088
-msgid "Other valid files remain in the queue. Check these files and add them again."
-msgstr "Останалите валидни файлове остават в опашката. Проверете тези файлове и ги добавете отново."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1092
-msgid "Some files could not be added"
-msgstr "Някои файлове не могат да бъдат добавени"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1108
-msgid "Audio preview"
-msgstr "Прослушване на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1136
-msgid "Reset all settings?"
-msgstr "Нулиране на всички настройки?"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1138
-msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
-msgstr "Форматът, качеството, папката за резултатите, изрязването, ефектите и еквалайзерът се връщат към стойностите по подразбиране. Опашката и файловете източници се запазват."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1142
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1161
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:82
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:865
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:163
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:194
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:94
-msgid "Cancel"
-msgstr "Отказ"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1143
-msgid "Reset"
-msgstr "Нулиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1156
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1162
-msgid "Clear Queue"
-msgstr "Изчистване на опашката"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1158
-msgid "Remove the queue entries and their edits? Source files will not be deleted."
-msgstr "Да се премахнат ли записите в опашката и техните редакции? Файловете източници няма да бъдат изтрити."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1194
-msgid "Select Audio or Video Files"
-msgstr "Избор на аудио- или видеофайлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1197
-msgid "Audio and Video files"
-msgstr "Аудио- и видеофайлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1243
-msgid "All files"
-msgstr "Всички файлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1270
-msgid "Some selected files are remote. Download them before adding them."
-msgstr "Някои избрани файлове са отдалечени. Изтеглете ги, преди да ги добавите."
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1281
-msgid "Files could not be selected"
-msgstr "Файловете не могат да бъдат избрани"
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:63
 msgid "The application is closing."
@@ -321,130 +61,70 @@ msgstr "При запазване на първоначалния формат �
 msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
 msgstr "Файлове с повече от два канала могат да се обединят само като моно или стерео. Изберете каналите в „Разширено кодиране“."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:301
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:298
 msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
 msgstr "При запазване на първоначалния формат не могат да се прилагат ефекти, да се сменят каналите или да се преобразува честотата. Изберете аудиоформат."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:312
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:309
 msgid "The original format keeps the encoded audio, so cuts are approximate and effects are not applied."
 msgstr "Първоначалният формат запазва кодирания звук, затова изрязванията са приблизителни и ефектите не се прилагат."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:331
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:328
 msgid "Floating-point audio was explicitly converted to 24-bit integer PCM for FLAC; this is not a bit-exact copy."
 msgstr "Звукът с плаваща запетая е преобразуван с изрично разрешение в 24-битов целочислен PCM за FLAC; това не е побитово точно копие."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:337
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:334
 msgid "Opus uses a 48 kHz playback sample clock. The source sample rate cannot be represented unchanged in the output container."
 msgstr "Opus използва тактова честота на дискретизация 48 kHz при възпроизвеждане. Честотата на дискретизация на източника не може да се представи непроменена в изходния контейнер."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:344
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:341
 #, python-brace-format
 msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
 msgstr "Изходният кодек изисква предискретизация от {rate} Hz на {final_rate} Hz."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:359
-msgid "Raising the volume may distort. Turn on Prevent distortion or lower the volume."
-msgstr "Увеличаването на силата на звука може да изкриви звука. Включете „Предотвратяване на изкривяването“ или намалете силата."
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:353
+msgid "Raising the volume may distort. Turn on Even volume or lower the volume."
+msgstr "Увеличаването на силата на звука може да изкриви звука. Включете „Изравнена сила на звука“ или намалете силата."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:365
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:359
 msgid "This raw audio format cannot preserve all tags or artwork."
 msgstr "Този необработен аудиоформат не може да запази всички етикети или обложки."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:372
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:366
 msgid "Artwork is not preserved by this output profile."
 msgstr "Този изходен профил не запазва обложки."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:438
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:432
 msgid "The source changed during conversion. No output was published; add the file again."
 msgstr "Източникът се промени по време на конвертирането. Не е записан окончателен резултат; добавете файла отново."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:456
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:450
 msgid "Conversion cancelled. No incomplete output was published."
 msgstr "Конвертирането е отменено. Не е записан недовършен изходен файл."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:470
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:464
 msgid "The file or destination could not be accessed. Check permissions and free disk space."
 msgstr "Няма достъп до файла или целевото местоположение. Проверете правата и свободното дисково пространство."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:479
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:473
 msgid "The media information or conversion settings are invalid."
 msgstr "Мултимедийната информация или настройките за конвертиране са невалидни."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:496
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:490
 msgid "The encoder changed the requested sample rate. No output was published."
 msgstr "Кодерът промени заявената честота на дискретизация. Не е записан окончателен резултат."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:504
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:498
 msgid "The encoder changed the requested channel count. No output was published."
 msgstr "Кодерът промени заявения брой канали. Не е записан окончателен резултат."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:512
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:506
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "Тази компилация на FFmpeg не може да запази заявената точност на FLAC. Изберете WAV или инсталирайте съвместим пакет FFmpeg."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:530
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:173
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:168
 msgid "Select a supported output format."
 msgstr "Изберете поддържан изходен формат."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:131
-#, python-brace-format
-msgid "Invalid value for {key}."
-msgstr "Невалидна стойност за {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:135
-#, python-brace-format
-msgid "{key} must be between {low} and {high}."
-msgstr "Стойността на {key} трябва да е между {low} и {high}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:143
-#, python-brace-format
-msgid "Invalid switch value for {key}."
-msgstr "Невалидна стойност на превключвател за {key}."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:153
-msgid "The equalizer bands are invalid."
-msgstr "Лентите на еквалайзера са невалидни."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:160
-msgid "The equalizer needs ten finite gains between -40 and 40 dB."
-msgstr "Еквалайзерът изисква десет крайни стойности на усилване между -40 и 40 dB."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:164
-msgid "Select a supported noise reduction mode."
-msgstr "Изберете поддържан режим на намаляване на шума."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:189
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC не може да запази това представяне на PCM. Изберете WAV или изрично разрешете преобразуване в 24-битов PCM в разширеното кодиране."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:214
-msgid "The selected bitrate is not supported by this output profile."
-msgstr "Избраната побитова скорост не се поддържа от този изходен профил."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:221
-msgid "Select original, mono or stereo channels."
-msgstr "Изберете първоначалните канали, моно или стерео."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:229
-msgid "MP3 supports mono or stereo. Select stereo channels or another format."
-msgstr "MP3 поддържа моно или стерео. Изберете стереоканали или друг формат."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:236
-msgid "Select a valid output sample rate."
-msgstr "Изберете валидна изходна честота на дискретизация."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:243
-msgid "The selected codec does not support that sample rate."
-msgstr "Избраният кодек не поддържа тази честота на дискретизация."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:317
-msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
-msgstr "Избраната приставка за намаляване на шума е недостъпна. Инсталирайте я или изключете намаляването на шума."
-
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:351
-msgid "The audio plugin path is unsupported."
-msgstr "Пътят към аудиоприставката не се поддържа."
 
 #: usr/share/biglinux/audio-converter/app/audio/media.py:24
 msgid "Select a valid local media file."
@@ -502,39 +182,43 @@ msgstr "Този файл не съдържа избраната аудиопи�
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "Избраният WAV кодер не може да запази тази точност на PCM."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:161
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:210 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:330
+msgid "The pauses could not be measured."
+msgstr "Паузите не можаха да бъдат измерени."
+
+#: usr/share/biglinux/audio-converter/app/audio/player.py:156
 msgid "Audio preview is unavailable. Install mpv and python-mpv, then reopen the application."
 msgstr "Прослушването на звук е недостъпно. Инсталирайте mpv и python-mpv, след което отворете приложението отново."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:188
+#: usr/share/biglinux/audio-converter/app/audio/player.py:183
 msgid "Audio outputs could not be listed. Try reopening the output selector."
 msgstr "Аудиоизходите не могат да бъдат изброени. Опитайте да отворите отново избора на изход."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:210
+#: usr/share/biglinux/audio-converter/app/audio/player.py:205
 msgid "The selected audio output was disconnected. Playback is paused. Choose an output or resume using the system default."
 msgstr "Избраният аудиоизход е изключен от системата. Възпроизвеждането е на пауза. Изберете изход или продължете със системния изход по подразбиране."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:223
+#: usr/share/biglinux/audio-converter/app/audio/player.py:218
 msgid "This audio output is no longer available. Choose another output."
 msgstr "Този аудиоизход вече не е достъпен. Изберете друг."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:235
+#: usr/share/biglinux/audio-converter/app/audio/player.py:230
 msgid "The audio output could not be selected. Choose another output."
 msgstr "Аудиоизходът не може да бъде избран. Изберете друг."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:261
+#: usr/share/biglinux/audio-converter/app/audio/player.py:256
 msgid "The selected audio track is unavailable. Add the file again."
 msgstr "Избраната аудиописта е недостъпна. Добавете файла отново."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:293
+#: usr/share/biglinux/audio-converter/app/audio/player.py:288
 msgid "The audio could not be played. Check the file and audio output device."
 msgstr "Звукът не може да бъде възпроизведен. Проверете файла и изходното аудиоустройство."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:419
+#: usr/share/biglinux/audio-converter/app/audio/player.py:414
 msgid "This audio position could not be reached."
 msgstr "Не може да се премине към тази позиция в звука."
 
-#: usr/share/biglinux/audio-converter/app/audio/player.py:471
+#: usr/share/biglinux/audio-converter/app/audio/player.py:461
 msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
 msgstr "Ефект за прослушване не може да бъде приложен. Проверете избраните ефекти и инсталираните приставки."
 
@@ -554,14 +238,72 @@ msgstr "Файлът се промени по време на анализа. Д
 msgid "The file could not be inspected. Add it again or choose another file."
 msgstr "Файлът не можа да бъде анализиран. Добавете го отново или изберете друг файл."
 
-#: usr/share/biglinux/audio-converter/app/audio/process.py:116
-#: usr/share/biglinux/audio-converter/app/audio/process.py:144
+#: usr/share/biglinux/audio-converter/app/audio/process.py:116 usr/share/biglinux/audio-converter/app/audio/process.py:144
 msgid "The media command timed out."
 msgstr "Времето за изпълнение на мултимедийната команда изтече."
 
 #: usr/share/biglinux/audio-converter/app/audio/process.py:134
 msgid "The media information is too large to process safely."
 msgstr "Мултимедийната информация е твърде голяма за безопасна обработка."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:126
+#, python-brace-format
+msgid "Invalid value for {key}."
+msgstr "Невалидна стойност за {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:130
+#, python-brace-format
+msgid "{key} must be between {low} and {high}."
+msgstr "Стойността на {key} трябва да е между {low} и {high}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:138
+#, python-brace-format
+msgid "Invalid switch value for {key}."
+msgstr "Невалидна стойност на превключвател за {key}."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:148
+msgid "The equalizer bands are invalid."
+msgstr "Лентите на еквалайзера са невалидни."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:155
+msgid "The equalizer needs ten finite gains between -40 and 40 dB."
+msgstr "Еквалайзерът изисква десет крайни стойности на усилване между -40 и 40 dB."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:159
+msgid "Select a supported noise reduction mode."
+msgstr "Изберете поддържан режим на намаляване на шума."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
+msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
+msgstr "FLAC не може да запази това представяне на PCM. Изберете WAV или изрично разрешете преобразуване в 24-битов PCM в разширеното кодиране."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
+msgid "The selected bitrate is not supported by this output profile."
+msgstr "Избраната побитова скорост не се поддържа от този изходен профил."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:216
+msgid "Select original, mono or stereo channels."
+msgstr "Изберете първоначалните канали, моно или стерео."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:224
+msgid "MP3 supports mono or stereo. Select stereo channels or another format."
+msgstr "MP3 поддържа моно или стерео. Изберете стереоканали или друг формат."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:231
+msgid "Select a valid output sample rate."
+msgstr "Изберете валидна изходна честота на дискретизация."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:238
+msgid "The selected codec does not support that sample rate."
+msgstr "Избраният кодек не поддържа тази честота на дискретизация."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:312
+msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
+msgstr "Избраната приставка за намаляване на шума е недостъпна. Инсталирайте я или изключете намаляването на шума."
+
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:341
+msgid "The audio plugin path is unsupported."
+msgstr "Пътят към аудиоприставката не се поддържа."
 
 #: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:40
 msgid "There is not enough free disk space. Free some space and try again."
@@ -607,10 +349,7 @@ msgstr "Декодираният звук завършва с непълен к�
 msgid "The file contains no readable audio samples."
 msgstr "Файлът не съдържа четими звукови отчети."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:236
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:154
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:189
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1173
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:236 usr/share/biglinux/audio-converter/app/ui/visualizer.py:158 usr/share/biglinux/audio-converter/app/ui/visualizer.py:193 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1160
 msgid "Generating waveform..."
 msgstr "Създаване на вълновата форма…"
 
@@ -626,654 +365,676 @@ msgstr "Вълновата форма не може да бъде създаде
 msgid "The source changed while its waveform was being generated."
 msgstr "Източникът се промени по време на създаването на вълновата му форма."
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:47
-msgid "Audio waveform visualizer"
-msgstr "Визуализатор на звуковата вълна"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:938
-msgid "Click to listen from there · Drag to mark a part"
-msgstr "Щракнете, за да слушате оттам · Плъзнете, за да маркирате част"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1170
-msgid "Waveform could not be generated"
-msgstr "Вълновата форма не може да бъде създадена"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1171
-msgid "Numeric segment editing is still available."
-msgstr "Числовото редактиране на отрязъци остава достъпно."
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1176
-msgid "No audio loaded"
-msgstr "Няма зареден звук"
-
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1265
-msgid "Audio position seekbar"
-msgstr "Лента за позицията в звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:37
-msgid "Inspecting audio"
-msgstr "Анализиране на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:39
-msgid "Files are still being inspected. Conversion will be available when inspection finishes."
-msgstr "Файловете все още се анализират. Конвертирането ще бъде достъпно след края на анализа."
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "No files to convert"
-msgstr "Няма файлове за конвертиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:46
-msgid "Please add at least one file to convert."
-msgstr "Добавете поне един файл за конвертиране."
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:57
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:41
 msgid "Check conversion settings"
 msgstr "Проверете настройките за конвертиране"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:63
-msgid "Converting Files"
-msgstr "Конвертиране на файлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77
-msgid "Preparing conversion…"
-msgstr "Подготовка за конвертиране…"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:80
-msgid "Overall conversion progress"
-msgstr "Общ напредък на конвертирането"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:100
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:52
 msgid "Conversion could not start"
 msgstr "Конвертирането не може да започне"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:107
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:60
+msgid "Converting audio"
+msgstr "Конвертиране на аудио"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:657 usr/share/biglinux/audio-converter/app/ui/main_window.py:1144 usr/share/biglinux/audio-converter/app/ui/main_window.py:1168 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+msgid "Cancel"
+msgstr "Отказ"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:90
 msgid "Cancelling…"
 msgstr "Отменяне…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:109
-msgid "Stopping the current operation and removing incomplete outputs…"
-msgstr "Спиране на текущата операция и премахване на недовършените резултати…"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:127
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:106
 #, python-brace-format
-msgid ""
-"File {current} of {total}\n"
-"{name}"
-msgstr ""
-"Файл {current} от {total}\n"
-"{name}"
+msgid "Converting {current} of {total} · {percent}%"
+msgstr "Конвертиране на {current} от {total} · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:158
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:218
-msgid "Converted"
-msgstr "Конвертиран"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:159
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:219
-msgid "Failed"
-msgstr "Неуспешно"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:160
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:220
-msgid "Cancelled"
-msgstr "Отменено"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:180
-msgid "Conversion Results"
-msgstr "Резултати от конвертирането"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:193
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:140
 #, python-brace-format
-msgid "Converted: {success} · Failed: {failed} · Cancelled: {cancelled}"
-msgstr "Конвертирани: {success} · Неуспешни: {failed} · Отменени: {cancelled}"
+msgid "{count} file was not converted"
+msgid_plural "{count} files were not converted"
+msgstr[0] "{count} файл не е конвертиран"
+msgstr[1] "{count} файла не са конвертирани"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:199
-msgid "Existing files were not replaced. Inputs remain in the queue."
-msgstr "Съществуващите файлове не са заменени. Входните файлове остават в опашката."
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+msgid "Try Again"
+msgstr "Нов опит"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:240
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:243
-msgid "Show output file"
-msgstr "Показване на получения файл"
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:147
+#, python-brace-format
+msgid "{count} file converted"
+msgid_plural "{count} files converted"
+msgstr[0] "{count} файл е конвертиран"
+msgstr[1] "{count} файла са конвертирани"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:252
-msgid "Technical details"
-msgstr "Технически подробности"
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:149
+msgid "Show Files"
+msgstr "Показване на файловете"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:264
-msgid "Retry unfinished files"
-msgstr "Повторен опит за недовършените файлове"
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:164 usr/share/biglinux/audio-converter/app/ui/main_window.py:1145
+msgid "Reset"
+msgstr "Нулиране"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:269
-msgid "Close"
-msgstr "Затваряне"
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:307 usr/share/biglinux/audio-converter/app/ui/effect_cards.py:325 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236
+msgid "Off"
+msgstr "Изкл."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:290
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:325
+msgid "On"
+msgstr "Вкл."
+
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:394
+#, python-brace-format
+msgid "{count} active"
+msgid_plural "{count} active"
+msgstr[0] "{count} активен"
+msgstr[1] "{count} активни"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:45
+msgid "Default Voice"
+msgstr "Глас по подразбиране"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:49
+msgid "Natural (No Effects)"
+msgstr "Естествен звук (без ефекти)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:53
+msgid "Crystal Voice"
+msgstr "Кристално чист глас"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:57
+msgid "Radio Host"
+msgstr "Радиоглас"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:61
+msgid "Velvet Voice"
+msgstr "Кадифен глас"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:65
+msgid "Extra Brightness"
+msgstr "Повече яркост"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:69
+msgid "Soften 'S' (De-esser)"
+msgstr "Омекотяване на съскащите звуци (de-esser)"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:73
+msgid "Remove Rumble"
+msgstr "Премахване на нискочестотен тътен"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:77
+msgid "Present Voice"
+msgstr "По-отчетлив глас"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:80
+msgid "Custom"
+msgstr "Персонализирано"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:486 usr/share/biglinux/audio-converter/app/ui/main_window.py:491
+msgid "Equalizer"
+msgstr "Еквалайзер"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:136
+msgid "Equalizer preset"
+msgstr "Предварителна настройка на еквалайзера"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:149
+msgid "Close equalizer"
+msgstr "Затваряне на еквалайзера"
+
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:188
+#, python-brace-format
+msgid "Equalizer band {} Hz"
+msgstr "Честотна лента на еквалайзера: {} Hz"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:110
+msgid "Size"
+msgstr "Размер"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:110
+msgid "Unknown"
+msgstr "Неизвестно"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:115
+msgid "Duration"
+msgstr "Продължителност"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:119
+msgid "Format"
+msgstr "Формат"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:124
+msgid "Bitrate"
+msgstr "Побитова скорост"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
+msgid "Sample rate"
+msgstr "Честота на дискретизация"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+msgid "Channels"
+msgstr "Канали"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:137
+msgid "Bit Depth"
+msgstr "Битова дълбочина"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:172 usr/share/biglinux/audio-converter/app/ui/file_info.py:176
+msgid "Copy value"
+msgstr "Копиране на стойността"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:190
+msgid "File Information"
+msgstr "Информация за файла"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:201 usr/share/biglinux/audio-converter/app/ui/file_info.py:204
+msgid "Copy information to clipboard"
+msgstr "Копиране на информацията в системния буфер"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:255
+msgid "No audio information is available."
+msgstr "Няма налична информация за звука."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:265
+msgid "File Details"
+msgstr "Подробности за файла"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:265
+msgid "Path"
+msgstr "Път"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:266
+msgid "Audio Properties"
+msgstr "Свойства на звука"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:270
+msgid "Metadata Tags"
+msgstr "Етикети с метаданни"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:39
 msgid "Folder could not be opened"
 msgstr "Папката не може да бъде отворена"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:291
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:40
 #, python-brace-format
 msgid "Open your file manager and navigate to: {path}"
 msgstr "Отворете файловия мениджър и отидете на: {path}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:87
-msgid "Play file"
-msgstr "Възпроизвеждане на файла"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:44
+msgid "Close"
+msgstr "Затваряне"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:100
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:54
+msgid "Converted with warnings"
+msgstr "Конвертиран с предупреждения"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:55 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
+msgid "Failed"
+msgstr "Неуспешно"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56
+msgid "Cancelled"
+msgstr "Отменено"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:74
+msgid "Technical details"
+msgstr "Технически подробности"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:170 usr/share/biglinux/audio-converter/app/ui/file_queue.py:175
 msgid "Remove from queue"
 msgstr "Премахване от опашката"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:118
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:120
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185 usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
 msgid "File actions"
 msgstr "Действия с файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:140
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:866
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207 usr/share/biglinux/audio-converter/app/ui/file_queue.py:658
 msgid "Move to Trash"
 msgstr "Преместване в кошчето"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:143
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:210
 msgid "Open Containing Folder"
 msgstr "Отваряне на папката на файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:146
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:213
 msgid "More Information..."
 msgstr "Допълнителна информация…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:252
-msgid "Size"
-msgstr "Размер"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:279
+msgid "Converted"
+msgstr "Конвертиран"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:252
-msgid "Unknown"
-msgstr "Неизвестно"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:287 usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
+msgid "Show output file"
+msgstr "Показване на получения файл"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:256
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:261
-msgid "Duration"
-msgstr "Продължителност"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
+msgid "Stop"
+msgstr "Спиране"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:269
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:271
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
-msgid "Format"
-msgstr "Формат"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
+msgid "Play file"
+msgstr "Възпроизвеждане на файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:274
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:278
-msgid "Bitrate"
-msgstr "Побитова скорост"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:326 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:232
+#, python-brace-format
+msgid "{count} part"
+msgid_plural "{count} parts"
+msgstr[0] "{count} част"
+msgstr[1] "{count} части"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:288
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:469
-msgid "Sample rate"
-msgstr "Честота на дискретизация"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:397
+msgid "Add audio or video files"
+msgstr "Добавете аудио или видео файлове"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:297
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
-msgid "Channels"
-msgstr "Канали"
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+msgid "Each audio track of a video becomes its own entry. The originals are never changed."
+msgstr "Всяка аудио следа на видеото става отделен запис. Оригиналите никога не се променят."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:300
-msgid "Bit Depth"
-msgstr "Битова дълбочина"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:331
-msgid "File Information"
-msgstr "Информация за файла"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:339
-msgid "Copy information to clipboard"
-msgstr "Копиране на информацията в системния буфер"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:371
-msgid "No audio information is available."
-msgstr "Няма налична информация за звука."
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:380
-msgid "File Details"
-msgstr "Подробности за файла"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:380
-msgid "Path"
-msgstr "Път"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:383
-msgid "Audio Properties"
-msgstr "Свойства на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:449
-msgid "Metadata Tags"
-msgstr "Етикети с метаданни"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:507
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:513
-msgid "Copy value"
-msgstr "Копиране на стойността"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:583
-msgid "No Audio Files"
-msgstr "Няма аудиофайлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:585
-msgid "Drag files here or use the Add Files Button"
-msgstr "Плъзнете файлове тук или използвайте бутона „Добавяне на файлове“"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:641
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:425
 #, python-brace-format
 msgid "Track {number}"
 msgstr "Писта {number}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:695
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:479
 msgid "Could not move the file to Trash"
 msgstr "Файлът не можа да бъде преместен в кошчето"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:717
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:501
 msgid "This file has no supported audio track."
 msgstr "Този файл няма поддържана аудиописта."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:775
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:556
 msgid "Unknown duration"
 msgstr "Неизвестна продължителност"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:778
-#, python-brace-format
-msgid "{rate} Hz"
-msgstr "{rate} Hz"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:790
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:582
 msgid "Choose a valid local media file."
 msgstr "Изберете валиден локален мултимедиен файл."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:799
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:591
 msgid "Inspecting audio…"
 msgstr "Анализиране на звука…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:818
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:610
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "Ограничението на опашката е 10 000 файла. Конвертирайте тази група, преди да добавяте още."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:845
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:646
+msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
+msgstr "Отменете конвертирането или изчакайте да завърши, преди да преместите входния файл в кошчето."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:652
+msgid "Move File to Trash?"
+msgstr "Преместване на файла в кошчето?"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:654
+#, python-brace-format
+msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
+msgstr "Да се премести ли „{name}“ в кошчето? Всички негови писти ще бъдат премахнати от опашката."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:671
+msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
+msgstr "Файлът се използва при конвертиране. Отменете го, преди да преместите входния файл в кошчето."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:683
+msgid "The file could not be moved to Trash. It has not been deleted."
+msgstr "Файлът не може да бъде преместен в кошчето. Не е изтрит."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:848 usr/share/biglinux/audio-converter/main.py:92
+msgid "Download this file to a local folder before adding it."
+msgstr "Изтеглете този файл в локална папка, преди да го добавите."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:126
+msgid "Settings could not be read and were reset"
+msgstr "Настройките не можаха да бъдат прочетени и бяха нулирани"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:202
+msgid "Drop to add"
+msgstr "Пуснете, за да добавите"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:259 usr/share/biglinux/audio-converter/app/ui/main_window.py:262
+msgid "Show settings"
+msgstr "Показване на настройките"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:276 usr/share/biglinux/audio-converter/app/ui/main_window.py:283
+msgid "Clear queue"
+msgstr "Изчистване на опашката"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:298 usr/share/biglinux/audio-converter/app/ui/main_window.py:306
+msgid "Add Files"
+msgstr "Добавяне на файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
+msgid "Show help on hover"
+msgstr "Показване на помощ при посочване"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:319 usr/share/biglinux/audio-converter/app/ui/main_window.py:1163 usr/share/biglinux/audio-converter/app/ui/main_window.py:1169
+msgid "Clear Queue"
+msgstr "Изчистване на опашката"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:320
+msgid "Reset All Settings…"
+msgstr "Нулиране на всички настройки…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:323
+msgid "About"
+msgstr "Относно"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:328
+msgid "Main menu"
+msgstr "Главно меню"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:379
+msgid "Volume"
+msgstr "Сила на звука"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:387
+msgid "Speed"
+msgstr "Скорост"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:202
+msgid "Cleaning quality"
+msgstr "Качество на почистването"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:398
+msgid "Clean voice"
+msgstr "Изчистване на гласа"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:410
+msgid "Adjusted"
+msgstr "Обработени"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:411 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:132 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:304 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
+msgid "Original"
+msgstr "Първоначални"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:414
+msgid "Listen with or without adjustments"
+msgstr "Слушане с корекции или без тях"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:424
+msgid "Selection only"
+msgstr "Само избраното"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:435
+msgid "Play only selected area"
+msgstr "Възпроизвеждане само на избраната област"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:440
+msgid "Edit Segments…"
+msgstr "Редактиране на отрязъци…"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:452
+msgid "Zoom out"
+msgstr "Намаляване"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:453
+msgid "Reset zoom"
+msgstr "Нулиране на мащаба"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:454
+msgid "Zoom in"
+msgstr "Увеличаване"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
+msgid "Play the next file automatically"
+msgstr "Автоматично възпроизвеждане на следващия файл"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:513 usr/share/biglinux/audio-converter/app/ui/main_window.py:515
+msgid "More playback options"
+msgstr "Още опции за възпроизвеждане"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:519
+msgid "Playback"
+msgstr "Възпроизвеждане"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:520
+msgid "Only affects listening. Converted files stay unchanged."
+msgstr "Засяга само прослушването. Конвертираните файлове остават непроменени."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528
+msgid "Audio output"
+msgstr "Аудиоизход"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528 usr/share/biglinux/audio-converter/app/ui/main_window.py:894
+msgid "System default"
+msgstr "Системен изход по подразбиране"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:554
+msgid "Previous track"
+msgstr "Предишна писта"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:566
+msgid "Play or pause"
+msgstr "Възпроизвеждане или пауза"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+msgid "Next track"
+msgstr "Следваща писта"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:785
 #, python-brace-format
 msgid "{count} file"
 msgid_plural "{count} files"
 msgstr[0] "{count} файл"
 msgstr[1] "{count} файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:854
-msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
-msgstr "Отменете конвертирането или изчакайте да завърши, преди да преместите входния файл в кошчето."
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:827
+#, python-format
+msgid "Join %d file"
+msgid_plural "Join %d files"
+msgstr[0] "Обединяване на %d файл"
+msgstr[1] "Обединяване на %d файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:860
-msgid "Move File to Trash?"
-msgstr "Преместване на файла в кошчето?"
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:829
+#, python-format
+msgid "Convert %d file"
+msgid_plural "Convert %d files"
+msgstr[0] "Конвертиране на %d файл"
+msgstr[1] "Конвертиране на %d файла"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:862
-#, python-brace-format
-msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
-msgstr "Да се премести ли „{name}“ в кошчето? Всички негови писти ще бъдат премахнати от опашката."
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:982 usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
+msgid "OK"
+msgstr "Добре"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:879
-msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
-msgstr "Файлът се използва при конвертиране. Отменете го, преди да преместите входния файл в кошчето."
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:990
+msgid "Stop the conversion?"
+msgstr "Да се спре ли конвертирането?"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:891
-msgid "The file could not be moved to Trash. It has not been deleted."
-msgstr "Файлът не може да бъде преместен в кошчето. Не е изтрит."
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:992
+msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
+msgstr "Затварянето на прозореца спира текущото конвертиране. Вече готовите файлове се запазват."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:160
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:996
+msgid "Keep Converting"
+msgstr "Продължаване на конвертирането"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:997
+msgid "Stop and Close"
+msgstr "Спиране и затваряне"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1043
+msgid "No audio selected"
+msgstr "Не е избран звук"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1044
+msgid "Add a file and select it before editing segments."
+msgstr "Добавете и изберете файл, преди да редактирате отрязъци."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1049
+msgid "Audio duration unavailable"
+msgstr "Продължителността на звука е недостъпна"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1050
+msgid "Wait for the waveform to finish loading before editing this file."
+msgstr "Изчакайте вълновата форма да се зареди, преди да редактирате този файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1090
+msgid "Other valid files remain in the queue. Check these files and add them again."
+msgstr "Останалите валидни файлове остават в опашката. Проверете тези файлове и ги добавете отново."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1094
+msgid "Some files could not be added"
+msgstr "Някои файлове не могат да бъдат добавени"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1110
+msgid "Audio preview"
+msgstr "Прослушване на звука"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1138
+msgid "Reset all settings?"
+msgstr "Нулиране на всички настройки?"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
+msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
+msgstr "Форматът, качеството, папката за резултатите, изрязването, ефектите и еквалайзерът се връщат към стойностите по подразбиране. Опашката и файловете източници се запазват."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1165
+msgid "Remove the queue entries and their edits? Source files will not be deleted."
+msgstr "Да се премахнат ли записите в опашката и техните редакции? Файловете източници няма да бъдат изтрити."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1213
+msgid "Select Audio or Video Files"
+msgstr "Избор на аудио- или видеофайлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1216
+msgid "Audio and Video files"
+msgstr "Аудио- и видеофайлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1262
+msgid "All files"
+msgstr "Всички файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1287 usr/share/biglinux/audio-converter/main.py:91
+msgid "Local files only"
+msgstr "Само локални файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1289
+msgid "Some selected files are remote. Download them before adding them."
+msgstr "Някои избрани файлове са отдалечени. Изтеглете ги, преди да ги добавите."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1300
+msgid "Files could not be selected"
+msgstr "Файловете не могат да бъдат избрани"
+
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:158
 msgid "Delete All Segments"
 msgstr "Изтриване на всички отрязъци"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:159
 msgid "Delete all marked segments? Source files will not be changed."
 msgstr "Да се изтрият ли всички маркирани отрязъци? Файловете източници няма да бъдат променени."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:164
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:197
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:162 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
 msgid "Delete All"
 msgstr "Изтриване на всички"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:191
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:189
 msgid "Delete Segment"
 msgstr "Изтриване на отрязък"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
 #, python-brace-format
 msgid "Delete segment {number}?"
 msgstr "Да се изтрие ли отрязък {number}?"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
 msgid "Delete"
 msgstr "Изтриване"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:91
-msgid "Default Voice"
-msgstr "Глас по подразбиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:95
-msgid "Natural (No Effects)"
-msgstr "Естествен звук (без ефекти)"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:99
-msgid "Crystal Voice"
-msgstr "Кристално чист глас"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:103
-msgid "Radio Host"
-msgstr "Радиоглас"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:107
-msgid "Velvet Voice"
-msgstr "Кадифен глас"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:111
-msgid "Extra Brightness"
-msgstr "Повече яркост"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:115
-msgid "Soften 'S' (De-esser)"
-msgstr "Омекотяване на съскащите звуци (de-esser)"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:119
-msgid "Remove Rumble"
-msgstr "Премахване на нискочестотен тътен"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:123
-msgid "Present Voice"
-msgstr "По-отчетлив глас"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:126
-msgid "Custom"
-msgstr "Персонализирано"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:183
-msgid "Equalizer preset"
-msgstr "Предварителна настройка на еквалайзера"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:196
-msgid "Close equalizer"
-msgstr "Затваряне на еквалайзера"
-
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:235
-#, python-brace-format
-msgid "Equalizer band {} Hz"
-msgstr "Честотна лента на еквалайзера: {} Hz"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:93
-msgid "Voice only"
-msgstr "Само за реч"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
-msgid "Fair"
-msgstr "Задоволително"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
-msgid "Good"
-msgstr "Добро"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:96
-msgid "Very good"
-msgstr "Много добро"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:97
-msgid "Best"
-msgstr "Най-добро"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:106
-#, python-brace-format
-msgid "{quality} — {kbps} kbps, about {size} MB per minute"
-msgstr "{quality} — {kbps} kbps, около {size} MB на минута"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
-msgid "MP3 — plays everywhere"
-msgstr "MP3 — възпроизвежда се навсякъде"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
-msgid "M4A — good quality in small files"
-msgstr "M4A — добро качество при малки файлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:245
-msgid "Opus — smallest files, great for voice"
-msgstr "Opus — най-малки файлове, отличен за реч"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:246
-msgid "FLAC — lossless, smaller than WAV"
-msgstr "FLAC — без загуби, по-малък от WAV"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:247
-msgid "WAV — uncompressed"
-msgstr "WAV — без компресия"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:248
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — отворен формат"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:249
-msgid "Keep the original format — no conversion, no effects"
-msgstr "Запазване на първоначалния формат — без конвертиране и ефекти"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:470
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:584
-msgid "Original"
-msgstr "Първоначални"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:261
-msgid "Quality"
-msgstr "Качество"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270
-msgid "Volume (%)"
-msgstr "Сила на звука (%)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:276
-msgid "Speed (×)"
-msgstr "Скорост (×)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
-msgid "Cleaning model"
-msgstr "Модел за изчистване"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301
-msgid "Light · DeepFilterNet3"
-msgstr "Лек · DeepFilterNet3"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301
-msgid "Higher quality · DPDFNet-2"
-msgstr "По-високо качество · DPDFNet-2"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
-msgid "Light"
-msgstr "Лек"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
-msgid "Higher quality"
-msgstr "По-високо качество"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:309
-msgid "Configure…"
-msgstr "Настройване…"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
-msgid "Marked parts"
-msgstr "Маркирани части"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
-msgid "Keep them"
-msgstr "Запазване"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:317
-msgid "Remove them"
-msgstr "Премахване"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
-msgid "Segment order"
-msgstr "Ред на отрязъците"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
-msgid "In timeline order"
-msgstr "По реда във времето"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:325
-msgid "In the order marked"
-msgstr "По реда на маркиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
-msgid "Save segments"
-msgstr "Запазване на отрязъците"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
-msgid "Separate files"
-msgstr "Отделни файлове"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:333
-msgid "Join this file's segments"
-msgstr "Обединяване на отрязъците от този файл"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:340
-msgid "Join into one file"
-msgstr "Обединяване в един файл"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:345
-msgid "Save to"
-msgstr "Запазване в"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:345
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:544
-msgid "Same folder as each source"
-msgstr "Папката на всеки файл източник"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:348
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:350
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:516
-msgid "Choose output folder"
-msgstr "Избор на папка за резултатите"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:356
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:357
-msgid "Use source folders"
-msgstr "Използване на папките на източниците"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:369
-msgid "Fix the sound"
-msgstr "Поправка на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:378
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
-msgid "Off"
-msgstr "Изкл."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
-msgid "Silence pauses"
-msgstr "Заглушаване на паузите"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:388
-msgid "Mutes the background between words"
-msgstr "Заглушава фона между думите"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:391
-msgid "Balance loud and quiet parts"
-msgstr "Балансиране на силните и тихите части"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:392
-msgid "Brings quiet passages closer to the loud ones"
-msgstr "Доближава тихите пасажи до силните"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:408
-msgid "Remove low rumble"
-msgstr "Премахване на нискочестотен тътен"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:411
-msgid "Cuts hum and handling noise below the voice"
-msgstr "Премахва бръмченето и шумовете от докосване под честотите на гласа"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:418
-msgid "Even volume"
-msgstr "Изравнена сила на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:419
-msgid "Brings every file to the same loudness (−16 LUFS)"
-msgstr "Привежда всички файлове към еднаква сила на звука (−16 LUFS)"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:426
-msgid "Prevent distortion"
-msgstr "Предотвратяване на изкривяването"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:427
-msgid "Keeps loud peaks from clipping"
-msgstr "Не позволява на силните пикове да предизвикат клипинг"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:435
-msgid "Adjust sound"
-msgstr "Настройване на звука"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:454
-msgid "Advanced encoding"
-msgstr "Разширено кодиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:455
-msgid "Keep original properties when supported"
-msgstr "Запазване на първоначалните свойства, когато се поддържат"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
-msgid "Mono"
-msgstr "Моно"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:459
-msgid "Stereo"
-msgstr "Стерео"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:477
-msgid "Allow conversion to 24-bit PCM"
-msgstr "Разрешаване на преобразуване в 24-битов PCM"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:479
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "За звук с плаваща запетая, експортиран във FLAC. Намалява точността; WAV запазва първоначалното представяне."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:495
-msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-msgstr "Първоначалният формат запазва кодирания звук. Изрязванията следват границите на пакетите и може да не съвпадат точно с времената. Ефектите се пропускат при прослушване и експорт."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:506
-msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Prevent distortion."
-msgstr "Увеличаването на силата или на лентите на еквалайзера може да изкриви звука. Намалете усилването или включете „Предотвратяване на изкривяването“."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:530
-msgid "Local folder required"
-msgstr "Необходима е локална папка"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:531
-msgid "Choose a folder on the local filesystem."
-msgstr "Изберете папка в локалната файлова система."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:66
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:61 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:73
+msgid "Pauses longer than"
+msgstr "Паузи по-дълги от"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:65
+msgid "0.5 s"
+msgstr "0,5 с"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:65
+msgid "1 s"
+msgstr "1 с"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:65
+msgid "2 s"
+msgstr "2 с"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:81
+msgid "Find Pauses"
+msgstr "Намиране на паузите"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:101 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:174
+msgid "Finding pauses"
+msgstr "Търсене на паузи"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:109
+msgid "Undo"
+msgstr "Отмяна"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:169
+msgid "Takes about a minute for each hour of audio."
+msgstr "Отнема около минута за всеки час звук."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:171
+msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
+msgstr "За реч. Паузите се търсят в гласа, изчистен от DPDFNet."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:577
 #, python-brace-format
 msgid "Unavailable: install {package}"
 msgstr "Недостъпно: инсталирайте {package}"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:702
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:181
+msgid "Open a file to find its pauses"
+msgstr "Отворете файл, за да намерите паузите в него"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:205
 #, python-brace-format
-msgid "Clean voice · {percent}%"
-msgstr "Изчистване на гласа · {percent}%"
+msgid "{count} pause · {duration} shorter"
+msgid_plural "{count} pauses · {duration} shorter"
+msgstr[0] "{count} пауза · с {duration} по-кратко"
+msgstr[1] "{count} паузи · с {duration} по-кратко"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:704
-msgid "Clean voice · off"
-msgstr "Изчистване на гласа · изкл."
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:210
+msgid "No pauses found. Nothing would change."
+msgstr "Не са намерени паузи. Нищо няма да се промени."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:827
-msgid "The original format cannot join files"
-msgstr "Първоначалният формат не може да обединява файлове"
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:302 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:317
+#, python-brace-format
+msgid "{percent}%"
+msgstr "{percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:829
-msgid "In queue order, named after the first file"
-msgstr "По реда в опашката, с името на първия файл"
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:252
+#, python-brace-format
+msgid "Speech marked in {count} part"
+msgid_plural "Speech marked in {count} parts"
+msgstr[0] "Речта е маркирана в {count} част"
+msgstr[1] "Речта е маркирана в {count} части"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:262
+#, python-brace-format
+msgid "This replaces the {count} mark already on the file."
+msgid_plural "This replaces the {count} marks already on the file."
+msgstr[0] "Това заменя {count} маркировка, която файлът вече има."
+msgstr[1] "Това заменя {count} маркировки, които файлът вече има."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:267
+msgid "Nothing is deleted from the original file."
+msgstr "От оригиналния файл не се изтрива нищо."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:319
+#, python-brace-format
+msgid "Finding pauses: {percent}%"
+msgstr "Търсене на паузи: {percent}%"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:369
+msgid "The pauses could not be marked"
+msgstr "Паузите не можаха да бъдат маркирани"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:370
+msgid "The file changed after it was measured. Find the pauses again."
+msgstr "Файлът се промени след измерването. Потърсете паузите отново."
 
 #: usr/share/biglinux/audio-converter/app/ui/segment_editor.py:17
 msgid "Edit Segments"
@@ -1346,121 +1107,293 @@ msgstr "Край на отрязък {number} в секунди"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "Активният файл е променен. Отворете отново редактора на отрязъци за текущия файл."
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:19
-msgid "Welcome"
-msgstr "Добре дошли"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:48
+msgid "Voice only"
+msgstr "Само за реч"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:33
-msgid "Convert audio in three steps"
-msgstr "Конвертиране на звук в три стъпки"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:49
+msgid "Fair"
+msgstr "Задоволително"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:39
-msgid "1. Add your files"
-msgstr "1. Добавете файловете си"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:50
+msgid "Good"
+msgstr "Добро"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:40
-msgid "Audio or video. Each audio track of a video becomes its own entry."
-msgstr "Аудио или видео. Всяка аудиописта от видеото става отделен запис."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
+msgid "Very good"
+msgstr "Много добро"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:43
-msgid "2. Choose what to make"
-msgstr "2. Изберете какво да създадете"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
+msgid "Best"
+msgstr "Най-добро"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:45
-msgid "Pick a format and, if you want, clean the voice, cut parts or adjust the sound."
-msgstr "Изберете формат и при желание изчистете гласа, изрежете части или настройте звука."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:63
+#, python-brace-format
+msgid "{quality}, about {size} MB per minute"
+msgstr "{quality}, около {size} MB на минута"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:49
-msgid "3. Convert"
-msgstr "3. Конвертирайте"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
+msgid "Allow conversion to 24-bit PCM"
+msgstr "Разрешаване на преобразуване в 24-битов PCM"
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:50
-msgid "New files appear next to the originals, which are never changed."
-msgstr "Новите файлове се появяват до оригиналите, които никога не се променят."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:97
+msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+msgstr "За звук с плаваща запетая, експортиран във FLAC. Намалява точността; WAV запазва първоначалното представяне."
 
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:60
-msgid "Show dialog on startup"
-msgstr "Показване на диалога при стартиране"
-
-#: usr/share/biglinux/audio-converter/app/ui/welcome_dialog.py:71
-msgid "Let's Start"
-msgstr "Да започнем"
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
 msgid "Choose the output format. Keeping the original format applies no effects."
 msgstr "Изберете изходния формат. При запазване на оригиналния формат не се прилагат ефекти."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
+msgid "MP3 — plays everywhere"
+msgstr "MP3 — възпроизвежда се навсякъде"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
+msgid "M4A — good quality in small files"
+msgstr "M4A — добро качество при малки файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
+msgid "Opus — smallest files, great for voice"
+msgstr "Opus — най-малки файлове, отличен за реч"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — без загуби, по-малък от WAV"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:128
+msgid "WAV — uncompressed"
+msgstr "WAV — без компресия"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — отворен формат"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:130
+msgid "Keep the original format — no conversion, no effects"
+msgstr "Запазване на първоначалния формат — без конвертиране и ефекти"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:144
+msgid "Quality"
+msgstr "Качество"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:146
 msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
 msgstr "По-високото качество звучи по-добре и създава по-големи файлове. Всеки избор показва размера си за минута."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:16
-msgid "Changes preview and export volume. Values above 100% can distort the audio."
-msgstr "Променя силата на звука при прослушване и експортиране. Стойности над 100% може да изкривят звука."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:203
+msgid "Faster"
+msgstr "По-бързо"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:18
-msgid "Changes preview and export speed while preserving pitch."
-msgstr "Променя скоростта на прослушване и експортиране, като запазва височината на тона."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:203
+msgid "Better, slower"
+msgstr "По-добро, по-бавно"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:19
-msgid "Reduce quiet background sound between spoken phrases."
-msgstr "Намалява тихите фонови звуци между изговорените фрази."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+msgid "Marked parts"
+msgstr "Маркирани части"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:21
-msgid "Brings every file to the same loudness. This changes the original volume."
-msgstr "Довежда всички файлове до еднаква сила на звука. Това променя оригиналната сила на звука."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:217
+msgid "Keep them"
+msgstr "Запазване"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:23
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:217
+msgid "Remove them"
+msgstr "Премахване"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
+msgid "Segment order"
+msgstr "Ред на отрязъците"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:225
 msgid "Choose the order in which marked segments are exported."
 msgstr "Изберете реда, в който да се експортират маркираните отрязъци."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:24
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:226
+msgid "In timeline order"
+msgstr "По реда във времето"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:226
+msgid "In the order marked"
+msgstr "По реда на маркиране"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+msgid "Save segments"
+msgstr "Запазване на отрязъците"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:234
 msgid "Export each segment separately or join the selected segments."
 msgstr "Експортирайте всеки отрязък поотделно или обединете избраните отрязъци."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:25
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+msgid "Separate files"
+msgstr "Отделни файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+msgid "Join this file's segments"
+msgstr "Обединяване на отрязъците от този файл"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
+msgid "Join into one file"
+msgstr "Обединяване в един файл"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
+msgid "In queue order, named after the first file"
+msgstr "По реда в опашката, с името на първия файл"
+
+# File: big-video-converter/big-video-converter/usr/share/big-video-
+# converter/ui/conversion_page.py, line: 270
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:254
+msgid "Save in the same folder as the original file"
+msgstr "Запазване в същата папка като оригиналния файл"
+
+# File: big-video-converter/big-video-converter/usr/share/big-video-
+# converter/ui/conversion_page.py, line: 271
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:254
+msgid "Folder to save"
+msgstr "Папка за запазване"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:258
+msgid "Save to"
+msgstr "Запазване в"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:268 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:273 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
+msgid "Choose output folder"
+msgstr "Избор на папка за резултатите"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
 msgstr "Запазва първоначалното разположение на каналите или при изричен избор смесва звука до моно или стерео."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:27
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
+msgid "Mono"
+msgstr "Моно"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
+msgid "Stereo"
+msgstr "Стерео"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:311
+msgid "Even volume"
+msgstr "Изравнена сила на звука"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:313
+msgid "Brings the whole file to a standard loudness, good for speech and podcasts; several files end up at the same level. A quiet voice and a loud one in the same file keep their difference."
+msgstr "Довежда целия файл до стандартна сила на звука, подходяща за говор и подкасти; няколко файла стигат до едно и също ниво. Тих и силен глас в един и същ файл запазват разликата помежду си."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:321
+msgid "Level loud and quiet parts"
+msgstr "Изравняване на силните и тихите части"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
+msgstr "Усилва тихите откъси и поотслабва силните, така че всичко да се чува добре, без да пипате звука."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:344
+msgid "Remove pauses"
+msgstr "Премахване на паузите"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
+msgid "Cuts"
+msgstr "Изрязвания"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
+msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+msgstr "Първоначалният формат запазва кодирания звук. Изрязванията следват границите на пакетите и може да не съвпадат точно с времената. Ефектите се пропускат при прослушване и експорт."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
+msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Even volume."
+msgstr "Увеличаването на силата или на лентите на еквалайзера може да изкриви звука. Намалете усилването или включете „Изравнена сила на звука“."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
+msgid "Local folder required"
+msgstr "Необходима е локална папка"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
+msgid "Choose a folder on the local filesystem."
+msgstr "Изберете папка в локалната файлова система."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
+msgid "Lossless"
+msgstr "Без загуба"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:669
+msgid "Mark a part on the waveform first."
+msgstr "Първо маркирайте част от вълновата форма."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:673
+msgid "Removing marked parts leaves one file in timeline order."
+msgstr "При премахване на маркираните части остава един файл по реда във времето."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:676
+msgid "Joining files makes one file of everything."
+msgstr "Обединяването на файлове създава един файл от всички."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:689
+msgid "The original format cannot join files"
+msgstr "Първоначалният формат не може да обединява файлове"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+msgid "Add another file to join them."
+msgstr "Добавете още един файл, за да ги обедините."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:720
+#, python-brace-format
+msgid "{count} adjustment"
+msgid_plural "{count} adjustments"
+msgstr[0] "{count} корекция"
+msgstr[1] "{count} корекции"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:53
+msgid "Audio waveform visualizer"
+msgstr "Визуализатор на звуковата вълна"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:940
+msgid "Click to listen from there · Drag to mark a part"
+msgstr "Щракнете, за да слушате оттам · Плъзнете, за да маркирате част"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1157
+msgid "Waveform could not be generated"
+msgstr "Вълновата форма не може да бъде създадена"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1158
+msgid "Numeric segment editing is still available."
+msgstr "Числовото редактиране на отрязъци остава достъпно."
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1163
+msgid "No audio loaded"
+msgstr "Няма зареден звук"
+
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1256
+msgid "Audio position seekbar"
+msgstr "Лента за позицията в звука"
+
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
 msgid "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
 msgstr "Щракнете, за да слушате от дадена точка. Плъзнете, за да маркирате част, след това плъзнете краищата или средата ѝ, за да я коригирате. „Редактиране на отрязъци“ предлага числови контроли и управление с клавиатура."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:30
-msgid "Remove all entries from the queue without deleting source files."
-msgstr "Премахва всички записи от опашката, без да изтрива файловете източници."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:32
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:12
 msgid "Preview the previous file."
 msgstr "Прослушване на предишния файл."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:33
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
 msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
 msgstr "Възпроизвеждане или пауза. Клавишна комбинация: Ctrl+Space."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:34
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:14
 msgid "Preview the next file."
 msgstr "Прослушване на следващия файл."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:35
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:15
 msgid "Preview only the marked segments."
 msgstr "Прослушване само на маркираните отрязъци."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:36
-msgid "Show the equalizer. Its settings affect exported audio."
-msgstr "Показва еквалайзера. Настройките му влияят на експортирания звук."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:37
-msgid "Preview this audio file."
-msgstr "Прослушване на този аудиофайл."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:38
-msgid "Remove this entry without deleting the source file."
-msgstr "Премахва този запис, без да изтрива файла източник."
-
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:40
+#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:17
 msgid "More actions are available from the adjacent menu button."
 msgstr "Допълнителни действия са достъпни от съседния бутон за меню."
+
+#: usr/share/biglinux/audio-converter/main.py:207 usr/share/biglinux/audio-converter/main.py:209
+msgid "BigLinux Team"
+msgstr "Екипът на BigLinux"
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Extract Audio"
@@ -1485,123 +1418,3 @@ msgstr "Грешка при стартиране на приложението"
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
 msgid "Big Audio Converter could not be started. Check that it is installed."
 msgstr "Big Audio Converter не може да бъде стартиран. Проверете дали е инсталиран."
-
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:105
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:197
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:325
-msgid "The pauses could not be measured."
-msgstr "Паузите не можаха да бъдат измерени."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:48
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:150
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:162
-msgid "Remove pauses"
-msgstr "Премахване на паузите"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:53
-msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
-msgstr "За реч. Паузите се търсят в гласа, изчистен от DPDFNet."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:78
-msgid "Takes about a minute for each hour of audio."
-msgstr "Отнема около минута за всеки час звук."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:83
-msgid "Find Pauses"
-msgstr "Намиране на паузите"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:91
-msgid "Finding pauses"
-msgstr "Търсене на паузи"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:102
-msgid "Try Again"
-msgstr "Нов опит"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:108
-msgid "Pauses longer than"
-msgstr "Паузи по-дълги от"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
-msgid "0.5 s"
-msgstr "0,5 с"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
-msgid "1 s"
-msgstr "1 с"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:117
-msgid "2 s"
-msgstr "2 с"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:129
-msgid "Mark for Removal"
-msgstr "Маркиране за премахване"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:138
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:376
-msgid "Undo"
-msgstr "Отмяна"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:184
-msgid "Open a file to find its pauses"
-msgstr "Отворете файл, за да намерите паузите в него"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:222
-#, python-brace-format
-msgid "{count} pause · {duration} shorter"
-msgid_plural "{count} pauses · {duration} shorter"
-msgstr[0] "{count} пауза · с {duration} по-кратко"
-msgstr[1] "{count} паузи · с {duration} по-кратко"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:227
-msgid "No pauses found. Nothing would change."
-msgstr "Не са намерени паузи. Нищо няма да се промени."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:233
-#, python-brace-format
-msgid "This replaces the {count} mark already on the file."
-msgid_plural "This replaces the {count} marks already on the file."
-msgstr[0] "Това заменя {count} маркировка, която файлът вече има."
-msgstr[1] "Това заменя {count} маркировки, които файлът вече има."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:257
-#, python-brace-format
-msgid "{count} pause marked"
-msgid_plural "{count} pauses marked"
-msgstr[0] "Маркирана е {count} пауза"
-msgstr[1] "Маркирани са {count} паузи"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:305
-#, python-brace-format
-msgid "{percent}%"
-msgstr "{percent}%"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:308
-#, python-brace-format
-msgid "Finding pauses: {percent}%"
-msgstr "Търсене на паузи: {percent}%"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:317
-msgid "Pauses found"
-msgstr "Паузите са намерени"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:317
-msgid "Review"
-msgstr "Преглед"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:360
-msgid "The pauses could not be marked"
-msgstr "Паузите не можаха да бъдат маркирани"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:361
-msgid "The file changed after it was measured. Find the pauses again."
-msgstr "Файлът се промени след измерването. Потърсете паузите отново."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_popover.py:372
-#, python-brace-format
-msgid "{count} pause marked for removal"
-msgid_plural "{count} pauses marked for removal"
-msgstr[0] "{count} пауза е маркирана за премахване"
-msgstr[1] "{count} паузи са маркирани за премахване"
