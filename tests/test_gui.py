@@ -1024,6 +1024,37 @@ def test_cancelling_leaves_no_partial_output_and_offers_retry(window, audio):
     assert window.banner.get_button_label() == "Try Again"
 
 
+def test_a_video_expanding_into_tracks_keeps_the_shown_file(
+    window, audio, tmp_path, monkeypatch
+):
+    video = tmp_path / "two tracks.mka"
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=duration=1"]
+        + ["-f", "lavfi", "-i", "sine=frequency=500:duration=1"]
+        + ["-map", "0", "-map", "1", str(video)],
+        check=True,
+    )
+    queue = window.file_queue
+    deliver = queue._probe_ready
+    held = []
+
+    # The video's tracks arrive after the plain file is already shown below it.
+    def probe_ready(token, path, info, error):
+        if path == str(video):
+            held.append((token, path, info, error))
+        else:
+            deliver(token, path, info, error)
+
+    monkeypatch.setattr(queue, "_probe_ready", probe_ready)
+    queue.add_file(str(video))
+    queue.add_file(str(audio))
+    pump(lambda: held and queue.active_file_index is not None)
+    assert queue.files[queue.active_file_index] == str(audio)
+    deliver(*held[0])
+    assert len(queue.files) == 3
+    assert queue.files[queue.active_file_index] == str(audio)
+
+
 def test_try_again_uses_the_current_settings_and_queue(window, audio, monkeypatch):
     queue = window.file_queue
     queue.add_file(str(audio))

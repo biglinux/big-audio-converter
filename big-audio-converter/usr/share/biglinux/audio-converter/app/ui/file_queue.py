@@ -6,6 +6,7 @@ import os
 import time
 import weakref
 from collections import deque
+from contextlib import contextmanager
 from pathlib import Path
 
 import gi
@@ -510,26 +511,27 @@ class FileQueue(Gtk.Box):
         row = self.file_rows[index]
         if len(tracks) > 1:
             # Replace the pending row in place, preserving any user's reordering.
-            self.files.pop(index)
-            self.file_rows.pop(index)
-            self.file_list.remove(row)
-            row.cleanup()
-            # Cuts handed over for the file apply to each of its tracks.
-            cuts = self._file_markers.pop(path, None)
-            added = []
-            for number, track in enumerate(tracks, 1):
-                if self._add_track_entry(path, track, number):
-                    added.append((self.files.pop(), self.file_rows.pop()))
-            for offset, (identifier, track_row) in enumerate(added):
-                self.file_list.remove(track_row)
-                self.files.insert(index + offset, identifier)
-                self.file_rows.insert(index + offset, track_row)
-                self.file_list.insert(track_row, index + offset)
-                self._set_probed_metadata(track_row, info)
-                if cuts is not None:
-                    self._file_markers[identifier] = [dict(cut) for cut in cuts]
-            for position, current_row in enumerate(self.file_rows):
-                current_row.index = position
+            with self._rows_keep_selection():
+                self.files.pop(index)
+                self.file_rows.pop(index)
+                self.file_list.remove(row)
+                row.cleanup()
+                # Cuts handed over for the file apply to each of its tracks.
+                cuts = self._file_markers.pop(path, None)
+                added = []
+                for number, track in enumerate(tracks, 1):
+                    if self._add_track_entry(path, track, number):
+                        added.append((self.files.pop(), self.file_rows.pop()))
+                for offset, (identifier, track_row) in enumerate(added):
+                    self.file_list.remove(track_row)
+                    self.files.insert(index + offset, identifier)
+                    self.file_rows.insert(index + offset, track_row)
+                    self.file_list.insert(track_row, index + offset)
+                    self._set_probed_metadata(track_row, info)
+                    if cuts is not None:
+                        self._file_markers[identifier] = [dict(cut) for cut in cuts]
+                for position, current_row in enumerate(self.file_rows):
+                    current_row.index = position
         else:
             row.stream_index = tracks[0]["index"]
             row.set_activatable(True)
@@ -903,34 +905,11 @@ class FileQueue(Gtk.Box):
             old_index = dragged_row.index
             new_index = target_row.index if target_row else len(self.file_rows)
 
-            active_path = (
-                self.files[self.active_file_index]
-                if self.active_file_index is not None
-                else None
-            )
-            playing_path = (
-                self.files[self.currently_playing_index]
-                if self.currently_playing_index is not None
-                else None
-            )
-
-            # Move the file in the internal list
-            file_path = self.files.pop(old_index)
-            self.files.insert(new_index, file_path)
-
-            # Move the row in the visual list
-            row_widget = self.file_rows.pop(old_index)
-            self.file_rows.insert(new_index, row_widget)
-
-            for i, row in enumerate(self.file_rows):
-                row.index = i
-
-            self.active_file_index = (
-                self.files.index(active_path) if active_path in self.files else None
-            )
-            self.currently_playing_index = (
-                self.files.index(playing_path) if playing_path in self.files else None
-            )
+            with self._rows_keep_selection():
+                self.files.insert(new_index, self.files.pop(old_index))
+                self.file_rows.insert(new_index, self.file_rows.pop(old_index))
+                for i, row in enumerate(self.file_rows):
+                    row.index = i
 
             # Reorder in the ListBox
             self.file_list.remove(dragged_row)
@@ -949,6 +928,27 @@ class FileQueue(Gtk.Box):
         except (ValueError, IndexError, TypeError, RuntimeError) as e:
             logger.error("Error reordering files: %s", e)
             return False
+
+    @contextmanager
+    def _rows_keep_selection(self):
+        """Keep the shown and the playing file selected while rows move."""
+        shown = (
+            self.files[self.active_file_index]
+            if self.active_file_index is not None
+            else None
+        )
+        playing = (
+            self.files[self.currently_playing_index]
+            if self.currently_playing_index is not None
+            else None
+        )
+        yield
+        self.active_file_index = (
+            self.files.index(shown) if shown in self.files else None
+        )
+        self.currently_playing_index = (
+            self.files.index(playing) if playing in self.files else None
+        )
 
     def connect_file_removed_signal(self, callback):
         """Connect a callback to be notified when a file is removed."""
