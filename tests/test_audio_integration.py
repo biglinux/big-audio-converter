@@ -34,6 +34,16 @@ def convert(source, output, settings):
     return engine.last_result
 
 
+def test_a_missing_output_folder_fails_instead_of_being_created(tmp_path, source):
+    folder = tmp_path / "unmounted drive"
+    engine = AudioConverter()
+    assert not engine.convert_file(
+        str(source), str(folder / "out.flac"), {"format": "flac"}
+    )
+    assert "could not be accessed" in engine.last_result.message
+    assert not folder.exists()
+
+
 @pytest.mark.parametrize(
     "codec", ["pcm_u8", "pcm_s16le", "pcm_s24le", "pcm_s32le", "pcm_f32le", "pcm_f64le"]
 )
@@ -295,6 +305,7 @@ def test_explicit_second_track_remains_second_after_opaque_identifier(source, tm
 
 
 def test_invalid_batch_entry_does_not_prevent_next_file(source, tmp_path):
+    (tmp_path / "output").mkdir()
     engine = AudioConverter()
     engine.start_batch(
         ["", str(source)],
@@ -708,6 +719,7 @@ def test_hundreds_of_cuts_are_joined_with_exact_samples(source, tmp_path):
 def test_batch_cuts_only_the_file_that_has_markers(source, tmp_path):
     other = tmp_path / "other.wav"
     other.write_bytes(source.read_bytes())
+    (tmp_path / "output").mkdir()
     engine = AudioConverter()
     engine.start_batch(
         [str(source), str(other)],
@@ -742,6 +754,7 @@ def test_joined_queue_is_one_file_in_queue_order(
         monkeypatch.setattr("app.audio.segment_processor.CUTS_PER_RUN", cuts_per_run)
     other = tone(tmp_path / "other.wav")
     cuts = [{"start": 1.5, "stop": 2}, {"start": 0.25, "stop": 0.5}]
+    (tmp_path / "output").mkdir()
     engine = AudioConverter()
     engine.start_batch(
         [str(source), str(other)],

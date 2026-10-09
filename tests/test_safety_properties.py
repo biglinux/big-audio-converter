@@ -1,6 +1,7 @@
 """Adversarial I/O and property-based contracts for file and process ownership."""
 
 import concurrent.futures
+import errno
 import json
 import signal
 import sys
@@ -131,6 +132,24 @@ def test_publication_rolls_back_only_its_own_files_on_failure(tmp_path):
             ProcessRunner(),
         )
     assert not target.exists()
+
+
+def test_publication_without_hard_links_never_replaces_a_file(tmp_path, monkeypatch):
+    from app.audio import output as module
+
+    def no_links(*_args, **_kwargs):
+        raise PermissionError(errno.EPERM, "hard links unsupported")
+
+    monkeypatch.setattr(module, "_renameat2", None)
+    monkeypatch.setattr(module.os, "link", no_links)
+    requested = tmp_path / "same.wav"
+    requested.write_bytes(b"existing")
+    staged = tmp_path / "staged.wav"
+    staged.write_bytes(b"new")
+    published = publish_all([(staged, requested)], ProcessRunner())[0]
+    assert requested.read_bytes() == b"existing"
+    assert Path(published).read_bytes() == b"new"
+    assert not staged.exists()
 
 
 def test_dangling_symlink_is_not_overwritten(tmp_path):

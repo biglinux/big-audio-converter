@@ -32,7 +32,8 @@ def available_path(path):
 
 
 def _rename_no_replace(source, target):
-    """Use Linux RENAME_NOREPLACE, with a no-clobber hard-link fallback."""
+    """Use Linux RENAME_NOREPLACE, falling back to a hard link, then to a
+    name claimed with an exclusive create."""
     if _renameat2 is not None:
         if _renameat2(-100, os.fsencode(source), -100, os.fsencode(target), 1) == 0:
             return
@@ -41,14 +42,29 @@ def _rename_no_replace(source, target):
             raise OSError(code, os.strerror(code), target)
     # Both names are in the same filesystem. Never fall back to copying into
     # an existing path or to os.replace(), which would overwrite user data.
-    os.link(source, target, follow_symlinks=False)
-    os.unlink(source)
+    try:
+        os.link(source, target, follow_symlinks=False)
+    except OSError as exc:
+        if exc.errno not in (errno.EPERM, errno.EOPNOTSUPP, errno.ENOSYS):
+            raise
+    else:
+        os.unlink(source)
+        return
+    # FUSE and exFAT mounts have no hard links: the empty file this creates
+    # is ours, so renaming over it replaces nothing of the user's.
+    os.close(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644))
+    try:
+        os.rename(source, target)
+    except BaseException:
+        os.unlink(target)
+        raise
 
 
 @contextmanager
 def staging_directory(output_path):
+    # A missing folder fails here rather than being created: it is usually an
+    # unmounted drive, and the output would land on the disk beneath it.
     parent = Path(output_path).absolute().parent
-    parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(
         prefix=".big-audio-converter-", dir=parent
     ) as directory:
