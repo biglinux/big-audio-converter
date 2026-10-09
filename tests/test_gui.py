@@ -244,21 +244,21 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     assert not window.bitrate_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("copy"))
     assert not window.volume_spin.is_sensitive()
-    assert not window.compressor_tile.scale.is_sensitive()
+    assert not window.compressor_tile.is_sensitive()
     assert not window.voice_scale.get_sensitive()
     assert window.format_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("flac"))
     assert window.volume_spin.is_sensitive()
     # Back on when the noise plugin is installed, which CI machines lack.
     assert window.voice_scale.get_sensitive() == window.noise_available
-    window.compressor_tile.scale.set_value(30)
+    window.compressor_tile.steps.set_selected(1)
     window.original_preview.set_active_name("original")
     assert window.player.effects_bypassed
     window.format_row.set_selected(window._format_list.index("mp3"))
     assert window.player.effects_bypassed
     window.original_preview.set_active_name("adjusted")
     assert not window.player.effects_bypassed
-    window.compressor_tile.scale.set_value(0)
+    window.compressor_tile.steps.set_selected(0)
     window.file_queue.add_file(str(audio))
     vis = window.visualizer
     pump(lambda: vis.waveform_data is not None and vis.get_width() > 0)
@@ -400,14 +400,14 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     window.cut_order_row.set_selected(1)
     window.volume_spin.set_value(250)
     window.speed_spin.set_value(1.5)
-    window.compressor_tile.scale.set_value(40)
+    window.compressor_tile.steps.set_selected(2)
     window.normalize_tile.set_active(True)
     window.eq_panel.band_scales[window.eq_panel.BANDS[0][1]].set_value(6)
     window.auto_advance_switch.set_active(False)
 
     assert window.equalizer_button.has_css_class("applied")
     window._on_reset_settings_response(None, "cancel")
-    assert window.compressor_tile.scale.get_value() == 40
+    assert window.compressor_tile.steps.get_selected() == 2
 
     window._on_reset_settings_response(None, "reset")
     assert window._format_list[window.format_row.get_selected()] == "mp3"
@@ -418,7 +418,7 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert window.cut_order_row.get_selected() == 0
     assert window.volume_spin.get_value() == 100
     assert window.speed_spin.get_value() == 1.0
-    assert window.compressor_tile.scale.get_value() == 0
+    assert window.compressor_tile.steps.get_selected() == 0
     assert not window.normalize_tile.get_active()
     assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
     assert window.auto_advance_switch.get_active()
@@ -466,24 +466,31 @@ def test_panning_the_waveform_moves_the_seek_bar_window(window):
     assert window.seekbar._viewport_offset == 0.25
 
 
-def test_each_correction_is_off_at_zero_and_set_by_its_slider(window):
+def test_the_compressor_is_set_in_named_steps_and_off_at_the_first(window):
     config = window.app.config
-    window.compressor_tile.scale.set_value(75)
+    window.compressor_tile.steps.set_selected(2)
     settings = window._collect_conversion_settings()
-    assert settings["compressor_enabled"] and settings["compressor_intensity"] == 0.75
+    assert settings["compressor_enabled"] and settings["compressor_intensity"] == 0.65
     assert window.player.compressor_enabled
-    assert config.get("compressor_intensity") == "0.75"
+    assert window.compressor_tile.value_label.get_text() == "Medium"
+    assert config.get("compressor_intensity") == "0.65"
 
-    window.compressor_tile.scale.set_value(0)
+    window.compressor_tile.steps.set_selected(0)
     assert not window._collect_conversion_settings()["compressor_enabled"]
     assert window.compressor_tile.value_label.get_text() == "Off"
     assert not window.player.compressor_enabled
     # Off keeps the strength for the next session's restore of a later choice.
     assert config.get("compressor_enabled") == "false"
-    assert config.get("compressor_intensity") == "0.75"
+    assert config.get("compressor_intensity") == "0.65"
 
+    # A strength saved by the former slider comes back as the nearest step.
+    config.set("compressor_enabled", "true")
+    config.set("compressor_intensity", "0.75")
     window._restore_conversion_settings()
-    assert window.compressor_tile.scale.get_value() == 0
+    assert window.compressor_tile.steps.get_selected() == 2
+    config.set("compressor_enabled", "false")
+    window._restore_conversion_settings()
+    assert window.compressor_tile.steps.get_selected() == 0
 
 
 def marks(win):
@@ -780,10 +787,10 @@ def test_a_tile_card_opens_for_the_keyboard_and_shows_the_amount(window):
     pump(lambda: tile.get_mapped())
     tile.activate()
     assert tile.popover.get_visible() and tile.popover.get_autohide()
-    pump(lambda: tile.scale.has_focus())
-    tile.scale.set_value(38)
-    assert tile.value_label.get_text() == "38%"
-    assert tile.card_value.get_text() == "38%"
+    pump(lambda: tile.steps.buttons[0].has_focus())
+    tile.steps.set_selected(3)
+    assert tile.value_label.get_text() == "Strong"
+    assert tile.card_value.get_text() == "Strong"
     [count] = [c for tiles, c in window.effect_cards.groups if tile in tiles]
     assert count.get_text() == "1 active"
     # Off is the default of a correction: there is nothing to reset to.
@@ -792,30 +799,40 @@ def test_a_tile_card_opens_for_the_keyboard_and_shows_the_amount(window):
     assert not tile.popover.get_autohide()
 
 
-def test_crossing_another_tile_on_the_way_keeps_the_open_card(window):
+def test_a_card_opens_beside_the_sidebar_clear_of_the_other_tiles(window):
     from types import SimpleNamespace
 
+    from gi.repository import Graphene
+
     popovers = window.effect_cards.popovers
-    # Even volume sits under the channels, beside the compressor.
-    lower, upper = window.normalize_tile, window.channels_row
-    beside = window.compressor_tile
+    left, beside = window.normalize_tile, window.compressor_tile
+    root = window
     window.present()
-    pump(lambda: lower.get_mapped())
-    popovers.open(lower)
-    pump(lambda: lower.popover.get_mapped())
+    pump(lambda: left.get_mapped())
+    popovers.open(left)
+    pump(lambda: left.popover.get_mapped() and left.popover.get_width())
+    # The card starts past the sidebar's edge, over the queue.
+    scrolled = window.effect_cards.scrolled
+    _found, edge = scrolled.compute_point(
+        root, Graphene.Point().init(scrolled.get_width(), 0)
+    )
+    surface = left.popover.get_surface()
+    offset_x, _offset_y = root.get_surface_transform()
+    shadow_x, _shadow_y = left.popover.get_surface_transform()
+    _found, card = left.popover.get_child().compute_bounds(left.popover)
+    card_left = surface.get_position_x() - offset_x + shadow_x + card.get_x()
+    assert card_left >= edge.x
 
     def pointer_on(tile, x, y):
         controller = SimpleNamespace(get_widget=lambda: tile)
         popovers._on_anchor_pointer(controller, x, y, tile)
 
-    # Up from the tile, over the one above it, toward its card: kept.
-    pointer_on(upper, lower.get_width() / 2, upper.get_height() - 2)
-    assert lower.popover.get_visible() and not upper.popover.get_visible()
-    # Sideways to the neighbour in the same row: that one takes over once
-    # the pointer rests on it.
+    # Across the neighbour on the way to the card: kept.
     pointer_on(beside, beside.get_width() - 4, beside.get_height() / 2)
+    assert left.popover.get_visible() and not beside.popover.get_visible()
+    # Resting on the neighbour: that one takes over.
     pump(lambda: beside.popover.get_visible())
-    assert not lower.popover.get_visible()
+    assert not left.popover.get_visible()
     beside.popover.popdown()
 
 
@@ -851,6 +868,11 @@ def test_copy_mode_closes_the_card_and_disables_the_tiles(window):
     assert not window.compressor_tile.popover.get_visible()
     assert not window.voice_scale.get_sensitive()
     assert not window.compressor_tile.is_sensitive()
+    # The tile says why, where its value was.
+    reason = "The original format keeps the audio as it is."
+    assert window.compressor_tile.value_label.get_text() == reason
+    window.format_row.set_selected(window._format_list.index("mp3"))
+    assert window.compressor_tile.value_label.get_text() == "Off"
 
 
 def test_pause_progress_shows_on_the_tile(window, audio, monkeypatch):
@@ -881,12 +903,12 @@ def test_pause_progress_shows_on_the_tile(window, audio, monkeypatch):
 def test_the_original_preview_shows_only_while_an_adjustment_is_on(window):
     preview = window.original_preview
     assert not preview.get_visible()
-    window.compressor_tile.scale.set_value(30)
+    window.compressor_tile.steps.set_selected(1)
     assert preview.get_visible()
     preview.set_active_name("original")
     assert window.player.effects_bypassed
     # Hiding it must never leave the preview silently bypassed.
-    window.compressor_tile.scale.set_value(0)
+    window.compressor_tile.steps.set_selected(0)
     assert not preview.get_visible()
     assert preview.get_active_name() == "adjusted"
     assert not window.player.effects_bypassed
@@ -1146,12 +1168,16 @@ def test_part_choices_appear_with_marks_and_joining_with_two_files(
     window, audio, tmp_path
 ):
     queue = window.file_queue
+    # Every tile is in place from the start; unavailable ones say why on
+    # the tile, where the value goes.
+    assert not window.pause_tile.get_sensitive()
+    assert window.pause_tile.value_label.get_text() == "Add a file first."
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
-    # Every tile is in place from the start; unavailable ones say why.
     assert window.pause_tile.get_sensitive()
     assert not window.cut_mode_row.get_sensitive()
     assert window.cut_mode_row.unavailable == "Mark a part on the waveform first."
+    assert window.cut_mode_row.value_label.get_text() == window.cut_mode_row.unavailable
     assert window.join_row.unavailable == "Add another file to join them."
     assert not window.join_row.get_sensitive()
     window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])

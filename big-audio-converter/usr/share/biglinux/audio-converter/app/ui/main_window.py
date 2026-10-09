@@ -21,7 +21,7 @@ from app.ui.file_queue import FileQueue
 from app.ui.hover_popovers import HoverPopovers
 from app.ui.playback_controller import PlaybackControllerMixin
 from app.ui.segment_editor import SegmentEditor
-from app.ui.settings_mixin import SettingsManagerMixin
+from app.ui.settings_mixin import COMPRESSOR_STEPS, SettingsManagerMixin
 from app.ui.visualizer import AudioVisualizer, SeekBar
 from app.utils.main_loop import MainLoopSources, weak_callback
 from app.utils.time_formatter import format_time_display
@@ -940,8 +940,10 @@ class MainWindow(
             "noise_engine": self._noise_engine(),
             "noise_strength": self.noise_adjustment.get_value(),
             # Each correction is off at zero and otherwise set by its slider.
-            "compressor_enabled": self.compressor_tile.scale.get_value() > 0,
-            "compressor_intensity": self.compressor_tile.scale.get_value() / 100,
+            "compressor_enabled": self.compressor_tile.steps.get_selected() > 0,
+            "compressor_intensity": COMPRESSOR_STEPS[
+                self.compressor_tile.steps.get_selected()
+            ],
             "eq_enabled": any(
                 self.eq_panel.band_scales[f].get_value() != 0
                 for _, f in self.eq_panel.BANDS

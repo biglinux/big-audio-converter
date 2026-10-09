@@ -350,7 +350,7 @@ class AudioConverter:
                 ) and not settings.get("normalize"):
                     warnings.append(
                         gettext.gettext(
-                            "Raising the volume may distort. Turn on Even volume or lower the volume."
+                            "Raising the volume may distort. Turn on Standard volume or lower the volume."
                         )
                     )
             if extension in ("aac", "ac3", "eac3", "dts"):

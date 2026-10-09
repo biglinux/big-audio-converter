@@ -5,6 +5,7 @@ import locale
 import logging
 import math
 import weakref
+from pathlib import Path
 
 import gi
 
@@ -12,14 +13,14 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 from app.ui.effect_cards import (
     ChoiceTile,
     ChoiceToggles,
     EffectTile,
-    LevelTile,
+    StepTile,
     SwitchTile,
 )
 from app.ui.pause_panel import PausePanel
@@ -29,6 +30,9 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 # Quality in words by bitrate. Opus reaches each level at a lower bitrate.
+# Intensity of each named compressor step after Off.
+COMPRESSOR_STEPS = (0.0, 0.35, 0.65, 1.0)
+
 QUALITY_WORDS = {
     "opus": {32: "voice", 64: "good", 96: "very good", 128: "very good"},
     "other": {
@@ -206,7 +210,7 @@ class SettingsManagerMixin:
         # is marked.
         self.cut_mode_row = ChoiceTile(
             "edit-cut-symbolic",
-            _("Marked parts"),
+            _("Marks"),
             None,
             [_("Keep them"), _("Remove them")],
         )
@@ -215,7 +219,7 @@ class SettingsManagerMixin:
         )
         self.cut_order_row = ChoiceTile(
             "view-sort-ascending-symbolic",
-            _("Segment order"),
+            _("Order"),
             _("Choose the order in which marked segments are exported."),
             [_("In timeline order"), _("In the order marked")],
         )
@@ -302,25 +306,24 @@ class SettingsManagerMixin:
         )
         self.normalize_tile = SwitchTile(
             "power-profile-balanced-symbolic",
-            _("Even volume"),
+            _("Standard volume"),
             _(
-                "Brings the whole file to a standard loudness, good for speech and podcasts; several files end up at the same level. A quiet voice and a loud one in the same file keep their difference."
+                "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
             ),
         )
         self.normalize_tile.switch.connect(
             "notify::active", weak_callback(self._on_normalize_switch_changed)
         )
-        self.compressor_tile = LevelTile(
+        self.compressor_tile = StepTile(
             "multimedia-volume-control-symbolic",
-            _("Level loud and quiet parts"),
+            _("Lift quiet parts"),
             _(
                 "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
             ),
-            Gtk.Adjustment(upper=100, step_increment=1, page_increment=10),
-            lambda value: f"{value:.0f}%",
+            [_("Off"), _("Light"), _("Medium"), _("Strong")],
         )
-        self.compressor_tile.scale.connect(
-            "value-changed", weak_callback(self._on_compressor_changed)
+        self.compressor_tile.steps.connect(
+            "notify::selected", weak_callback(self._on_compressor_changed)
         )
         for tile in (
             self.channels_row,
@@ -334,9 +337,18 @@ class SettingsManagerMixin:
         # the marked parts are saved and appear once there are some. Cuts
         # also apply to the original format, unlike the effects.
         self.pause_panel = PausePanel(self)
-        self.pause_tile = EffectTile(
-            "media-playback-pause-symbolic", _("Remove pauses"), None, self.pause_panel
+        # The app's own icon, by file as the equalizer's: the player's pause
+        # glyph read as a Pause button.
+        icon = Gio.FileIcon.new(
+            Gio.File.new_for_path(
+                str(
+                    Path(__file__).resolve().parents[4]
+                    / "icons/hicolor/symbolic/actions"
+                    / "big-audio-converter-remove-pauses-symbolic.svg"
+                )
+            )
         )
+        self.pause_tile = EffectTile(icon, _("Remove pauses"), None, self.pause_panel)
         self.pause_tile.counts = False  # what is kept, not how it sounds
         self.parts_group, parts_flow = cards.add_group(_("Cuts"), 2)
         self.parts_group.set_margin_start(12)
@@ -371,7 +383,7 @@ class SettingsManagerMixin:
         self.output_box.append(self.copy_notice)
         self.gain_notice = Gtk.Label(
             label=_(
-                "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Even volume."
+                "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
             ),
             wrap=True,
             xalign=0,
@@ -611,14 +623,15 @@ class SettingsManagerMixin:
         if self._noise_active():
             self.player.set_noise_reduction(True)
 
-    def _on_compressor_changed(self, scale):
-        """Off at zero, otherwise that percent of it."""
-        level = scale.get_value()
-        if level:
-            self.app.config.set("compressor_intensity", str(level / 100))
-            self.player.set_compressor_intensity(level / 100)
-        self.app.config.set("compressor_enabled", str(level > 0).lower())
-        self.player.set_compressor_enabled(level > 0)
+    def _on_compressor_changed(self, steps, _pspec):
+        """Off at the first step, otherwise that step's intensity."""
+        step = steps.get_selected()
+        if step:
+            intensity = COMPRESSOR_STEPS[step]
+            self.app.config.set("compressor_intensity", str(intensity))
+            self.player.set_compressor_intensity(intensity)
+        self.app.config.set("compressor_enabled", str(step > 0).lower())
+        self.player.set_compressor_enabled(step > 0)
 
     def _on_normalize_switch_changed(self, row, _pspec):
         state = row.get_active()
@@ -660,20 +673,24 @@ class SettingsManagerMixin:
             )
         keeping = not self.removes_marked()
         self.play_selection_switch.set_visible(has_segments)
+        # Short: the reason shows on the tile. The first tile says where to
+        # mark; the ones that wait for it only that it comes first.
         unmarked = None if has_segments else _("Mark a part on the waveform first.")
-        removing = (
-            None
-            if keeping
-            else _("Removing marked parts leaves one file in timeline order.")
-        )
+        first = None if has_segments else _("Mark a part first.")
         joining = (
             _("Joining files makes one file of everything.")
             if self._joining()
             else None
         )
         self.cut_mode_row.set_unavailable(unmarked)
-        self.cut_order_row.set_unavailable(unmarked or removing)
-        self.cut_output_row.set_unavailable(unmarked or removing or joining)
+        self.cut_order_row.set_unavailable(
+            first or (None if keeping else _("Removing keeps the timeline order."))
+        )
+        self.cut_output_row.set_unavailable(
+            first
+            or (None if keeping else _("Removing leaves a single file."))
+            or joining
+        )
 
     def _sync_join(self):
         """Joining needs two files and an encoded format."""
@@ -735,17 +752,23 @@ class SettingsManagerMixin:
         self.precision_list.set_visible(
             self._format_list[self.format_row.get_selected()] == "flac"
         )
-        # The encoded audio is kept as it is: no encoding to choose.
-        self.channels_row.set_sensitive(not is_copy_mode)
-        self.sample_rate_row.set_sensitive(not is_copy_mode)
-        # Copy keeps the encoded audio, so nothing that processes it applies.
+        # Copy keeps the encoded audio as it is: no encoding to choose, and
+        # nothing that processes it applies.
         if is_copy_mode:
             self.effect_cards.close()
             self.bar_popovers.close_all()
-        bar_controls = (self.volume_button, self.speed_button, self.voice_button)
-        for widget in (
+        kept = (
+            _("The original format keeps the audio as it is.") if is_copy_mode else None
+        )
+        for tile in (
+            self.channels_row,
+            self.sample_rate_row,
             self.normalize_tile,
             self.compressor_tile,
+        ):
+            tile.set_unavailable(kept)
+        bar_controls = (self.volume_button, self.speed_button, self.voice_button)
+        for widget in (
             *(b.get_parent() for b in bar_controls),
             self.equalizer_button,
         ):
@@ -834,11 +857,8 @@ class SettingsManagerMixin:
         self._set_processing_volume(100)
         self._set_processing_speed(1.0)
         self.noise_model.set_selected(0)
-        for scale in (
-            self.noise_adjustment,
-            self.compressor_tile.scale,
-        ):
-            scale.set_value(0)
+        self.noise_adjustment.set_value(0)
+        self.compressor_tile.steps.set_selected(0)
         self.normalize_tile.set_active(False)
         self.eq_panel.preset_dropdown.set_selected(
             self.eq_panel.PRESET_KEYS.index("flat")
@@ -868,9 +888,14 @@ class SettingsManagerMixin:
             else 0
         )
 
-        # Off is the lowest value; the strength in between is kept for later.
-        self.compressor_tile.scale.set_value(
-            100 * self._config_float("compressor_intensity", 1.0)
+        # Off is the first step; the strength is kept for later. A strength
+        # saved by the former slider takes the nearest step.
+        intensity = self._config_float("compressor_intensity", 1.0)
+        self.compressor_tile.steps.set_selected(
+            min(
+                range(1, len(COMPRESSOR_STEPS)),
+                key=lambda step: abs(COMPRESSOR_STEPS[step] - intensity),
+            )
             if self._config_bool("compressor_enabled")
             else 0
         )

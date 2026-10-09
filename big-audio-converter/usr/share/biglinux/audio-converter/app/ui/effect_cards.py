@@ -12,7 +12,7 @@ import weakref
 import gi
 
 gi.require_version("Adw", "1")
-from gi.repository import Adw, GLib, GObject, Gtk, Pango
+from gi.repository import Adw, Gdk, GLib, GObject, Graphene, Gtk, Pango
 
 from app.ui.hover_popovers import HoverPopovers
 from app.utils.main_loop import MainLoopSources, weak_callback
@@ -118,12 +118,17 @@ class EffectTile(Gtk.FlowBoxChild):
                 css_classes=["heading"],
             )
         )
+        # Up to three lines: a greyed tile says here why, not in a tooltip
+        # alone, and a reason cut short says nothing.
         self.value_label = Gtk.Label(
             xalign=0,
+            wrap=True,
+            lines=3,
             ellipsize=Pango.EllipsizeMode.END,
             max_width_chars=12,
             css_classes=["effect-value", "caption"],
         )
+        self._value = ""
         text.append(self.value_label)
         box.append(text)
         self.set_child(box)
@@ -167,22 +172,27 @@ class EffectTile(Gtk.FlowBoxChild):
             card.append(self.reset_button)
         # A bounded width: a long line in the body wraps instead of widening
         # the card past its neighbours.
+        # Beside the sidebar, over the queue: above or below the tile it
+        # covered the neighbouring tiles. EffectCards points it at the edge.
         self.popover = Gtk.Popover(
             child=Adw.Clamp(child=card, maximum_size=340, tightening_threshold=340),
-            position=Gtk.PositionType.TOP,
+            position=Gtk.PositionType.RIGHT,
             css_classes=["effect-card"],
         )
         self.popover.update_property([Gtk.AccessibleProperty.LABEL], [title])
 
     def set_unavailable(self, reason):
-        """Greyed with ``reason`` as its tooltip, or usable again."""
+        """Greyed with ``reason`` in place of its value, or usable again."""
         self.unavailable = reason
+        if reason and self.popover is not None:
+            self.popover.popdown()
         self.set_sensitive(reason is None)
         self.set_tooltip_text(reason)
+        self.value_label.set_text(reason or self._value)
         self._describe()
 
     def _describe(self):
-        text = self.value_label.get_text()
+        text = self._value
         detail = self.unavailable or self.description
         self.update_property(
             [Gtk.AccessibleProperty.DESCRIPTION],
@@ -192,7 +202,8 @@ class EffectTile(Gtk.FlowBoxChild):
     def show_value(self, text, applied):
         """Show the value on the tile, in its card and to screen readers."""
         self.applied = applied
-        self.value_label.set_text(text)
+        self._value = text
+        self.value_label.set_text(self.unavailable or text)
         (self.add_css_class if applied else self.remove_css_class)("applied")
         if self.popover is not None:
             self.card_value.set_text(text)
@@ -228,9 +239,6 @@ class ChoiceTile(EffectTile):
         for widget in extra:
             body.append(widget)
         super().__init__(icon, title, description, body)
-        # "Very good · 192 kbps" takes two lines rather than an ellipsis.
-        self.value_label.set_wrap(True)
-        self.value_label.set_lines(2)
         self._buttons = []
         self._model = None
         self.short_labels = []
@@ -291,36 +299,22 @@ class ChoiceTile(EffectTile):
         return self._model.get_item(self.selected)
 
 
-class LevelTile(EffectTile):
-    """A correction set by how much of it applies; the lowest value is off.
+class StepTile(EffectTile):
+    """A correction in a few named steps, picked in its card; the first is off."""
 
-    ``amount`` turns the value into the text shown for it.
-    """
+    def __init__(self, icon, title, description, labels):
+        self.steps = ChoiceToggles(title, labels)
+        super().__init__(icon, title, description, self.steps)
+        self.labels = labels
+        self.steps.connect("notify::selected", weak_callback(self._show))
+        self._show()
 
-    unavailable = None  # why the correction cannot apply now, if it cannot
+    def _show(self, *_args):
+        step = self.steps.get_selected()
+        self.show_value(self.labels[step], step > 0)
 
-    def __init__(self, icon, title, description, adjustment, amount, extra=()):
-        scale = Gtk.Scale(adjustment=adjustment, draw_value=False, hexpand=True)
-        scale.update_property([Gtk.AccessibleProperty.LABEL], [title])
-        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        body.append(scale)
-        for widget in extra:
-            body.append(widget)
-        super().__init__(icon, title, description, body)
-        self.scale = scale
-        self.amount = amount
-        self.scale.connect("value-changed", weak_callback(self.refresh))
-        self.refresh()
-
-    def refresh(self, *_args):
-        value = self.scale.get_value()
-        if self.unavailable:
-            self.show_value(self.unavailable, False)
-        else:
-            self.show_value(self.amount(value) if value else _("Off"), value > 0)
-        self.scale.update_property(
-            [Gtk.AccessibleProperty.VALUE_TEXT], [self.value_label.get_text()]
-        )
+    def focus_target(self):
+        return self.steps.buttons[self.steps.get_selected()]
 
 
 class SwitchTile(EffectTile):
@@ -353,6 +347,7 @@ class EffectCards:
         # A card opens once the pointer rests on its tile, not on the way past.
         self.popovers = HoverPopovers(self._sources, open_delay_ms=150)
         self.popovers.can_open = weak_callback(self._can_open)
+        self.popovers.before_open = weak_callback(self._point_at_edge)
         self.groups = []  # (tiles, count label)
         self.on_changed = None  # told after any tile's state changes
         self._scrolled_at = 0
@@ -395,8 +390,9 @@ class EffectCards:
         self.groups[flow.group_index][0].append(tile)
         flow.append(tile)
         if tile.popover is not None:
-            # A click gives the slider the keyboard, or the card's one control.
-            focus = getattr(tile, "scale", tile.body)
+            # A click gives the keyboard to the chosen step, or the card's one
+            # control.
+            focus = getattr(tile, "focus_target", lambda: tile.body)
             self.popovers.attach(tile, tile, tile.popover, focus=focus)
         self.tile_changed(tile)
 
@@ -434,6 +430,18 @@ class EffectCards:
             tile.is_sensitive()
             and GLib.get_monotonic_time() - self._scrolled_at >= SCROLL_QUIET_US
         )
+
+    def _point_at_edge(self, tile):
+        """Point the card at the sidebar's edge level with the tile, so it
+        opens over the queue, clear of the tiles in the other column."""
+        found, edge = self.scrolled.compute_point(
+            tile, Graphene.Point().init(self.scrolled.get_width(), 0)
+        )
+        if found:
+            rect = Gdk.Rectangle()
+            rect.x, rect.y = int(edge.x) - 1, 0
+            rect.width, rect.height = 1, tile.get_height()
+            tile.popover.set_pointing_to(rect)
 
     def _note_scroll(self):
         self._scrolled_at = GLib.get_monotonic_time()

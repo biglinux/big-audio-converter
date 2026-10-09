@@ -2,7 +2,8 @@
 
 The anchor, its popover and the band between them count as one region: the
 popover stays while the pointer is anywhere in it, even over another anchor
-on the way, and closes a moment after the pointer leaves it. A click opens
+on the way unless the pointer rests there, and closes a moment after the
+pointer leaves it. A click opens
 one for the keyboard instead: focused, and closed by Escape or a click
 elsewhere.
 """
@@ -14,16 +15,24 @@ from app.utils.main_loop import weak_callback
 CLOSE_DELAY_MS = 300
 
 
-def _in_band(x, y, upper, lower):
-    """Whether (x, y) lies between two boxes, in the band that narrows or
-    widens from the bottom of ``upper`` to the top of ``lower``."""
-    top, bottom = upper[3], lower[1]
-    if not top <= y <= bottom:
+def _in_band(x, y, first, second):
+    """Whether (x, y) lies between two boxes (x0, y0, x1, y1), in the band
+    that narrows or widens from one to the other: up or down when one is
+    above the other, otherwise sideways."""
+    if first[3] <= second[1] or second[3] <= first[1]:
+        upper, lower = sorted((first, second), key=lambda b: b[1])
+        start, end, along, across = upper[3], lower[1], y, x
+        near, far = (upper[0], upper[2]), (lower[0], lower[2])
+    else:
+        left, right = sorted((first, second), key=lambda b: b[0])
+        start, end, along, across = left[2], right[0], x, y
+        near, far = (left[1], left[3]), (right[1], right[3])
+    if not start <= along <= end:
         return False
-    t = (y - top) / (bottom - top) if bottom > top else 0
-    left = upper[0] + t * (lower[0] - upper[0])
-    right = upper[2] + t * (lower[2] - upper[2])
-    return left <= x <= right
+    t = (along - start) / (end - start) if end > start else 0
+    low = near[0] + t * (far[0] - near[0])
+    high = near[1] + t * (far[1] - near[1])
+    return low <= across <= high
 
 
 class HoverPopovers:
@@ -42,6 +51,7 @@ class HoverPopovers:
         self._closing = {}  # name -> pending close
         self._window_motion = None  # the window's pointer, while a card is open
         self.can_open = None  # optional check before opening on hover
+        self.before_open = None  # optional, to place a popover as it opens
 
     def attach(self, name, anchor, popover, focus=None):
         popover.set_autohide(False)
@@ -81,6 +91,8 @@ class HoverPopovers:
             if other != name:
                 popover.popdown()
         self._follow(self._anchors[name].get_root())
+        if self.before_open is not None:
+            self.before_open(name)
         self.popovers[name].popup()
 
     def open_for_keyboard(self, name):
@@ -88,8 +100,11 @@ class HoverPopovers:
         popover.popdown()
         popover.set_autohide(True)
         self.open(name)
-        if self._focus[name] is not None:
-            self._focus[name].grab_focus()
+        focus = self._focus[name]
+        if callable(focus):
+            focus = focus()  # the control to focus can change between openings
+        if focus is not None:
+            focus.grab_focus()
 
     def close(self, name):
         self.popovers[name].popdown()
@@ -161,8 +176,7 @@ class HoverPopovers:
         for x0, y0, x1, y1 in (anchor_box, popover_box):
             if x0 <= x <= x1 and y0 <= y <= y1:
                 return True
-        upper, lower = sorted((anchor_box, popover_box), key=lambda b: b[1])
-        return _in_band(x, y, upper, lower)
+        return _in_band(x, y, anchor_box, popover_box)
 
     def _on_anchor_pointer(self, controller, x, y, name):
         shown = self._shown_by_pointer()
@@ -171,7 +185,14 @@ class HoverPopovers:
         elif shown is not None and self._in_region(
             shown, controller.get_widget(), x, y
         ):
-            return  # crossing this anchor on the way to the open popover
+            # Crossing this anchor on the way to the open popover keeps it;
+            # resting on this one opens its own, where there is a wait.
+            self._cancel_close(shown)
+            if self._open_delay_ms:
+                self._cancel_opening()
+                self._opening = self._sources.later(
+                    self._open_delay_ms, self._open_by_pointer, name
+                )
         elif not self._open_delay_ms:
             if self.can_open is None or self.can_open(name):
                 self.open(name)

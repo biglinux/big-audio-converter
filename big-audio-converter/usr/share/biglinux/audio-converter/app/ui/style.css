@@ -42,7 +42,15 @@ flowboxchild.effect-tile {
 }
 flowboxchild.effect-tile:hover { background-color: mix(@card_bg_color, currentColor, 0.04); }
 flowboxchild.effect-tile:active { background-color: mix(@card_bg_color, currentColor, 0.08); }
-flowboxchild.effect-tile:disabled { opacity: 0.5; }
+/* A greyed tile dims its name and icon, not the reason it gives in place
+   of its value: that has to stay readable. */
+flowboxchild.effect-tile:disabled .heading,
+flowboxchild.effect-tile:disabled .effect-badge { opacity: 0.45; }
+flowboxchild.effect-tile:disabled .effect-value {
+    color: @card_fg_color;
+    opacity: 0.7;
+    filter: none;
+}
 .effect-badge {
     min-width: 32px;
     min-height: 32px;
@@ -54,7 +62,10 @@ flowboxchild.effect-tile:disabled { opacity: 0.5; }
     color: @accent_fg_color;
 }
 .effect-tile .effect-value { opacity: 0.7; }
-.effect-tile.applied .effect-value, .effect-card .effect-value {
+.effect-card .effect-value { font-weight: bold; }
+/* The card is the tile's popover, so this colours its value too: an accent
+   only while the setting applies, never on "Off". */
+.effect-tile.applied .effect-value {
     opacity: 1;
     color: @accent_color;
     font-weight: bold;

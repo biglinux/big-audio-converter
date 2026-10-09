@@ -235,6 +235,13 @@ class PausePanel(Adw.PreferencesGroup):
         else:
             text = _("Off")
         tile.show_value(text, applied)
+        # Like the other cuts: greyed with the reason until there is a file.
+        window = self.window()
+        tile.set_unavailable(
+            None
+            if window and window.active_audio_id is not None
+            else _("Add a file first.")
+        )
 
     def _show_undo(self):
         window = self.window()

@@ -395,7 +395,12 @@ class FileQueue(Gtk.Box):
         empty = Adw.StatusPage(
             icon_name="big-audio-converter",
             title=_("Add audio or video files"),
-            description=_(
+            # How to begin first; the button is named as the header shows it.
+            description=_("Drag files here or use {button}.").format(
+                button=_("Add Files")
+            )
+            + "\n"
+            + _(
                 "Each audio track of a video becomes its own entry. "
                 "The originals are never changed."
             ),
