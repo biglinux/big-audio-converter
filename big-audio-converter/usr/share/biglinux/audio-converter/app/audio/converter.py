@@ -275,7 +275,7 @@ class AudioConverter:
                     if channels > 2:
                         raise MediaError(
                             gettext.gettext(
-                                "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
+                                "Files with more than two channels can only be joined as mono or stereo. Choose Mono or Stereo under Channels."
                             )
                         )
             warnings, notes = [], []

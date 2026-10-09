@@ -58,8 +58,8 @@ msgid "Keeping the original format cannot join files. Select an audio format."
 msgstr "元の形式を維持する場合はファイルを結合できません。音声形式を選んでください。"
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:278
-msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
-msgstr "3 チャンネル以上のファイルは、モノラルかステレオでしか結合できません。「エンコードの詳細設定」でチャンネルを選んでください。"
+msgid "Files with more than two channels can only be joined as mono or stereo. Choose Mono or Stereo under Channels."
+msgstr "3 チャンネル以上のファイルは、モノラルかステレオでしか結合できません。「チャンネル」で「モノラル」か「ステレオ」を選んでください。"
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:298
 msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
@@ -274,8 +274,8 @@ msgid "Select a supported noise reduction mode."
 msgstr "対応しているノイズ低減モードを選んでください。"
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC ではこの PCM 表現を保持できません。WAV を選ぶか、「エンコードの詳細設定」で 24 ビット PCM への変換を明示的に許可してください。"
+msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
+msgstr "FLAC ではこの PCM 表現を保持できません。WAV を選ぶか、「形式」で「24 ビット PCM への変換を許可」をオンにしてください。"
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
 msgid "The selected bitrate is not supported by this output profile."
@@ -365,48 +365,48 @@ msgstr "波形を生成できませんでした。"
 msgid "The source changed while its waveform was being generated."
 msgstr "波形の生成中に元のファイルが変更されました。"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:41
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
 msgid "Check conversion settings"
 msgstr "変換設定を確認してください"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:52
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
 msgid "Conversion could not start"
 msgstr "変換を開始できませんでした"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:60
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
 msgid "Converting audio"
 msgstr "オーディオを変換中"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:90
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
 msgid "Cancelling…"
 msgstr "キャンセル中…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:106
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "{total} 件中 {current} 件を変換中 · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:140
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "{count} 件のファイルを変換できませんでした"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "再試行"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:147
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} 件のファイルを変換しました"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:149
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
 msgid "Show Files"
 msgstr "ファイルを表示"
 
@@ -1413,7 +1413,7 @@ msgstr "マークした区間のみを試聴します。"
 msgid "More actions are available from the adjacent menu button."
 msgstr "その他の操作は、隣のメニューボタンから選べます。"
 
-#: usr/share/biglinux/audio-converter/main.py:207 usr/share/biglinux/audio-converter/main.py:209
+#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
 msgid "BigLinux Team"
 msgstr "BigLinux チーム"
 

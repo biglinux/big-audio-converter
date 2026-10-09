@@ -58,8 +58,8 @@ msgid "Keeping the original format cannot join files. Select an audio format."
 msgstr "Med det oprindelige format kan filer ikke samles. Vælg et lydformat."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:278
-msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
-msgstr "Filer med mere end to kanaler kan kun sammenføjes som mono eller stereo. Vælg kanalerne under Avanceret kodning."
+msgid "Files with more than two channels can only be joined as mono or stereo. Choose Mono or Stereo under Channels."
+msgstr "Filer med mere end to kanaler kan kun sammenføjes som mono eller stereo. Vælg Mono eller Stereo under Kanaler."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:298
 msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
@@ -274,8 +274,8 @@ msgid "Select a supported noise reduction mode."
 msgstr "Vælg en understøttet tilstand for støjreduktion."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC kan ikke bevare denne PCM-repræsentation. Vælg WAV, eller tillad udtrykkeligt konvertering til 24-bit PCM under Avanceret kodning."
+msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
+msgstr "FLAC kan ikke bevare denne PCM-repræsentation. Vælg WAV, eller slå »Tillad konvertering til 24-bit PCM« til under Format."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
 msgid "The selected bitrate is not supported by this output profile."
@@ -365,50 +365,50 @@ msgstr "Bølgeformen kunne ikke genereres."
 msgid "The source changed while its waveform was being generated."
 msgstr "Kildefilen blev ændret, mens bølgeformen blev genereret."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:41
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
 msgid "Check conversion settings"
 msgstr "Kontrollér konverteringsindstillingerne"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:52
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
 msgid "Conversion could not start"
 msgstr "Konverteringen kunne ikke starte"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:60
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
 msgid "Converting audio"
 msgstr "Konverterer lyd"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "Annuller"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:90
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
 msgid "Cancelling…"
 msgstr "Annullerer…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:106
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "Konverterer {current} af {total} · {percent} %"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:140
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "{count} fil blev ikke konverteret"
 msgstr[1] "{count} filer blev ikke konverteret"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "Prøv igen"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:147
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} fil konverteret"
 msgstr[1] "{count} filer konverteret"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:149
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
 msgid "Show Files"
 msgstr "Vis filer"
 
@@ -1424,7 +1424,7 @@ msgstr "Lyt kun til de markerede segmenter."
 msgid "More actions are available from the adjacent menu button."
 msgstr "Menuknappen ved siden af giver adgang til flere handlinger."
 
-#: usr/share/biglinux/audio-converter/main.py:207 usr/share/biglinux/audio-converter/main.py:209
+#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
 msgid "BigLinux Team"
 msgstr "BigLinux-holdet"
 

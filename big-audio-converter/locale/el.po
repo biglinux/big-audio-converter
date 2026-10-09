@@ -58,8 +58,8 @@ msgid "Keeping the original format cannot join files. Select an audio format."
 msgstr "Με διατήρηση της αρχικής μορφής δεν γίνεται ένωση αρχείων. Επιλέξτε μορφή ήχου."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:278
-msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
-msgstr "Τα αρχεία με περισσότερα από δύο κανάλια μπορούν να ενωθούν μόνο ως μονοφωνικά ή στερεοφωνικά. Επιλέξτε τα κανάλια στη «Σύνθετη κωδικοποίηση»."
+msgid "Files with more than two channels can only be joined as mono or stereo. Choose Mono or Stereo under Channels."
+msgstr "Τα αρχεία με περισσότερα από δύο κανάλια μπορούν να ενωθούν μόνο ως μονοφωνικά ή στερεοφωνικά. Επιλέξτε «Μονοφωνικά» ή «Στερεοφωνικά» στα «Κανάλια»."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:298
 msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
@@ -274,8 +274,8 @@ msgid "Select a supported noise reduction mode."
 msgstr "Επιλέξτε μια υποστηριζόμενη λειτουργία μείωσης θορύβου."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "Το FLAC δεν μπορεί να διατηρήσει αυτή την αναπαράσταση PCM. Επιλέξτε WAV ή επιτρέψτε ρητά τη μετατροπή σε PCM 24 bit στη σύνθετη κωδικοποίηση."
+msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
+msgstr "Το FLAC δεν μπορεί να διατηρήσει αυτή την αναπαράσταση PCM. Επιλέξτε WAV ή ενεργοποιήστε το «Να επιτρέπεται η μετατροπή σε PCM 24 bit» στη «Μορφή»."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
 msgid "The selected bitrate is not supported by this output profile."
@@ -365,50 +365,50 @@ msgstr "Δεν ήταν δυνατή η δημιουργία της κυματο
 msgid "The source changed while its waveform was being generated."
 msgstr "Το αρχείο προέλευσης άλλαξε κατά τη δημιουργία της κυματομορφής του."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:41
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
 msgid "Check conversion settings"
 msgstr "Ελέγξτε τις ρυθμίσεις μετατροπής"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:52
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
 msgid "Conversion could not start"
 msgstr "Δεν ήταν δυνατή η έναρξη της μετατροπής"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:60
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
 msgid "Converting audio"
 msgstr "Μετατροπή ήχου"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "Ακύρωση"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:90
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
 msgid "Cancelling…"
 msgstr "Ακύρωση σε εξέλιξη…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:106
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "Μετατροπή {current} από {total} · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:140
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "{count} αρχείο δεν μετατράπηκε"
 msgstr[1] "{count} αρχεία δεν μετατράπηκαν"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "Δοκιμή ξανά"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:147
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} αρχείο μετατράπηκε"
 msgstr[1] "{count} αρχεία μετατράπηκαν"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:149
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
 msgid "Show Files"
 msgstr "Εμφάνιση αρχείων"
 
@@ -1424,7 +1424,7 @@ msgstr "Ακούστε μόνο τα επισημασμένα τμήματα."
 msgid "More actions are available from the adjacent menu button."
 msgstr "Περισσότερες ενέργειες είναι διαθέσιμες από το διπλανό κουμπί μενού."
 
-#: usr/share/biglinux/audio-converter/main.py:207 usr/share/biglinux/audio-converter/main.py:209
+#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
 msgid "BigLinux Team"
 msgstr "Ομάδα BigLinux"
 

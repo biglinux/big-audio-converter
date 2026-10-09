@@ -58,8 +58,8 @@ msgid "Keeping the original format cannot join files. Select an audio format."
 msgstr "При запазване на първоначалния формат файловете не могат да се обединяват. Изберете аудиоформат."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:278
-msgid "Files with more than two channels can only be joined as mono or stereo. Choose the channels in Advanced encoding."
-msgstr "Файлове с повече от два канала могат да се обединят само като моно или стерео. Изберете каналите в „Разширено кодиране“."
+msgid "Files with more than two channels can only be joined as mono or stereo. Choose Mono or Stereo under Channels."
+msgstr "Файлове с повече от два канала могат да се обединят само като моно или стерео. Изберете „Моно“ или „Стерео“ в „Канали“."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:298
 msgid "Keeping the original format cannot apply effects, change channels or resample. Select an audio format."
@@ -274,8 +274,8 @@ msgid "Select a supported noise reduction mode."
 msgstr "Изберете поддържан режим на намаляване на шума."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
-msgid "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
-msgstr "FLAC не може да запази това представяне на PCM. Изберете WAV или изрично разрешете преобразуване в 24-битов PCM в разширеното кодиране."
+msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
+msgstr "FLAC не може да запази това представяне на PCM. Изберете WAV или включете „Разрешаване на преобразуване в 24-битов PCM“ във „Формат“."
 
 #: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
 msgid "The selected bitrate is not supported by this output profile."
@@ -365,50 +365,50 @@ msgstr "Вълновата форма не може да бъде създаде
 msgid "The source changed while its waveform was being generated."
 msgstr "Източникът се промени по време на създаването на вълновата му форма."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:41
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
 msgid "Check conversion settings"
 msgstr "Проверете настройките за конвертиране"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:52
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
 msgid "Conversion could not start"
 msgstr "Конвертирането не може да започне"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:60
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
 msgid "Converting audio"
 msgstr "Конвертиране на аудио"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "Отказ"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:90
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
 msgid "Cancelling…"
 msgstr "Отменяне…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:106
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "Конвертиране на {current} от {total} · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:140
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "{count} файл не е конвертиран"
 msgstr[1] "{count} файла не са конвертирани"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "Нов опит"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:147
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} файл е конвертиран"
 msgstr[1] "{count} файла са конвертирани"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:149
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
 msgid "Show Files"
 msgstr "Показване на файловете"
 
@@ -1424,7 +1424,7 @@ msgstr "Прослушване само на маркираните отрязъ
 msgid "More actions are available from the adjacent menu button."
 msgstr "Допълнителни действия са достъпни от съседния бутон за меню."
 
-#: usr/share/biglinux/audio-converter/main.py:207 usr/share/biglinux/audio-converter/main.py:209
+#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
 msgid "BigLinux Team"
 msgstr "Екипът на BigLinux"
 

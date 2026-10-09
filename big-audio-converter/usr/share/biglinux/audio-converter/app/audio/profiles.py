@@ -181,7 +181,7 @@ def codec_args(settings, channels=None, stream=None):
             if not settings.get("allow_precision_reduction"):
                 raise MediaError(
                     gettext.gettext(
-                        "FLAC cannot preserve this PCM representation. Choose WAV or explicitly allow conversion to 24-bit PCM in Advanced encoding."
+                        "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
                     )
                 )
             bits = 24
