@@ -16,15 +16,20 @@ concurrency:
 jobs:
   linux:
     runs-on: ubuntu-24.04
+    # The packages target Arch-based BigLinux, and the window needs a
+    # libadwaita newer than Ubuntu ships.
+    container: archlinux:base@sha256:4e77cf2ea5f410e6f8be5abf93ccf17ce2436e87a138c167208356711a405dbd
     timeout-minutes: 20
     steps:
+      - name: Install dependencies
+        run: >-
+          pacman -Syu --noconfirm --needed git ffmpeg python python-pipx
+          python-pytest python-pytest-cov python-gobject python-cairo python-numpy
+          python-mpv gtk4 libadwaita xorg-server-xvfb xdotool dbus gettext
+          desktop-file-utils appstream
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg python3-pytest python3-pytest-cov python3-gi python3-gi-cairo python3-cairo python3-numpy python3-mpv gir1.2-gtk-4.0 gir1.2-adw-1 xvfb xauth xdotool dbus-x11 gettext desktop-file-utils appstream
       - name: Lint
         run: |
           pipx run ruff==0.16.6 check big-audio-converter/usr/share/biglinux/audio-converter tests
@@ -35,7 +40,7 @@ jobs:
           appstreamcli validate --no-net big-audio-converter/usr/share/metainfo/br.com.biglinux.audio.converter.metainfo.xml
       - name: Test
         # The tests start their own Xvfb display and session bus.
-        run: /usr/bin/python3 -m pytest -q --junitxml=test-results/tests.xml --cov=big-audio-converter/usr/share/biglinux/audio-converter/app --cov-branch --cov-report=xml:test-results/coverage.xml
+        run: python -m pytest -q --junitxml=test-results/tests.xml --cov=big-audio-converter/usr/share/biglinux/audio-converter/app --cov-branch --cov-report=xml:test-results/coverage.xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
