@@ -198,9 +198,8 @@ class Application(Adw.Application):
     def do_shutdown(self):
         if self._main_window is not None:
             self._main_window.cleanup()
-        else:
-            self.player.cleanup()
-            self.converter.cleanup()
+        self.player.cleanup()
+        self.converter.cleanup()
         self.config.close()
         Adw.Application.do_shutdown(self)
 

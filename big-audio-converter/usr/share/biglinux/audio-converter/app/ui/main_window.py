@@ -1030,8 +1030,9 @@ class MainWindow(
         self.converter.cancel_conversion()
         self.file_queue.cleanup()
         self.waveform_generator.cleanup()
-        self.converter.cleanup()
-        self.player.cleanup()
+        # The player and converter belong to the application, which disposes
+        # of them at shutdown: a window opened meanwhile still needs them.
+        self.player.stop()
         self.visualizer.cleanup()
         self.tooltip_helper.cleanup()
         self.seekbar.connect_seek_handler(None)

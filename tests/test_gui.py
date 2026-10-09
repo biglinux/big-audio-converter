@@ -47,6 +47,8 @@ def stop_window(win):
     app = win.get_application()
     win.cleanup()
     win.destroy()
+    app.player.cleanup()
+    app.converter.cleanup()
     app.config.close()
     app.quit()
 
@@ -621,6 +623,13 @@ def test_closing_during_a_conversion_asks_first(window, monkeypatch):
     assert not window._closed
     window._on_close_while_converting(None, "stop")
     assert window._closed
+
+
+def test_closing_the_window_leaves_the_shared_player_and_converter(window):
+    app = window.get_application()
+    window.cleanup()
+    assert not app.player._closed
+    assert not app.converter._disposed
 
 
 def test_quitting_during_a_conversion_asks_first(window, monkeypatch):
