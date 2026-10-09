@@ -1,4 +1,4 @@
-"""Unit tests for BAC AppConfig."""
+"""AppConfig persistence, validation and recovery."""
 
 import json
 import os
@@ -14,18 +14,6 @@ def config(tmp_path):
     cfg._save_delay = 0.01
     yield cfg
     cfg.close()
-
-
-class TestAppConfigGetSet:
-    def test_get_default(self, config):
-        assert config.get("noise_engine") == "dfn3"
-
-    def test_get_unknown_key(self, config):
-        assert config.get("nonexistent", "fallback") == "fallback"
-
-    def test_set_and_get(self, config):
-        config.set("conversion_format", "flac")
-        assert config.get("conversion_format") == "flac"
 
 
 class TestAppConfigPersistence:

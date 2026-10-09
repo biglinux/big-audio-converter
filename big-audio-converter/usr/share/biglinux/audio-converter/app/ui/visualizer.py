@@ -75,9 +75,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.hover_time_callback = None  # Callback for waveform hover time changes
         self._init_marker_state()
 
-        # Player reference for checking playback state
         self.player = None
 
+        # Handlers reach the widget through the controller: a closure over self
+        # would keep the widget alive through its own controllers.
         click_controller = Gtk.GestureClick()
         click_controller.connect(
             "pressed",
