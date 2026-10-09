@@ -282,12 +282,9 @@ class AudioConverter:
             if format_name == "copy":
                 effects = (
                     "noise_reduction",
-                    "hpf_enabled",
-                    "gate_enabled",
                     "compressor_enabled",
                     "eq_enabled",
                     "normalize",
-                    "prevent_clipping",
                 )
                 if (
                     any(settings.get(key) for key in effects)
@@ -350,13 +347,10 @@ class AudioConverter:
                         settings.get("eq_enabled")
                         and any(float(g) > 0 for g in settings["eq_bands"].split(","))
                     )
-                ) and (
-                    not settings.get("prevent_clipping")
-                    and not settings.get("normalize")
-                ):
+                ) and not settings.get("normalize"):
                     warnings.append(
                         gettext.gettext(
-                            "Raising the volume may distort. Turn on Prevent distortion or lower the volume."
+                            "Raising the volume may distort. Turn on Even volume or lower the volume."
                         )
                     )
             if extension in ("aac", "ac3", "eac3", "dts"):

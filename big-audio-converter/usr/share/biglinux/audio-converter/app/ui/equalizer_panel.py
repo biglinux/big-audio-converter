@@ -13,55 +13,9 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gdk, Gtk
+from gi.repository import Gtk
 
 _ = gettext.gettext
-
-_CSS = """
-.eq-panel {
-    border-top: 1px solid alpha(currentColor, 0.15);
-}
-.eq-band-value {
-    font-size: 10px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    min-width: 24px;
-}
-.eq-band-value.active {
-    color: @accent_color;
-}
-.eq-band-freq {
-    font-size: 10px;
-    opacity: 0.55;
-}
-.eq-scale-column scale {
-    min-height: 100px;
-}
-.eq-scale-column scale trough {
-    min-width: 4px;
-    border-radius: 2px;
-}
-.eq-scale-column scale slider {
-    min-width: 16px;
-    min-height: 16px;
-}
-"""
-
-_css_loaded = False
-
-
-def _ensure_css():
-    global _css_loaded
-    if _css_loaded:
-        return
-    provider = Gtk.CssProvider()
-    provider.load_from_string(_CSS)
-    Gtk.StyleContext.add_provider_for_display(
-        Gdk.Display.get_default(),
-        provider,
-        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
-    )
-    _css_loaded = True
 
 
 class EqualizerPanel(Gtk.Box):
@@ -128,7 +82,6 @@ class EqualizerPanel(Gtk.Box):
 
     def __init__(self, player, config, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
-        _ensure_css()
         self.add_css_class("eq-panel")
         self.player = player
         self.config = config

@@ -9,7 +9,7 @@ from gi.repository import Adw
 
 from app.audio.media import Segment
 from app.audio.process import MediaError
-from app.ui.cairo_text import rounded_rect, show_text, text_extents
+from app.ui.cairo_text import CUT, KEEP, rounded_rect, show_text, text_extents
 from app.utils.time_formatter import format_time_short
 
 _ = gettext.gettext
@@ -42,8 +42,6 @@ class MarkerManagerMixin:
         self.new_segment_anchor = None
         # Segments the export cuts out are drawn red instead of blue.
         self.remove_marked = False
-        # Found pauses shown in place of the marks until they are applied.
-        self.proposed_pairs = []
 
         # Callbacks
         self.marker_updated_callback = None
@@ -302,21 +300,18 @@ class MarkerManagerMixin:
         if not self.duration > 0:
             return
 
-        # Define colors
-        start_color = (0.8, 0.2, 0.2, 0.8)  # Red
-        stop_color = (0.2, 0.7, 0.3, 0.8)  # Green
-        border_rgb = (0.9, 0.25, 0.25) if self.remove_marked else (0.3, 0.6, 1.0)
+        # A part reads as a lighter block: red to cut out, blue to keep, with
+        # a red start and a green end.
+        start_color = (0.8, 0.2, 0.2, 0.8)
+        stop_color = (0.2, 0.7, 0.3, 0.8)
+        border_rgb = CUT if self.remove_marked else KEEP
         region_color = (*border_rgb, 0.30 if self.remove_marked else 0.25)
-        highlight_color = (1.0, 0.8, 0.0, 0.35)  # Gold, highlighted region
+        highlight_color = (1.0, 0.8, 0.0, 0.35)
 
         # Calculate visible time range
         visible_duration = self.duration / self.zoom_level
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
-
-        if self.proposed_pairs:
-            self._draw_proposed(cr, width, height, start_time, visible_duration)
-            return
 
         # Collect all marker labels for collision-aware placement
         label_items = []  # (x_center, text)
@@ -436,26 +431,6 @@ class MarkerManagerMixin:
         if label_items:
             self._draw_marker_labels(cr, width, label_items)
 
-    def _draw_proposed(self, cr, width, height, start_time, visible_duration):
-        """Pauses not yet applied: a lighter red, outlined with dashes."""
-        end_time = start_time + visible_duration
-        cr.set_line_width(1)
-        cr.set_dash([4, 3])
-        for pair in self.proposed_pairs:
-            if pair["stop"] < start_time or pair["start"] > end_time:
-                continue
-            x_start = (max(pair["start"], start_time) - start_time) / visible_duration
-            x_stop = (min(pair["stop"], end_time) - start_time) / visible_duration
-            x_start, x_stop = x_start * width, x_stop * width
-            cr.set_source_rgba(0.9, 0.25, 0.25, 0.18)
-            cr.rectangle(x_start, 0, max(1.5, x_stop - x_start), height)
-            cr.fill()
-            if x_stop - x_start > 3:
-                cr.set_source_rgba(0.9, 0.25, 0.25, 0.8)
-                cr.rectangle(x_start + 0.5, 0.5, x_stop - x_start - 1, height - 1)
-                cr.stroke()
-        cr.set_dash([])
-
     def _draw_marker_labels(self, cr, width, label_items):
         """Draw time labels for markers with collision-aware vertical stacking."""
         cr.set_font_size(10)
@@ -513,10 +488,7 @@ class MarkerManagerMixin:
         cr.fill()
 
         # Background circle
-        if is_hovered:
-            cr.set_source_rgba(0.90, 0.22, 0.22, 0.95)
-        else:
-            cr.set_source_rgba(0.70, 0.15, 0.15, 0.80)
+        cr.set_source_rgba(*CUT, 0.95 if is_hovered else 0.80)
         cr.arc(cx, cy, r, 0, 2 * math.pi)
         cr.fill()
 

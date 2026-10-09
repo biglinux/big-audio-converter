@@ -29,7 +29,6 @@ from app.audio.player import AudioPlayer
 from app.audio.process import MediaError
 from app.audio.profiles import discover_noise_plugins
 from app.ui.main_window import MainWindow
-from app.ui.welcome_dialog import WelcomeDialog
 from app.utils.config import AppConfig
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
@@ -142,44 +141,51 @@ class Application(Adw.Application):
         actions = [
             ("quit", self.on_quit_action),
             ("about", self.on_about_action),
-            ("show-welcome", self.on_show_welcome_action),
         ]
         for name, callback in actions:
             action = Gio.SimpleAction.new(name, None)
             action.connect("activate", callback)
             self.add_action(action)
 
-        # Keyboard accelerators
+        # Help tooltips are a preference of the person, not of one window.
+        tips = Gio.SimpleAction.new_stateful(
+            "toggle-tips",
+            None,
+            GLib.Variant.new_boolean(
+                str(self.config.get("show_mouseover_tips", "true")).lower() == "true"
+            ),
+        )
+        tips.connect("change-state", self._on_tips_changed)
+        self.add_action(tips)
+
         self.set_accels_for_action("app.quit", ["<Control>q"])
+
+    def _on_tips_changed(self, action, value):
+        action.set_state(value)
+        self.config.set(
+            "show_mouseover_tips", "true" if value.get_boolean() else "false"
+        )
+        if self._main_window is not None:
+            self._main_window.tooltip_helper.refresh()
 
     def do_startup(self):
         Adw.Application.do_startup(self)
         big_gtk_kit.install()
         icon_theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
         icon_theme.add_search_path(str(Path(__file__).resolve().parents[2] / "icons"))
+        style = Gtk.CssProvider()
+        style.load_from_path(str(Path(__file__).resolve().parent / "app/ui/style.css"))
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
 
     def do_activate(self):
         """Called when the application is activated."""
         win = self._main_window
-        first_window = win is None or win._closed
-        if first_window:
+        if win is None or win._closed:
             win = MainWindow(application=self)
             self._main_window = win
         win.present()
-        # An Adw.Dialog presented before its window is mapped never shows,
-        # yet it still takes the window's first close request.
-        if (
-            first_window
-            and str(self.config.get("show_welcome_dialog", True)).lower() == "true"
-        ):
-            self.show_welcome_dialog(win)
-
-    def show_welcome_dialog(self, parent_window=None):
-        """Show the welcome dialog"""
-        if parent_window is None:
-            parent_window = self._main_window
-        welcome = WelcomeDialog(parent_window)
-        welcome.present()
 
     def on_quit_action(self, *args):
         self.quit()
@@ -205,10 +211,6 @@ class Application(Adw.Application):
             license_type=Gtk.License.GPL_3_0_ONLY,
         )
         about.present(self._main_window)
-
-    def on_show_welcome_action(self, *args):
-        """Show the welcome dialog."""
-        self.show_welcome_dialog()
 
 
 def main():

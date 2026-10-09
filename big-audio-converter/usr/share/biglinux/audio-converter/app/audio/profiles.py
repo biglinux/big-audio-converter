@@ -103,18 +103,13 @@ NUMERIC_LIMITS = {
     "noise_strength": (0, 100),
     "volume": (0, 10),
     "speed": (0.1, 5),
-    "hpf_frequency": (20, 20000),
     "compressor_intensity": (0, 1),
-    "gate_intensity": (0, 1),
 }
 BOOLEAN_KEYS = (
     "noise_reduction",
-    "hpf_enabled",
-    "gate_enabled",
     "compressor_enabled",
     "eq_enabled",
     "normalize",
-    "prevent_clipping",
     "allow_precision_reduction",
 )
 
@@ -136,7 +131,7 @@ def validate_settings(settings):
                     key=key, low=low, high=high
                 )
             )
-        result[key] = int(value) if key == "hpf_frequency" else value
+        result[key] = value
     for key in BOOLEAN_KEYS:
         if key in result and not isinstance(result[key], bool):
             raise MediaError(
@@ -318,11 +313,6 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
             )
         )
 
-    # High-pass filter (remove low-frequency rumble)
-    if settings.get("hpf_enabled", False):
-        freq = settings.get("hpf_frequency", 80)
-        filters.append(f"highpass=f={freq}:poles=2")
-
     # Compressor (before NR to even out dynamics)
     if settings.get("compressor_enabled", False):
         ci = settings.get("compressor_intensity", 1.0)
@@ -351,8 +341,9 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
             raise MediaError(gettext.gettext("The audio plugin path is unsupported."))
         controls = f"c0={attenuation}"
         if engine == "dfn3":
-            # The microphone default discards the first second of speech.
-            controls += "|c6=0"
+            # Microphone defaults: the startup mute discards the first second, and
+            # the voice gate mutes everything but speech behind extra delay.
+            controls += "|c6=0|c17=0"
         # The plugin starts from an empty model state and under-restores the
         # first ~150 ms, so it first runs over the opening half second played
         # backwards, which is cut away again. That lead-in ends at timestamp 0,
@@ -369,17 +360,6 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
             f"atrim=start_sample={24000 + delay}",
             f"asetpts=PTS-{delay}/SR/TB",
         ]
-
-    # Noise gate (after NR)
-    if settings.get("gate_enabled", False):
-        intensity = settings.get("gate_intensity", 0.5)
-        threshold_db = -50.0 + math.sqrt(intensity) * 35.0
-        range_db = -40.0 - math.sqrt(intensity) * 50.0
-        threshold_lin = 10 ** (threshold_db / 20.0)
-        range_lin = 10 ** (range_db / 20.0)
-        filters.append(
-            f"agate=threshold={threshold_lin:.6f}:range={range_lin:.6f}:attack=10:release=10:detection=rms"
-        )
 
     # Equalizer
     if settings.get("eq_enabled", False):
@@ -408,7 +388,4 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
     # Normalization (last)
     if settings.get("normalize", False):
         filters.append(LOUDNORM)
-
-    if settings.get("prevent_clipping", False):
-        filters.append("alimiter=limit=0.891251:level=false:latency=true")
     return filters

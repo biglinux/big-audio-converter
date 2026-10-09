@@ -1,4 +1,4 @@
-"""The queue of files to convert, their probes and the file information dialog."""
+"""The queue of files to convert and their probes."""
 
 import gettext
 import logging
@@ -18,6 +18,7 @@ from app.audio.media import audio_duration, audio_stream, track_identifier
 from app.audio.probe_service import ProbeService
 from app.audio.process import MediaError
 from app.audio.profiles import copy_container
+from app.ui.file_info import FileInfoWindow
 from app.utils.main_loop import MainLoopSources, weak_callback
 from app.utils.time_formatter import format_time_display
 
@@ -25,13 +26,78 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
-def shares_file(info, stream):
-    """Whether the probed file holds tracks besides `stream`; embedded cover
-    art is part of the file, not another track."""
-    return any(
-        other is not stream and not other.get("disposition", {}).get("attached_pic")
-        for other in info["streams"]
+def open_containing_folder(widget, path):
+    """Show `path` in the file manager, or say where it is if none opens."""
+    root = widget.get_root()
+
+    def opened(launcher, result):
+        try:
+            launcher.open_containing_folder_finish(result)
+        except GLib.Error as exc:
+            logger.warning("The containing folder could not be opened: %s", exc.message)
+            dialog = Adw.AlertDialog(
+                heading=_("Folder could not be opened"),
+                body=_("Open your file manager and navigate to: {path}").format(
+                    path=os.path.dirname(path)
+                ),
+            )
+            dialog.add_response("close", _("Close"))
+            dialog.present(root)
+
+    launcher = Gtk.FileLauncher(file=Gio.File.new_for_path(path))
+    launcher.open_containing_folder(root, None, opened)
+
+
+def _result_details(item):
+    """A status button whose popover says what went wrong and why."""
+    status = {
+        "success": _("Converted with warnings"),
+        "failed": _("Failed"),
+        "cancelled": _("Cancelled"),
+    }[item.status]
+    box = Gtk.Box(
+        orientation=Gtk.Orientation.VERTICAL,
+        spacing=8,
+        margin_start=12,
+        margin_end=12,
+        margin_top=12,
+        margin_bottom=12,
     )
+    heading = Gtk.Label(label=status, xalign=0, css_classes=["heading"])
+    box.append(heading)
+    for text in (item.message, *item.warnings):
+        if text:
+            # Not selectable: a popover would focus and select it on opening.
+            box.append(Gtk.Label(label=text, wrap=True, xalign=0, max_width_chars=50))
+    technical = "\n\n".join((*item.notes, item.details[-16384:])).strip()
+    if technical:
+        details = Gtk.Expander(label=_("Technical details"))
+        details.set_child(
+            Gtk.ScrolledWindow(
+                child=Gtk.Label(
+                    label=technical,
+                    wrap=True,
+                    xalign=0,
+                    selectable=True,
+                    max_width_chars=50,
+                    css_classes=["caption", "monospace"],
+                ),
+                hscrollbar_policy=Gtk.PolicyType.NEVER,
+                propagate_natural_height=True,
+                max_content_height=240,
+            )
+        )
+        box.append(details)
+    failed = item.status == "failed"
+    button = Gtk.MenuButton(
+        icon_name="dialog-error-symbolic" if failed else "dialog-warning-symbolic",
+        tooltip_text=status,
+        valign=Gtk.Align.CENTER,
+        css_classes=["flat", "circular", "error" if failed else "warning"],
+        popover=Gtk.Popover(child=box),
+    )
+    button.update_property([Gtk.AccessibleProperty.LABEL], [status])
+    return button
 
 
 class FileQueueRow(Adw.ActionRow):
@@ -52,6 +118,7 @@ class FileQueueRow(Adw.ActionRow):
         self.file_path = file_path
         self.source_path = file_path
         self.stream_index = None
+        self.duration = None  # seconds, once probed
         self.probe_service = None
         self._info_dialogs = []
         self.index = index
@@ -64,8 +131,8 @@ class FileQueueRow(Adw.ActionRow):
         filename = os.path.basename(file_path)
         self.set_title(GLib.markup_escape_text(filename))
 
-        # Metadata will be set as subtitle
-        self.set_subtitle("")
+        self._details = ""
+        self._cut_count = 0
 
         # Make row activatable
         self.set_activatable(True)
@@ -76,33 +143,15 @@ class FileQueueRow(Adw.ActionRow):
                 lambda row: row.on_activate_callback(row.file_path, row.index),
             )
 
-        # Play button (left side)
-        self.play_button = Gtk.Button.new_from_icon_name(
-            "media-playback-start-symbolic"
+        # The row's own play button, a round badge leading the row.
+        self.play_button = Gtk.Button(
+            valign=Gtk.Align.CENTER, css_classes=["circular", "queue-badge"]
         )
-        self.play_button.add_css_class("flat")
-        self.play_button.set_valign(Gtk.Align.CENTER)
-        self.play_button.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Play file")],
-        )
+        self.show_playing(False)
         self.play_button.connect(
             "clicked", lambda btn: owner.on_play_callback(owner.file_path, owner.index)
         )
         self.add_prefix(self.play_button)
-
-        # Remove from queue button (left side, after play button)
-        self.remove_button = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
-        self.remove_button.add_css_class("flat")
-        self.remove_button.set_valign(Gtk.Align.CENTER)
-        self.remove_button.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Remove from queue")],
-        )
-        self.remove_button.connect(
-            "clicked", lambda btn: owner.on_remove_callback(owner.index)
-        )
-        self.add_prefix(self.remove_button)
 
         # Progress bar (right side)
         self.progress_bar = Gtk.ProgressBar()
@@ -111,6 +160,24 @@ class FileQueueRow(Adw.ActionRow):
         self.progress_bar.set_visible(False)
         self.progress_bar.add_css_class("file-progress")
         self.add_suffix(self.progress_bar)
+        # The last conversion's outcome, filled by set_result.
+        self.result_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+        self.add_suffix(self.result_box)
+
+        # Only the entry: the menu's "Move to Trash" is the one that deletes.
+        self.remove_button = Gtk.Button(
+            icon_name="window-close-symbolic",
+            tooltip_text=_("Remove from queue"),
+            valign=Gtk.Align.CENTER,
+            css_classes=["flat", "circular"],
+        )
+        self.remove_button.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Remove from queue")]
+        )
+        self.remove_button.connect(
+            "clicked", lambda btn: owner.on_remove_callback(owner.index)
+        )
+        self.add_suffix(self.remove_button)
 
         self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic")
         self.more_button.add_css_class("flat")
@@ -160,7 +227,7 @@ class FileQueueRow(Adw.ActionRow):
         # Open folder action
         open_folder_action = Gio.SimpleAction.new("open_folder", None)
         open_folder_action.connect(
-            "activate", lambda action, param: owner._on_open_folder(action, param)
+            "activate", lambda *_: open_containing_folder(owner, owner.source_path)
         )
         action_group.add_action(open_folder_action)
 
@@ -174,238 +241,22 @@ class FileQueueRow(Adw.ActionRow):
         self.insert_action_group("row", action_group)
         button.set_popover(menu)
 
-    def _on_open_folder(self, action, param):
-        parent = self.get_root()
-        launcher = Gtk.FileLauncher(file=Gio.File.new_for_path(self.source_path))
-        launcher.open_containing_folder(parent, None, self._folder_opened)
-
-    def _folder_opened(self, launcher, result):
-        try:
-            launcher.open_containing_folder_finish(result)
-        except GLib.Error as exc:
-            logger.warning("The containing folder could not be opened: %s", exc.message)
-
-    @staticmethod
-    def _format_size(size_bytes):
-        """Format byte count to human-readable string."""
-        if size_bytes < 1024:
-            return f"{size_bytes} B"
-        if size_bytes < 1024 * 1024:
-            return f"{size_bytes / 1024:.1f} KB"
-        if size_bytes < 1024 * 1024 * 1024:
-            return f"{size_bytes / (1024 * 1024):.1f} MB"
-        return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
-
-    @staticmethod
-    def _parse_duration_tag(value):
-        """Parse a duration tag string like '00:20:55.072000000' into seconds."""
-        time_parts = value.split(":")
-        if len(time_parts) == 3:
-            return (
-                int(time_parts[0]) * 3600
-                + int(time_parts[1]) * 60
-                + float(time_parts[2])
-            )
-        return None
-
-    def _get_stream_tag(self, stream, prefixes):
-        """Get the first matching tag value from a stream's tags."""
-        if not stream or "tags" not in stream:
-            return None
-        for key, value in stream["tags"].items():
-            for prefix in prefixes:
-                if key.startswith(prefix + "-") or key == prefix:
-                    return value
-        return None
-
-    def _extract_audio_props(self, audio_stream, data, shares_file, actual_path):
-        """Extract ordered list of (label, value) for audio properties.
-
-        `shares_file`: the file also holds other tracks, so its size is not
-        this track's and is estimated from duration and bitrate instead.
-        """
-        props = []
-
-        duration_val = self._get_tag_as_duration(audio_stream)
-        if duration_val is None and audio_stream and "duration" in audio_stream:
-            try:
-                duration_val = float(audio_stream["duration"])
-            except (ValueError, TypeError):
-                pass
-
-        bitrate_val = self._get_tag_as_int(audio_stream, ("BPS",))
-        if bitrate_val is None and audio_stream and "bit_rate" in audio_stream:
-            try:
-                bitrate_val = int(audio_stream["bit_rate"])
-            except (ValueError, TypeError):
-                pass
-
-        size = None
-        if not shares_file:
-            try:
-                size = os.path.getsize(actual_path)
-            except OSError:
-                pass
-        elif duration_val is not None and bitrate_val is not None:
-            size = int(duration_val * bitrate_val / 8)
-        props.append(
-            (_("Size"), _("Unknown") if size is None else self._format_size(size))
-        )
-
-        if duration_val is not None:
-            props.append((_("Duration"), format_time_display(duration_val)))
-        elif "format" in data and "duration" in data["format"]:
-            try:
-                props.append(
-                    (
-                        _("Duration"),
-                        format_time_display(float(data["format"]["duration"])),
-                    )
-                )
-            except (ValueError, TypeError):
-                pass
-
-        if audio_stream and "codec_long_name" in audio_stream:
-            props.append((_("Format"), audio_stream["codec_long_name"]))
-        elif "format" in data and "format_long_name" in data["format"]:
-            props.append((_("Format"), data["format"]["format_long_name"]))
-
-        if bitrate_val is not None:
-            props.append((_("Bitrate"), f"{bitrate_val // 1000} kbps"))
-        elif "format" in data and "bit_rate" in data["format"]:
-            try:
-                props.append(
-                    (_("Bitrate"), f"{int(data['format']['bit_rate']) // 1000} kbps")
-                )
-            except (ValueError, TypeError):
-                pass
-
-        if audio_stream:
-            if "sample_rate" in audio_stream:
-                try:
-                    props.append(
-                        (
-                            _("Sample rate"),
-                            f"{int(audio_stream['sample_rate']) / 1000:g} kHz",
-                        )
-                    )
-                except (ValueError, TypeError):
-                    pass
-            if "channels" in audio_stream:
-                ch = audio_stream["channels"]
-                layout = audio_stream.get("channel_layout", "")
-                props.append((_("Channels"), f"{ch} ({layout})" if layout else str(ch)))
-            bps = audio_stream.get("bits_per_sample", 0)
-            if bps and int(bps) > 0:
-                props.append((_("Bit Depth"), f"{bps} bit"))
-
-        return props
-
-    def _get_tag_as_duration(self, stream):
-        """Get duration in seconds from stream tags."""
-        raw = self._get_stream_tag(stream, ("DURATION",))
-        if raw:
-            try:
-                return self._parse_duration_tag(raw)
-            except (ValueError, TypeError, OverflowError):
-                logger.debug("Unrecognized duration tag", exc_info=True)
-        return None
-
-    def _get_tag_as_int(self, stream, prefixes):
-        """Get an integer tag value from stream."""
-        raw = self._get_stream_tag(stream, prefixes)
-        if raw:
-            try:
-                return int(raw)
-            except (ValueError, TypeError):
-                pass
-        return None
-
     def _on_show_info(self, action, param):
-        """Present immediately; refresh metadata without blocking the GTK thread."""
         if self.probe_service is None:
             return
-        dialog = Gtk.Window(
-            transient_for=self.get_root(),
-            modal=True,
-            title=_("File Information"),
-            default_width=640,
-            default_height=540,
+        dialog = FileInfoWindow(
+            self.get_root(),
+            self.probe_service,
+            self.source_path,
+            os.path.basename(self.file_path),
+            self.stream_index,
         )
-        header = Gtk.HeaderBar()
-        copy_button = Gtk.Button(
-            icon_name="edit-copy-symbolic",
-            sensitive=False,
-            tooltip_text=_("Copy information to clipboard"),
-        )
-        header.pack_end(copy_button)
-        dialog.set_titlebar(header)
-        scrolled = Gtk.ScrolledWindow(
-            vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER
-        )
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        scrolled.set_child(main_box)
-        dialog.set_child(scrolled)
-        title = Gtk.Label(
-            label=os.path.basename(self.file_path),
-            wrap=True,
-            margin_top=18,
-            margin_start=18,
-            margin_end=18,
-        )
-        title.add_css_class("title-2")
-        main_box.append(title)
-        spinner = Gtk.Spinner(spinning=True, margin_top=18, margin_bottom=18)
-        main_box.append(spinner)
-        clipboard = []
-        copy_button.connect(
-            "clicked",
-            lambda button: self._copy_to_clipboard("\n".join(clipboard)),
-        )
-
-        def ready(token, path, info, error):
-            spinner.stop()
-            main_box.remove(spinner)
-            if error or not info:
-                self._append_error_label(
-                    main_box, error or _("No audio information is available.")
-                )
-                return
-            try:
-                stream = audio_stream(info, self.stream_index)
-                properties = self._extract_audio_props(
-                    stream, info, shares_file(info, stream), path
-                )
-                main_box.append(
-                    self._create_info_group(_("File Details"), [(_("Path"), path)])
-                )
-                main_box.append(
-                    self._create_info_group(_("Audio Properties"), properties)
-                )
-                clipboard.extend(
-                    [path, ""] + [f"{label}: {value}" for label, value in properties]
-                )
-                self._append_metadata_group(info, main_box, clipboard)
-                copy_button.set_sensitive(True)
-            except (MediaError, ValueError, TypeError) as exc:
-                self._append_error_label(main_box, str(exc))
-
-        try:
-            token = self.probe_service.request(self.source_path, ready, priority=True)
-        except (MediaError, RuntimeError) as exc:
-            spinner.stop()
-            self._append_error_label(main_box, str(exc))
-            token = None
         self._info_dialogs.append(dialog)
-
-        def closed(window):
-            if token is not None:
-                self.probe_service.cancel(token)
-            if window in self._info_dialogs:
-                self._info_dialogs.remove(window)
-            return False
-
-        dialog.connect("close-request", closed)
+        owner = weakref.proxy(self)
+        dialog.connect(
+            "close-request",
+            lambda window: owner._info_dialogs.remove(window) or False,
+        )
         dialog.present()
 
     def cleanup(self):
@@ -415,129 +266,79 @@ class FileQueueRow(Adw.ActionRow):
         self.on_remove_callback = self.on_play_callback = self.on_delete_callback = None
         self.on_activate_callback = None
 
-    def _append_metadata_group(self, data, main_box, info_text):
-        """Extract and append metadata tags group to the dialog."""
-        if "format" not in data or "tags" not in data["format"]:
+    def set_result(self, item):
+        """A conversion's outcome at the row's end; None clears it."""
+        while child := self.result_box.get_first_child():
+            self.result_box.remove(child)
+        if item is None:
             return
-        tags = data["format"]["tags"]
-        metadata_items = []
-        tag_order = [
-            "title",
-            "artist",
-            "album",
-            "album_artist",
-            "date",
-            "genre",
-            "track",
-            "disc",
-            "comment",
-            "composer",
-            "performer",
-            "copyright",
-            "encoded_by",
-            "encoder",
-        ]
-        for tag_key in tag_order:
-            if tag_key in tags:
-                label = tag_key.replace("_", " ").title()
-                metadata_items.append((label, str(tags[tag_key])[:4096]))
-        for key, value in list(tags.items())[:128]:
-            if key.lower() not in tag_order:
-                label = key.replace("_", " ").title()
-                metadata_items.append((label, str(value)[:4096]))
-        if metadata_items:
-            main_box.append(self._create_info_group(_("Metadata Tags"), metadata_items))
-            info_text.append("")
-            for label, value in metadata_items:
-                info_text.append(f"{label}: {value}")
+        if item.successful and not item.warnings:
+            done = Gtk.Image(
+                icon_name="object-select-symbolic", css_classes=["success"]
+            )
+            done.update_property([Gtk.AccessibleProperty.LABEL], [_("Converted")])
+            self.result_box.append(done)
+        else:
+            self.result_box.append(_result_details(item))
+        if item.outputs:
+            owner = weakref.proxy(self)
+            reveal = Gtk.Button(
+                icon_name="folder-open-symbolic",
+                tooltip_text=_("Show output file"),
+                css_classes=["flat", "circular"],
+            )
+            reveal.update_property(
+                [Gtk.AccessibleProperty.LABEL], [_("Show output file")]
+            )
+            reveal.connect(
+                "clicked",
+                lambda _button, path=item.outputs[0]: open_containing_folder(
+                    owner, path
+                ),
+            )
+            self.result_box.append(reveal)
 
-    @staticmethod
-    def _append_error_label(main_box, message):
-        """Append an error label to the dialog."""
-        error_label = Gtk.Label(label=message)
-        error_label.add_css_class("dim-label")
-        error_label.set_margin_top(12)
-        error_label.set_margin_bottom(12)
-        main_box.append(error_label)
-
-    def _create_info_group(self, title, items):
-        """Create a group of information items with Adwaita styling.
-
-        Args:
-            title: Group title
-            items: List of (label, value) tuples
-
-        Returns:
-            Gtk.Box: Container with the group
-        """
-        group_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        group_box.set_margin_start(12)
-        group_box.set_margin_end(12)
-        group_box.set_margin_bottom(24)
-
-        # Group title
-        title_label = Gtk.Label()
-        title_label.set_markup(
-            f"<span weight='bold'>{GLib.markup_escape_text(title)}</span>"
+    def show_playing(self, playing):
+        label = _("Stop") if playing else _("Play file")
+        self.play_button.set_icon_name(
+            "media-playback-stop-symbolic"
+            if playing
+            else "media-playback-start-symbolic"
         )
-        title_label.set_xalign(0)
-        title_label.set_margin_start(12)
-        title_label.set_margin_bottom(6)
-        group_box.append(title_label)
+        self.play_button.set_tooltip_text(label)
+        self.play_button.update_property([Gtk.AccessibleProperty.LABEL], [label])
 
-        listbox = Gtk.ListBox()
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        listbox.add_css_class("boxed-list")
+    def set_details(self, details):
+        """What the probe found; the number of parts is added to it."""
+        self._details = details
+        self._show_subtitle()
 
-        for label, value in items:
-            row = Adw.ActionRow()
-            row.set_title(GLib.markup_escape_text(str(label)))
+    def set_cut_count(self, count):
+        if count != self._cut_count:
+            self._cut_count = count
+            self._show_subtitle()
 
-            # Value label
-            value_label = Gtk.Label(label=str(value))
-            value_label.set_wrap(True)
-            value_label.set_xalign(1)
-            value_label.add_css_class("dim-label")
-            value_label.set_valign(Gtk.Align.CENTER)
-            row.add_suffix(value_label)
-
-            # Copy button for this row
-            copy_btn = Gtk.Button()
-            copy_btn.set_icon_name("edit-copy-symbolic")
-            copy_btn.set_tooltip_text(_("Copy value"))
-            copy_btn.add_css_class("flat")
-            copy_btn.add_css_class("circular")
-            copy_btn.set_valign(Gtk.Align.CENTER)
-            copy_btn.update_property(
-                [Gtk.AccessibleProperty.LABEL],
-                [_("Copy value")],
+    def _show_subtitle(self):
+        parts = [self._details] if self._details else []
+        if self._cut_count:
+            parts.append(
+                gettext.ngettext(
+                    "{count} part", "{count} parts", self._cut_count
+                ).format(count=self._cut_count)
             )
-            copy_btn.connect(
-                "clicked", lambda b, v=str(value): self._copy_to_clipboard(v)
-            )
-            row.add_suffix(copy_btn)
-
-            listbox.append(row)
-
-        group_box.append(listbox)
-        return group_box
-
-    @staticmethod
-    def _copy_to_clipboard(text):
-        Gdk.Display.get_default().get_clipboard().set(text)
-
-    def set_metadata(self, metadata_text):
-        """Set the metadata subtitle."""
-        self.set_subtitle(metadata_text)
+        self.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))
 
 
 class FileQueue(Gtk.Box):
     """Widget for managing a queue of files to be converted."""
 
-    def __init__(self, converter):
+    def __init__(self, converter, tooltip_helper, file_markers):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
         self.converter = converter
+        self._tooltip_helper = tooltip_helper
+        # The window's cuts by entry; a file expanded into tracks hands its cuts on.
+        self._file_markers = file_markers
         self.files = []  # List of file paths
         self.file_rows = []  # List of FileQueueRow widgets
         self.currently_playing_index = None
@@ -552,25 +353,38 @@ class FileQueue(Gtk.Box):
         self.on_trash_error = None
         self.on_pending_changed = None
         self.on_queue_size_changed = None
-        self._parent_window = None  # Will be set by MainWindow for dialogs
-        self._tooltip_helper = None  # Will be set by MainWindow for tooltips
 
         # Track metadata storage for video files with multiple audio tracks
         # Key: file_path, Value: dict with 'source_video', 'track_index', 'codec', 'language', etc.
         self.track_metadata = {}
 
-        self._setup_styles()
+        scrolled = Gtk.ScrolledWindow(
+            hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True
+        )
 
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_vexpand(True)
-
-        self.file_list = Gtk.ListBox()
-        self.file_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.file_list.add_css_class("boxed-list")  # Adwaita style
+        self.file_list = Gtk.ListBox(
+            selection_mode=Gtk.SelectionMode.NONE,
+            valign=Gtk.Align.START,
+            css_classes=["boxed-list"],
+            margin_start=12,
+            margin_end=12,
+            margin_top=6,
+            margin_bottom=12,
+        )
 
         # Enable reordering by drag and drop within the list
         self.file_list.set_can_focus(True)
+
+        # Delete removes the focused entry, never the file itself.
+        owner = weakref.proxy(self)
+        delete = Gtk.ShortcutController()
+        delete.add_shortcut(
+            Gtk.Shortcut(
+                trigger=Gtk.ShortcutTrigger.parse_string("Delete|KP_Delete"),
+                action=Gtk.CallbackAction.new(lambda *_: owner._remove_focused_row()),
+            )
+        )
+        self.file_list.add_controller(delete)
 
         drop_target_reorder = Gtk.DropTarget.new(FileQueueRow, Gdk.DragAction.MOVE)
         drop_target_reorder.connect("drop", weak_callback(self._on_row_drop))
@@ -578,24 +392,20 @@ class FileQueue(Gtk.Box):
 
         scrolled.set_child(self.file_list)
 
-        self.placeholder = Adw.StatusPage()
-        self.placeholder.set_icon_name("folder-music-symbolic")
-        self.placeholder.set_title(_("No Audio Files"))
-        self.placeholder.set_description(
-            _("Drag files here or use the Add Files Button")
+        empty = Adw.StatusPage(
+            icon_name="big-audio-converter",
+            title=_("Add audio or video files"),
+            description=_(
+                "Each audio track of a video becomes its own entry. "
+                "The originals are never changed."
+            ),
         )
-        self.file_list.set_placeholder(self.placeholder)
-
-        # Assemble the layout
-        self.append(scrolled)
-
-        # Enable drag and drop for multiple files with improved visual feedback
-        drop_target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
-        drop_target.set_gtypes([Gdk.FileList])
-        drop_target.connect("drop", weak_callback(self._on_drop))
-        drop_target.connect("enter", weak_callback(self._on_drop_enter))
-        drop_target.connect("leave", weak_callback(self._on_drop_leave))
-        self.add_controller(drop_target)
+        self.stack = Gtk.Stack(
+            transition_type=Gtk.StackTransitionType.CROSSFADE, vexpand=True
+        )
+        self.stack.add_named(empty, "empty")
+        self.stack.add_named(scrolled, "files")
+        self.append(self.stack)
 
         self.on_stop_playback = None
         self.on_file_added_to_empty_queue = None
@@ -603,32 +413,6 @@ class FileQueue(Gtk.Box):
         self.on_play_file = None
 
         self.file_removed_signal = None  # Will be set by MainWindow
-
-    def _setup_styles(self):
-        """Set up custom CSS styles for the file list."""
-        css_provider = self._css_provider = Gtk.CssProvider()
-        css_provider.load_from_string(
-            """
-            .drag-highlight {
-                background-color: alpha(@accent_color, 0.2);
-                border: 2px dashed @accent_color;
-                border-radius: 8px;
-            }
-            .drag-row {
-                opacity: 0.5;
-            }
-            /* Active file (showing waveform) background highlight */
-            .active-waveform-file {
-                background-color: alpha(@accent_bg_color, 0.15);
-            }
-            """,
-        )
-
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(),
-            css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-        )
 
     def _add_track_entry(self, video_file, track_info, track_display_index):
         """Expand an inspected source without additional blocking probes."""
@@ -726,8 +510,7 @@ class FileQueue(Gtk.Box):
             self.file_list.remove(row)
             row.cleanup()
             # Cuts handed over for the file apply to each of its tracks.
-            markers = getattr(self._parent_window, "file_markers", {})
-            cuts = markers.pop(path, None)
+            cuts = self._file_markers.pop(path, None)
             added = []
             for number, track in enumerate(tracks, 1):
                 if self._add_track_entry(path, track, number):
@@ -739,7 +522,7 @@ class FileQueue(Gtk.Box):
                 self.file_list.insert(track_row, index + offset)
                 self._set_probed_metadata(track_row, info)
                 if cuts is not None:
-                    markers[identifier] = [dict(cut) for cut in cuts]
+                    self._file_markers[identifier] = [dict(cut) for cut in cuts]
             for position, current_row in enumerate(self.file_rows):
                 current_row.index = position
         else:
@@ -766,20 +549,29 @@ class FileQueue(Gtk.Box):
                 self.on_file_added_to_empty_queue(first.file_path, first.index)
 
     def _set_probed_metadata(self, row, info):
+        """Length, type and sample rate: "0:06 · WAV · 48 kHz"."""
         stream = audio_stream(info, row.stream_index)
-        duration = audio_duration(info, stream)
-        parts = [stream.get("codec_name", "").upper()]
-        if duration is not None:
-            parts.append(format_time_display(duration))
+        row.duration = audio_duration(info, stream)
+        parts = [
+            _("Unknown duration")
+            if row.duration is None
+            else format_time_display(row.duration)
+        ]
+        # A track is told apart by its codec; a file by the type it was saved as.
+        if row.file_path != row.source_path:
+            parts.append(stream.get("codec_name", "").upper())
         else:
-            parts.append(_("Unknown duration"))
-        rate = stream.get("sample_rate")
+            parts.append(Path(row.source_path).suffix[1:].upper())
+        try:
+            rate = int(stream.get("sample_rate"))
+        except (TypeError, ValueError):
+            rate = 0
         if rate:
-            parts.append(_("{rate} Hz").format(rate=rate))
+            parts.append(f"{rate / 1000:g} kHz")
         language = stream.get("tags", {}).get("language")
         if language and language != "und":
             parts.append(language)
-        row.set_metadata(GLib.markup_escape_text(" · ".join(parts)))
+        row.set_details(" · ".join(part for part in parts if part))
 
     def add_file(self, file_path):
         """Add immediately; inspect and expand tracks on a bounded worker."""
@@ -796,7 +588,7 @@ class FileQueue(Gtk.Box):
             token = self._probes.request(path, self._probe_ready)
             self._pending_probes[path] = token
             row = self._append_row(path)
-            row.set_metadata(_("Inspecting audio…"))
+            row.set_details(_("Inspecting audio…"))
             row.set_activatable(False)
             row.play_button.set_sensitive(False)
             self.update_queue_size_label()
@@ -838,14 +630,14 @@ class FileQueue(Gtk.Box):
         self._pending_changed()
 
     def update_queue_size_label(self):
-        if self.on_queue_size_changed and not self._closed:
-            count = len(self.files)
-            self.on_queue_size_changed(
-                count,
-                gettext.ngettext("{count} file", "{count} files", count).format(
-                    count=count
-                ),
-            )
+        if self._closed:
+            return
+        self.stack.set_visible_child_name("files" if self.files else "empty")
+        if self.on_queue_size_changed:
+            self.on_queue_size_changed(len(self.files))
+
+    def total_duration(self):
+        return sum(row.duration for row in self.file_rows if row.duration)
 
     def on_delete_file(self, index, file_path):
         if self.converter.busy:
@@ -868,7 +660,7 @@ class FileQueue(Gtk.Box):
         dialog.set_default_response("cancel")
         dialog.set_close_response("cancel")
         dialog.connect("response", self._on_delete_response, actual)
-        dialog.present(self._parent_window)
+        dialog.present(self.get_root())
 
     def _on_delete_response(self, dialog, response, path):
         if response != "trash" or self._closed:
@@ -898,6 +690,23 @@ class FileQueue(Gtk.Box):
                         self.remove_file(index)
 
         Gio.File.new_for_path(path).trash_async(GLib.PRIORITY_DEFAULT, None, trashed)
+
+    def set_locked(self, locked):
+        """While converting, entries are neither removed nor reordered."""
+        for row in self.file_rows:
+            row.remove_button.set_sensitive(not locked)
+
+    def reveal(self, path):
+        open_containing_folder(self, path)
+
+    def _remove_focused_row(self):
+        row = self.file_list.get_focus_child()
+        if self.converter.busy or not isinstance(row, FileQueueRow):
+            return False
+        self.remove_file(row.index)
+        if self.file_rows:
+            self.file_rows[min(row.index, len(self.file_rows) - 1)].grab_focus()
+        return True
 
     def remove_file(self, index):
         if not 0 <= index < len(self.files):
@@ -958,9 +767,6 @@ class FileQueue(Gtk.Box):
         if self._closed:
             return
         self._closed = True
-        Gtk.StyleContext.remove_provider_for_display(
-            self.get_display(), self._css_provider
-        )
         self._imports.clear()
         self._sources.close()
         self._probes.cleanup()
@@ -989,18 +795,7 @@ class FileQueue(Gtk.Box):
 
             row.progress_bar.set_fraction(progress)
             row.progress_bar.set_text(f"{int(progress * 100)}%")
-
-            # Make progress visible
-            if not row.progress_bar.get_visible():
-                row.progress_bar.set_visible(True)
-
-            if progress >= 1:
-
-                def hide_progress():
-                    row.progress_bar.set_visible(False)
-                    return False
-
-                self._sources.later(1500, hide_progress)
+            row.progress_bar.set_visible(True)
 
     def set_currently_playing(self, index):
         """Set the currently playing file and update UI."""
@@ -1008,15 +803,11 @@ class FileQueue(Gtk.Box):
             self.currently_playing_index is not None
             and 0 <= self.currently_playing_index < len(self.file_rows)
         ):
-            old_row = self.file_rows[self.currently_playing_index]
-            old_row.play_button.set_icon_name("media-playback-start-symbolic")
-            # Removed accent color - we use background highlighting for active file instead
+            self.file_rows[self.currently_playing_index].show_playing(False)
 
         self.currently_playing_index = index
         if 0 <= index < len(self.file_rows):
-            new_row = self.file_rows[index]
-            new_row.play_button.set_icon_name("media-playback-stop-symbolic")
-            # Removed accent color - we use background highlighting for active file instead
+            self.file_rows[index].show_playing(True)
 
     def set_active_file(self, index):
         """Set the active file (the one showing its waveform) and update UI."""
@@ -1038,19 +829,7 @@ class FileQueue(Gtk.Box):
             self.currently_playing_index is not None
             and 0 <= self.currently_playing_index < len(self.file_rows)
         ):
-            icon_name = (
-                "media-playback-stop-symbolic"
-                if is_playing
-                else "media-playback-start-symbolic"
-            )
-            self.file_rows[self.currently_playing_index].play_button.set_icon_name(
-                icon_name
-            )
-
-    def _on_drop(self, drop_target, value, x, y):
-        self.placeholder.remove_css_class("drag-highlight")
-        self.file_list.remove_css_class("drag-highlight")
-        return self.add_dropped(value)
+            self.file_rows[self.currently_playing_index].show_playing(is_playing)
 
     def add_dropped(self, value):
         """Queue the local files of a drop and report the others."""
@@ -1073,6 +852,8 @@ class FileQueue(Gtk.Box):
 
     def _on_row_drag_prepare(self, drag_source, x, y):
         """Prepare drag operation for a row."""
+        if self.converter.busy:
+            return None
         content = Gdk.ContentProvider.new_for_value(drag_source.get_widget())
         return content
 
@@ -1091,7 +872,7 @@ class FileQueue(Gtk.Box):
     def _on_row_drop(self, drop_target, value, x, y):
         """Handle drop of a row for reordering."""
         dragged_row = value
-        if not isinstance(dragged_row, FileQueueRow):
+        if self.converter.busy or not isinstance(dragged_row, FileQueueRow):
             return False
 
         # Find the target position based on y coordinate
@@ -1164,31 +945,11 @@ class FileQueue(Gtk.Box):
             logger.error("Error reordering files: %s", e)
             return False
 
-    # Drop zone visual feedback
-    def _on_drop_enter(self, drop_target, x, y):
-        """Handle drag enter events with visual feedback."""
-        if self.placeholder.get_parent():
-            self.placeholder.add_css_class("drag-highlight")
-        else:
-            self.file_list.add_css_class("drag-highlight")
-        return Gdk.DragAction.COPY
-
-    def _on_drop_leave(self, drop_target):
-        """Handle drag leave events."""
-        if self.placeholder.get_parent():
-            self.placeholder.remove_css_class("drag-highlight")
-        else:
-            self.file_list.remove_css_class("drag-highlight")
-
     def connect_file_removed_signal(self, callback):
         """Connect a callback to be notified when a file is removed."""
         self.file_removed_signal = callback
 
     def _apply_row_tooltips(self, row):
         """Apply custom tooltips to a file queue row."""
-        if not self._tooltip_helper:
-            return
-        self._tooltip_helper.add_tooltip(row.play_button, "play_this_file")
-        self._tooltip_helper.add_tooltip(row.remove_button, "remove_from_queue")
         # The buttons' own tooltips take precedence over the row's.
         self._tooltip_helper.add_tooltip(row, "right_click_options")

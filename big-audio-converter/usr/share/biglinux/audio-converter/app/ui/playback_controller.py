@@ -281,7 +281,7 @@ class PlaybackControllerMixin:
     def _on_markers_updated(self, markers):
         """Handle marker updates from visualizer."""
         self._update_cut_rows()
-        self.pause_popover.markers_changed(markers)
+        self.pause_panel.markers_changed(markers)
         if self._play_selection_mode:
             self._load_selection_segments()
 
@@ -493,7 +493,7 @@ class PlaybackControllerMixin:
             self.visualizer.clear_waveform()
             self.visualizer.clear_all_markers()
             self.active_audio_id = None
-            self.pause_popover.sync()
+            self.pause_panel.sync()
         self._update_cut_rows()
 
         if file_id in (self.player.current_file, self.player.current_actual_file):

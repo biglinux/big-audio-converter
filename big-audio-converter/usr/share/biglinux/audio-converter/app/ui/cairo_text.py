@@ -9,6 +9,12 @@ import gi
 gi.require_version("PangoCairo", "1.0")
 from gi.repository import Gtk, Pango, PangoCairo
 
+# Fixed roles on the always-dark playback strip, from libadwaita's palette. The
+# waveform and the parts to keep take the accent, which each widget reads from CSS.
+INK = (1.0, 1.0, 1.0)  # neutral marks, always drawn with an alpha
+CUT = (0.9, 0.25, 0.25)  # red: parts cut out
+KEEP = (0.3, 0.6, 1.0)  # blue: parts kept
+
 
 class TextExtents(NamedTuple):
     width: float

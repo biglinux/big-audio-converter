@@ -21,9 +21,7 @@ class AppConfig:
         "noise_strength": (0, 100),
         "conversion_volume": (0, 1000),
         "conversion_speed": (0.1, 5),
-        "gate_intensity": (0, 1),
         "compressor_intensity": (0, 1),
-        "hpf_frequency": (20, 20000),
         "window_width": (320, 32768),
         "window_height": (240, 32768),
         "visualizer_height": (80, 4096),
@@ -35,16 +33,11 @@ class AppConfig:
     BOOLS: ClassVar = {
         "noise_reduction_enabled",
         "auto_advance_enabled",
-        "show_welcome_dialog",
-        "gate_enabled",
         "compressor_enabled",
-        "hpf_enabled",
         "normalize_enabled",
-        "prevent_clipping",
         "allow_precision_reduction",
         "show_mouseover_tips",
         "window_maximized",
-        "cut_remove",
     }
 
     def __init__(self, config_dir=None):
@@ -62,19 +55,13 @@ class AppConfig:
         self.modified_keys = set()
         self.load_warning = None
         self.defaults = {
-            "show_welcome_dialog": True,
             "noise_reduction_enabled": "false",
             "noise_engine": "dfn3",
             "noise_strength": "100",
             # Gate (single intensity slider, sqrt curve)
-            "gate_enabled": "false",
-            "gate_intensity": "0.5",
             # Compressor
             "compressor_enabled": "false",
             "compressor_intensity": "1.0",
-            # HPF
-            "hpf_enabled": "false",
-            "hpf_frequency": "80",
             # Normalization
             "normalize_enabled": "false",
         }

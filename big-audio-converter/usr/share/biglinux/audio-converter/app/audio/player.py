@@ -51,14 +51,9 @@ class AudioPlayer:
         self.noise_reduction = False
         self.noise_engine = "dfn3"
         self.noise_strength = 100.0
-        self.hpf_enabled = False
-        self.hpf_frequency = 80
-        self.gate_enabled = False
-        self.gate_intensity = 0.5
         self.compressor_enabled = False
         self.compressor_intensity = 1.0
         self.normalize = False
-        self.prevent_clipping = False
         self.equalizer_settings = []
         self.position_callback = None
         self.state_callback = None
@@ -424,15 +419,10 @@ class AudioPlayer:
             "noise_reduction",
             "noise_engine",
             "noise_strength",
-            "hpf_enabled",
-            "hpf_frequency",
-            "gate_enabled",
-            "gate_intensity",
             "compressor_enabled",
             "compressor_intensity",
             "volume",
             "normalize",
-            "prevent_clipping",
         )
         settings = {field: getattr(self, field) for field in fields}
         gains = dict(self.equalizer_settings)
@@ -564,18 +554,6 @@ class AudioPlayer:
         # and that text may still hold an older strength.
         self._send_noise_strength(self.noise_strength)
 
-    def set_hpf_enabled(self, enabled):
-        self._set_effect("hpf_enabled", bool(enabled))
-
-    def set_hpf_frequency(self, value):
-        self._set_effect("hpf_frequency", int(value))
-
-    def set_gate_enabled(self, enabled):
-        self._set_effect("gate_enabled", bool(enabled))
-
-    def set_gate_intensity(self, value):
-        self._set_effect("gate_intensity", float(value))
-
     def set_compressor_enabled(self, enabled):
         self._set_effect("compressor_enabled", bool(enabled))
 
@@ -584,9 +562,6 @@ class AudioPlayer:
 
     def set_normalize(self, enabled):
         self._set_effect("normalize", bool(enabled))
-
-    def set_prevent_clipping(self, enabled):
-        self._set_effect("prevent_clipping", bool(enabled))
 
     def is_playing(self):
         return self.is_playing_flag

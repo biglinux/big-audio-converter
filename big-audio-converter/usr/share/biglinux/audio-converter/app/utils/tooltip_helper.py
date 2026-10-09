@@ -6,36 +6,13 @@ import weakref
 _ = gettext.gettext
 
 TOOLTIPS = {
-    "format": _(
-        "Choose the output format. Keeping the original format applies no effects."
-    ),
-    "bitrate": _(
-        "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
-    ),
-    "volume": _(
-        "Changes preview and export volume. Values above 100% can distort the audio."
-    ),
-    "speed": _("Changes preview and export speed while preserving pitch."),
-    "noise_gate": _("Reduce quiet background sound between spoken phrases."),
-    "normalize": _(
-        "Brings every file to the same loudness. This changes the original volume."
-    ),
-    "cut": _("Choose the order in which marked segments are exported."),
-    "cut_output": _("Export each segment separately or join the selected segments."),
-    "channels": _("Keep the original layout or explicitly downmix to mono or stereo."),
     "waveform_visualizer": _(
         "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
-    ),
-    "clear_queue_button": _(
-        "Remove all entries from the queue without deleting source files."
     ),
     "prev_audio_btn": _("Preview the previous file."),
     "pause_play_btn": _("Play or pause. Keyboard shortcut: Ctrl+Space."),
     "next_audio_btn": _("Preview the next file."),
     "play_selection_switch": _("Preview only the marked segments."),
-    "eq_toggle_btn": _("Show the equalizer. Its settings affect exported audio."),
-    "play_this_file": _("Preview this audio file."),
-    "remove_from_queue": _("Remove this entry without deleting the source file."),
     "right_click_options": _(
         "More actions are available from the adjacent menu button."
     ),

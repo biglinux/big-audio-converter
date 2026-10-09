@@ -6,7 +6,7 @@ import subprocess
 
 import pytest
 from app.audio.media import MediaSource
-from app.audio.pauses import KEEP, STEP, find_pauses, measure_levels
+from app.audio.pauses import KEEP, STEP, find_pauses, find_speech, measure_levels
 from app.audio.process import ProcessRunner
 
 
@@ -22,6 +22,17 @@ def test_pauses_keep_air_beside_speech_but_not_at_the_ends():
         {"start": 3 + KEEP, "stop": 4.5 - KEEP},
         {"start": 6.5 + KEEP, "stop": 7.5},
     ]
+
+
+def test_speech_is_what_lies_between_the_pauses():
+    envelope = levels((-80, 1), (-6, 2), (-70, 1.5), (-6, 2), (-80, 1))
+    assert find_speech(envelope, 0.5) == [
+        {"start": 1 - KEEP, "stop": 3 + KEEP},
+        {"start": 4.5 - KEEP, "stop": 6.5 + KEEP},
+    ]
+    # Without pauses the whole file is speech; without levels there is none.
+    assert find_speech(levels((-6, 3)), 0.5) == [{"start": 0.0, "stop": 3.0}]
+    assert find_speech([], 0.5) == []
 
 
 def test_short_gaps_and_silence_free_audio_are_not_pauses():

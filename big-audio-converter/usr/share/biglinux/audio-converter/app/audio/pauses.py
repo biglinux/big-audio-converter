@@ -139,6 +139,19 @@ def find_pauses(levels, min_pause):
     return pauses
 
 
+def find_speech(levels, min_pause):
+    """The parts between the pauses: what marking keeps and exports."""
+    speech, start = [], 0.0
+    for pause in find_pauses(levels, min_pause):
+        if pause["start"] > start:
+            speech.append({"start": start, "stop": pause["start"]})
+        start = pause["stop"]
+    end = round(len(levels) * STEP, 3)
+    if end > start:
+        speech.append({"start": start, "stop": end})
+    return speech
+
+
 class PauseFinder:
     """Measure one source at a time off the GTK thread; keep the last four.
 

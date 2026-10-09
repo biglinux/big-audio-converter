@@ -429,7 +429,7 @@ def test_offline_dpdfnet_export_matches_the_plugin_bit_for_bit(tmp_path, cut):
         "noise_reduction": True,
         "noise_engine": "dpdfnet",
         "noise_strength": 70,
-        "hpf_enabled": True,
+        "compressor_enabled": True,
         "normalize": True,
         "file_markers": {
             str(source): [{"start": 0.5, "stop": 1.2}, {"start": 2, "stop": 2.8}]
@@ -668,7 +668,6 @@ def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
         {
             "format": "wav",
             "normalize": True,
-            "prevent_clipping": True,
             "file_markers": {
                 str(source): [{"start": 1, "stop": 5}, {"start": 6, "stop": 11}]
             },

@@ -8,14 +8,20 @@ import cairo
 import gi
 import numpy as np
 
-from app.ui.cairo_text import rounded_rect, show_text, text_extents
+from app.ui.cairo_text import INK, rounded_rect, show_text, text_extents
 from app.ui.marker_manager import MarkerManagerMixin
-from app.utils.time_formatter import format_time_ruler, format_time_short
+from app.utils.time_formatter import (
+    format_time_display,
+    format_time_ruler,
+    format_time_short,
+)
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gtk
 
 _ = gettext.gettext
+
+# Waveform bars are drawn 2 px wide with a 1 px gap.
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +65,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.hover_time = None
         self.hover_x = None
 
-        # Visualization settings
-        self.bg_color = (0.11, 0.11, 0.13)
-        self.wave_color = (0.30, 0.65, 1.0)
+        self.add_css_class("waveform")
 
         # Waveform rendering cache for performance
         self.cached_viewport_key = None  # (start_sample, end_sample, width, height)
@@ -260,9 +264,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                         self.viewport_offset = max(
                             0, min(max_offset, new_start_time / self.duration)
                         )
-                        # Invalidate cache to ensure immediate redraw with correct viewport
-                        self.cached_viewport_key = None
-                        self.cached_waveform_surface = None
+                        self._drop_cached_surface()
 
         self.queue_draw()
 
@@ -909,29 +911,29 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.set_font_size(9)
         cr.set_line_width(1)
 
-        first_mark = int(start_time / time_per_mark) * time_per_mark
-        t = first_mark
-        while t <= end_time:
-            if t >= start_time:
-                x = ((t - start_time) / visible_duration) * width
-                is_major = abs(t % (time_per_mark * 5)) < 0.01
-                tick_h = 8 if is_major else 4
+        # An integer index, not an accumulated float: 10 × 0.2 s falls short
+        # of 2 s and would lose that label.
+        for i in range(
+            math.ceil(start_time / time_per_mark),
+            math.floor(end_time / time_per_mark) + 1,
+        ):
+            t = i * time_per_mark
+            x = ((t - start_time) / visible_duration) * width
+            is_major = i % 5 == 0
+            tick_h = 8 if is_major else 4
 
-                # Tick mark (upward from base)
-                cr.set_source_rgba(0.55, 0.55, 0.60, 0.45)
-                cr.move_to(x, tick_base_y)
-                cr.line_to(x, tick_base_y - tick_h)
-                cr.stroke()
+            cr.set_source_rgba(*INK, 0.30)
+            cr.move_to(x, tick_base_y)
+            cr.line_to(x, tick_base_y - tick_h)
+            cr.stroke()
 
-                # Time label for major marks
-                if is_major:
-                    label = format_time_ruler(t, time_per_mark)
-                    ext = text_extents(cr, label)
-                    lx = max(2, min(width - ext.width - 2, x - ext.width / 2))
-                    cr.set_source_rgba(0.55, 0.55, 0.60, 0.65)
-                    cr.move_to(lx, tick_base_y - tick_h - 3)
-                    show_text(cr, label)
-            t += time_per_mark
+            if is_major:
+                label = format_time_ruler(t, time_per_mark * 5)
+                ext = text_extents(cr, label)
+                lx = max(2, min(width - ext.width - 2, x - ext.width / 2))
+                cr.set_source_rgba(*INK, 0.50)
+                cr.move_to(lx, tick_base_y - tick_h - 3)
+                show_text(cr, label)
 
     def _draw_hint(self, cr):
         """How to use the waveform, until the first segment exists."""
@@ -940,10 +942,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.set_font_size(12)
         extents = text_extents(cr, text)
         # The waveform's peaks reach the top; the text keeps its own backdrop.
-        cr.set_source_rgba(*self.bg_color, 0.85)
+        cr.set_source_rgba(0, 0, 0, 0.6)
         rounded_rect(cr, 6, 6, extents.width + 12, 20, 4)
         cr.fill()
-        cr.set_source_rgba(1, 1, 1, 0.85)
+        cr.set_source_rgba(*INK, 0.85)
         cr.move_to(12, 20)
         show_text(cr, text)
 
@@ -953,7 +955,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             return
 
         # Vertical guide line only (time shown on seekbar)
-        cr.set_source_rgba(1, 1, 1, 0.3)
+        cr.set_source_rgba(*INK, 0.3)
         cr.set_line_width(1)
         cr.move_to(self.hover_x, 0)
         cr.line_to(self.hover_x, height)
@@ -966,7 +968,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         scrollbar_width = width - (2 * self.scrollbar_margin)
         scrollbar_x = self.scrollbar_margin
 
-        cr.set_source_rgba(0.2, 0.2, 0.2, 0.3)  # Dark semi-transparent
+        cr.set_source_rgba(*INK, 0.06)
         cr.rectangle(scrollbar_x, scrollbar_y, scrollbar_width, self.scrollbar_height)
         cr.fill()
 
@@ -985,18 +987,17 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         max_thumb_x = scrollbar_width - thumb_width
         thumb_x = scrollbar_x + (thumb_fraction * max_thumb_x)
 
-        if self.hovering_scrollbar or self.is_dragging_scrollbar:
-            cr.set_source_rgba(0.6, 0.7, 0.9, 0.9)  # Brighter when hovering/dragging
-        else:
-            cr.set_source_rgba(0.5, 0.6, 0.8, 0.7)  # Normal state
-
-        cr.rectangle(thumb_x, scrollbar_y + 2, thumb_width, self.scrollbar_height - 4)
+        active = self.hovering_scrollbar or self.is_dragging_scrollbar
+        cr.set_source_rgba(*INK, 0.55 if active else 0.35)
+        rounded_rect(
+            cr,
+            thumb_x,
+            scrollbar_y + 2,
+            thumb_width,
+            self.scrollbar_height - 4,
+            (self.scrollbar_height - 4) / 2,
+        )
         cr.fill()
-
-        cr.set_source_rgba(0.7, 0.8, 1.0, 0.5)
-        cr.set_line_width(1)
-        cr.rectangle(thumb_x, scrollbar_y + 2, thumb_width, self.scrollbar_height - 4)
-        cr.stroke()
 
     def _get_scrollbar_bounds(self, width, height):
         """Get the bounds of the scrollbar area for hit detection."""
@@ -1075,7 +1076,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
     def _draw_loading_indicator(self, cr, width, height):
         """A static status avoids redraw polling and respects reduced motion."""
         cr.set_font_size(14)
-        cr.set_source_rgb(0.9, 0.9, 0.9)
+        cr.set_source_rgba(*INK, 0.8)
         extents = text_extents(cr, self.loading_message)
         cr.move_to(max(12, (width - extents.width) / 2), height / 2)
         show_text(cr, self.loading_message)
@@ -1099,60 +1100,46 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.set_draw_func(lambda *args: None)
 
     def _render_waveform_cache(self, width, height, visible_waveform, viewport_key):
-        """Render the waveform to a cached ImageSurface."""
+        """Render the waveform once, as an alpha mask the draw paints."""
         y_center = height / 2
         y_scale = height * 0.4 / self.waveform_peak
-        render_width = int(width)
-        bar_width = 1
-        samples_per_bar = (
-            len(visible_waveform) / render_width
-            if render_width > 0
-            else len(visible_waveform)
-        )
-
+        bars = int(width)
+        samples_per_bar = len(visible_waveform) / bars if bars else 0
         # The loudest peak under each pixel column.
         starts = np.minimum(
-            (np.arange(render_width) * samples_per_bar).astype(int),
+            (np.arange(bars) * samples_per_bar).astype(int),
             len(visible_waveform) - 1,
         )
-        peaks = np.maximum.reduceat(visible_waveform, starts) if render_width else []
+        peaks = np.maximum.reduceat(visible_waveform, starts) if bars else []
 
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(width), int(height))
+        surface = cairo.ImageSurface(cairo.FORMAT_A8, int(width), int(height))
         surface_cr = cairo.Context(surface)
-        surface_cr.set_operator(cairo.OPERATOR_CLEAR)
-        surface_cr.paint()
-        surface_cr.set_operator(cairo.OPERATOR_OVER)
-
-        # Center reference line
-        surface_cr.set_source_rgba(0.4, 0.4, 0.45, 0.15)
-        surface_cr.set_line_width(1)
-        surface_cr.move_to(0, y_center)
-        surface_cr.line_to(render_width, y_center)
-        surface_cr.stroke()
-
-        # Waveform bars
-        surface_cr.set_source_rgb(*self.wave_color)
-        for pixel_x, peak in enumerate(peaks):
-            # Levels hold absolute peaks; draw them mirrored.
-            if 2 * peak * y_scale >= 0.5:
-                surface_cr.rectangle(
-                    pixel_x, y_center - peak * y_scale, bar_width, 2 * peak * y_scale
-                )
+        for bar, peak in enumerate(peaks):
+            # Levels hold absolute peaks; draw them mirrored, never thinner than
+            # a hairline so silence still reads as a line.
+            half = max(0.5, peak * y_scale)
+            surface_cr.rectangle(bar, y_center - half, 1, 2 * half)
         surface_cr.fill()
 
         self.cached_waveform_surface = surface
         self.cached_viewport_key = viewport_key
 
+    def _draw_waveform(self, cr):
+        """One colour, so a marked part's lighter block stands out on it."""
+        color = self.get_color()
+        cr.set_source_rgb(color.red, color.green, color.blue)
+        cr.mask_surface(self.cached_waveform_surface, 0, 0)
+
     def _draw_position_marker(
         self, cr, width, height, start_time, end_time, visible_duration
     ):
-        """Draw the orange playback position marker line."""
+        """The playhead: a white line with a soft halo."""
         if self.duration > 0 and start_time <= self.position <= end_time:
             position_x = ((self.position - start_time) / visible_duration) * width
-            cr.set_source_rgba(1.0, 0.5, 0.0, 0.08)
+            cr.set_source_rgba(*INK, 0.10)
             cr.rectangle(position_x - 3, 0, 6, height)
             cr.fill()
-            cr.set_source_rgba(1.0, 0.5, 0.0, 0.9)
+            cr.set_source_rgba(*INK, 0.92)
             cr.set_line_width(2)
             cr.move_to(position_x, 0)
             cr.line_to(position_x, height)
@@ -1162,7 +1149,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self, cr, width, height, start_time, end_time, visible_duration
     ):
         """Draw placeholder text when no waveform data is available."""
-        cr.set_source_rgb(0.7, 0.7, 0.7)
+        cr.set_source_rgba(*INK, 0.7)
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(16)
 
@@ -1187,7 +1174,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         if subtitle:
             cr.set_font_size(12)
-            cr.set_source_rgb(0.5, 0.5, 0.5)
+            cr.set_source_rgba(*INK, 0.5)
             sub_ext = text_extents(cr, subtitle)
             cr.move_to((width - sub_ext.width) / 2, (height + sub_ext.height) / 2 + 10)
             show_text(cr, subtitle)
@@ -1199,11 +1186,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             )
 
     def on_draw(self, area, cr, width, height):
-        """Draw the waveform visualization."""
-        cr.set_source_rgb(*self.bg_color)
-        cr.rectangle(0, 0, width, height)
-        cr.fill()
-
+        """Draw the waveform over the panel's own background."""
         if self.is_loading:
             self._draw_loading_indicator(cr, width, height)
             return
@@ -1229,8 +1212,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self._render_waveform_cache(
                     width, height, peaks[start_sample:end_sample], viewport_key
                 )
-            cr.set_source_surface(self.cached_waveform_surface, 0, 0)
-            cr.paint()
+            cr.set_source_rgba(*INK, 0.06)
+            cr.set_line_width(1)
+            cr.move_to(0, int(height / 2) + 0.5)
+            cr.line_to(width, int(height / 2) + 0.5)
+            cr.stroke()
+            self._draw_waveform(cr)
             self._draw_position_marker(
                 cr, width, height, start_time, end_time, visible_duration
             )
@@ -1250,12 +1237,16 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
 
 class SeekBar(Gtk.DrawingArea):
-    """Modern seekbar with rounded track, smooth thumb, hover preview, and time labels."""
+    """The file's whole length under the waveform: position, the zoomed window
+    and hover times. It also writes the elapsed and total time beside it."""
 
-    HEIGHT = 36
+    HEIGHT = 30
 
-    def __init__(self):
+    def __init__(self, elapsed, total):
         super().__init__()
+        self._elapsed = elapsed
+        self._total = total
+        self.add_css_class("seekbar")
         self.set_content_height(self.HEIGHT)
         self.set_draw_func(lambda area, *args: area._draw(area, *args))
 
@@ -1338,6 +1329,7 @@ class SeekBar(Gtk.DrawingArea):
             [Gtk.AccessibleProperty.VALUE_MIN, Gtk.AccessibleProperty.VALUE_MAX],
             [0.0, self.duration],
         )
+        self._show_time()
         self.queue_draw()
 
     def set_position(self, position):
@@ -1346,7 +1338,18 @@ class SeekBar(Gtk.DrawingArea):
             [Gtk.AccessibleProperty.VALUE_NOW, Gtk.AccessibleProperty.VALUE_TEXT],
             [self._position, format_time_short(self._position)],
         )
+        self._show_time()
         self.queue_draw()
+
+    def _show_time(self):
+        # Whole seconds: the labels change once a second while playing.
+        for label, seconds in (
+            (self._elapsed, self._position),
+            (self._total, self.duration),
+        ):
+            text = format_time_display(seconds)
+            if label.get_label() != text:
+                label.set_label(text)
 
     def set_zoom_viewport(self, zoom_level, viewport_offset):
         self._zoom_level = max(1.0, zoom_level)
@@ -1418,166 +1421,77 @@ class SeekBar(Gtk.DrawingArea):
 
     def _draw(self, area, cr, width, height):
         color = self.get_color()
-        fg = (color.red, color.green, color.blue)
-        bg = (0.15, 0.15, 0.17) if sum(fg) > 1.5 else (0.97, 0.97, 0.98)
+        accent = (color.red, color.green, color.blue)
         # The ring marks keyboard focus; a click to seek is not one.
         if self.get_state_flags() & Gtk.StateFlags.FOCUS_VISIBLE:
-            cr.set_source_rgb(*fg)
+            cr.set_source_rgba(*INK, 0.8)
             cr.set_line_width(2)
-            cr.rectangle(1, 1, width - 2, height - 2)
+            rounded_rect(cr, 1, 1, width - 2, height - 2, 6)
             cr.stroke()
 
-        # Full transparent background (blends with parent)
-        cr.set_source_rgba(0, 0, 0, 0)
-        cr.paint()
-
-        # Layout constants — track spans full width to align with waveform
-        pad = 4  # horizontal padding (matches waveform frame margins)
-        track_h = 6  # track height
-        track_r = 3  # track corner radius
-        thumb_r = 7  # thumb radius
+        # The track lines up with the waveform frame's 10 px margins.
+        pad = 6
+        track_h = 4
         track_w = width - 2 * pad
-
-        # Center labels+track ensemble vertically for equal top/bottom spacing
-        text_h_approx = 10  # font size 10 approximate ascent
-        gap = 6  # space between label baseline and track top
-        content_h = text_h_approx + gap + track_h
-        top_margin = (height - content_h) / 2
-        track_y = top_margin + text_h_approx + gap
-
+        track_cy = height - 9
+        track_y = track_cy - track_h / 2
         self._track_x = pad
         self._track_w = track_w
-
         if track_w <= 0:
             return
-
         progress = (
             max(0.0, min(1.0, self._position / self.duration))
             if self.duration > 0
             else 0.0
         )
 
-        cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        cr.set_font_size(10)
-
-        elapsed_str = format_time_short(self._position)
-        remaining = max(0, self.duration - self._position)
-        remaining_str = f"-{format_time_short(remaining)}"
-
-        label_y = track_y - 6
-
-        # Elapsed (left)
-        cr.set_source_rgba(*fg, 1)
-        cr.move_to(pad, label_y)
-        show_text(cr, elapsed_str)
-
-        # Remaining (right)
-        ext_r = text_extents(cr, remaining_str)
-        cr.set_source_rgba(*fg, 1)
-        cr.move_to(width - pad - ext_r.width, label_y)
-        show_text(cr, remaining_str)
-
-        # Waveform hover time (at corresponding position, with opaque bg over labels)
-        if self._waveform_hover_time is not None and self.duration > 0:
-            hover_str = format_time_short(self._waveform_hover_time)
-            hover_progress = max(
-                0.0, min(1.0, self._waveform_hover_time / self.duration)
-            )
-            hover_x = pad + hover_progress * track_w
-            ext_h = text_extents(cr, hover_str)
-            # Clamp label position within bounds
-            lx = max(pad, min(width - pad - ext_h.width, hover_x - ext_h.width / 2))
-            # Opaque background so it covers elapsed/remaining labels beneath
-            bg_px, bg_py = 3, 2
-            cr.set_source_rgba(*bg, 0.98)
-            cr.rectangle(
-                lx - bg_px,
-                label_y - ext_h.height - bg_py,
-                ext_h.width + bg_px * 2,
-                ext_h.height + bg_py * 2,
-            )
-            cr.fill()
-            cr.set_source_rgba(*fg, 0.85)
-            cr.move_to(lx, label_y)
-            show_text(cr, hover_str)
-            # Small indicator line on track at hover position
-            cr.set_source_rgba(*fg, 0.35)
-            cr.set_line_width(1)
-            cr.move_to(hover_x, track_y - 2)
-            cr.line_to(hover_x, track_y + track_h + 2)
-            cr.stroke()
-
         if self._zoom_level > 1.0:
-            vp_frac = 1.0 / self._zoom_level
-            vp_x = pad + self._viewport_offset * (1.0 - vp_frac) * track_w
-            vp_w = vp_frac * track_w
-            cr.set_source_rgba(*fg, 0.06)
-            rounded_rect(cr, vp_x, track_y - 4, vp_w, track_h + 8, track_r + 2)
+            window = 1.0 / self._zoom_level
+            window_x = pad + self._viewport_offset * (1.0 - window) * track_w
+            cr.set_source_rgba(*INK, 0.10)
+            rounded_rect(cr, window_x, track_cy - 6, window * track_w, 12, 6)
             cr.fill()
-            cr.set_source_rgba(*fg, 0.12)
-            cr.set_line_width(1)
-            rounded_rect(
-                cr, vp_x + 0.5, track_y - 3.5, vp_w - 1, track_h + 7, track_r + 2
-            )
-            cr.stroke()
 
-        cr.set_source_rgba(*fg, 0.15)
-        rounded_rect(cr, pad, track_y, track_w, track_h, track_r)
+        cr.set_source_rgba(*INK, 0.16)
+        rounded_rect(cr, pad, track_y, track_w, track_h, track_h / 2)
         cr.fill()
-
-        elapsed_w = progress * track_w
-        if elapsed_w > 0:
-            pat = cairo.LinearGradient(pad, 0, pad + elapsed_w, 0)
-            pat.add_color_stop_rgba(0, 0.30, 0.56, 0.92, 0.90)
-            pat.add_color_stop_rgba(1, 0.45, 0.72, 1.0, 0.95)
-            cr.set_source(pat)
-            rounded_rect(cr, pad, track_y, elapsed_w, track_h, track_r)
+        if progress > 0:
+            cr.set_source_rgba(*accent, 1.0)
+            rounded_rect(cr, pad, track_y, progress * track_w, track_h, track_h / 2)
             cr.fill()
 
-        if (
-            self._hover_x >= pad
-            and self._hover_x <= width - pad
-            and not self._is_dragging
-        ):
-            hover_prog = max(0.0, min(1.0, (self._hover_x - pad) / track_w))
-            hx = pad + hover_prog * track_w
-            cr.set_source_rgba(*fg, 0.25)
+        hover_time = None
+        if pad <= self._hover_x <= width - pad and not self._is_dragging:
+            hover_time = self._hover_time
+        elif self._waveform_hover_time is not None and self.duration > 0:
+            hover_time = self._waveform_hover_time
+        if hover_time is not None and self.duration > 0:
+            hx = pad + max(0.0, min(1.0, hover_time / self.duration)) * track_w
+            cr.set_source_rgba(*INK, 0.35)
             cr.set_line_width(1)
-            cr.move_to(hx, track_y - 3)
-            cr.line_to(hx, track_y + track_h + 3)
+            cr.move_to(int(hx) + 0.5, track_cy - 5)
+            cr.line_to(int(hx) + 0.5, track_cy + 5)
             cr.stroke()
-
-            # Hover time tooltip
-            hover_str = format_time_short(self._hover_time)
-            cr.set_font_size(9)
-            ext = text_extents(cr, hover_str)
-            tip_x = hx - ext.width / 2
-            tip_x = max(pad, min(width - pad - ext.width, tip_x))
-            tip_y = track_y - 8
-
-            cr.set_source_rgba(*bg, 0.98)
-            rounded_rect(
-                cr, tip_x - 4, tip_y - ext.height - 2, ext.width + 8, ext.height + 4, 3
+            cr.select_font_face(
+                "Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL
             )
+            cr.set_font_size(10)
+            text = format_time_short(hover_time)
+            ext = text_extents(cr, text)
+            chip_x = max(0, min(width - ext.width - 8, hx - ext.width / 2 - 4))
+            cr.set_source_rgba(0, 0, 0, 0.75)
+            rounded_rect(cr, chip_x, 1, ext.width + 8, ext.height + 2, 4)
             cr.fill()
-            cr.set_source_rgba(*fg, 0.9)
-            cr.move_to(tip_x, tip_y)
-            show_text(cr, hover_str)
+            cr.set_source_rgba(*INK, 0.9)
+            cr.move_to(chip_x + 4, 1 + ext.height)
+            show_text(cr, text)
 
         thumb_x = pad + progress * track_w
-        thumb_cy = track_y + track_h / 2
-        show_thumb = self._is_dragging or (self._hover_x >= 0)
-
-        if show_thumb:
-            cr.set_source_rgba(0.40, 0.65, 1.0, 0.15)
-            cr.arc(thumb_x, thumb_cy, thumb_r + 4, 0, 2 * math.pi)
-            cr.fill()
-
-        cr.set_source_rgba(*fg, 0.95)
-        cr.arc(thumb_x, thumb_cy, thumb_r if show_thumb else 4, 0, 2 * math.pi)
+        large = self._is_dragging or self._hover_x >= 0
+        cr.set_source_rgba(*INK, 0.95)
+        cr.arc(thumb_x, track_cy, 6 if large else 4, 0, 2 * math.pi)
         cr.fill()
-
-        if show_thumb:
-            cr.set_source_rgba(0.35, 0.60, 0.95, 1.0)
-            cr.arc(thumb_x, thumb_cy, 3, 0, 2 * math.pi)
+        if large:
+            cr.set_source_rgba(*accent, 1.0)
+            cr.arc(thumb_x, track_cy, 2.5, 0, 2 * math.pi)
             cr.fill()

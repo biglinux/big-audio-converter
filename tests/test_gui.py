@@ -31,7 +31,6 @@ def start_window():
     app = module.Application()
     app.set_flags(app.get_flags() | Gio.ApplicationFlags.NON_UNIQUE)
     app.set_application_id("br.com.biglinux.audio.converter.Test" + uuid.uuid4().hex)
-    app.config.set("show_welcome_dialog", False)
     app.player._mpv_options["ao"] = "null"
     app.register(None)
     app.activate()
@@ -89,7 +88,7 @@ def test_queue_probe_lifecycle_and_numeric_editor(window, audio):
     assert not window._test_errors
     assert len(queue.files) == 1
     assert window.seekbar.duration == pytest.approx(2)
-    assert "44100" in queue.file_rows[0].get_subtitle()
+    assert queue.file_rows[0].get_subtitle() == "0:02 · WAV · 44.1 kHz"
     assert window.convert_button.get_sensitive()
     window.on_edit_segments()
     editor = window.segment_editor
@@ -114,10 +113,10 @@ def test_join_offered_for_several_files_and_not_in_fast_copy(window, audio, tmp_
     second.write_bytes(audio.read_bytes())
     assert queue.add_file(str(audio))
     pump(lambda: not queue.pending)
-    assert not window.join_row.get_visible()
+    assert not window.join_row.get_sensitive()
     assert queue.add_file(str(second))
     pump(lambda: not queue.pending)
-    assert window.join_row.get_visible()
+    assert window.join_row.get_sensitive()
     window.join_row.set_active(True)
     assert window.convert_button.get_label() == "Join 2 files"
     assert window._collect_conversion_settings()["join_files"]
@@ -242,27 +241,29 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     window.bitrate_row.set_selected(window._bitrate_list.index("128k"))
     assert window.app.config.get("conversion_bitrate") == "128k"
     window.format_row.set_selected(window._format_list.index("flac"))
-    assert not window.bitrate_row.get_visible()
+    assert not window.bitrate_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("copy"))
     assert not window.volume_spin.is_sensitive()
-    assert not window.gate_row.scale.is_sensitive()
-    assert not window.noise_scale.get_sensitive()
+    assert not window.compressor_tile.scale.is_sensitive()
+    assert not window.voice_scale.get_sensitive()
     assert window.format_row.get_sensitive()
     window.format_row.set_selected(window._format_list.index("flac"))
     assert window.volume_spin.is_sensitive()
     # Back on when the noise plugin is installed, which CI machines lack.
-    assert window.noise_scale.get_sensitive() == window.noise_available
-    window.original_preview.set_active(True)
+    assert window.voice_scale.get_sensitive() == window.noise_available
+    window.compressor_tile.scale.set_value(30)
+    window.original_preview.set_active_name("original")
     assert window.player.effects_bypassed
     window.format_row.set_selected(window._format_list.index("mp3"))
     assert window.player.effects_bypassed
-    window.original_preview.set_active(False)
+    window.original_preview.set_active_name("adjusted")
     assert not window.player.effects_bypassed
+    window.compressor_tile.scale.set_value(0)
     window.file_queue.add_file(str(audio))
     vis = window.visualizer
     pump(lambda: vis.waveform_data is not None and vis.get_width() > 0)
     assert window.segment_edit_button.get_visible()
-    assert not window.cut_order_row.get_visible()
+    assert not window.cut_order_row.get_sensitive()
     width, duration = vis.get_width(), vis.duration
 
     # A press that does not move is a click: listening moves there.
@@ -280,7 +281,7 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     vis.on_drag_update(Drag(), -width * 0.6, 0)
     vis.on_release_handler(None, 1, width * 0.2, 20)
     vis.on_drag_end(None, -width * 0.6, 0)
-    assert window.cut_order_row.get_visible()
+    assert window.cut_order_row.get_sensitive()
     assert window.play_selection_switch.get_visible()
     settings = window._collect_conversion_settings()
     [segment] = settings["file_markers"][window.active_audio_id]
@@ -290,8 +291,8 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
     # Removing the marked part exports and previews what lies around it.
     window.cut_mode_row.set_selected(1)
     assert vis.remove_marked
-    assert not window.cut_order_row.get_visible()
-    assert not window.cut_output_row.get_visible()
+    assert not window.cut_order_row.get_sensitive()
+    assert not window.cut_output_row.get_sensitive()
     assert window._collect_conversion_settings()["cut_remove"]
     before, after = window._load_selection_segments()
     assert before == (0, pytest.approx(duration * 0.2, abs=0.01))
@@ -352,8 +353,8 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     assert player.load(str(audio))
     pump(lambda: player._loaded)
     for index, engine in enumerate(window.noise_engines):
-        window.noise_model_row.set_selected(index)
-        window.noise_scale.set_value(25)
+        window.noise_model.set_selected(index)
+        window.noise_adjustment.set_value(25)
         # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
         attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
         pump(
@@ -380,14 +381,14 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     del player.noise_plugins["dpdfnet"]
     window._update_noise_availability()
     assert not player.noise_reduction
-    assert not window.noise_scale.get_sensitive()
+    assert not window.voice_scale.get_sensitive()
     assert "dpdfnet-native" in window.noise_status.get_label()
     assert window.noise_status.get_visible()
-    assert window.noise_model_row.get_visible()
-    window.noise_model_row.set_selected(0)
-    assert window.noise_scale.get_sensitive()
+    assert window.noise_model.get_sensitive()
+    window.noise_model.set_selected(0)
+    assert window.voice_scale.get_sensitive()
     assert player.noise_reduction and player.noise_engine == "dfn3"
-    assert window.noise_value_label.get_text() == "Clean voice · 25%"
+    assert window.voice_value.get_label() == "25"
 
 
 def test_reset_settings_restores_first_run_values(window, tmp_path):
@@ -399,39 +400,36 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     window.cut_order_row.set_selected(1)
     window.volume_spin.set_value(250)
     window.speed_spin.set_value(1.5)
-    window.gate_row.scale.set_value(40)
-    window.hpf_row.scale.set_value(120)
-    window.normalize_row.set_active(True)
+    window.compressor_tile.scale.set_value(40)
+    window.normalize_tile.set_active(True)
     window.eq_panel.band_scales[window.eq_panel.BANDS[0][1]].set_value(6)
     window.auto_advance_switch.set_active(False)
 
-    assert window.equalizer_row.get_subtitle() == "Custom"
+    assert window.equalizer_button.has_css_class("applied")
     window._on_reset_settings_response(None, "cancel")
-    assert window.gate_row.scale.get_value() == 40
+    assert window.compressor_tile.scale.get_value() == 40
 
     window._on_reset_settings_response(None, "reset")
     assert window._format_list[window.format_row.get_selected()] == "mp3"
     assert window._bitrate_list[window.bitrate_row.get_selected()] == "192k"
-    assert window.bitrate_row.get_visible()
+    assert window.bitrate_row.get_sensitive()
     assert window.channels_row.get_selected() == 0
     assert window.output_directory == ""
     assert window.cut_order_row.get_selected() == 0
     assert window.volume_spin.get_value() == 100
     assert window.speed_spin.get_value() == 1.0
-    assert window.gate_row.scale.get_value() == 0
-    assert window.hpf_row.scale.get_value() == 0
-    assert not window.normalize_row.get_active()
+    assert window.compressor_tile.scale.get_value() == 0
+    assert not window.normalize_tile.get_active()
     assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
     assert window.auto_advance_switch.get_active()
     assert not window.player.normalize
-    assert window.equalizer_row.get_subtitle() == "Natural (No Effects)"
+    assert not window.equalizer_button.has_css_class("applied")
     for key, value in (
         ("conversion_format", "mp3"),
         ("audio_channels", "0"),
         ("output_directory", ""),
         ("cut_audio_mode", "0"),
-        ("gate_enabled", "false"),
-        ("hpf_enabled", "false"),
+        ("compressor_enabled", "false"),
         ("normalize_enabled", "false"),
         ("auto_advance_enabled", True),
     ):
@@ -441,8 +439,8 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert float(config.get("conversion_volume")) == 100
 
 
-def test_information_size_is_the_file_unless_other_tracks_share_it(window, audio):
-    from app.ui.file_queue import shares_file
+def test_information_size_is_the_file_unless_other_tracks_share_it(audio):
+    from app.ui.file_info import audio_properties, format_size, shares_file
 
     track = {"index": 0, "codec_type": "audio", "duration": "2.0"}
     cover = {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 1}}
@@ -451,18 +449,13 @@ def test_information_size_is_the_file_unless_other_tracks_share_it(window, audio
     assert not shares_file({"streams": [track, cover]}, track)
     assert shares_file({"streams": [track, video]}, track)
 
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    row = queue.file_rows[0]
-
     def size(stream, shares):
         info = {"streams": [stream], "format": {}}
-        return dict(row._extract_audio_props(stream, info, shares, str(audio)))["Size"]
+        return dict(audio_properties(stream, info, shares, str(audio)))["Size"]
 
-    assert size(track, False) == row._format_size(audio.stat().st_size)
+    assert size(track, False) == format_size(audio.stat().st_size)
     assert size(track, True) == "Unknown"
-    assert size({**track, "bit_rate": "128000"}, True) == row._format_size(32000)
+    assert size({**track, "bit_rate": "128000"}, True) == format_size(32000)
 
 
 def test_panning_the_waveform_moves_the_seek_bar_window(window):
@@ -475,29 +468,22 @@ def test_panning_the_waveform_moves_the_seek_bar_window(window):
 
 def test_each_correction_is_off_at_zero_and_set_by_its_slider(window):
     config = window.app.config
-    window.gate_row.scale.set_value(40)
-    window.compressor_row.scale.set_value(75)
-    window.hpf_row.scale.set_value(5)
+    window.compressor_tile.scale.set_value(75)
     settings = window._collect_conversion_settings()
-    assert settings["gate_enabled"] and settings["gate_intensity"] == 0.4
     assert settings["compressor_enabled"] and settings["compressor_intensity"] == 0.75
-    # The filter starts at 20 Hz: the first step above off means that.
-    assert settings["hpf_enabled"] and settings["hpf_frequency"] == 20
-    assert window.hpf_row.value_label.get_text() == "20 Hz"
-    assert window.player.gate_enabled
+    assert window.player.compressor_enabled
     assert config.get("compressor_intensity") == "0.75"
 
-    window.gate_row.scale.set_value(0)
-    assert not window._collect_conversion_settings()["gate_enabled"]
-    assert window.gate_row.value_label.get_text() == "Off"
-    assert not window.player.gate_enabled
+    window.compressor_tile.scale.set_value(0)
+    assert not window._collect_conversion_settings()["compressor_enabled"]
+    assert window.compressor_tile.value_label.get_text() == "Off"
+    assert not window.player.compressor_enabled
     # Off keeps the strength for the next session's restore of a later choice.
-    assert config.get("gate_enabled") == "false"
-    assert config.get("gate_intensity") == "0.4"
+    assert config.get("compressor_enabled") == "false"
+    assert config.get("compressor_intensity") == "0.75"
 
     window._restore_conversion_settings()
-    assert window.gate_row.scale.get_value() == 0
-    assert window.compressor_row.scale.get_value() == 75
+    assert window.compressor_tile.scale.get_value() == 0
 
 
 def marks(win):
@@ -537,7 +523,7 @@ def test_removed_and_cleared_files_forget_their_cuts(window, audio):
 
     queue.remove_file(0)
     assert window.file_markers == {}
-    assert not window.cut_mode_row.get_visible()
+    assert not window.cut_mode_row.get_sensitive()
 
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -637,7 +623,7 @@ def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypat
         panel = win.eq_panel
         panel.preset_dropdown.set_selected(panel.PRESET_KEYS.index("podcast"))
         panel.preset_dropdown.set_selected(panel.PRESET_KEYS.index("custom"))
-        assert win.equalizer_row.get_subtitle() == "Custom"
+        assert panel.preset_dropdown.get_selected_item().get_string() == "Custom"
         panel.band_scales[1000].set_value(7)
     finally:
         stop_window(win)
@@ -645,7 +631,8 @@ def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypat
     try:
         assert win.eq_panel.band_scales[1000].get_value() == 7
         assert win.eq_panel.band_scales[31].get_value() == 5  # from Radio Host
-        assert win.equalizer_row.get_subtitle() == "Custom"
+        assert win.eq_panel.preset_dropdown.get_selected_item().get_string() == "Custom"
+        assert win.equalizer_button.has_css_class("applied")
     finally:
         stop_window(win)
 
@@ -669,22 +656,54 @@ def test_unreadable_settings_are_announced_once(tmp_path, monkeypatch):
         stop_window(win)
 
 
-def test_found_pauses_say_what_they_replace_and_undo_restores_it(window, audio):
+def test_found_pauses_mark_the_speech_at_once_and_undo_restores_it(window, audio):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
     window.visualizer.restore_markers([{"start": 0.1, "stop": 0.3}])
-    popover = window.pause_popover
-    popover.levels = [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50
-    popover._show_state()
-    assert "replaces the 1 mark" in popover.summary.get_label()
-
-    popover._on_apply(None)
-    assert marks(window) == [(0.65, 1.35)]
-    assert window.removes_marked()
-    popover.undo_apply()
-    assert marks(window) == [(0.1, 0.3)]
+    panel = window.pause_panel
+    levels = [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50  # a 1 s pause
+    panel.length_buttons[0].set_active(True)
+    panel._on_found(None, levels)
+    # What is marked is exported: the speech, kept in order and joined.
+    assert marks(window) == [(0.0, 0.65), (1.35, 2.0)]
     assert not window.removes_marked()
+    assert window.cut_order_row.get_selected() == 0
+    assert window.cut_output_row.get_selected() == 1
+    # One row says it all: what was marked, from what, and that it undoes.
+    assert not panel.status_row.get_visible()
+    assert panel.undo_row.get_visible()
+    assert panel.undo_row.get_title() == "Speech marked in 2 parts"
+    assert panel.undo_row.get_subtitle().split("\n") == [
+        "1 pause · 0:00 shorter",
+        "This replaces the 1 mark already on the file.",
+        "Nothing is deleted from the original file.",
+    ]
+    assert not panel.actions.get_visible()
+    # Another length replaces the panel's marks, never the person's.
+    panel.length_buttons[2].set_active(True)  # 2 s: no pause that long
+    assert marks(window) == [(0.1, 0.3)]
+    assert not panel.undo_row.get_visible()
+    panel.length_buttons[0].set_active(True)
+    assert marks(window) == [(0.0, 0.65), (1.35, 2.0)]
+    panel.undo_apply()
+    assert marks(window) == [(0.1, 0.3)]
+    assert window.cut_output_row.get_selected() == 0
+    assert not panel.undo_row.get_visible()
+
+
+def test_marks_edited_after_finding_stay_and_finding_again_is_offered(window, audio):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    panel = window.pause_panel
+    panel.length_buttons[0].set_active(True)
+    panel._on_found(None, [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50)
+    window.visualizer.restore_markers([{"start": 0.0, "stop": 0.5}])
+    assert marks(window) == [(0.0, 0.5)]
+    assert not panel.undo_row.get_visible()
+    assert panel.actions.get_visible()
+    assert panel.actions.get_visible_child_name() == "find"
 
 
 def test_pauses_past_the_end_of_the_file_are_reported(window, audio, monkeypatch):
@@ -693,10 +712,8 @@ def test_pauses_past_the_end_of_the_file_are_reported(window, audio, monkeypatch
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
     shown = []
     monkeypatch.setattr(window, "_show_message", lambda *args: shown.append(args))
-    popover = window.pause_popover
-    popover.levels = [-6.0] * 300 + [-80.0] * 100  # 4 s measured, 2 s on screen
-    popover._show_state()
-    popover._on_apply(None)
+    panel = window.pause_panel
+    panel._on_found(None, [-6.0] * 300 + [-80.0] * 100)  # 4 s measured, 2 s shown
     assert shown and shown[0][0] == "The pauses could not be marked"
     assert marks(window) == []
 
@@ -707,13 +724,456 @@ def test_installing_the_denoiser_is_noticed_without_a_restart(
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
-    popover = window.pause_popover
+    panel = window.pause_panel
     monkeypatch.setattr("shutil.which", lambda _name: None)
-    popover._show_state()
-    assert popover.stack.get_visible_child_name() == "missing"
+    panel._show_state()
+    assert "dpdfnet-native" in panel.status_row.get_title()
+    assert not panel.actions.get_visible()
 
+    # Showing a file again looks again.
     monkeypatch.setattr("shutil.which", lambda name: f"/usr/bin/{name}")
-    popover.popup()
-    pump(lambda: popover.get_visible())
-    assert popover.stack.get_visible_child_name() == "start"
-    popover.popdown()
+    panel.sync()
+    assert panel.actions.get_visible_child_name() == "find"
+
+
+def test_marked_parts_are_kept_in_a_new_session(tmp_path, monkeypatch):
+    """Marks do not outlive the session, so neither does removing them: a
+    saved mode would silently turn the next session's marks into cuts."""
+    config = tmp_path / "config" / "audio-converter"
+    config.mkdir(parents=True)
+    (config / "config.json").write_text('{"cut_remove": true}')
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    win = start_window()
+    try:
+        assert not win.removes_marked() and not win.visualizer.remove_marked
+        win.set_removes_marked(True)
+        assert win.visualizer.remove_marked
+    finally:
+        stop_window(win)
+    win = start_window()
+    try:
+        assert not win.removes_marked()
+    finally:
+        stop_window(win)
+
+
+def test_saved_volume_and_speed_come_back_in_a_new_session(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    win = start_window()
+    try:
+        win.volume_spin.set_value(250)
+        win.speed_spin.set_value(1.5)
+    finally:
+        stop_window(win)
+    win = start_window()
+    try:
+        assert win.volume_spin.get_value() == 250
+        assert win.speed_spin.get_value() == 1.5
+        assert win.volume_value.get_label() == "250"
+    finally:
+        stop_window(win)
+
+
+def test_a_tile_card_opens_for_the_keyboard_and_shows_the_amount(window):
+    tile = window.compressor_tile
+    window.present()
+    pump(lambda: tile.get_mapped())
+    tile.activate()
+    assert tile.popover.get_visible() and tile.popover.get_autohide()
+    pump(lambda: tile.scale.has_focus())
+    tile.scale.set_value(38)
+    assert tile.value_label.get_text() == "38%"
+    assert tile.card_value.get_text() == "38%"
+    [count] = [c for tiles, c in window.effect_cards.groups if tile in tiles]
+    assert count.get_text() == "1 active"
+    # Off is the default of a correction: there is nothing to reset to.
+    assert tile.reset_button is None
+    tile.popover.popdown()
+    assert not tile.popover.get_autohide()
+
+
+def test_crossing_another_tile_on_the_way_keeps_the_open_card(window):
+    from types import SimpleNamespace
+
+    popovers = window.effect_cards.popovers
+    # Even volume sits under the channels, beside the compressor.
+    lower, upper = window.normalize_tile, window.channels_row
+    beside = window.compressor_tile
+    window.present()
+    pump(lambda: lower.get_mapped())
+    popovers.open(lower)
+    pump(lambda: lower.popover.get_mapped())
+
+    def pointer_on(tile, x, y):
+        controller = SimpleNamespace(get_widget=lambda: tile)
+        popovers._on_anchor_pointer(controller, x, y, tile)
+
+    # Up from the tile, over the one above it, toward its card: kept.
+    pointer_on(upper, lower.get_width() / 2, upper.get_height() - 2)
+    assert lower.popover.get_visible() and not upper.popover.get_visible()
+    # Sideways to the neighbour in the same row: that one takes over once
+    # the pointer rests on it.
+    pointer_on(beside, beside.get_width() - 4, beside.get_height() / 2)
+    pump(lambda: beside.popover.get_visible())
+    assert not lower.popover.get_visible()
+    beside.popover.popdown()
+
+
+def test_the_bar_equalizer_button_shows_and_hides_its_panel(window):
+    button = window.equalizer_button
+    button.set_active(True)
+    assert window.eq_revealer.get_reveal_child()
+    # The panel's own close button releases the toggle too.
+    window.eq_panel._on_close(None)
+    assert not button.get_active()
+    # A shaped curve is an adjustment like any other.
+    window.eq_panel.band_scales[1000].set_value(4)
+    assert window.original_preview.get_visible()
+    assert window.adjustments_label.get_label() == "1 adjustment"
+
+
+def test_a_switch_tile_flips_on_activation_without_a_card(window):
+    tile = window.normalize_tile
+    tile.activate()
+    assert tile.get_active() and window.player.normalize
+    assert tile.value_label.get_text() == "On"
+    assert not tile.popover.get_visible()
+    tile.activate()
+    assert not tile.get_active()
+
+
+def test_copy_mode_closes_the_card_and_disables_the_tiles(window):
+    window.present()
+    pump(lambda: window.compressor_tile.get_mapped())
+    window.compressor_tile.activate()
+    assert window.compressor_tile.popover.get_visible()
+    window.format_row.set_selected(window._format_list.index("copy"))
+    assert not window.compressor_tile.popover.get_visible()
+    assert not window.voice_scale.get_sensitive()
+    assert not window.compressor_tile.is_sensitive()
+
+
+def test_pause_progress_shows_on_the_tile(window, audio, monkeypatch):
+    from gi.repository import Gtk
+
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    panel = window.pause_panel
+    # The panel is the card of a tile in the Cuts section.
+    assert panel.get_ancestor(Gtk.Popover) is window.pause_tile.popover
+    assert window.pause_tile.value_label.get_text() == "Off"
+    running = [True]  # an analysis in progress
+    monkeypatch.setattr(type(panel.finder), "busy", property(lambda _f: running[0]))
+    panel._show_state("busy")
+    panel._on_progress(0.4)
+    assert panel.progress_row.get_visible()
+    assert panel.status_row.get_title() == "Finding pauses: 40%"
+    # The tile follows it with the card closed.
+    assert window.pause_tile.value_label.get_text() == "40%"
+    assert panel.actions.get_visible_child_name() == "cancel"
+    running[0] = False
+    panel._on_cancel()
+    assert not panel.progress_row.get_visible()
+    assert window.pause_tile.value_label.get_text() == "Off"
+
+
+def test_the_original_preview_shows_only_while_an_adjustment_is_on(window):
+    preview = window.original_preview
+    assert not preview.get_visible()
+    window.compressor_tile.scale.set_value(30)
+    assert preview.get_visible()
+    preview.set_active_name("original")
+    assert window.player.effects_bypassed
+    # Hiding it must never leave the preview silently bypassed.
+    window.compressor_tile.scale.set_value(0)
+    assert not preview.get_visible()
+    assert preview.get_active_name() == "adjusted"
+    assert not window.player.effects_bypassed
+
+
+def test_the_bar_shows_the_time_and_zooms_with_buttons(window, audio):
+    window.file_queue.add_file(str(audio))
+    pump(lambda: window.visualizer.duration > 0)
+    assert (window.elapsed_label.get_label(), window.total_label.get_label()) == (
+        "0:00",
+        "0:02",
+    )
+    window.seekbar.set_position(1.4)
+    assert window.elapsed_label.get_label() == "0:01"
+    assert not window.zoom_out_button.get_sensitive()
+    window.zoom_out_button.get_parent().get_last_child().emit("clicked")
+    assert window.visualizer.zoom_level > 1
+    assert window.zoom_out_button.get_sensitive()
+    window.zoom_reset_button.emit("clicked")
+    assert window.visualizer.zoom_level == 1
+    assert window.zoom_reset_button.get_label() == "1×"
+
+
+def test_an_empty_queue_offers_adding_files_and_no_player(window, audio):
+    queue = window.file_queue
+    assert queue.stack.get_visible_child_name() == "empty"
+    assert not window.visualizer_container.get_visible()
+    assert not window.lookup_action("clear-queue").get_enabled()
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    assert queue.stack.get_visible_child_name() == "files"
+    assert window.visualizer_container.get_visible()
+    assert window.queue_label.get_label() == "1 file · 0:02"
+    # Cuts are work: clearing them asks first.
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    window.activate_action("win.clear-queue", None)
+    assert queue.files == [str(audio)]
+    window.visualizer.clear_all_markers()
+    window.activate_action("win.clear-queue", None)
+    assert queue.files == []
+    assert queue.stack.get_visible_child_name() == "empty"
+    assert not window.visualizer_container.get_visible()
+
+
+def test_delete_removes_the_focused_entry_and_keeps_the_file(window, audio, tmp_path):
+    queue = window.file_queue
+    second = tmp_path / "second.wav"
+    second.write_bytes(audio.read_bytes())
+    queue.add_files([str(audio), str(second)])
+    pump(lambda: len(queue.files) == 2 and not queue.pending)
+    pump(lambda: window.visualizer.duration > 0)
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    window._update_cut_rows()
+    assert queue.file_rows[0].get_subtitle().endswith(" · 1 part")
+    queue.file_rows[0].grab_focus()
+    assert queue._remove_focused_row()
+    assert queue.files == [str(second)]
+    assert audio.is_file()
+    assert queue.file_list.get_focus_child() is queue.file_rows[0]
+
+
+def test_converting_locks_the_queue_and_reports_in_a_banner(window, audio):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    window.format_row.set_selected(window._format_list.index("flac"))
+    window.activate_action("win.convert", None)
+    assert window.converter.busy
+    assert window.convert_button.get_label() == "Cancel"
+    assert not window.options_scroll.get_sensitive()
+    assert not window.lookup_action("add-files").get_enabled()
+    assert not queue.file_rows[0].remove_button.get_sensitive()
+    assert window.queue_label.get_label().startswith("Converting 1 of 1")
+    pump(lambda: window.conversion.last_batch is not None)
+    assert window.convert_button.get_label() == "Convert 1 file"
+    assert window.options_scroll.get_sensitive()
+    assert queue.file_rows[0].remove_button.get_sensitive()
+    assert window.banner.get_revealed()
+    assert window.banner.get_title() == "1 file converted"
+    assert queue.file_rows[0].result_box.get_first_child() is not None
+    assert window.queue_label.get_label() == "1 file · 0:02"
+
+
+def test_cancelling_leaves_no_partial_output_and_offers_retry(window, audio):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    window.format_row.set_selected(window._format_list.index("flac"))
+    before = set(audio.parent.iterdir())
+    window.activate_action("win.convert", None)
+    window.activate_action("win.cancel-conversion", None)
+    pump(lambda: window.conversion.last_batch is not None)
+    assert window.conversion.last_batch.items[0].status == "cancelled"
+    assert set(audio.parent.iterdir()) == before
+    assert window.banner.get_title() == "1 file was not converted"
+    assert window.banner.get_button_label() == "Try Again"
+
+
+def test_marked_speech_exports_as_one_file_without_the_pauses(window, audio):
+    import json
+    import subprocess
+
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    panel = window.pause_panel
+    panel.length_buttons[0].set_active(True)
+    panel._on_found(None, [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50)
+    window.format_row.set_selected(window._format_list.index("flac"))
+    window.on_convert(None)
+    pump(lambda: window.conversion.last_batch is not None)
+    [item] = window.conversion.last_batch.items
+    assert item.successful and len(item.outputs) == 1
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_format", "-of", "json", item.outputs[0]],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    # 0.65 s + 0.65 s of speech; the 0.7 s pause is gone.
+    assert float(json.loads(probe.stdout)["format"]["duration"]) == pytest.approx(
+        1.3, abs=0.05
+    )
+
+
+def test_volume_speed_and_voice_sit_in_the_playback_bar(window):
+    from gi.repository import Gtk
+
+    preview = window.original_preview
+    window.volume_spin.set_value(150)
+    assert window.volume_value.get_label() == "150"
+    assert window.volume_button.get_icon_name() == "audio-volume-high-symbolic"
+    # A bar adjustment counts like a tile: the original can be heard.
+    assert preview.get_visible()
+    assert window.adjustments_label.get_label() == "1 adjustment"
+    window.speed_spin.set_value(1.25)
+    assert window.speed_value.get_label() == "1.25x"
+    assert window.adjustments_label.get_label() == "2 adjustments"
+    window.volume_spin.set_value(100)
+    window.speed_spin.set_value(1.0)
+    assert not preview.get_visible()
+    # The voice and its model are in the bar's card, not in the sidebar.
+    assert window.voice_value.get_label() == "0"
+    assert window.noise_model.get_ancestor(Gtk.Popover) is not None
+
+
+def test_bar_controls_keep_their_width_whatever_their_cards_hold(window, audio):
+    import time
+
+    from gi.repository import GLib
+
+    window.file_queue.add_file(str(audio))
+    pump(lambda: not window.file_queue.pending)
+    window.present()
+    voice = window.voice_button.get_parent()
+    pump(lambda: voice.get_mapped() and voice.get_width())
+    closed = voice.get_width()
+    # An open card's expanding choices must not widen the control it points
+    # at, which would aim the card's arrow past the button.
+    window.bar_popovers.open("voice")
+    card = window.bar_popovers.popovers["voice"]
+    pump(lambda: card.get_mapped())
+    # The next layouts would widen it; give them a few frames.
+    context = GLib.MainContext.default()
+    deadline = time.monotonic() + 0.3
+    while time.monotonic() < deadline:
+        context.iteration(False)
+    assert voice.get_width() == closed
+    card.popdown()
+
+
+def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
+    from types import SimpleNamespace
+
+    from gi.repository import Gdk, Gtk
+
+    # Themes such as the BigLinux one give cards a wide shadow.
+    shadow = Gtk.CssProvider()
+    shadow.load_from_string(
+        "popover > contents { box-shadow: 0 6px 40px 12px alpha(black, 0.3); }"
+    )
+    Gtk.StyleContext.add_provider_for_display(
+        Gdk.Display.get_default(), shadow, Gtk.STYLE_PROVIDER_PRIORITY_USER
+    )
+    window.file_queue.add_file(str(audio))
+    pump(lambda: not window.file_queue.pending)
+    window.present()
+    popovers = window.bar_popovers
+    speed, voice = (b.get_parent() for b in (window.speed_button, window.voice_button))
+    pump(lambda: speed.get_mapped())
+    popovers.open("speed")
+    pump(lambda: popovers.popovers["speed"].get_mapped())
+    # The microphone lies under the speed card's shadow, not under the card.
+    controller = SimpleNamespace(get_widget=lambda: voice)
+    popovers._on_anchor_pointer(controller, 4, voice.get_height() / 2, "voice")
+    assert popovers.popovers["voice"].get_visible()
+    assert not popovers.popovers["speed"].get_visible()
+    popovers.close_all()
+    Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), shadow)
+
+
+def test_a_tile_card_opens_once_the_pointer_rests_on_the_tile(window):
+    import time
+    from types import SimpleNamespace
+
+    popovers = window.effect_cards.popovers
+    tile = window.compressor_tile
+    window.present()
+    pump(lambda: tile.get_mapped())
+    controller = SimpleNamespace(get_widget=lambda: tile)
+    # Passing over: in and out within the wait opens nothing.
+    popovers._on_anchor_pointer(controller, 10, 10, tile)
+    assert not tile.popover.get_visible()
+    popovers._on_anchor_leave(controller, tile)
+    started = time.monotonic()
+    pump(lambda: time.monotonic() - started > 0.3)
+    assert not tile.popover.get_visible()
+    # Resting: it opens after the wait.
+    popovers._on_anchor_pointer(controller, 10, 10, tile)
+    started = time.monotonic()
+    pump(lambda: tile.popover.get_visible())
+    assert time.monotonic() - started >= 0.14
+    tile.popover.popdown()
+
+
+def test_output_and_encoding_choices_are_tiles_and_count_as_no_adjustment(
+    window, tmp_path
+):
+    format_tile, quality = window.format_row, window.bitrate_row
+    assert format_tile.value_label.get_text() == "MP3"
+    assert quality.value_label.get_text() == "Very good · 192 kbps"
+    # Neighbouring bitrates share a quality word; the bitrate tells them apart.
+    names = [
+        quality._model.get_string(i).partition(" — ")[0]
+        for i in range(quality._model.get_n_items())
+    ]
+    assert len(set(names)) == len(names) and names[0] == "32 kbps"
+    format_tile.set_selected(window._format_list.index("flac"))
+    assert format_tile.value_label.get_text() == "FLAC"
+    assert not quality.get_sensitive()
+    assert quality.value_label.get_text() == "Lossless"
+    assert window.precision_list.get_visible()
+    window.channels_row.set_selected(1)
+    assert window.channels_row.value_label.get_text() == "Mono"
+    # Choosing what the file becomes is no adjustment of its sound.
+    assert window.effect_cards.active_count() == 0
+    # The destination sits under the queue and follows the folder in use.
+    window._set_output_folder(str(tmp_path))
+    assert window.destination_choice.get_selected() == 1
+    assert window.destination_button.get_visible()
+    window.destination_choice.set_selected(0)
+    assert window.output_directory == ""
+    assert not window.destination_button.get_visible()
+
+
+def test_part_choices_appear_with_marks_and_joining_with_two_files(
+    window, audio, tmp_path
+):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    # Every tile is in place from the start; unavailable ones say why.
+    assert window.pause_tile.get_sensitive()
+    assert not window.cut_mode_row.get_sensitive()
+    assert window.cut_mode_row.unavailable == "Mark a part on the waveform first."
+    assert window.join_row.unavailable == "Add another file to join them."
+    assert not window.join_row.get_sensitive()
+    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
+    assert window.cut_mode_row.get_sensitive()
+    assert window.cut_mode_row.value_label.get_text() == "Keep them"
+    second = tmp_path / "second.wav"
+    second.write_bytes(audio.read_bytes())
+    queue.add_file(str(second))
+    pump(lambda: not queue.pending and len(queue.files) == 2)
+    assert window.join_row.get_sensitive()
+    window.join_row.set_active(True)
+    # Joining decides what the files become; it adjusts no sound.
+    assert window.effect_cards.active_count() == 0
+
+
+def test_a_long_option_in_a_card_wraps_instead_of_widening_it(window):
+    # FLAC adds the 24-bit row, whose explanation is one long line.
+    tile = window.format_row
+    tile.set_selected(window._format_list.index("flac"))
+    window.present()
+    pump(lambda: tile.get_mapped())
+    window.effect_cards.popovers.open(tile)
+    pump(lambda: tile.popover.get_mapped() and tile.popover.get_width())
+    assert tile.popover.get_width() <= 380
+    tile.popover.popdown()

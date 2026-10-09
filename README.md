@@ -13,31 +13,33 @@ Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.5 or 
 ## Convert files
 
 1. Select **Add Files**, or drag local audio or video files into the window. Videos with multiple audio tracks get a separate entry for each track.
-2. Choose **Format** and **Quality**. MP3 is widely compatible. FLAC preserves decoded audio without loss, while WAV stores uncompressed audio. M4A, Opus and Ogg Vorbis are also available.
-3. Check **Save to**. By default, each result goes beside its original; you can choose another folder.
-4. Select **Convert**. The results show what succeeded, what failed and which files can be retried. Use each result's folder button to find its output.
+2. Choose **Format** and **Quality**, the two tiles at the top of the sidebar; each opens its choices as the pointer rests on it. MP3 is widely compatible. FLAC preserves decoded audio without loss, while WAV stores uncompressed audio. M4A, Opus and Ogg Vorbis are also available.
+3. Check where the files go, below the queue as in Big Video Converter. By default, each result goes beside its original; **Folder to save** picks another one.
+4. Select **Convert**. Each entry shows its progress, and the queue header counts the files done. When the batch ends, a banner above the queue shows the output folder, or offers **Try Again** for the files that were not converted. An entry's status icon explains its failure or warnings; its folder button shows its output.
 
-The inputs stay in the list. Existing files are never overwritten: conflicting output names receive a numeric suffix. Cancel waits for the worker to stop and removes unfinished output. Removing an entry from the list does not delete its source; **Move to Trash** is a separate, confirmed action.
+While a batch runs, the settings and the queue wait; listening stays available, and the computer does not suspend. The inputs stay in the list. Existing files are never overwritten: conflicting output names receive a numeric suffix. **Cancel** waits for the worker to stop and removes unfinished output. Removing an entry (its **×** button, or Delete on the focused entry) does not delete its source; **Move to Trash**, in the entry's menu, is a separate, confirmed action. **Clear Queue**, in the main menu, asks first only when entries have marked parts.
 
-**Advanced encoding** exposes bitrate, channels and sample rate. Original properties are preserved where the selected format supports them. If conversion requires resampling or a precision change, the result identifies it. WAV preserves the source PCM representation; exporting floating-point audio to FLAC requires explicitly allowing 24-bit conversion.
+In a narrow window the sidebar folds away; the button at the start of the queue header shows it and counts the active adjustments.
+
+**Channels** and **Sample rate** sit under **Format** and **Quality**, with **Even volume** and **Level loud and quiet parts** below them. Original properties are preserved where the selected format supports them. If conversion requires resampling or a precision change, the result identifies it. WAV preserves the source PCM representation; exporting floating-point audio to FLAC requires explicitly allowing 24-bit conversion, in the **Format** card.
 
 ## Cut audio
 
 Drag across the waveform to mark a part; drag its edges or the whole part to adjust it, and press Delete over it to remove it. **Edit Segments…** lists the same parts with their times in seconds, reachable by keyboard; its changes take effect when you select **Apply**.
 
-Once a file has marks, **Marked parts** chooses whether they are kept or removed. Kept parts can be saved in timeline order or in the order marked (**Segment order**), as separate files or joined (**Save segments**). With several files in the queue, **Join into one file** joins them in queue order. Files without marks are converted in full, and each file keeps its own marks.
+Once a file has marks, tiles beside **Remove pauses**, in the **Cuts** section, appear: **Marked parts** chooses whether they are kept or removed. Kept parts can be saved in timeline order or in the order marked (**Segment order**), as separate files or joined (**Save segments**). With several files in the queue, the **Join into one file** tile, last in **Cuts**, joins them in queue order. Files without marks are converted in full, and each file keeps its own marks.
 
-**Remove pauses**, on the waveform, marks the pauses in speech for removal. It looks for them in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide a pause. The analysis takes about a minute per hour of audio and runs in the background. Choose the shortest pause to remove, check the dashed preview, then select **Mark for Removal**; it replaces the file's marks, each pause keeps 0.15 s beside the speech, and **Undo** restores the previous marks.
+**Remove pauses**, a tile in the sidebar's **Cuts** section whose card opens as the pointer rests on it, marks the speech between the pauses, so the export keeps what is marked as always: the speech, joined in order. It looks for the pauses in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide one. It is made for speech: in songs, instruments can pass for a voice, above all in an intro before the singing starts. The analysis takes about a minute per hour of audio and runs in the background, its progress shown on the tile; when it ends, the speech is marked at once, **Marked parts** is set to keep it in timeline order, joined, and 0.15 s of each pause stays beside the speech. Choosing another pause length marks again; **Undo** restores the previous marks and settings. Once you edit the marks they are yours, and **Find Pauses** marks anew.
 
 **Keep the original format** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an audio format when you need precise cuts or effects.
 
 ## Listen and adjust
 
-The bottom controls play the selected file. **Audio output** lists available playback devices; **System default** uses the default selected by the audio system. Use **Refresh audio outputs** if a newly connected output is missing. If a specifically selected output disappears, playback pauses and returns to the default selection so that resuming is your choice.
+The bottom controls play the selected file. The playback options menu (⋮) holds automatic advance and **Audio output**, which lists the playback devices each time the menu opens; **System default** uses the default selected by the audio system. If a specifically selected output disappears, playback pauses and returns to the default selection so that resuming is your choice.
 
-Volume, speed, equalizer, **Even volume** and the other enabled effects affect both preview and exported audio. **Listen to original** temporarily bypasses processing without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or turn on **Prevent distortion**. The equalizer keeps its preset and bands between sessions.
+Volume, speed, equalizer, **Even volume** and the other enabled effects affect both preview and exported audio. While an adjustment is on, **Original** in the playback bar plays without them, without changing export settings. Increasing volume or equalizer gain can cause distortion; lower the gain or turn on **Even volume**, which keeps peaks below -1.5 dBTP. The **Equalizer** button at the bottom right of the playback bar opens its panel and lights up while the curve is not flat; the equalizer keeps its preset and bands between sessions.
 
-**Clean voice**, in the playback bar beside volume and speed, reduces sounds other than speech. Its slider opens as the pointer reaches the control; **Cleaning model** in the sidebar chooses between two models:
+Volume, speed and **Clean voice** sit at the left of the playback bar, as in the BigLinux audio and video players: each shows its value, opens its slider as the pointer reaches it (a click opens it for the keyboard), and the wheel over it moves the slider; volume and speed also take an exact amount. **Clean voice** reduces sounds other than speech; **Cleaning quality** in its card chooses between two models, **Faster** and **Better, slower**:
 
 | Model | Installation | Plugin |
 |---|---|---|

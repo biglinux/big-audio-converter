@@ -1,0 +1,112 @@
+/* Loaded once for the whole application (main.py, do_startup). */
+
+.sidebar { background-color: @sidebar_bg_color; }
+.playback-controls { padding: 6px 10px; }
+/* The queue side is one light surface, set apart from the sidebar. */
+.queue-pane { background-color: @window_bg_color; color: @window_fg_color; }
+/* A player stays dark in both themes, matching the waveform's own
+   background; flat controls follow currentColor. */
+.playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
+.playback-panel frame { border-color: rgba(255, 255, 255, 0.08); }
+/* The waveform and seek bar draw in their CSS colour, a light blue readable
+   on the dark strip and apart from the marked parts' blocks. */
+.waveform, .seekbar { color: #4da6ff; }
+.playback-controls .play-button { min-width: 42px; min-height: 42px; }
+/* At fractional scales the content and the arrow end on different fractions
+   of a pixel, leaving a seam at the arrow's base that their borders and the
+   arrow's shadow darken. The content reaches a pixel into the arrow so the
+   two solid fills overlap; an effect card flips below its tile when there is
+   no room above, so it reaches both ways. */
+popover.bar-slider > contents, popover.effect-card > contents {
+    border: none;
+    margin-bottom: -1px;
+}
+popover.effect-card > contents { margin-top: -1px; }
+popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shadow: none; }
+/* A bar control whose setting changes the sound, such as a shaped curve. */
+.playback-controls button.applied { color: #4da6ff; }
+.playback-controls button:checked {
+    background-color: alpha(@accent_bg_color, 0.55);
+    color: #ffffff;
+}
+.queue-pane headerbar { background: none; box-shadow: none; }
+/* Rows at the height of the original compact list. */
+/* Only the list's own rows: a dropdown's popup is a descendant too. */
+.compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }
+
+/* Effect tiles share the lists' card surface; an applied effect fills its
+   badge and colours its value. */
+flowboxchild.effect-tile {
+    padding: 10px 12px;
+    transition: background-color 120ms ease-out;
+}
+flowboxchild.effect-tile:hover { background-color: mix(@card_bg_color, currentColor, 0.04); }
+flowboxchild.effect-tile:active { background-color: mix(@card_bg_color, currentColor, 0.08); }
+flowboxchild.effect-tile:disabled { opacity: 0.5; }
+.effect-badge {
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 9999px;
+    background-color: alpha(currentColor, 0.08);
+}
+.effect-tile.applied .effect-badge {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+.effect-tile .effect-value { opacity: 0.7; }
+.effect-tile.applied .effect-value, .effect-card .effect-value {
+    opacity: 1;
+    color: @accent_color;
+    font-weight: bold;
+}
+
+/* Queue */
+/* Files dragged over the window: one target, the whole window. */
+.drop-overlay {
+    background-color: alpha(@window_bg_color, 0.92);
+    border: 2px dashed @accent_color;
+    border-radius: 12px;
+    margin: 12px;
+}
+.drag-row { opacity: 0.5; }
+/* Where the files go, under the queue. */
+.destination-bar { padding: 4px 12px 8px; }
+/* Plain text until pointed at, as in Big Video Converter. */
+.destination-bar dropdown > button:not(:hover):not(:checked) {
+    background: none;
+    box-shadow: none;
+}
+/* A row's play button leads it as a round badge. */
+.queue-badge {
+    min-width: 40px;
+    min-height: 40px;
+    background-color: alpha(@accent_bg_color, 0.12);
+    color: @accent_color;
+}
+.queue-badge:hover { background-color: alpha(@accent_bg_color, 0.22); }
+.queue-badge:disabled { background-color: alpha(currentColor, 0.06); }
+/* The file whose waveform is shown. */
+.active-waveform-file { background-color: alpha(@accent_bg_color, 0.15); }
+
+/* Equalizer */
+.eq-panel { border-top: 1px solid alpha(currentColor, 0.15); }
+.eq-band-value {
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 24px;
+}
+.eq-band-value.active { color: @accent_color; }
+.eq-band-freq {
+    font-size: 10px;
+    opacity: 0.55;
+}
+.eq-scale-column scale { min-height: 100px; }
+.eq-scale-column scale trough {
+    min-width: 4px;
+    border-radius: 2px;
+}
+.eq-scale-column scale slider {
+    min-width: 16px;
+    min-height: 16px;
+}
