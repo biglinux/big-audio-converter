@@ -188,7 +188,12 @@ class Application(Adw.Application):
         win.present()
 
     def on_quit_action(self, *args):
-        self.quit()
+        # Through the window, so a running conversion asks before it stops.
+        win = self._main_window
+        if win is not None and not win._closed:
+            win.close()
+        else:
+            self.quit()
 
     def do_shutdown(self):
         if self._main_window is not None:

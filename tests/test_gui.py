@@ -623,6 +623,23 @@ def test_closing_during_a_conversion_asks_first(window, monkeypatch):
     assert window._closed
 
 
+def test_quitting_during_a_conversion_asks_first(window, monkeypatch):
+    from gi.repository import Adw
+
+    app = window.get_application()
+    quits, asked = [], []
+    monkeypatch.setattr(type(window.converter), "busy", property(lambda self: True))
+    monkeypatch.setattr(app, "quit", lambda: quits.append(True))
+    monkeypatch.setattr(
+        Adw.AlertDialog,
+        "present",
+        lambda self, _parent: asked.append(self.get_heading()),
+    )
+    app.on_quit_action()
+    assert asked == ["Stop the conversion?"]
+    assert not quits and not window._closed
+
+
 def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     win = start_window()
