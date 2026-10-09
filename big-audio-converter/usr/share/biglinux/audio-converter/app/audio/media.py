@@ -172,11 +172,6 @@ def track_identifier(path, stream_index):
     return "bac-track:" + hashlib.sha256(payload).hexdigest()
 
 
-def source_label(identifier, metadata=None):
-    entry = (metadata or {}).get(identifier, {})
-    return entry.get("display_name") or os.path.basename(identifier)
-
-
 def ffprobe_executable(ffmpeg_path=None):
     if ffmpeg_path:
         sibling = Path(ffmpeg_path).with_name("ffprobe")

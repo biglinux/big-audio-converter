@@ -8,7 +8,7 @@ import threading
 from copy import deepcopy
 from pathlib import Path
 
-from gi.repository import GLib
+from app.utils.main_loop import MainLoopSources
 
 from .media import (
     BatchResult,
@@ -45,6 +45,7 @@ class AudioConverter:
         self._runner = None
         self._thread = None
         self._disposed = False
+        self._sources = MainLoopSources()
         self.last_result = None
         self.last_batch_result = BatchResult()
 
@@ -192,8 +193,7 @@ class AudioConverter:
         finally:
             self.last_batch_result = batch
             self._end()
-        if not self._disposed:
-            GLib.idle_add(finish_callback)
+        self._sources.idle(finish_callback)
 
     def convert_file(self, input_path, output_path, settings, progress_callback=None):
         """Convert one file synchronously; ``last_result`` holds paths and details."""
@@ -540,6 +540,7 @@ class AudioConverter:
 
     def cleanup(self):
         self._disposed = True
+        self._sources.close()
         self.cancel_conversion()
         if self._thread is not None and self._thread is not threading.current_thread():
             self._thread.join(timeout=2)

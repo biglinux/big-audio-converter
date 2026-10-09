@@ -15,7 +15,7 @@ import threading
 from array import array
 from collections import OrderedDict
 
-from gi.repository import GLib
+from app.utils.main_loop import MainLoopSources
 
 from .media import audio_duration, audio_stream, file_identity, probe_media
 from .process import CancelledError, MediaError, ProcessRunner
@@ -166,6 +166,7 @@ class PauseFinder:
         self._runner = None
         self._thread = None
         self._cache = OrderedDict()
+        self._sources = MainLoopSources()
 
     @staticmethod
     def identity(source):
@@ -223,16 +224,11 @@ class PauseFinder:
         self._thread.start()
 
     def _deliver(self, generation, callback, *args):
-        def run(*_source_data):
-            if generation == self._generation:
-                callback(*args)
-            return GLib.SOURCE_REMOVE
+        self._sources.idle(self._if_current, generation, callback, args)
 
-        # A source made here, as in the waveform worker: GLib.idle_add's
-        # Python signature depends on which module imported GLib first.
-        source = GLib.idle_source_new()
-        source.set_callback(run)
-        source.attach(GLib.MainContext.default())
+    def _if_current(self, generation, callback, args):
+        if generation == self._generation:
+            callback(*args)
 
     @property
     def busy(self):
@@ -247,6 +243,7 @@ class PauseFinder:
 
     def cleanup(self):
         self.cancel()
+        self._sources.close()
         if self._thread:
             self._thread.join(timeout=2)
         with self._lock:

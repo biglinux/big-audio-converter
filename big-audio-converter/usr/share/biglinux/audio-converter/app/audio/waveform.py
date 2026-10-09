@@ -10,6 +10,8 @@ from copy import deepcopy
 
 import numpy as np
 
+from app.utils.main_loop import MainLoopSources
+
 from .media import (
     MediaSource,
     audio_duration,
@@ -129,7 +131,7 @@ class WaveformGenerator:
         self._pending = None
         self._worker = None
         self._disposed = False
-        self._sources = set()
+        self._sources = MainLoopSources()
         self._cache = OrderedDict()
         self._cache_bytes = 0
 
@@ -207,26 +209,13 @@ class WaveformGenerator:
         )
 
     def _schedule(self, generation, callback):
-        from gi.repository import GLib
+        self._sources.idle(self._if_current, generation, callback)
 
+    def _if_current(self, generation, callback):
         with self._condition:
-            if self._disposed or generation != self._generation:
-                return
-            source = GLib.idle_source_new()
-            holder: list[int] = []
-
-            def deliver(*_args):
-                with self._condition:
-                    self._sources.discard(holder[0])
-                    current = not self._disposed and generation == self._generation
-                if current:
-                    callback()
-                return False
-
-            source.set_callback(deliver)
-            identifier = source.attach(GLib.MainContext.default())
-            holder.append(identifier)
-            self._sources.add(identifier)
+            current = not self._disposed and generation == self._generation
+        if current:
+            callback()
 
     def _execute(self, generation, runner, path, ffmpeg, target_ref, markers, metadata):
         def loading():
@@ -342,19 +331,16 @@ class WaveformGenerator:
                     self._runner = None
 
     def cancel(self):
-        from gi.repository import GLib
-
         with self._condition:
             self._generation += 1
             self._pending = None
             if self._runner:
                 self._runner.cancel()
-            for identifier in self._sources:
-                GLib.source_remove(identifier)
-            self._sources.clear()
+        self._sources.clear()
 
     def cleanup(self):
         self.cancel()
+        self._sources.close()
         with self._condition:
             self._disposed = True
             self._condition.notify_all()
