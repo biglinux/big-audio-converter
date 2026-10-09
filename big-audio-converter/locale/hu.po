@@ -83,8 +83,8 @@ msgid "The output codec requires resampling from {rate} Hz to {final_rate} Hz."
 msgstr "A kimeneti kodek {rate} Hz-ről {final_rate} Hz-re történő újramintavételezést igényel."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:353
-msgid "Raising the volume may distort. Turn on Even volume or lower the volume."
-msgstr "A hangerő növelése torzíthat. Kapcsolja be a Egyenletes hangerő beállítást, vagy csökkentse a hangerőt."
+msgid "Raising the volume may distort. Turn on Standard volume or lower the volume."
+msgstr "A hangerő növelése torzíthat. Kapcsolja be a Normál hangerő beállítást, vagy csökkentse a hangerőt."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:359
 msgid "This raw audio format cannot preserve all tags or artwork."
@@ -182,7 +182,7 @@ msgstr "A fájl nem tartalmazza a kiválasztott hangsávot."
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "A kiválasztott WAV-kódoló nem tudja megőrizni ezt a PCM-pontosságot."
 
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:210 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:330
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:210 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
 msgid "The pauses could not be measured."
 msgstr "A szüneteket nem sikerült megmérni."
 
@@ -377,7 +377,7 @@ msgstr "Az átalakítás nem indítható el"
 msgid "Converting audio"
 msgstr "Hang átalakítása"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:657 usr/share/biglinux/audio-converter/app/ui/main_window.py:1144 usr/share/biglinux/audio-converter/app/ui/main_window.py:1168 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:77 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "Mégse"
 
@@ -410,19 +410,19 @@ msgstr[0] "{count} fájl átalakítva"
 msgid "Show Files"
 msgstr "Fájlok megjelenítése"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:164 usr/share/biglinux/audio-converter/app/ui/main_window.py:1145
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1147
 msgid "Reset"
 msgstr "Visszaállítás"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:307 usr/share/biglinux/audio-converter/app/ui/effect_cards.py:325 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236
-msgid "Off"
-msgstr "Ki"
-
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:325
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332
 msgid "On"
 msgstr "Be"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:394
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Off"
+msgstr "Ki"
+
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:403
 #, python-brace-format
 msgid "{count} active"
 msgid_plural "{count} active"
@@ -497,7 +497,7 @@ msgstr "Ismeretlen"
 msgid "Duration"
 msgstr "Időtartam"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:119
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:117
 msgid "Format"
 msgstr "Formátum"
 
@@ -505,11 +505,11 @@ msgstr "Formátum"
 msgid "Bitrate"
 msgstr "Bitráta"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
 msgid "Sample rate"
 msgstr "Mintavételi frekvencia"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
 msgid "Channels"
 msgstr "Csatornák"
 
@@ -586,7 +586,7 @@ msgstr "Eltávolítás a sorból"
 msgid "File actions"
 msgstr "Fájlműveletek"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207 usr/share/biglinux/audio-converter/app/ui/file_queue.py:658
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207 usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
 msgid "Move to Trash"
 msgstr "Áthelyezés a Kukába"
 
@@ -625,60 +625,69 @@ msgid "Add audio or video files"
 msgstr "Hang- vagy videofájlok hozzáadása"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+#, python-brace-format
+msgid "Drag files here or use {button}."
+msgstr "Húzza ide a fájlokat, vagy használja: {button}."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:400 usr/share/biglinux/audio-converter/app/ui/main_window.py:298 usr/share/biglinux/audio-converter/app/ui/main_window.py:306
+msgid "Add Files"
+msgstr "Fájlok hozzáadása"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
 msgid "Each audio track of a video becomes its own entry. The originals are never changed."
 msgstr "A videók minden hangsávja külön elem lesz. Az eredeti fájlok sosem módosulnak."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:425
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:430
 #, python-brace-format
 msgid "Track {number}"
 msgstr "{number}. sáv"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:479
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:484
 msgid "Could not move the file to Trash"
 msgstr "A fájlt nem sikerült áthelyezni a Kukába"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:501
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:506
 msgid "This file has no supported audio track."
 msgstr "A fájlban nincs támogatott hangsáv."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:556
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:561
 msgid "Unknown duration"
 msgstr "Ismeretlen időtartam"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:582
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:587
 msgid "Choose a valid local media file."
 msgstr "Válasszon érvényes helyi médiafájlt."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:591
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:596
 msgid "Inspecting audio…"
 msgstr "Hang vizsgálata…"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:610
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:615
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "A sor legfeljebb 10 000 fájlt tartalmazhat. További fájlok hozzáadása előtt alakítsa át ezt az adagot."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:646
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:651
 msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
 msgstr "A bemeneti fájl Kukába helyezése előtt szakítsa meg az átalakítást, vagy várja meg a befejezését."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:652
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:657
 msgid "Move File to Trash?"
 msgstr "Áthelyezi a fájlt a Kukába?"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:654
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:659
 #, python-brace-format
 msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
 msgstr "Áthelyezi a(z) „{name}” fájlt a Kukába? Az összes sávja kikerül a sorból."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:671
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:676
 msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
 msgstr "A fájlt egy átalakítás használja. A bemeneti fájl Kukába helyezése előtt szakítsa meg az átalakítást."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:683
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:688
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "A fájlt nem sikerült a Kukába helyezni. Nem lett törölve."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:848 usr/share/biglinux/audio-converter/main.py:92
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:853 usr/share/biglinux/audio-converter/main.py:92
 msgid "Download this file to a local folder before adding it."
 msgstr "Hozzáadás előtt töltse le a fájlt egy helyi mappába."
 
@@ -698,15 +707,11 @@ msgstr "Beállítások megjelenítése"
 msgid "Clear queue"
 msgstr "Sor ürítése"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:298 usr/share/biglinux/audio-converter/app/ui/main_window.py:306
-msgid "Add Files"
-msgstr "Fájlok hozzáadása"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
 msgid "Show help on hover"
 msgstr "Súgó megjelenítése rámutatáskor"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:319 usr/share/biglinux/audio-converter/app/ui/main_window.py:1163 usr/share/biglinux/audio-converter/app/ui/main_window.py:1169
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:319 usr/share/biglinux/audio-converter/app/ui/main_window.py:1165 usr/share/biglinux/audio-converter/app/ui/main_window.py:1171
 msgid "Clear Queue"
 msgstr "Sor ürítése"
 
@@ -730,7 +735,7 @@ msgstr "Hangerő"
 msgid "Speed"
 msgstr "Sebesség"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:202
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
 msgid "Cleaning quality"
 msgstr "Tisztítás minősége"
 
@@ -742,7 +747,7 @@ msgstr "Beszéd tisztítása"
 msgid "Adjusted"
 msgstr "Módosított"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:411 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:132 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:304 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:411 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:130 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:474
 msgid "Original"
 msgstr "Eredeti"
 
@@ -828,87 +833,87 @@ msgid "Convert %d file"
 msgid_plural "Convert %d files"
 msgstr[0] "%d fájl átalakítása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:982 usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:984 usr/share/biglinux/audio-converter/app/ui/main_window.py:1098
 msgid "OK"
 msgstr "Rendben"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:990
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:992
 msgid "Stop the conversion?"
 msgstr "Leállítja az átalakítást?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:992
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:994
 msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
 msgstr "Az ablak bezárása leállítja a folyamatban lévő átalakítást. A már elkészült fájlok megmaradnak."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:996
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:998
 msgid "Keep Converting"
 msgstr "Átalakítás folytatása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:997
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:999
 msgid "Stop and Close"
 msgstr "Leállítás és bezárás"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1043
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1045
 msgid "No audio selected"
 msgstr "Nincs kiválasztott hang"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1044
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1046
 msgid "Add a file and select it before editing segments."
 msgstr "A szakaszok szerkesztése előtt adjon hozzá és válasszon ki egy fájlt."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1049
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1051
 msgid "Audio duration unavailable"
 msgstr "A hang időtartama nem érhető el"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1050
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1052
 msgid "Wait for the waveform to finish loading before editing this file."
 msgstr "A fájl szerkesztése előtt várja meg, amíg a hullámforma betöltődik."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1090
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1092
 msgid "Other valid files remain in the queue. Check these files and add them again."
 msgstr "A többi érvényes fájl a sorban marad. Ellenőrizze ezeket a fájlokat, és adja hozzá őket újra."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1094
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
 msgid "Some files could not be added"
 msgstr "Néhány fájlt nem sikerült hozzáadni"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1110
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1112
 msgid "Audio preview"
 msgstr "Hang előnézeti lejátszása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1138
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
 msgid "Reset all settings?"
 msgstr "Visszaállítja az összes beállítást?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1142
 msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
 msgstr "A formátum, a minőség, a kimeneti mappa, a vágás, az effektek és a hangszínszabályzó visszaáll az alapértékekre. A sor és a forrásfájlok megmaradnak."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1165
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1167
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
 msgstr "Eltávolítja a sor elemeit és a hozzájuk tartozó szerkesztéseket? A forrásfájlok nem törlődnek."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1213
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1215
 msgid "Select Audio or Video Files"
 msgstr "Hang- vagy videofájlok kiválasztása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1216
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1218
 msgid "Audio and Video files"
 msgstr "Hang- és videofájlok"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1262
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1264
 msgid "All files"
 msgstr "Minden fájl"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1287 usr/share/biglinux/audio-converter/main.py:91
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1289 usr/share/biglinux/audio-converter/main.py:91
 msgid "Local files only"
 msgstr "Csak helyi fájlok"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1289
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1291
 msgid "Some selected files are remote. Download them before adding them."
 msgstr "Néhány kiválasztott fájl távoli helyen található. Hozzáadás előtt töltse le őket."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1300
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1302
 msgid "Files could not be selected"
 msgstr "A fájlok nem választhatók ki"
 
@@ -973,7 +978,7 @@ msgstr "Óránként körülbelül egy percig tart."
 msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
 msgstr "Beszédhez készült. A szüneteket a DPDFNet által megtisztított hangban keresi."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:577
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:583
 #, python-brace-format
 msgid "Unavailable: install {package}"
 msgstr "Nem érhető el: telepítse a(z) {package} csomagot"
@@ -992,37 +997,41 @@ msgstr[0] "{count} szünet · {duration} rövidebb"
 msgid "No pauses found. Nothing would change."
 msgstr "Nincs szünet. Semmi sem változna."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:302 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:317
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:309 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:324
 #, python-brace-format
 msgid "{percent}%"
 msgstr "{percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:252
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:243
+msgid "Add a file first."
+msgstr "Előbb adjon hozzá fájlt."
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:259
 #, python-brace-format
 msgid "Speech marked in {count} part"
 msgid_plural "Speech marked in {count} parts"
 msgstr[0] "Beszéd megjelölve {count} részben"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:262
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:269
 #, python-brace-format
 msgid "This replaces the {count} mark already on the file."
 msgid_plural "This replaces the {count} marks already on the file."
 msgstr[0] "Ez lecseréli a fájlon már meglévő {count} jelölést."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:267
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:274
 msgid "Nothing is deleted from the original file."
 msgstr "Az eredeti fájlból semmi sem törlődik."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:319
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:326
 #, python-brace-format
 msgid "Finding pauses: {percent}%"
 msgstr "Szünetek keresése: {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:369
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:376
 msgid "The pauses could not be marked"
 msgstr "A szüneteket nem sikerült megjelölni"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:370
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:377
 msgid "The file changed after it was measured. Find the pauses again."
 msgstr "A fájl a mérés után megváltozott. Keresse meg újra a szüneteket."
 
@@ -1097,240 +1106,264 @@ msgstr "A(z) {number}. szakasz vége másodpercben"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "Az aktív fájl megváltozott. Nyissa meg újra a szakaszszerkesztőt az aktuális fájlhoz."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:48
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
 msgid "Voice only"
 msgstr "Csak beszédhez"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:49
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
 msgid "Fair"
 msgstr "Elfogadható"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:50
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
 msgid "Good"
 msgstr "Jó"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
 msgid "Very good"
 msgstr "Nagyon jó"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:56
 msgid "Best"
 msgstr "Legjobb"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:63
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:67
 #, python-brace-format
 msgid "{quality}, about {size} MB per minute"
 msgstr "{quality}, percenként kb. {size} MB"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:93
 msgid "Allow conversion to 24-bit PCM"
 msgstr "Átalakítás engedélyezése 24 bites PCM-re"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:97
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
 msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
 msgstr "FLAC-ba exportált lebegőpontos hanghoz. Csökkenti a pontosságot; a WAV megőrzi az eredeti ábrázolást."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:119
 msgid "Choose the output format. Keeping the original format applies no effects."
 msgstr "Válassza ki a kimeneti formátumot. Az eredeti formátum megtartásakor nem érvényesülnek effektek."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
 msgid "MP3 — plays everywhere"
 msgstr "MP3 — mindenhol lejátszható"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
 msgid "M4A — good quality in small files"
 msgstr "M4A — jó minőség kis fájlméretben"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
 msgid "Opus — smallest files, great for voice"
 msgstr "Opus — a legkisebb fájlok, beszédhez kiváló"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
 msgid "FLAC — lossless, smaller than WAV"
 msgstr "FLAC — veszteségmentes, a WAV-nál kisebb"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:128
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
 msgid "WAV — uncompressed"
 msgstr "WAV — tömörítetlen"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
 msgid "Ogg Vorbis — open format"
 msgstr "Ogg Vorbis — nyílt formátum"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:130
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:128
 msgid "Keep the original format — no conversion, no effects"
 msgstr "Eredeti formátum megtartása — átalakítás és effektek nélkül"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:144
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:142
 msgid "Quality"
 msgstr "Minőség"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:146
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:144
 msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
 msgstr "A jobb minőség jobban szól, de nagyobb fájlokat eredményez. Minden lehetőség mellett látható a percenkénti méret."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:203
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
 msgid "Faster"
 msgstr "Gyorsabb"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:203
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
 msgid "Better, slower"
 msgstr "Jobb, lassabb"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
-msgid "Marked parts"
-msgstr "Megjelölt részek"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:213
+msgid "Marks"
+msgstr "Jelölések"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:217
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
 msgid "Keep them"
 msgstr "Megtartás"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:217
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
 msgid "Remove them"
 msgstr "Eltávolítás"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
-msgid "Segment order"
-msgstr "Szakaszok sorrendje"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
+msgid "Order"
+msgstr "Sorrend"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:225
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
 msgid "Choose the order in which marked segments are exported."
 msgstr "Válassza ki a megjelölt szakaszok exportálási sorrendjét."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:226
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
 msgid "In timeline order"
 msgstr "Idővonal szerinti sorrendben"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:226
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
 msgid "In the order marked"
 msgstr "Megjelölés sorrendjében"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
 msgid "Save segments"
 msgstr "Szakaszok mentése"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:234
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
 msgid "Export each segment separately or join the selected segments."
 msgstr "Exportálja a szakaszokat külön-külön, vagy egyesíti a kijelölt szakaszokat."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
 msgid "Separate files"
 msgstr "Külön fájlok"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:235
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
 msgid "Join this file's segments"
 msgstr "A fájl szakaszainak egyesítése"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:243
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
 msgid "Join into one file"
 msgstr "Egyesítés egy fájlba"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:244
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:242
 msgid "In queue order, named after the first file"
 msgstr "A sor sorrendjében, az első fájl nevével"
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 270
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:254
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
 msgid "Save in the same folder as the original file"
 msgstr "Mentse ugyanabba a mappába, mint az eredeti fájl"
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 271
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:254
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
 msgid "Folder to save"
 msgstr "Mentési mappa"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:258
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:256
 msgid "Save to"
 msgstr "Mentés helye"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:268 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:273 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:266 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:271 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:401
 msgid "Choose output folder"
 msgstr "Kimeneti mappa kiválasztása"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:291
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
 msgstr "Megőrzi az eredeti csatornakiosztást, vagy kérésre monóvá, illetve sztereóvá keveri le a hangot."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
 msgid "Mono"
 msgstr "Monó"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:292
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
 msgid "Stereo"
 msgstr "Sztereó"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:311
-msgid "Even volume"
-msgstr "Egyenletes hangerő"
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:309
+msgid "Standard volume"
+msgstr "Normál hangerő"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:313
-msgid "Brings the whole file to a standard loudness, good for speech and podcasts; several files end up at the same level. A quiet voice and a loud one in the same file keep their difference."
-msgstr "A teljes fájlt szabványos hangerőre hozza, beszédhez és podcastokhoz ideális; több fájl azonos szintre kerül. Egy halk és egy hangos hang ugyanabban a fájlban megtartja a különbségét."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:311
+msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
+msgstr "Minden fájlt a beszéd és a podcastok szabványos hangerejére hoz, így több fájl azonos szinten szól."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:319
+msgid "Lift quiet parts"
+msgstr "Halkak erősítése"
 
 #: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:321
-msgid "Level loud and quiet parts"
-msgstr "Hangos és halk részek kiegyenlítése"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
 msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
 msgstr "A halk részeket hangosabbá, a hangosakat halkabbá teszi, így minden jól hallható a hangerő állítása nélkül."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:344
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Light"
+msgstr "Enyhe"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Medium"
+msgstr "Közepes"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+msgid "Strong"
+msgstr "Erős"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:351
 msgid "Remove pauses"
 msgstr "Szünetek eltávolítása"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:353
 msgid "Cuts"
 msgstr "Vágások"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:376
 msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
 msgstr "Az eredeti formátum megtartja a kódolt hangot. A vágások a csomaghatárokhoz igazodnak, és nem feltétlenül esnek pontosan a megadott időkre. Az effektek az előnézetben és az exportban kimaradnak."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
-msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Even volume."
-msgstr "A hangerő vagy a hangszínszabályzó sávjainak növelése torzíthatja a hangot. Csökkentse az erősítést, vagy kapcsolja be a Egyenletes hangerő beállítást."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:386
+msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
+msgstr "A hangerő vagy a hangszínszabályzó sávjainak növelése torzíthatja a hangot. Csökkentse az erősítést, vagy kapcsolja be a Normál hangerő beállítást."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:415
 msgid "Local folder required"
 msgstr "Helyi mappa szükséges"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:416
 msgid "Choose a folder on the local filesystem."
 msgstr "Válasszon egy mappát a helyi fájlrendszeren."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458
 msgid "Lossless"
 msgstr "Veszteségmentes"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:669
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:678
 msgid "Mark a part on the waveform first."
 msgstr "Előbb jelöljön meg egy részt a hullámformán."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:673
-msgid "Removing marked parts leaves one file in timeline order."
-msgstr "A megjelölt részek eltávolításakor egy fájl marad idővonal szerinti sorrendben."
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:679
+msgid "Mark a part first."
+msgstr "Előbb jelöljön meg egy részt."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:676
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:681
 msgid "Joining files makes one file of everything."
 msgstr "A fájlok egyesítésekor mindenből egyetlen fájl lesz."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:689
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:687
+msgid "Removing keeps the timeline order."
+msgstr "Eltávolításkor az idővonal sorrendje marad."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+msgid "Removing leaves a single file."
+msgstr "Eltávolítás után egy fájl marad."
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:699
 msgid "The original format cannot join files"
 msgstr "Az eredeti formátummal nem lehet fájlokat egyesíteni"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:701
 msgid "Add another file to join them."
 msgstr "Adjon hozzá még egy fájlt az egyesítéshez."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:720
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:730
 #, python-brace-format
 msgid "{count} adjustment"
 msgid_plural "{count} adjustments"
 msgstr[0] "{count} módosítás"
+
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:761
+msgid "The original format keeps the audio as it is."
+msgstr "Az eredeti formátum változatlanul hagyja a hangot."
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:53
 msgid "Audio waveform visualizer"
