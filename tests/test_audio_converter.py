@@ -1,4 +1,4 @@
-"""Unit tests for BAC AudioConverter helper methods."""
+"""AudioConverter decisions that need no media: plugins, filters, batch state."""
 
 import pytest
 from app.audio.converter import AudioConverter

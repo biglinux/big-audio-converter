@@ -864,10 +864,10 @@ def test_a_card_opens_beside_the_sidebar_clear_of_the_other_tiles(window):
         controller = SimpleNamespace(get_widget=lambda: tile)
         popovers._on_anchor_pointer(controller, x, y, tile)
 
-    # Across the neighbour on the way to the card: kept.
+    # Across the neighbor on the way to the card: kept.
     pointer_on(beside, beside.get_width() - 4, beside.get_height() / 2)
     assert left.popover.get_visible() and not beside.popover.get_visible()
-    # Resting on the neighbour: that one takes over.
+    # Resting on the neighbor: that one takes over.
     pump(lambda: beside.popover.get_visible())
     assert not left.popover.get_visible()
     beside.popover.popdown()

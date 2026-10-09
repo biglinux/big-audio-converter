@@ -1,4 +1,4 @@
-"""Adversarial I/O and property-based contracts for file and process ownership."""
+"""File and process ownership under hostile input."""
 
 import concurrent.futures
 import errno

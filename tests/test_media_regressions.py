@@ -193,7 +193,7 @@ def test_waveform_represents_right_channel(tmp_path):
 
 
 def test_short_segments_produce_actual_outputs(tone, tmp_path):
-    """10 ms cuts are now supported, not discarded under the old 100 ms limit."""
+    """A 10 ms cut still produces a file."""
     st = settings(tone, cut_merge=False)
     st["file_markers"][str(tone)] = [
         {"start": 0, "stop": 0.01},

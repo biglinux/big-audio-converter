@@ -58,11 +58,8 @@ class AppConfig:
             "noise_reduction_enabled": "false",
             "noise_engine": "dfn3",
             "noise_strength": "100",
-            # Gate (single intensity slider, sqrt curve)
-            # Compressor
             "compressor_enabled": "false",
             "compressor_intensity": "1.0",
-            # Normalization
             "normalize_enabled": "false",
         }
 

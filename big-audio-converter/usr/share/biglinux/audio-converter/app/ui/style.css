@@ -8,7 +8,7 @@
    background; flat controls follow currentColor. */
 .playback-panel { background-color: #1c1c21; color: rgba(255, 255, 255, 0.87); }
 .playback-panel frame { border-color: rgba(255, 255, 255, 0.08); }
-/* The waveform and seek bar draw in their CSS colour, a light blue readable
+/* The waveform and seek bar draw in their CSS color, a light blue readable
    on the dark strip and apart from the marked parts' blocks. */
 .waveform, .seekbar { color: #4da6ff; }
 .playback-controls .play-button { min-width: 42px; min-height: 42px; }
@@ -30,19 +30,18 @@ popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shad
     color: #ffffff;
 }
 .queue-pane headerbar { background: none; box-shadow: none; }
-/* Rows at the height of the original compact list. */
-/* Only the list's own rows: a dropdown's popup is a descendant too. */
+/* Compact rows, only the list's own: a dropdown's popup is a descendant too. */
 .compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }
 
 /* Effect tiles share the lists' card surface; an applied effect fills its
-   badge and colours its value. */
+   badge and colors its value. */
 flowboxchild.effect-tile {
     padding: 10px 12px;
     transition: background-color 120ms ease-out;
 }
 flowboxchild.effect-tile:hover { background-color: mix(@card_bg_color, currentColor, 0.04); }
 flowboxchild.effect-tile:active { background-color: mix(@card_bg_color, currentColor, 0.08); }
-/* A greyed tile dims its name and icon, not the reason it gives in place
+/* A grayed tile dims its name and icon, not the reason it gives in place
    of its value: that has to stay readable. */
 flowboxchild.effect-tile:disabled .heading,
 flowboxchild.effect-tile:disabled .effect-badge { opacity: 0.45; }
@@ -63,7 +62,7 @@ flowboxchild.effect-tile:disabled .effect-value {
 }
 .effect-tile .effect-value { opacity: 0.7; }
 .effect-card .effect-value { font-weight: bold; }
-/* The card is the tile's popover, so this colours its value too: an accent
+/* The card is the tile's popover, so this colors its value too: an accent
    only while the setting applies, never on "Off". */
 .effect-tile.applied .effect-value {
     opacity: 1;
@@ -71,7 +70,6 @@ flowboxchild.effect-tile:disabled .effect-value {
     font-weight: bold;
 }
 
-/* Queue */
 /* Files dragged over the window: one target, the whole window. */
 .drop-overlay {
     background-color: alpha(@window_bg_color, 0.92);
@@ -99,7 +97,6 @@ flowboxchild.effect-tile:disabled .effect-value {
 /* The file whose waveform is shown. */
 .active-waveform-file { background-color: alpha(@accent_bg_color, 0.15); }
 
-/* Equalizer */
 .eq-panel { border-top: 1px solid alpha(currentColor, 0.15); }
 .eq-band-value {
     font-size: 10px;

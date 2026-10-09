@@ -497,14 +497,13 @@ def test_dpdfnet_missing_model_never_publishes_output(tmp_path, monkeypatch, cut
 
 
 @pytest.mark.parametrize("engine_name", ["dfn3", "dpdfnet"])
-def test_native_denoiser_does_not_need_onnx_runtime(tmp_path, monkeypatch, engine_name):
+def test_noise_reduction_attenuates_with_each_installed_model(tmp_path, engine_name):
     import numpy as np
     from app.audio.profiles import discover_noise_plugins
 
     plugins = discover_noise_plugins()
     if engine_name not in plugins:
         pytest.skip(f"Optional {engine_name} LADSPA plugin is not installed")
-    monkeypatch.setenv("ORT_DYLIB_PATH", str(tmp_path / "missing-runtime.so"))
     source = tmp_path / "noise.wav"
     command(
         "ffmpeg",

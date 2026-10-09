@@ -155,8 +155,8 @@ class ConversionController:
             return
         kind, value = self._banner_action
         if kind == "retry":
-            # With the settings and marks as they are now: the message may have
-            # asked for a change. Files removed since then stay out.
+            # With the current settings and marks: the message may have asked
+            # for a change. Files removed since then stay out.
             queued = self.window().file_queue.files
             remaining = tuple(path for path in value if path in queued)
             if remaining:

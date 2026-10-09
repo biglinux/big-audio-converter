@@ -16,28 +16,28 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Contextual translation and automated validation\n"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:63
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:64
 msgid "The application is closing."
 msgstr "애플리케이션을 종료하는 중입니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:67
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:68
 msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
 msgstr "변환이 아직 진행 중입니다. 취소가 완료된 후 다른 변환을 시작하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:121
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:122
 msgid "Conversion cancelled."
 msgstr "변환이 취소되었습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:143
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:144
 msgid "The output path is invalid. Check the source filename and destination."
 msgstr "출력 경로가 잘못되었습니다. 원본 파일 이름과 대상 위치를 확인하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:172
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:173
 #, python-brace-format
 msgid "Joined into {name}"
 msgstr "'{name}'에 합쳐짐"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:187
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:188
 msgid "An unexpected error stopped this conversion."
 msgstr "예기치 않은 오류로 변환이 중단되었습니다."
 
@@ -122,7 +122,7 @@ msgstr "인코더가 요청한 채널 수를 변경했습니다. 최종 출력 �
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "이 FFmpeg 빌드는 요청한 FLAC 정밀도를 보존할 수 없습니다. WAV를 선택하거나 호환되는 FFmpeg 패키지를 설치하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:168
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:165
 msgid "Select a supported output format."
 msgstr "지원되는 출력 형식을 선택하세요."
 
@@ -158,31 +158,31 @@ msgstr "원본 오디오 길이를 넘는 구간이 있습니다. 종료 시간�
 msgid "A segment must contain at least one audio sample."
 msgstr "구간에는 오디오 샘플이 하나 이상 있어야 합니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:189
+#: usr/share/biglinux/audio-converter/app/audio/media.py:184
 msgid "FFprobe is not installed. Install the FFmpeg package and try again."
 msgstr "FFprobe가 설치되어 있지 않습니다. FFmpeg 패키지를 설치하고 다시 시도하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:216
+#: usr/share/biglinux/audio-converter/app/audio/media.py:211
 msgid "The media file could not be read. It may be damaged or unsupported."
 msgstr "미디어 파일을 읽지 못했습니다. 손상되었거나 지원되지 않는 파일일 수 있습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:224
+#: usr/share/biglinux/audio-converter/app/audio/media.py:219
 msgid "FFprobe returned invalid media information."
 msgstr "FFprobe가 잘못된 미디어 정보를 반환했습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:229
+#: usr/share/biglinux/audio-converter/app/audio/media.py:224
 msgid "FFprobe returned incomplete media information."
 msgstr "FFprobe가 불완전한 미디어 정보를 반환했습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:242
+#: usr/share/biglinux/audio-converter/app/audio/media.py:237
 msgid "This file does not contain the selected audio track."
 msgstr "이 파일에는 선택한 오디오 트랙이 없습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:287
+#: usr/share/biglinux/audio-converter/app/audio/media.py:282
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "선택한 WAV 인코더는 이 PCM 정밀도를 보존할 수 없습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:210 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:211 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
 msgid "The pauses could not be measured."
 msgstr "공백을 측정하지 못했습니다."
 
@@ -246,62 +246,62 @@ msgstr "미디어 명령의 제한 시간이 초과되었습니다."
 msgid "The media information is too large to process safely."
 msgstr "미디어 정보가 너무 커서 안전하게 처리할 수 없습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:126
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:123
 #, python-brace-format
 msgid "Invalid value for {key}."
 msgstr "{key}의 값이 잘못되었습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:130
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:127
 #, python-brace-format
 msgid "{key} must be between {low} and {high}."
 msgstr "{key} 값은 {low}에서 {high} 사이여야 합니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:138
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:135
 #, python-brace-format
 msgid "Invalid switch value for {key}."
 msgstr "{key}의 켜기/끄기 값이 잘못되었습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:148
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:145
 msgid "The equalizer bands are invalid."
 msgstr "이퀄라이저 대역이 잘못되었습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:155
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:152
 msgid "The equalizer needs ten finite gains between -40 and 40 dB."
 msgstr "이퀄라이저에는 -40에서 40 dB 사이의 유한한 게인 값 10개가 필요합니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:159
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:156
 msgid "Select a supported noise reduction mode."
 msgstr "지원되는 잡음 감소 모드를 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:181
 msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
 msgstr "FLAC은 이 PCM 표현 방식을 보존할 수 없습니다. WAV를 선택하거나 형식에서 '24비트 PCM 변환 허용'을 켜세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:206
 msgid "The selected bitrate is not supported by this output profile."
 msgstr "선택한 비트레이트는 이 출력 프로필에서 지원하지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:216
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:213
 msgid "Select original, mono or stereo channels."
 msgstr "원본 채널 구성, 모노, 스테레오 중 하나를 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:224
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:221
 msgid "MP3 supports mono or stereo. Select stereo channels or another format."
 msgstr "MP3는 모노 또는 스테레오를 지원합니다. 스테레오 채널이나 다른 형식을 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:231
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:228
 msgid "Select a valid output sample rate."
 msgstr "유효한 출력 샘플레이트를 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:238
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:235
 msgid "The selected codec does not support that sample rate."
 msgstr "선택한 코덱은 해당 샘플레이트를 지원하지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:312
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:309
 msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
 msgstr "선택한 잡음 감소 플러그인을 사용할 수 없습니다. 플러그인을 설치하거나 잡음 감소를 끄세요."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:341
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:338
 msgid "The audio plugin path is unsupported."
 msgstr "오디오 플러그인 경로가 지원되지 않습니다."
 
@@ -337,31 +337,31 @@ msgstr "중간 구간에 안전하지 않은 경로가 있습니다."
 msgid "The output contains no readable audio. No file was published."
 msgstr "출력에 읽을 수 있는 오디오가 없습니다. 최종 파일은 저장되지 않았습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:61
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:63
 msgid "The audio contains non-finite samples."
 msgstr "오디오에 유한하지 않은 값의 샘플이 포함되어 있습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:103
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:105
 msgid "The decoded audio ends with an incomplete sample frame."
 msgstr "디코딩된 오디오가 불완전한 샘플 프레임으로 끝납니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:106
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:108
 msgid "The file contains no readable audio samples."
 msgstr "파일에 읽을 수 있는 오디오 샘플이 없습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:236 usr/share/biglinux/audio-converter/app/ui/visualizer.py:158 usr/share/biglinux/audio-converter/app/ui/visualizer.py:193 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1160
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225 usr/share/biglinux/audio-converter/app/ui/visualizer.py:153 usr/share/biglinux/audio-converter/app/ui/visualizer.py:187 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1109
 msgid "Generating waveform..."
 msgstr "파형 생성 중…"
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:244
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:233
 msgid "FFmpeg is not installed."
 msgstr "FFmpeg가 설치되어 있지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:291
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:280
 msgid "The waveform could not be generated."
 msgstr "파형을 생성하지 못했습니다."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:299
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:288
 msgid "The source changed while its waveform was being generated."
 msgstr "파형을 생성하는 동안 원본이 변경되었습니다."
 
@@ -377,7 +377,7 @@ msgstr "변환을 시작하지 못했습니다"
 msgid "Converting audio"
 msgstr "오디오 변환 중"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1129 usr/share/biglinux/audio-converter/app/ui/main_window.py:1153 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:156 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:187 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "취소"
 
@@ -410,7 +410,7 @@ msgstr[0] "파일 {count}개 변환됨"
 msgid "Show Files"
 msgstr "파일 보기"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1147
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
 msgid "Reset"
 msgstr "초기화"
 
@@ -418,7 +418,7 @@ msgstr "초기화"
 msgid "On"
 msgstr "켬"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Off"
 msgstr "끔"
 
@@ -468,7 +468,7 @@ msgstr "존재감 있는 음성"
 msgid "Custom"
 msgstr "사용자 지정"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:486 usr/share/biglinux/audio-converter/app/ui/main_window.py:491
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:470 usr/share/biglinux/audio-converter/app/ui/main_window.py:475
 msgid "Equalizer"
 msgstr "이퀄라이저"
 
@@ -497,7 +497,7 @@ msgstr "알 수 없음"
 msgid "Duration"
 msgstr "길이"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:117
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:116
 msgid "Format"
 msgstr "형식"
 
@@ -505,11 +505,11 @@ msgstr "형식"
 msgid "Bitrate"
 msgstr "비트레이트"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:299
 msgid "Sample rate"
 msgstr "샘플레이트"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:287
 msgid "Channels"
 msgstr "채널"
 
@@ -549,32 +549,32 @@ msgstr "오디오 속성"
 msgid "Metadata Tags"
 msgstr "메타데이터 태그"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:39
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:40
 msgid "Folder could not be opened"
 msgstr "폴더를 열지 못했습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:40
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:41
 #, python-brace-format
 msgid "Open your file manager and navigate to: {path}"
 msgstr "파일 관리자를 열고 다음 위치로 이동하세요: {path}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:44
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:45
 msgid "Close"
 msgstr "닫기"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:54
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:55
 msgid "Converted with warnings"
 msgstr "경고와 함께 변환됨"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:55 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
 msgid "Failed"
 msgstr "실패"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:57
 msgid "Cancelled"
 msgstr "취소됨"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:74
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:75
 msgid "Technical details"
 msgstr "기술 세부 정보"
 
@@ -620,33 +620,33 @@ msgid "{count} part"
 msgid_plural "{count} parts"
 msgstr[0] "{count}개 구간"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:397
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:396
 msgid "Add audio or video files"
 msgstr "오디오 또는 비디오 파일 추가"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:398
 #, python-brace-format
 msgid "Drag files here or use {button}."
 msgstr "파일을 여기로 끌어 놓거나 {button}을(를) 사용하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:400 usr/share/biglinux/audio-converter/app/ui/main_window.py:298 usr/share/biglinux/audio-converter/app/ui/main_window.py:306
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399 usr/share/biglinux/audio-converter/app/ui/main_window.py:292 usr/share/biglinux/audio-converter/app/ui/main_window.py:300
 msgid "Add Files"
 msgstr "파일 추가"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:403
 msgid "Each audio track of a video becomes its own entry. The originals are never changed."
 msgstr "비디오의 각 오디오 트랙은 별도 항목이 됩니다. 원본은 절대 변경되지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:430
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:429
 #, python-brace-format
 msgid "Track {number}"
 msgstr "트랙 {number}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:484
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:483
 msgid "Could not move the file to Trash"
 msgstr "파일을 휴지통으로 옮길 수 없습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:506
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:505
 msgid "This file has no supported audio track."
 msgstr "이 파일에는 지원되는 오디오 트랙이 없습니다."
 
@@ -687,258 +687,258 @@ msgstr "변환 작업에서 이 파일을 사용 중입니다. 입력 파일을 
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "파일을 휴지통으로 이동하지 못했습니다. 파일은 삭제되지 않았습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:853 usr/share/biglinux/audio-converter/main.py:92
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849 usr/share/biglinux/audio-converter/main.py:88
 msgid "Download this file to a local folder before adding it."
 msgstr "이 파일을 추가하기 전에 로컬 폴더로 다운로드하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:126
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
 msgstr "설정을 읽을 수 없어 기본값으로 되돌렸습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:202
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:196
 msgid "Drop to add"
 msgstr "놓아서 추가"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:259 usr/share/biglinux/audio-converter/app/ui/main_window.py:262
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253 usr/share/biglinux/audio-converter/app/ui/main_window.py:256
 msgid "Show settings"
 msgstr "설정 표시"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:276 usr/share/biglinux/audio-converter/app/ui/main_window.py:283
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270 usr/share/biglinux/audio-converter/app/ui/main_window.py:277
 msgid "Clear queue"
 msgstr "대기열 비우기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:311
 msgid "Show help on hover"
 msgstr "마우스를 올리면 도움말 표시"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:319 usr/share/biglinux/audio-converter/app/ui/main_window.py:1165 usr/share/biglinux/audio-converter/app/ui/main_window.py:1171
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313 usr/share/biglinux/audio-converter/app/ui/main_window.py:1148 usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
 msgid "Clear Queue"
 msgstr "대기열 비우기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:320
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:314
 msgid "Reset All Settings…"
 msgstr "모든 설정 초기화…"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:323
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
 msgid "About"
 msgstr "정보"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:328
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:322
 msgid "Main menu"
 msgstr "주 메뉴"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:379
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:373
 msgid "Volume"
 msgstr "음량"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:387
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:381
 msgid "Speed"
 msgstr "속도"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:199
 msgid "Cleaning quality"
 msgstr "잡음 제거 품질"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:398
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392
 msgid "Clean voice"
 msgstr "목소리 잡음 제거"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:410
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:404
 msgid "Adjusted"
 msgstr "조정됨"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:411 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:130 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:474
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
 msgid "Original"
 msgstr "원본"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:414
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:408
 msgid "Listen with or without adjustments"
 msgstr "조정 적용 여부로 듣기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:424
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:418
 msgid "Selection only"
 msgstr "선택 영역만"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:435
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:429
 msgid "Play only selected area"
 msgstr "선택한 영역만 재생"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:440
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:434
 msgid "Edit Segments…"
 msgstr "구간 편집…"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:452
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:446
 msgid "Zoom out"
 msgstr "축소"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:453
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:447
 msgid "Reset zoom"
 msgstr "확대/축소 초기화"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:454
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:448
 msgid "Zoom in"
 msgstr "확대"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:487
 msgid "Play the next file automatically"
 msgstr "다음 파일 자동 재생"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:513 usr/share/biglinux/audio-converter/app/ui/main_window.py:515
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497 usr/share/biglinux/audio-converter/app/ui/main_window.py:499
 msgid "More playback options"
 msgstr "추가 재생 옵션"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:519
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
 msgid "Playback"
 msgstr "재생"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:520
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:504
 msgid "Only affects listening. Converted files stay unchanged."
 msgstr "듣기에만 적용됩니다. 변환된 파일은 바뀌지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
 msgid "Audio output"
 msgstr "오디오 출력"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528 usr/share/biglinux/audio-converter/app/ui/main_window.py:894
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512 usr/share/biglinux/audio-converter/app/ui/main_window.py:877
 msgid "System default"
 msgstr "시스템 기본값"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:554
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:538
 msgid "Previous track"
 msgstr "이전 트랙"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:566
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
 msgid "Play or pause"
 msgstr "재생 또는 일시 정지"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:563
 msgid "Next track"
 msgstr "다음 트랙"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:785
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:768
 #, python-brace-format
 msgid "{count} file"
 msgid_plural "{count} files"
 msgstr[0] "파일 {count}개"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:827
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:810
 #, python-format
 msgid "Join %d file"
 msgid_plural "Join %d files"
 msgstr[0] "파일 %d개 합치기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:829
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:812
 #, python-format
 msgid "Convert %d file"
 msgid_plural "Convert %d files"
 msgstr[0] "파일 %d개 변환"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:984 usr/share/biglinux/audio-converter/app/ui/main_window.py:1098
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967 usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
 msgid "OK"
 msgstr "확인"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:992
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:975
 msgid "Stop the conversion?"
 msgstr "변환을 중지할까요?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:994
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:977
 msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
 msgstr "창을 닫으면 진행 중인 변환이 중지됩니다. 이미 완료된 파일은 유지됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:998
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:981
 msgid "Keep Converting"
 msgstr "계속 변환"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:999
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:982
 msgid "Stop and Close"
 msgstr "중지하고 닫기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1045
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1029
 msgid "No audio selected"
 msgstr "선택한 오디오 없음"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1046
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1030
 msgid "Add a file and select it before editing segments."
 msgstr "구간을 편집하기 전에 파일을 추가하고 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1051
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1035
 msgid "Audio duration unavailable"
 msgstr "오디오 길이를 확인할 수 없음"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1052
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1036
 msgid "Wait for the waveform to finish loading before editing this file."
 msgstr "이 파일을 편집하기 전에 파형을 다 불러올 때까지 기다리세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1092
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1076
 msgid "Other valid files remain in the queue. Check these files and add them again."
 msgstr "다른 유효한 파일은 대기열에 남아 있습니다. 해당 파일들을 확인하고 다시 추가하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1080
 msgid "Some files could not be added"
 msgstr "일부 파일을 추가하지 못했습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1112
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
 msgid "Audio preview"
 msgstr "오디오 미리 듣기"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1123
 msgid "Reset all settings?"
 msgstr "모든 설정을 초기화할까요?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1142
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1125
 msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
 msgstr "형식, 품질, 출력 폴더, 자르기, 효과, 이퀄라이저를 기본값으로 되돌립니다. 대기열과 원본 파일은 유지됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1167
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1150
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
 msgstr "대기열 항목과 편집 내용을 제거할까요? 원본 파일은 삭제되지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1215
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1195
 msgid "Select Audio or Video Files"
 msgstr "오디오 또는 동영상 파일 선택"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1218
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1198
 msgid "Audio and Video files"
 msgstr "오디오 및 동영상 파일"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1264
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1244
 msgid "All files"
 msgstr "모든 파일"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1289 usr/share/biglinux/audio-converter/main.py:91
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269 usr/share/biglinux/audio-converter/main.py:87
 msgid "Local files only"
 msgstr "로컬 파일만 지원"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1291
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1271
 msgid "Some selected files are remote. Download them before adding them."
 msgstr "선택한 파일 중 일부가 원격 위치에 있습니다. 추가하기 전에 다운로드하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1302
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1282
 msgid "Files could not be selected"
 msgstr "파일을 선택하지 못했습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:158
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:153
 msgid "Delete All Segments"
 msgstr "모든 구간 삭제"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:159
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:154
 msgid "Delete all marked segments? Source files will not be changed."
 msgstr "표시한 구간을 모두 삭제할까요? 원본 파일은 변경되지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:162 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:157 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
 msgid "Delete All"
 msgstr "모두 삭제"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:189
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:184
 msgid "Delete Segment"
 msgstr "구간 삭제"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:185
 #, python-brace-format
 msgid "Delete segment {number}?"
 msgstr "구간 {number}을(를) 삭제할까요?"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:188
 msgid "Delete"
 msgstr "삭제"
 
@@ -978,7 +978,7 @@ msgstr "오디오 1시간당 약 1분이 걸립니다."
 msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
 msgstr "음성용입니다. DPDFNet으로 정리한 목소리에서 공백을 찾습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:583
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:576
 #, python-brace-format
 msgid "Unavailable: install {package}"
 msgstr "사용 불가: {package} 설치 필요"
@@ -1106,286 +1106,286 @@ msgstr "구간 {number}의 종료 시간(초)"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "활성 파일이 바뀌었습니다. 현재 파일의 구간 편집기를 다시 여세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
 msgid "Voice only"
 msgstr "말소리용"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
 msgid "Fair"
 msgstr "보통"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
 msgid "Good"
 msgstr "좋음"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
 msgid "Very good"
 msgstr "매우 좋음"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:56
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
 msgid "Best"
 msgstr "최고"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:67
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:66
 #, python-brace-format
 msgid "{quality}, about {size} MB per minute"
 msgstr "{quality}, 분당 약 {size} MB"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:93
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:92
 msgid "Allow conversion to 24-bit PCM"
 msgstr "24비트 PCM 변환 허용"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
 msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
 msgstr "부동소수점 오디오를 FLAC으로 내보낼 때 사용합니다. 정밀도가 낮아지며, WAV는 원래 표현 방식을 유지합니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:119
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:118
 msgid "Choose the output format. Keeping the original format applies no effects."
 msgstr "출력 형식을 선택하세요. 원본 형식을 유지하면 효과가 적용되지 않습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
 msgid "MP3 — plays everywhere"
 msgstr "MP3 — 어디서나 재생 가능"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
 msgid "M4A — good quality in small files"
 msgstr "M4A — 작은 파일로 좋은 음질"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
 msgid "Opus — smallest files, great for voice"
 msgstr "Opus — 가장 작은 파일, 말소리에 적합"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
 msgid "FLAC — lossless, smaller than WAV"
 msgstr "FLAC — 무손실, WAV보다 작은 크기"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
 msgid "WAV — uncompressed"
 msgstr "WAV — 비압축"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
 msgid "Ogg Vorbis — open format"
 msgstr "Ogg Vorbis — 개방형 형식"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:128
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
 msgid "Keep the original format — no conversion, no effects"
 msgstr "원본 형식 유지 — 변환 및 효과 없음"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:142
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:141
 msgid "Quality"
 msgstr "음질"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:144
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:143
 msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
 msgstr "음질이 높을수록 소리가 좋아지고 파일이 커집니다. 각 항목에 1분당 크기가 표시됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
 msgid "Faster"
 msgstr "더 빠름"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
 msgid "Better, slower"
 msgstr "더 좋음, 더 느림"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:213
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
 msgid "Marks"
 msgstr "표시"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
 msgid "Keep them"
 msgstr "유지"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
 msgid "Remove them"
 msgstr "제거"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:221
 msgid "Order"
 msgstr "순서"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
 msgid "Choose the order in which marked segments are exported."
 msgstr "표시한 구간을 내보낼 순서를 선택합니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
 msgid "In timeline order"
 msgstr "시간 순서대로"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
 msgid "In the order marked"
 msgstr "표시한 순서대로"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:230
 msgid "Save segments"
 msgstr "구간 저장"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
 msgid "Export each segment separately or join the selected segments."
 msgstr "각 구간을 별도로 내보내거나 선택한 구간을 합칩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
 msgid "Separate files"
 msgstr "개별 파일"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
 msgid "Join this file's segments"
 msgstr "이 파일의 구간 합치기"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:240
 msgid "Join into one file"
 msgstr "하나의 파일로 합치기"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:242
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
 msgid "In queue order, named after the first file"
 msgstr "대기열 순서대로, 첫 번째 파일 이름 사용"
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 270
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
 msgid "Save in the same folder as the original file"
 msgstr "원본 파일과 동일한 폴더에 저장하십시오."
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 271
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
 msgid "Folder to save"
 msgstr "저장할 폴더"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:256
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:255
 msgid "Save to"
 msgstr "저장 위치"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:266 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:271 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:401
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:265 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
 msgid "Choose output folder"
 msgstr "출력 폴더 선택"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
 msgstr "원래 채널 구성을 유지하거나, 명시적으로 선택하면 모노 또는 스테레오로 다운믹스합니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
 msgid "Mono"
 msgstr "모노"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
 msgid "Stereo"
 msgstr "스테레오"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:309
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
 msgid "Standard volume"
 msgstr "표준 음량"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:311
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:310
 msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
 msgstr "각 파일을 말소리와 팟캐스트의 표준 음량에 맞춰 여러 파일이 같은 수준으로 재생되게 합니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:319
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:318
 msgid "Lift quiet parts"
 msgstr "작은 소리 키우기"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:321
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:320
 msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
 msgstr "작은 부분은 키우고 큰 부분은 줄여, 음량을 조절하지 않아도 모두 잘 들리게 합니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Light"
 msgstr "약하게"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Medium"
 msgstr "보통"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Strong"
 msgstr "강하게"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:351
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
 msgid "Remove pauses"
 msgstr "공백 제거"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:353
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
 msgid "Cuts"
 msgstr "자르기"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:376
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
 msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
 msgstr "원본 형식은 인코딩된 오디오를 그대로 둡니다. 자르기는 패킷 경계를 따르므로 정확한 시간과 다를 수 있습니다. 미리 듣기와 내보내기에서 효과는 무시됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:386
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
 msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
 msgstr "볼륨이나 이퀄라이저 대역을 높이면 소리가 왜곡될 수 있습니다. 게인을 줄이거나 표준 음량을 켜세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:415
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
 msgid "Local folder required"
 msgstr "로컬 폴더 필요"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:416
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
 msgid "Choose a folder on the local filesystem."
 msgstr "로컬 파일 시스템의 폴더를 선택하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
 msgid "Lossless"
 msgstr "무손실"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:678
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:671
 msgid "Mark a part on the waveform first."
 msgstr "먼저 파형에서 부분을 표시하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:679
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:672
 msgid "Mark a part first."
 msgstr "먼저 부분을 표시하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:681
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:674
 msgid "Joining files makes one file of everything."
 msgstr "파일을 합치면 모든 것이 하나의 파일이 됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:687
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:680
 msgid "Removing keeps the timeline order."
 msgstr "제거하면 시간 순서가 유지됩니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:684
 msgid "Removing leaves a single file."
 msgstr "제거하면 파일이 하나로 남습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:699
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:692
 msgid "The original format cannot join files"
 msgstr "원본 형식으로는 파일을 합칠 수 없습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:701
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:694
 msgid "Add another file to join them."
 msgstr "파일을 합치려면 다른 파일을 추가하세요."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:730
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:722
 #, python-brace-format
 msgid "{count} adjustment"
 msgid_plural "{count} adjustments"
 msgstr[0] "조정 {count}개"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:761
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:753
 msgid "The original format keeps the audio as it is."
 msgstr "원본 형식은 오디오를 그대로 둡니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:53
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:51
 msgid "Audio waveform visualizer"
 msgstr "오디오 파형 시각화"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:940
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:894
 msgid "Click to listen from there · Drag to mark a part"
 msgstr "클릭하여 그 위치부터 듣기 · 드래그하여 부분 표시"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1157
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1106
 msgid "Waveform could not be generated"
 msgstr "파형을 생성하지 못했습니다"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1158
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1107
 msgid "Numeric segment editing is still available."
 msgstr "숫자를 입력해 구간을 편집하는 기능은 계속 사용할 수 있습니다."
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1163
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1112
 msgid "No audio loaded"
 msgstr "불러온 오디오 없음"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1256
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1205
 msgid "Audio position seekbar"
 msgstr "오디오 위치 탐색 막대"
 
@@ -1413,7 +1413,7 @@ msgstr "표시한 구간만 미리 듣습니다."
 msgid "More actions are available from the adjacent menu button."
 msgstr "옆의 메뉴 버튼에서 더 많은 작업을 선택할 수 있습니다."
 
-#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
+#: usr/share/biglinux/audio-converter/main.py:205 usr/share/biglinux/audio-converter/main.py:207
 msgid "BigLinux Team"
 msgstr "BigLinux 팀"
 

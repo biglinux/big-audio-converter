@@ -29,7 +29,9 @@ Drag across the waveform to mark a part; drag its edges or the whole part to adj
 
 Once a file has marks, the tiles beside **Remove pauses**, in the **Cuts** section, become available: **Marks** chooses whether they are kept or removed. Kept parts can be saved in timeline order or in the order marked (**Order**), as separate files or joined (**Save segments**). With several files in the queue, the **Join into one file** tile, last in **Cuts**, joins them in queue order. Files without marks are converted in full, and each file keeps its own marks.
 
-**Remove pauses**, a tile in the sidebar's **Cuts** section whose card opens as the pointer rests on it, marks the speech between the pauses, so the export keeps what is marked as always: the speech, joined in order. It looks for the pauses in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide one. It is made for speech: in songs, instruments can pass for a voice, above all in an intro before the singing starts. The analysis takes about a minute per hour of audio and runs in the background, its progress shown on the tile; when it ends, the speech is marked at once, **Marks** is set to keep it in timeline order, joined, and 0.15 s of each pause stays beside the speech. Choosing another pause length marks again; **Undo** restores the previous marks and settings. Once you edit the marks they are yours, and **Find Pauses** marks anew.
+**Remove pauses**, a tile in the sidebar's **Cuts** section whose card opens as the pointer rests on it, marks the speech between the pauses, so the export keeps what is marked as always: the speech, joined in order. It looks for the pauses in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide one. It is made for speech: in songs, instruments can pass for a voice, above all in an intro before the singing starts.
+
+The analysis takes about a minute per hour of audio and runs in the background, its progress shown on the tile; when it ends, the speech is marked at once, **Marks** is set to keep it in timeline order, joined, and 0.15 s of each pause stays beside the speech. Choosing another pause length marks again; **Undo** restores the previous marks and settings. Once you edit the marks they are yours, and **Find Pauses** marks anew.
 
 **Keep the original format** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an audio format when you need precise cuts or effects.
 
@@ -46,11 +48,9 @@ Volume, speed and **Clean voice** sit at the left of the playback bar, as in the
 | Faster (DeepFilterNet3) | `deepfilternet3-native` | `libdfn3_ladspa.so` |
 | Better, slower (DPDFNet-2) | `dpdfnet-native`, including the W8A16 model | `libdpdfnet_native.so`, label `dpdfnet_native_48hr` |
 
-**Faster** is selected initially and the slider starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% each model applies its maximum useful reduction (24 dB for DeepFilterNet3, 48 dB for DPDFNet-2). Changing the strength during playback retunes the running filter without interrupting the sound. Both plugins run inference natively in Rust, without ONNX Runtime or OpenVINO. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved. Use current BigLinux plugin builds; older builds can have different controls or timing.
+**Faster** is selected initially and the slider starts at 0, which is off. It is intended for speech, not music. Lower strengths retain more background sound; at 100% each model applies its maximum useful reduction (24 dB for DeepFilterNet3, 48 dB for DPDFNet-2). Changing the strength during playback retunes the running filter without interrupting the sound. They process each channel at 48 kHz, with the selected output rate restored on export. The converter disables DFN3's microphone startup mute and compensates the plugins' delays (DFN3: 1,919 samples; DPDFNet: 2,880 samples) so the beginning and end are preserved.
 
-Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`. The plugin supports a `DPDFNET_NATIVE_MODEL` environment override; keep it unset to use the intended DPDFNet-2 model.
-
-The DeepFilterNet package also installs its LL library; the converter never selects it.
+Install `dpdfnet-native` to get the DPDFNet plugin and its model. Its default model directory is `/usr/share/dpdfnet-native/dpdfnet2_48khz_hr-w8a16`, containing `manifest.json` and `weights.bin`.
 
 Keyboard shortcuts: **Ctrl+O** adds files, **Ctrl+Enter** converts, **Ctrl+Space** plays or pauses, **Ctrl+E** opens the segment editor and **Ctrl+Q** quits.
 
@@ -62,6 +62,8 @@ From the repository root, run the application with:
 python3 big-audio-converter/usr/share/biglinux/audio-converter/main.py
 ```
 
+The interface stays in English until the catalogs in `big-audio-converter/locale/` are compiled, as the package recipe's `build()` does.
+
 The tests run real FFmpeg and libmpv and need `pytest`. The GTK tests start their own Xvfb display and session bus, so no window reaches your desktop; set `BAC_TESTS_KEEP_SESSION=1` to use the current one instead. The pause tests also need `dpdfnet-enhance` and `espeak-ng`, and are skipped without them. Point `TMPDIR` at an executable directory if `/tmp` is mounted `noexec`:
 
 ```sh
@@ -71,7 +73,7 @@ ruff check big-audio-converter/usr/share/biglinux/audio-converter tests
 ruff format --check big-audio-converter/usr/share/biglinux/audio-converter tests
 ```
 
-Conversions write to a staging file that is renamed into place, never over an existing file, only when FFmpeg succeeds; cancelling stops FFmpeg and removes it. Metadata probes and waveform decoding run off the GTK main loop.
+Conversions write to a staging file that is renamed into place only when FFmpeg succeeds; cancelling stops FFmpeg and removes it. Metadata probes and waveform decoding run off the GTK main loop.
 
 The [package recipe](pkgbuild/PKGBUILD) compiles the translations and runs the backend tests; the [CI workflow](.github/workflows/quality.yml) runs the GTK tests too. Audio devices and file-manager actions still need a check on an installed desktop.
 

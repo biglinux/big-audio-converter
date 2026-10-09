@@ -89,17 +89,15 @@ class MainWindow(
         self.file_markers = {}  # Dictionary mapping file path to marker pairs
         self.active_audio_id = None  # Queue entry whose waveform is shown
 
-        # Selection playback tracking
         self._playing_selection = False
         self._selection_segments = []  # List of (start, stop) tuples
         self._current_segment_index = 0
-        self._play_selection_mode = False  # Whether switch is on
-        self._marker_dragging = False  # Track when user is dragging markers
+        self._play_selection_mode = False
+        self._marker_dragging = False
         self._is_transitioning_segment = False  # a seek between parts is pending
         self._syncing_volume = False
         self._syncing_speed = False
 
-        # Default visualizer height - will be overridden by saved value
         self.visualizer_height = 132
 
         saved_height = config.get("visualizer_height")
@@ -127,7 +125,6 @@ class MainWindow(
 
         self.connect("map", weak_callback(self.on_window_mapped))
 
-        # Connect window state signals (only maximized, save size on close only)
         self.connect("notify::maximized", weak_callback(self._on_window_state_changed))
 
         self.player.connect(
@@ -148,7 +145,6 @@ class MainWindow(
 
         self.file_queue.connect_file_removed_signal(self._on_file_removed)
 
-        # Setup window-level keyboard shortcuts
         self._setup_keyboard_shortcuts()
 
     def _setup_keyboard_shortcuts(self):
@@ -192,7 +188,6 @@ class MainWindow(
         app.set_accels_for_action("win.edit-segments", ["<Control>e"])
 
     def setup_ui(self):
-        """Set up the user interface."""
         owner = weakref.proxy(self)
         self.vertical_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         # Shown over the whole window while files are dragged in.
@@ -614,8 +609,7 @@ class MainWindow(
         self.visualizer_frame.set_margin_top(4)
         self.visualizer_frame.set_margin_bottom(0)
 
-        # Set minimum height instead of fixed size
-        self.visualizer_frame.set_size_request(-1, 100)  # Min height 100px
+        self.visualizer_frame.set_size_request(-1, 100)
 
         # Connect seek handler before adding the visualizer to the frame
         self.visualizer.connect_seek_handler(self.on_visualizer_seek)
@@ -928,7 +922,7 @@ class MainWindow(
             "noise_reduction": self._noise_active(),
             "noise_engine": self._noise_engine(),
             "noise_strength": self.noise_adjustment.get_value(),
-            # Each correction is off at zero and otherwise set by its slider.
+            # Each correction is off at its first step.
             "compressor_enabled": self.compressor_tile.steps.get_selected() > 0,
             "compressor_intensity": COMPRESSOR_STEPS[
                 self.compressor_tile.steps.get_selected()
@@ -1112,7 +1106,6 @@ class MainWindow(
     def _save_window_size(self):
         width = self.get_width()
         height = self.get_height()
-        # Only save if the values are reasonable
         if width > 200 and height > 200:
             self.app.config.set("window_width", str(width))
             self.app.config.set("window_height", str(height))
@@ -1166,9 +1159,7 @@ class MainWindow(
         dialog.present(self)
 
     def _on_clear_queue_response(self, dialog, response):
-        """Handle clear queue dialog response."""
         if not self._closed and response == "clear":
-            # Stop playback if currently playing
             if self.player and self.player.is_playing():
                 self.player.stop()
 
@@ -1200,7 +1191,6 @@ class MainWindow(
         self.add_controller(drop_target)
 
     def on_add_files(self, button):
-        """Handle adding files through dialog."""
         dialog = Gtk.FileDialog()
         dialog.set_title(_("Select Audio or Video Files"))
 

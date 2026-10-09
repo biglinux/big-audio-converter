@@ -135,7 +135,7 @@ class ProcessRunner:
                                     )
                                 )
                             output.extend(data)
-                # The process may close its pipes before it exits. Still honour
+                # The process may close its pipes before it exits. Still honor
                 # cancellation/deadlines rather than blocking in wait().
                 while process.poll() is None:
                     self.check_cancelled()

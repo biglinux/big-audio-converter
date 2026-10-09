@@ -128,14 +128,13 @@ class FileQueueRow(Adw.ActionRow):
         self.on_delete_callback = on_delete_callback
         self.on_activate_callback = on_activate_callback
 
-        # Set title to filename (escape special characters for Pango markup)
+        # Escaped: the title is Pango markup.
         filename = os.path.basename(file_path)
         self.set_title(GLib.markup_escape_text(filename))
 
         self._details = ""
         self._cut_count = 0
 
-        # Make row activatable
         self.set_activatable(True)
 
         if on_activate_callback:
@@ -355,7 +354,6 @@ class FileQueue(Gtk.Box):
         self.on_pending_changed = None
         self.on_queue_size_changed = None
 
-        # Track metadata storage for video files with multiple audio tracks
         # Key: file_path, Value: dict with 'source_video', 'track_index', 'codec', 'language', etc.
         self.track_metadata = {}
 
@@ -792,11 +790,9 @@ class FileQueue(Gtk.Box):
             setattr(self, name, None)
 
     def get_files(self):
-        """Get all files in the queue."""
         return self.files.copy()
 
     def update_progress(self, index, progress):
-        """Update conversion progress for a file."""
         if 0 <= index < len(self.file_rows):
             row = self.file_rows[index]
 
@@ -805,7 +801,6 @@ class FileQueue(Gtk.Box):
             row.progress_bar.set_visible(True)
 
     def set_currently_playing(self, index):
-        """Set the currently playing file and update UI."""
         if (
             self.currently_playing_index is not None
             and 0 <= self.currently_playing_index < len(self.file_rows)
@@ -831,7 +826,6 @@ class FileQueue(Gtk.Box):
             new_row.add_css_class("active-waveform-file")
 
     def update_playing_state(self, is_playing):
-        """Update UI based on player state."""
         if (
             self.currently_playing_index is not None
             and 0 <= self.currently_playing_index < len(self.file_rows)
@@ -865,7 +859,6 @@ class FileQueue(Gtk.Box):
         return content
 
     def _on_row_drag_begin(self, drag_source, drag):
-        """Handle drag begin for a row."""
         row = drag_source.get_widget()
         row.add_css_class("drag-row")
         paintable = Gtk.WidgetPaintable.new(row)
@@ -877,12 +870,10 @@ class FileQueue(Gtk.Box):
         drag_source.get_widget().remove_css_class("drag-row")
 
     def _on_row_drop(self, drop_target, value, x, y):
-        """Handle drop of a row for reordering."""
         dragged_row = value
         if self.converter.busy or not isinstance(dragged_row, FileQueueRow):
             return False
 
-        # Find the target position based on y coordinate
         target_row = None
         for row in self.file_rows:
             allocation = row.get_allocation()
@@ -892,7 +883,6 @@ class FileQueue(Gtk.Box):
                 target_row = row
                 break
 
-        # If no target row found, append to end
         if not target_row:
             target_row = self.file_rows[-1] if self.file_rows else None
 
@@ -920,7 +910,6 @@ class FileQueue(Gtk.Box):
                 # Insert at specific position
                 self.file_list.insert(dragged_row, new_index)
 
-            # Remove drag styling
             dragged_row.remove_css_class("drag-row")
 
             return True

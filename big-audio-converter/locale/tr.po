@@ -16,28 +16,28 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Contextual translation and automated validation\n"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:63
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:64
 msgid "The application is closing."
 msgstr "Uygulama kapanıyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:67
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:68
 msgid "A conversion is still running. Wait for it to finish cancelling before starting another."
 msgstr "Bir dönüştürme işlemi hâlâ çalışıyor. Başka bir işlem başlatmadan önce iptalin tamamlanmasını bekleyin."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:121
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:122
 msgid "Conversion cancelled."
 msgstr "Dönüştürme iptal edildi."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:143
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:144
 msgid "The output path is invalid. Check the source filename and destination."
 msgstr "Çıktı yolu geçersiz. Kaynak dosya adını ve hedefi kontrol edin."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:172
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:173
 #, python-brace-format
 msgid "Joined into {name}"
 msgstr "{name} dosyasında birleştirildi"
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:187
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:188
 msgid "An unexpected error stopped this conversion."
 msgstr "Beklenmeyen bir hata bu dönüştürmeyi durdurdu."
 
@@ -122,7 +122,7 @@ msgstr "Kodlayıcı, istenen kanal sayısını değiştirdi. Nihai çıktı dosy
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "Bu FFmpeg derlemesi, istenen FLAC hassasiyetini koruyamıyor. WAV'ı seçin veya uyumlu bir FFmpeg paketi yükleyin."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:168
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:165
 msgid "Select a supported output format."
 msgstr "Desteklenen bir çıktı biçimi seçin."
 
@@ -158,31 +158,31 @@ msgstr "Bir bölüm kaynak sesin sonunu aşıyor. Bitiş zamanını ayarlayın."
 msgid "A segment must contain at least one audio sample."
 msgstr "Bir bölüm en az bir ses örneği içermelidir."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:189
+#: usr/share/biglinux/audio-converter/app/audio/media.py:184
 msgid "FFprobe is not installed. Install the FFmpeg package and try again."
 msgstr "FFprobe yüklü değil. FFmpeg paketini yükleyip yeniden deneyin."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:216
+#: usr/share/biglinux/audio-converter/app/audio/media.py:211
 msgid "The media file could not be read. It may be damaged or unsupported."
 msgstr "Medya dosyası okunamadı. Hasarlı veya desteklenmeyen bir biçimde olabilir."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:224
+#: usr/share/biglinux/audio-converter/app/audio/media.py:219
 msgid "FFprobe returned invalid media information."
 msgstr "FFprobe geçersiz medya bilgileri döndürdü."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:229
+#: usr/share/biglinux/audio-converter/app/audio/media.py:224
 msgid "FFprobe returned incomplete media information."
 msgstr "FFprobe eksik medya bilgileri döndürdü."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:242
+#: usr/share/biglinux/audio-converter/app/audio/media.py:237
 msgid "This file does not contain the selected audio track."
 msgstr "Bu dosya seçili ses izini içermiyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/media.py:287
+#: usr/share/biglinux/audio-converter/app/audio/media.py:282
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "Seçili WAV kodlayıcısı bu PCM hassasiyetini koruyamıyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:210 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:211 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
 msgid "The pauses could not be measured."
 msgstr "Duraklamalar ölçülemedi."
 
@@ -246,62 +246,62 @@ msgstr "Medya komutu zaman aşımına uğradı."
 msgid "The media information is too large to process safely."
 msgstr "Medya bilgileri güvenli biçimde işlenemeyecek kadar büyük."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:126
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:123
 #, python-brace-format
 msgid "Invalid value for {key}."
 msgstr "{key} için geçersiz değer."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:130
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:127
 #, python-brace-format
 msgid "{key} must be between {low} and {high}."
 msgstr "{key}, {low} ile {high} arasında olmalıdır."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:138
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:135
 #, python-brace-format
 msgid "Invalid switch value for {key}."
 msgstr "{key} için geçersiz açma/kapatma değeri."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:148
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:145
 msgid "The equalizer bands are invalid."
 msgstr "Ekolayzır bantları geçersiz."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:155
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:152
 msgid "The equalizer needs ten finite gains between -40 and 40 dB."
 msgstr "Ekolayzır, -40 ile 40 dB arasında on sonlu kazanç değeri gerektirir."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:159
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:156
 msgid "Select a supported noise reduction mode."
 msgstr "Desteklenen bir gürültü azaltma modu seçin."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:184
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:181
 msgid "FLAC cannot preserve this PCM representation. Choose WAV, or turn on Allow conversion to 24-bit PCM under Format."
 msgstr "FLAC bu PCM gösterimini koruyamaz. WAV'ı seçin veya Biçim bölümünde “24 bit PCM'ye dönüştürmeye izin ver” seçeneğini açın."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:209
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:206
 msgid "The selected bitrate is not supported by this output profile."
 msgstr "Seçili bit hızı bu çıktı profili tarafından desteklenmiyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:216
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:213
 msgid "Select original, mono or stereo channels."
 msgstr "Özgün kanal düzenini, monoyu veya stereoyu seçin."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:224
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:221
 msgid "MP3 supports mono or stereo. Select stereo channels or another format."
 msgstr "MP3 mono veya stereoyu destekler. Stereo kanalları ya da başka bir biçim seçin."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:231
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:228
 msgid "Select a valid output sample rate."
 msgstr "Geçerli bir çıktı örnekleme hızı seçin."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:238
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:235
 msgid "The selected codec does not support that sample rate."
 msgstr "Seçili kodek bu örnekleme hızını desteklemiyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:312
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:309
 msgid "The selected noise reduction plugin is unavailable. Install it or turn noise reduction off."
 msgstr "Seçili gürültü azaltma eklentisi kullanılamıyor. Eklentiyi yükleyin veya gürültü azaltmayı kapatın."
 
-#: usr/share/biglinux/audio-converter/app/audio/profiles.py:341
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:338
 msgid "The audio plugin path is unsupported."
 msgstr "Ses eklentisinin yolu desteklenmiyor."
 
@@ -337,31 +337,31 @@ msgstr "Bir ara bölümün yolu güvenli değil."
 msgid "The output contains no readable audio. No file was published."
 msgstr "Çıktıda okunabilir ses yok. Nihai dosya kaydedilmedi."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:61
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:63
 msgid "The audio contains non-finite samples."
 msgstr "Ses, sonlu olmayan örnek değerleri içeriyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:103
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:105
 msgid "The decoded audio ends with an incomplete sample frame."
 msgstr "Kodu çözülmüş ses eksik bir örnek çerçevesiyle bitiyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:106
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:108
 msgid "The file contains no readable audio samples."
 msgstr "Dosya okunabilir ses örnekleri içermiyor."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:236 usr/share/biglinux/audio-converter/app/ui/visualizer.py:158 usr/share/biglinux/audio-converter/app/ui/visualizer.py:193 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1160
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225 usr/share/biglinux/audio-converter/app/ui/visualizer.py:153 usr/share/biglinux/audio-converter/app/ui/visualizer.py:187 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1109
 msgid "Generating waveform..."
 msgstr "Dalga biçimi oluşturuluyor…"
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:244
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:233
 msgid "FFmpeg is not installed."
 msgstr "FFmpeg yüklü değil."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:291
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:280
 msgid "The waveform could not be generated."
 msgstr "Dalga biçimi oluşturulamadı."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:299
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:288
 msgid "The source changed while its waveform was being generated."
 msgstr "Dalga biçimi oluşturulurken kaynak değişti."
 
@@ -377,7 +377,7 @@ msgstr "Dönüştürme başlatılamadı"
 msgid "Converting audio"
 msgstr "Ses dönüştürülüyor"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1146 usr/share/biglinux/audio-converter/app/ui/main_window.py:1170 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:161 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:192 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1129 usr/share/biglinux/audio-converter/app/ui/main_window.py:1153 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:156 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:187 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
 msgid "Cancel"
 msgstr "İptal"
 
@@ -410,7 +410,7 @@ msgstr[0] "{count} dosya dönüştürüldü"
 msgid "Show Files"
 msgstr "Dosyaları Göster"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1147
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
 msgid "Reset"
 msgstr "Sıfırla"
 
@@ -418,7 +418,7 @@ msgstr "Sıfırla"
 msgid "On"
 msgstr "Açık"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Off"
 msgstr "Kapalı"
 
@@ -468,7 +468,7 @@ msgstr "Öne Çıkan Ses"
 msgid "Custom"
 msgstr "Özel"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:486 usr/share/biglinux/audio-converter/app/ui/main_window.py:491
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:470 usr/share/biglinux/audio-converter/app/ui/main_window.py:475
 msgid "Equalizer"
 msgstr "Ekolayzır"
 
@@ -497,7 +497,7 @@ msgstr "Bilinmiyor"
 msgid "Duration"
 msgstr "Süre"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:117
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:116
 msgid "Format"
 msgstr "Biçim"
 
@@ -505,11 +505,11 @@ msgstr "Biçim"
 msgid "Bitrate"
 msgstr "Bit hızı"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:300
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:299
 msgid "Sample rate"
 msgstr "Örnekleme hızı"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:287
 msgid "Channels"
 msgstr "Kanallar"
 
@@ -549,32 +549,32 @@ msgstr "Ses Özellikleri"
 msgid "Metadata Tags"
 msgstr "Üst Veri Etiketleri"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:39
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:40
 msgid "Folder could not be opened"
 msgstr "Klasör açılamadı"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:40
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:41
 #, python-brace-format
 msgid "Open your file manager and navigate to: {path}"
 msgstr "Dosya yöneticinizi açıp şu konuma gidin: {path}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:44
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:45
 msgid "Close"
 msgstr "Kapat"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:54
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:55
 msgid "Converted with warnings"
 msgstr "Uyarılarla dönüştürüldü"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:55 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
 msgid "Failed"
 msgstr "Başarısız"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:57
 msgid "Cancelled"
 msgstr "İptal edildi"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:74
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:75
 msgid "Technical details"
 msgstr "Teknik ayrıntılar"
 
@@ -620,33 +620,33 @@ msgid "{count} part"
 msgid_plural "{count} parts"
 msgstr[0] "{count} parça"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:397
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:396
 msgid "Add audio or video files"
 msgstr "Ses veya video dosyaları ekleyin"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:398
 #, python-brace-format
 msgid "Drag files here or use {button}."
 msgstr "Dosyaları buraya sürükleyin veya {button} düğmesini kullanın."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:400 usr/share/biglinux/audio-converter/app/ui/main_window.py:298 usr/share/biglinux/audio-converter/app/ui/main_window.py:306
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399 usr/share/biglinux/audio-converter/app/ui/main_window.py:292 usr/share/biglinux/audio-converter/app/ui/main_window.py:300
 msgid "Add Files"
 msgstr "Dosya Ekle"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:404
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:403
 msgid "Each audio track of a video becomes its own entry. The originals are never changed."
 msgstr "Bir videonun her ses parçası ayrı bir girdi olur. Özgün dosyalar asla değiştirilmez."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:430
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:429
 #, python-brace-format
 msgid "Track {number}"
 msgstr "Ses izi {number}"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:484
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:483
 msgid "Could not move the file to Trash"
 msgstr "Dosya Çöp Kutusuna taşınamadı"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:506
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:505
 msgid "This file has no supported audio track."
 msgstr "Bu dosyada desteklenen bir ses izi yok."
 
@@ -687,258 +687,258 @@ msgstr "Dosya bir dönüştürme işlemi tarafından kullanılıyor. Girdi dosya
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "Dosya çöp kutusuna taşınamadı. Silinmedi."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:853 usr/share/biglinux/audio-converter/main.py:92
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849 usr/share/biglinux/audio-converter/main.py:88
 msgid "Download this file to a local folder before adding it."
 msgstr "Bu dosyayı eklemeden önce yerel bir klasöre indirin."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:126
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
 msgstr "Ayarlar okunamadı ve sıfırlandı"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:202
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:196
 msgid "Drop to add"
 msgstr "Eklemek için bırakın"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:259 usr/share/biglinux/audio-converter/app/ui/main_window.py:262
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253 usr/share/biglinux/audio-converter/app/ui/main_window.py:256
 msgid "Show settings"
 msgstr "Ayarları göster"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:276 usr/share/biglinux/audio-converter/app/ui/main_window.py:283
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270 usr/share/biglinux/audio-converter/app/ui/main_window.py:277
 msgid "Clear queue"
 msgstr "Kuyruğu temizle"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:311
 msgid "Show help on hover"
 msgstr "Üzerine gelindiğinde yardım göster"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:319 usr/share/biglinux/audio-converter/app/ui/main_window.py:1165 usr/share/biglinux/audio-converter/app/ui/main_window.py:1171
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313 usr/share/biglinux/audio-converter/app/ui/main_window.py:1148 usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
 msgid "Clear Queue"
 msgstr "Kuyruğu Temizle"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:320
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:314
 msgid "Reset All Settings…"
 msgstr "Tüm Ayarları Sıfırla…"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:323
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:317
 msgid "About"
 msgstr "Hakkında"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:328
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:322
 msgid "Main menu"
 msgstr "Ana menü"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:379
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:373
 msgid "Volume"
 msgstr "Ses düzeyi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:387
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:381
 msgid "Speed"
 msgstr "Hız"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:199
 msgid "Cleaning quality"
 msgstr "Temizleme kalitesi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:398
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:392
 msgid "Clean voice"
 msgstr "Sesi temizle"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:410
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:404
 msgid "Adjusted"
 msgstr "Ayarlı"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:411 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:130 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:302 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:474
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
 msgid "Original"
 msgstr "Özgün"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:414
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:408
 msgid "Listen with or without adjustments"
 msgstr "Ayarlı veya ayarsız dinle"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:424
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:418
 msgid "Selection only"
 msgstr "Yalnızca seçim"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:435
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:429
 msgid "Play only selected area"
 msgstr "Yalnızca seçili alanı oynat"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:440
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:434
 msgid "Edit Segments…"
 msgstr "Bölümleri Düzenle…"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:452
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:446
 msgid "Zoom out"
 msgstr "Uzaklaştır"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:453
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:447
 msgid "Reset zoom"
 msgstr "Yakınlaştırmayı sıfırla"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:454
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:448
 msgid "Zoom in"
 msgstr "Yakınlaştır"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:487
 msgid "Play the next file automatically"
 msgstr "Sonraki dosyayı otomatik oynat"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:513 usr/share/biglinux/audio-converter/app/ui/main_window.py:515
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497 usr/share/biglinux/audio-converter/app/ui/main_window.py:499
 msgid "More playback options"
 msgstr "Diğer oynatma seçenekleri"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:519
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
 msgid "Playback"
 msgstr "Oynatma"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:520
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:504
 msgid "Only affects listening. Converted files stay unchanged."
 msgstr "Yalnızca dinlemeyi etkiler. Dönüştürülen dosyalar değişmez."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
 msgid "Audio output"
 msgstr "Ses çıkışı"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:528 usr/share/biglinux/audio-converter/app/ui/main_window.py:894
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512 usr/share/biglinux/audio-converter/app/ui/main_window.py:877
 msgid "System default"
 msgstr "Sistem varsayılanı"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:554
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:538
 msgid "Previous track"
 msgstr "Önceki ses izi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:566
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
 msgid "Play or pause"
 msgstr "Oynat veya duraklat"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:579
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:563
 msgid "Next track"
 msgstr "Sonraki ses izi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:785
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:768
 #, python-brace-format
 msgid "{count} file"
 msgid_plural "{count} files"
 msgstr[0] "{count} dosya"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:827
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:810
 #, python-format
 msgid "Join %d file"
 msgid_plural "Join %d files"
 msgstr[0] "%d dosyayı birleştir"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:829
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:812
 #, python-format
 msgid "Convert %d file"
 msgid_plural "Convert %d files"
 msgstr[0] "%d dosyayı dönüştür"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:984 usr/share/biglinux/audio-converter/app/ui/main_window.py:1098
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967 usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
 msgid "OK"
 msgstr "Tamam"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:992
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:975
 msgid "Stop the conversion?"
 msgstr "Dönüştürme durdurulsun mu?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:994
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:977
 msgid "Closing the window stops the conversion in progress. Files that already finished are kept."
 msgstr "Pencereyi kapatmak süren dönüştürmeyi durdurur. Tamamlanmış dosyalar korunur."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:998
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:981
 msgid "Keep Converting"
 msgstr "Dönüştürmeye devam et"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:999
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:982
 msgid "Stop and Close"
 msgstr "Durdur ve kapat"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1045
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1029
 msgid "No audio selected"
 msgstr "Ses seçilmedi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1046
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1030
 msgid "Add a file and select it before editing segments."
 msgstr "Bölümleri düzenlemeden önce bir dosya ekleyin ve seçin."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1051
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1035
 msgid "Audio duration unavailable"
 msgstr "Ses süresi alınamıyor"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1052
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1036
 msgid "Wait for the waveform to finish loading before editing this file."
 msgstr "Bu dosyayı düzenlemeden önce dalga biçiminin yüklenmesini bekleyin."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1092
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1076
 msgid "Other valid files remain in the queue. Check these files and add them again."
 msgstr "Diğer geçerli dosyalar kuyrukta kalır. Bu dosyaları kontrol edip yeniden ekleyin."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1080
 msgid "Some files could not be added"
 msgstr "Bazı dosyalar eklenemedi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1112
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1096
 msgid "Audio preview"
 msgstr "Ses ön dinlemesi"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1140
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1123
 msgid "Reset all settings?"
 msgstr "Tüm ayarlar sıfırlansın mı?"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1142
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1125
 msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
 msgstr "Biçim, kalite, çıktı klasörü, kesme, efektler ve ekolayzır varsayılanlarına döner. Kuyruk ve kaynak dosyalarınız korunur."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1167
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1150
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
 msgstr "Kuyruktaki öğeler ve düzenlemeleri kaldırılsın mı? Kaynak dosyalar silinmeyecek."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1215
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1195
 msgid "Select Audio or Video Files"
 msgstr "Ses veya Video Dosyalarını Seçin"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1218
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1198
 msgid "Audio and Video files"
 msgstr "Ses ve video dosyaları"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1264
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1244
 msgid "All files"
 msgstr "Tüm dosyalar"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1289 usr/share/biglinux/audio-converter/main.py:91
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269 usr/share/biglinux/audio-converter/main.py:87
 msgid "Local files only"
 msgstr "Yalnızca yerel dosyalar"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1291
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1271
 msgid "Some selected files are remote. Download them before adding them."
 msgstr "Seçili dosyalardan bazıları uzak konumlarda. Eklemeden önce bunları indirin."
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1302
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1282
 msgid "Files could not be selected"
 msgstr "Dosyalar seçilemedi"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:158
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:153
 msgid "Delete All Segments"
 msgstr "Tüm Bölümleri Sil"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:159
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:154
 msgid "Delete all marked segments? Source files will not be changed."
 msgstr "İşaretli tüm bölümler silinsin mi? Kaynak dosyalar değiştirilmeyecek."
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:162 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:195
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:157 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
 msgid "Delete All"
 msgstr "Tümünü Sil"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:189
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:184
 msgid "Delete Segment"
 msgstr "Bölümü Sil"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:185
 #, python-brace-format
 msgid "Delete segment {number}?"
 msgstr "{number}. bölüm silinsin mi?"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:193
+#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:188
 msgid "Delete"
 msgstr "Sil"
 
@@ -978,7 +978,7 @@ msgstr "Her saatlik ses için yaklaşık bir dakika sürer."
 msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
 msgstr "Konuşma için tasarlandı. Duraklamalar, DPDFNet ile temizlenen seste aranır."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:583
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:576
 #, python-brace-format
 msgid "Unavailable: install {package}"
 msgstr "Kullanılamıyor: {package} paketini yükleyin"
@@ -1106,286 +1106,286 @@ msgstr "{number}. bölümün saniye cinsinden bitişi"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "Etkin dosya değişti. Geçerli dosya için bölüm düzenleyiciyi yeniden açın."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
 msgid "Voice only"
 msgstr "Yalnızca konuşma"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
 msgid "Fair"
 msgstr "Orta"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
 msgid "Good"
 msgstr "İyi"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
 msgid "Very good"
 msgstr "Çok iyi"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:56
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
 msgid "Best"
 msgstr "En iyi"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:67
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:66
 #, python-brace-format
 msgid "{quality}, about {size} MB per minute"
 msgstr "{quality}, dakikada yaklaşık {size} MB"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:93
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:92
 msgid "Allow conversion to 24-bit PCM"
 msgstr "24 bit PCM'ye dönüştürmeye izin ver"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:95
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
 msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
 msgstr "FLAC'a aktarılan kayan noktalı ses içindir. Hassasiyeti azaltır; WAV özgün gösterimi korur."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:119
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:118
 msgid "Choose the output format. Keeping the original format applies no effects."
 msgstr "Çıkış biçimini seçin. Orijinal biçimi korumak hiçbir efekt uygulamaz."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
 msgid "MP3 — plays everywhere"
 msgstr "MP3 — her yerde çalar"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
 msgid "M4A — good quality in small files"
 msgstr "M4A — küçük dosyalarda iyi kalite"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
 msgid "Opus — smallest files, great for voice"
 msgstr "Opus — en küçük dosyalar, konuşma için ideal"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
 msgid "FLAC — lossless, smaller than WAV"
 msgstr "FLAC — kayıpsız, WAV'dan küçük"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
 msgid "WAV — uncompressed"
 msgstr "WAV — sıkıştırılmamış"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
 msgid "Ogg Vorbis — open format"
 msgstr "Ogg Vorbis — açık biçim"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:128
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
 msgid "Keep the original format — no conversion, no effects"
 msgstr "Özgün biçimi koru — dönüştürme yok, efekt yok"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:142
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:141
 msgid "Quality"
 msgstr "Kalite"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:144
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:143
 msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
 msgstr "Daha yüksek kalite daha iyi ses ve daha büyük dosyalar demektir. Her seçenek dakika başına boyutunu gösterir."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
 msgid "Faster"
 msgstr "Daha hızlı"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:201
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
 msgid "Better, slower"
 msgstr "Daha iyi, daha yavaş"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:213
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
 msgid "Marks"
 msgstr "İşaretler"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
 msgid "Keep them"
 msgstr "Koru"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:215
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
 msgid "Remove them"
 msgstr "Kaldır"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:221
 msgid "Order"
 msgstr "Sıra"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
 msgid "Choose the order in which marked segments are exported."
 msgstr "İşaretli bölümlerin dışa aktarılacağı sırayı seçin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
 msgid "In timeline order"
 msgstr "Zaman çizelgesindeki sırayla"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:224
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
 msgid "In the order marked"
 msgstr "İşaretlenme sırasıyla"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:230
 msgid "Save segments"
 msgstr "Bölümleri kaydet"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
 msgid "Export each segment separately or join the selected segments."
 msgstr "Her bölümü ayrı ayrı dışa aktarın veya seçili bölümleri birleştirin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
 msgid "Separate files"
 msgstr "Ayrı dosyalar"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:233
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
 msgid "Join this file's segments"
 msgstr "Bu dosyanın bölümlerini birleştir"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:240
 msgid "Join into one file"
 msgstr "Tek dosyada birleştir"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:242
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
 msgid "In queue order, named after the first file"
 msgstr "Kuyruk sırasıyla, ilk dosyanın adıyla"
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 270
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
 msgid "Save in the same folder as the original file"
 msgstr "Orijinal dosya ile aynı klasöre kaydet"
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 271
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:252
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
 msgid "Folder to save"
 msgstr "Kaydetmek için klasör"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:256
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:255
 msgid "Save to"
 msgstr "Kayıt konumu"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:266 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:271 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:401
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:265 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
 msgid "Choose output folder"
 msgstr "Çıktı klasörünü seç"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
 msgid "Keep the original layout or explicitly downmix to mono or stereo."
 msgstr "Özgün kanal düzenini korur ya da açıkça seçilirse sesi mono veya stereoya indirger."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
 msgid "Mono"
 msgstr "Mono"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:290
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
 msgid "Stereo"
 msgstr "Stereo"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:309
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
 msgid "Standard volume"
 msgstr "Standart ses düzeyi"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:311
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:310
 msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
 msgstr "Her dosyayı konuşma ve podcast’ler için standart ses düzeyine getirir, böylece birden çok dosya aynı seviyede çalar."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:319
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:318
 msgid "Lift quiet parts"
 msgstr "Kısıkları yükselt"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:321
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:320
 msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
 msgstr "Kısık bölümleri yükseltir, yüksek olanları yumuşatır; böylece ses düzeyiyle uğraşmadan her şey rahatça duyulur."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Light"
 msgstr "Hafif"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Medium"
 msgstr "Orta"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:323
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
 msgid "Strong"
 msgstr "Güçlü"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:351
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
 msgid "Remove pauses"
 msgstr "Duraklamaları kaldır"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:353
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
 msgid "Cuts"
 msgstr "Kesimler"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:376
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
 msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
 msgstr "Özgün biçim kodlanmış sesi korur. Kesimler paket sınırlarını izler ve tam zamanlara denk gelmeyebilir. Efektler önizlemede ve dışa aktarmada atlanır."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:386
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
 msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
 msgstr "Sesi veya ekolayzır bantlarını yükseltmek sesi bozabilir. Kazancı düşürün veya Standart ses düzeyi seçeneğini açın."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:415
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
 msgid "Local folder required"
 msgstr "Yerel klasör gerekli"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:416
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
 msgid "Choose a folder on the local filesystem."
 msgstr "Yerel dosya sisteminden bir klasör seçin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:458
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
 msgid "Lossless"
 msgstr "Kayıpsız"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:678
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:671
 msgid "Mark a part on the waveform first."
 msgstr "Önce dalga biçiminde bir parça işaretleyin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:679
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:672
 msgid "Mark a part first."
 msgstr "Önce bir parça işaretleyin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:681
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:674
 msgid "Joining files makes one file of everything."
 msgstr "Dosyaları birleştirmek her şeyi tek bir dosya yapar."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:687
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:680
 msgid "Removing keeps the timeline order."
 msgstr "Kaldırınca zaman sırası korunur."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:691
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:684
 msgid "Removing leaves a single file."
 msgstr "Kaldırınca tek dosya kalır."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:699
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:692
 msgid "The original format cannot join files"
 msgstr "Özgün biçim dosyaları birleştiremez"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:701
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:694
 msgid "Add another file to join them."
 msgstr "Birleştirmek için bir dosya daha ekleyin."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:730
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:722
 #, python-brace-format
 msgid "{count} adjustment"
 msgid_plural "{count} adjustments"
 msgstr[0] "{count} ayar"
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:761
+#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:753
 msgid "The original format keeps the audio as it is."
 msgstr "Özgün biçim sesi olduğu gibi bırakır."
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:53
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:51
 msgid "Audio waveform visualizer"
 msgstr "Ses dalga biçimi görselleştiricisi"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:940
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:894
 msgid "Click to listen from there · Drag to mark a part"
 msgstr "Oradan dinlemek için tıklayın · Bir parçayı işaretlemek için sürükleyin"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1157
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1106
 msgid "Waveform could not be generated"
 msgstr "Dalga biçimi oluşturulamadı"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1158
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1107
 msgid "Numeric segment editing is still available."
 msgstr "Sayısal bölüm düzenleme hâlâ kullanılabilir."
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1163
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1112
 msgid "No audio loaded"
 msgstr "Ses yüklenmedi"
 
-#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1256
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1205
 msgid "Audio position seekbar"
 msgstr "Ses konumu çubuğu"
 
@@ -1413,7 +1413,7 @@ msgstr "Yalnızca işaretli bölümleri ön dinleyin."
 msgid "More actions are available from the adjacent menu button."
 msgstr "Diğer işlemlere yanındaki menü düğmesinden erişebilirsiniz."
 
-#: usr/share/biglinux/audio-converter/main.py:212 usr/share/biglinux/audio-converter/main.py:214
+#: usr/share/biglinux/audio-converter/main.py:205 usr/share/biglinux/audio-converter/main.py:207
 msgid "BigLinux Team"
 msgstr "BigLinux Ekibi"
 

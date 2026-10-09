@@ -10,8 +10,8 @@ from .media import audio_duration, audio_stream, pcm_codec, probe_media
 from .process import MediaError, ProcessRunner
 from .profiles import LOUDNORM, OfflineDenoise, metadata_args
 
-# Every input costs FFmpeg a demuxer, a decoder and about 1 MB; near 2,300 it
-# cannot open another decoder. Longer edits are joined through lossless parts.
+# Every input costs FFmpeg a demuxer and a decoder, and a run cannot open
+# thousands of them. Longer edits are joined through lossless parts.
 CUTS_PER_RUN = 256
 # Decode | denoise | wrap the result for the following passes. Paths and
 # numbers arrive as environment variables, never as shell text.

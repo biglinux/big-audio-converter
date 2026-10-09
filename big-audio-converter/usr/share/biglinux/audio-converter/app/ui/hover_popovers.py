@@ -163,7 +163,7 @@ class HoverPopovers:
         # The popup is placed in the window's surface, whose origin lies
         # outside the root widget by the window's own shadow. The popup's own
         # shadow is no part of the card: under a card it covers the
-        # neighbouring anchors, which would then never take over.
+        # neighboring anchors, which would then never take over.
         popover = self.popovers[name]
         found_card, card = popover.get_child().compute_bounds(popover)
         if not found_card:

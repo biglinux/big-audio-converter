@@ -1,4 +1,4 @@
-"""Native, nonblocking Nautilus integration for local audio and video files."""
+"""Files context-menu entry that opens audio and video files in the converter."""
 
 import gettext
 import logging

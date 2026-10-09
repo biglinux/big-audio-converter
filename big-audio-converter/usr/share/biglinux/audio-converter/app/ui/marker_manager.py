@@ -31,7 +31,6 @@ class MarkerManagerMixin:
         return 1.0 - 1.0 / self.zoom_level
 
     def _init_marker_state(self):
-        """Initialize all marker-related state variables."""
         self._marker_dialog = None
         self.marker_pairs = []  # List of {start, stop} pairs
         self.highlighted_pair = -1  # Index of pair being highlighted
@@ -57,10 +56,8 @@ class MarkerManagerMixin:
         self.marker_updated_callback = None
         self.marker_drag_callback = None  # Callback for marker drag state changes
 
-        # Track which segment is being hovered for visual feedback and keyboard shortcuts
         self.hovered_segment_index = -1
 
-        # Track if hovering over delete button for cursor change
         self.hovering_delete_button = False
         self.delete_button_bounds = None  # Store (x, y, radius) for hit detection
 
@@ -71,25 +68,21 @@ class MarkerManagerMixin:
 
         button_x, button_y, button_radius = self.delete_button_bounds
 
-        # Calculate distance from center of button
         distance = ((x - button_x) ** 2 + (y - button_y) ** 2) ** 0.5
 
-        # Return True if within button radius (with small padding for easier clicking)
+        # Three pixels of slack make the small button easier to hit.
         return distance <= button_radius + 3
 
     def _find_segment_at_position(self, x, y):
         """Find if the given x,y position is on an existing segment."""
         width = self.get_width()
 
-        # Calculate visible time range
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
-        # Check each pair
         for i, pair in enumerate(self.marker_pairs):
             if pair["start"] is not None and pair["stop"] is not None:
-                # Skip segments not in visible range
                 if pair["stop"] < start_time or pair["start"] > end_time:
                     continue
 
@@ -110,24 +103,19 @@ class MarkerManagerMixin:
         height = self.get_height()
         marker_hit_tolerance = 5  # Pixels of tolerance for marker hit detection
 
-        # Only check within reasonable Y bounds
         if y < 0 or y > height:
             return None
 
-        # Calculate visible time range
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
-        # Check each marker pair
         for i, pair in enumerate(self.marker_pairs):
-            # Check start marker (only if visible)
             if pair["start"] is not None and start_time <= pair["start"] <= end_time:
                 x_start = ((pair["start"] - start_time) / visible_duration) * width
                 if abs(x - x_start) <= marker_hit_tolerance:
                     return {"index": i, "type": "start"}
 
-            # Check stop marker (only if visible)
             if pair["stop"] is not None and start_time <= pair["stop"] <= end_time:
                 x_stop = ((pair["stop"] - start_time) / visible_duration) * width
                 if abs(x - x_stop) <= marker_hit_tolerance:
@@ -139,17 +127,14 @@ class MarkerManagerMixin:
         """Find if x,y is inside a segment body (not on edge)."""
         width = self.get_width()
 
-        # Calculate visible time range
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
 
-        # Check each segment
         edge_tolerance = 5  # Same as marker hit tolerance
 
         for i, pair in enumerate(self.marker_pairs):
             if pair["start"] is not None and pair["stop"] is not None:
-                # Skip segments not in visible range
                 if pair["stop"] < start_time or pair["start"] > end_time:
                     continue
 
@@ -271,7 +256,6 @@ class MarkerManagerMixin:
         Returns:
             List of ordered marker pairs.
         """
-        # First, get all valid marker pairs
         pairs = self.get_marker_pairs()
 
         if not pairs:
@@ -318,7 +302,6 @@ class MarkerManagerMixin:
         region_color = (*border_rgb, 0.30 if self.remove_marked else 0.25)
         highlight_color = (1.0, 0.8, 0.0, 0.35)
 
-        # Calculate visible time range
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         end_time = start_time + visible_duration
@@ -326,15 +309,12 @@ class MarkerManagerMixin:
         # Collect all marker labels for collision-aware placement
         label_items = []  # (x_center, text)
 
-        # First draw the segments and markers
         for i, pair in enumerate(self.marker_pairs):
-            # Skip markers outside visible range
             if (pair["start"] is not None and pair["stop"] is not None) and (
                 pair["stop"] < start_time or pair["start"] > end_time
             ):
                 continue  # Skip this pair, it's not visible
 
-            # Use highlight color if this segment is highlighted
             is_highlighted = i == self.highlighted_pair
             # Hundreds of found pauses would bury the waveform under edge
             # lines, times and numbers (112 ms a frame for 600): those show
@@ -379,7 +359,6 @@ class MarkerManagerMixin:
                 label_items.append((x_stop, time_str))
 
             if pair["start"] is not None and pair["stop"] is not None:
-                # Calculate positions accounting for zoom and viewport
                 if pair["start"] <= end_time and pair["stop"] >= start_time:
                     # Clamp to visible range
                     visible_start = max(pair["start"], start_time)
@@ -513,7 +492,6 @@ class MarkerManagerMixin:
         cr.move_to(cx - s, cy - s * 0.5)
         cr.line_to(cx + s, cy - s * 0.5)
         cr.stroke()
-        # Handle on lid
         cr.move_to(cx - s * 0.3, cy - s * 0.5)
         cr.line_to(cx - s * 0.3, cy - s * 0.8)
         cr.line_to(cx + s * 0.3, cy - s * 0.8)

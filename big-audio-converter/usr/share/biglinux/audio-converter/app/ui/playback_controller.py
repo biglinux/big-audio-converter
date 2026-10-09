@@ -11,7 +11,7 @@ class PlaybackControllerMixin:
     """Mixin providing all playback control logic for MainWindow."""
 
     def on_playback_finished(self, player):
-        """Handle playback completion and auto-play next file."""
+        """Play the next file when auto-advance is on."""
 
         if not self.auto_advance_switch.get_active():
             self._playback_sources.idle(self.file_queue.update_playing_state, False)
@@ -52,7 +52,7 @@ class PlaybackControllerMixin:
             self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
 
     def on_activate_file(self, file_path, index):
-        """Handle file row activation (clicked) - show waveform, auto-play if already playing."""
+        """Show the row's waveform; keep playing if playback was running."""
         was_playing = self.player.is_playing()
         self._load_file_for_visualization(file_path, index, play_audio=was_playing)
 
@@ -107,7 +107,6 @@ class PlaybackControllerMixin:
             self.file_queue.update_playing_state(False)
             return
 
-        # Stop any different file that might be playing
         if self.player.is_playing() and self.player.current_file != file_path:
             self.player.stop()
 
@@ -118,7 +117,6 @@ class PlaybackControllerMixin:
         if file_path != self.active_audio_id:
             self._prepare_visualizer_for_new_file(file_path, index)
 
-        # Load the file into the player
         if (self.player.load(file_path, self.file_queue.track_metadata)) and (
             play_audio
         ):
@@ -129,7 +127,6 @@ class PlaybackControllerMixin:
             self.file_queue.update_playing_state(True)
 
     def on_player_position_updated(self, player, position, duration):
-        """Handle position updates from player."""
         if duration > 0 and self.visualizer.duration != duration:
             self.visualizer.duration = duration
         self.visualizer.set_position(position)
@@ -143,7 +140,6 @@ class PlaybackControllerMixin:
 
         self._update_play_selection_button()
 
-        # Handle segment transitions in Play Selection Only mode
         if self._playing_selection and self._selection_segments:
             if self._marker_dragging or self._is_transitioning_segment:
                 return
@@ -208,21 +204,17 @@ class PlaybackControllerMixin:
         return False
 
     def on_player_duration_changed(self, player, duration):
-        """Handle duration changes from player."""
         if duration > 0:
             self.visualizer.duration = duration
             self.seekbar.set_duration(duration)
 
     def on_visualizer_seek(self, position, should_play):
-        """Handle seek request from visualizer."""
-        # If marker is being dragged/resized, allow free seeking
         if self._marker_dragging:
             self.player.seek(position)
             self.visualizer.set_position(position)
             self.seekbar.set_position(position)
             return
 
-        # If in Play Selection Only mode, validate position is in a segment
         if self._play_selection_mode and self._selection_segments:
             in_segment = False
             for i, (start, stop) in enumerate(self._selection_segments):
@@ -279,7 +271,6 @@ class PlaybackControllerMixin:
             self._on_pause_play_clicked(None)
 
     def _on_markers_updated(self, markers):
-        """Handle marker updates from visualizer."""
         self._update_cut_rows()
         self.pause_panel.markers_changed(markers)
         if self._play_selection_mode:
@@ -344,7 +335,6 @@ class PlaybackControllerMixin:
         self._playback_sources.later(150, setattr, self, "_marker_dragging", False)
 
     def on_player_state_changed(self, player, is_playing):
-        """Handle player state changes to update UI."""
         # Use actual player state to avoid stale callbacks from stop()/play() race
         actual_state = player.is_playing()
         is_playing = actual_state
@@ -357,7 +347,6 @@ class PlaybackControllerMixin:
         )
 
     def _on_pause_play_clicked(self, button):
-        """Handle pause/play button click."""
         if self.player.is_playing():
             self.player.pause()
             if self._playing_selection:
@@ -388,7 +377,6 @@ class PlaybackControllerMixin:
             self.player.play()
 
     def _on_previous_audio_clicked(self):
-        """Handle previous audio button click - go to previous file in queue."""
         if not self.file_queue.files:
             return
 
@@ -404,7 +392,6 @@ class PlaybackControllerMixin:
         self._load_file_for_visualization(prev_file, prev_index, play_audio=True)
 
     def _on_next_audio_clicked(self):
-        """Handle next audio button click - go to next file in queue."""
         if not self.file_queue.files:
             return
 
@@ -420,7 +407,6 @@ class PlaybackControllerMixin:
         self._load_file_for_visualization(next_file, next_index, play_audio=True)
 
     def _on_play_selection_switch_toggled(self, button):
-        """Handle play selection toggle button state change."""
         active = button.get_active()
         self._play_selection_mode = active
 
@@ -432,7 +418,6 @@ class PlaybackControllerMixin:
                 self._playing_selection = False
 
     def _on_auto_advance_switch_toggled(self, button):
-        """Handle auto-advance toggle button state change."""
         is_active = button.get_active()
         self.app.config.set("auto_advance_enabled", is_active)
 
@@ -474,7 +459,6 @@ class PlaybackControllerMixin:
         self.player.seek(start)
 
     def _update_play_selection_button(self):
-        """Update Play Selection switch state based on markers."""
         has_complete_pair = False
         for marker in self.visualizer.marker_pairs:
             if marker.get("start") is not None and marker.get("stop") is not None:
@@ -487,7 +471,6 @@ class PlaybackControllerMixin:
         return False
 
     def _on_file_removed(self, file_id):
-        """Handle when a file is removed from the queue."""
         self.file_markers.pop(file_id, None)
         if file_id == self.active_audio_id:
             self.visualizer.clear_waveform()

@@ -21,12 +21,12 @@ from gi.repository import Gdk, Gtk
 
 _ = gettext.gettext
 
-# Waveform bars are drawn 2 px wide with a 1 px gap.
-
 logger = logging.getLogger(__name__)
 
 
 class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
+    """The waveform with its marks, zoom, scrollbar and time ruler."""
+
     # Told of every change of the visible window: zoom, panning, scrollbar.
     viewport_changed_callback = None
 
@@ -40,8 +40,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self._viewport_offset = offset
         if changed and self.viewport_changed_callback:
             self.viewport_changed_callback()
-
-    """Widget that displays audio waveform visualization."""
 
     def __init__(self):
         super().__init__()
@@ -80,7 +78,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         # Player reference for checking playback state
         self.player = None
 
-        # Setup click handler for both seeking and marking
         click_controller = Gtk.GestureClick()
         click_controller.connect(
             "pressed",
@@ -117,7 +114,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
         self.add_controller(drag_controller)
 
-        # Setup motion controller for hover effects
         motion_controller = Gtk.EventControllerMotion()
         motion_controller.connect(
             "motion",
@@ -133,7 +129,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         )
         self.add_controller(motion_controller)
 
-        # Zoom and pan functionality
         self.zoom_level = 1.0  # 1.0 = no zoom, higher = zoomed in
         self.viewport_offset = 0.0  # Position in waveform (0.0 to 1.0)
         self.min_zoom = 1.0
@@ -187,7 +182,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.add_controller(right_click_controller)
 
     def set_loading(self, is_loading, message=None):
-        """Set the loading state for waveform generation."""
         self.is_loading = is_loading
         self.loading_message = (
             message if message is not None else _("Generating waveform...")
@@ -195,7 +189,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.queue_draw()
 
     def set_waveform(self, data, duration):
-        """Set the waveform data to visualize."""
         self.is_loading = False
 
         self.position = 0
@@ -223,7 +216,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.cached_viewport_key = None
 
     def set_position(self, position):
-        """Update the current playback position."""
         self.position = position
 
         # Auto-follow: adjust viewport during playback OR when seeking outside visible range
@@ -234,7 +226,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 start_time = self.viewport_offset * self.duration
                 end_time = start_time + visible_duration
 
-                # Calculate position marker's pixel position
                 marker_pixel_x = ((position - start_time) / visible_duration) * width
 
                 is_playing = self.player and self.player.is_playing()
@@ -256,9 +247,8 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                             0, min(max_offset, new_start_time / self.duration)
                         )
                 else:
-                    # When NOT playing (e.g., seeking with buttons), center position if outside visible range
+                    # Seeking while paused centers a position outside the view.
                     if position < start_time or position > end_time:
-                        # Center the position in the viewport
                         new_start_time = position - visible_duration * 0.5
                         max_offset = self.max_scroll_offset
                         self.viewport_offset = max(
@@ -280,7 +270,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.queue_draw()
 
     def on_right_click(self, gesture, n_press, x, y):
-        """Handle right-click for context menu on segments."""
         if not self.duration > 0:
             return
 
@@ -306,12 +295,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         position = start_time + (x / width) * visible_duration
         position = round(position, 3)
 
-        # Check delete button
         if self.hovering_delete_button and self.hovered_segment_index >= 0:
             self._prompt_delete_segment(self.hovered_segment_index)
             return
 
-        # Check marker edge for drag
         marker_info = self._find_marker_at_position(x, y)
         if marker_info:
             self.is_dragging_marker = True
@@ -321,7 +308,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self.marker_drag_callback(True)
             return
 
-        # Check segment body for drag
         segment_body_index = self._find_segment_body_at_position(x, y)
         if segment_body_index >= 0:
             self.potential_drag_segment = {
@@ -336,14 +322,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.pending_press = position
 
     def on_release_handler(self, gesture, n_press, x, y):
-        """Handle mouse release events."""
         # End pan gesture if active
         if self.pan_gesture_active:
             self.pan_gesture_active = False
             self.set_cursor(None)
             return
 
-        # If we were dragging, notify about the marker update
         if self.is_dragging_marker:
             if self.dragging_marker_type == "new":
                 pair = self.marker_pairs[self.dragging_pair_index]
@@ -361,14 +345,12 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.dragging_pair_index = -1
 
     def on_drag_begin(self, gesture, start_x, start_y):
-        """Handle start of drag operation."""
         if self._is_over_scrollbar_thumb(start_x, start_y):
             self.is_dragging_scrollbar = True
             self.scrollbar_drag_start_offset = self.viewport_offset
             self.queue_draw()
             return
 
-        # Check for Ctrl+drag panning (left-click with Ctrl)
         event = gesture.get_last_event(gesture.get_last_updated_sequence())
         if event and self.zoom_level > 1.0:
             ctrl_pressed = (
@@ -382,11 +364,9 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self.set_cursor(Gdk.Cursor.new_from_name("grabbing"))
                 return
 
-        # If we have a potential segment drag, start tracking for REAL drag
         # We don't want to immediately enter drag mode - that happens in update
 
     def _drag_update_single_marker(self, pair, current_x, width, marker_type):
-        """Update a single start/stop marker position during drag."""
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         new_position = start_time + (current_x / width) * visible_duration
@@ -457,19 +437,15 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.seek_position_callback(new_start, False)
 
     def on_drag_update(self, gesture, offset_x, offset_y):
-        """Handle drag movement updates."""
-        # Handle scrollbar dragging (highest priority)
         if self.is_dragging_scrollbar:
             width = self.get_width()
             scrollbar_bounds = self._get_scrollbar_bounds(width, self.get_height())
             if scrollbar_bounds:
-                # Calculate new viewport offset from drag distance
                 visible_fraction = 1.0 / self.zoom_level
                 thumb_width = max(30, scrollbar_bounds["width"] * visible_fraction)
                 max_thumb_travel = scrollbar_bounds["width"] - thumb_width
 
                 if max_thumb_travel > 0:
-                    # Convert pixel movement to viewport offset
                     max_offset = 1.0 - visible_fraction
                     delta_offset = (offset_x / max_thumb_travel) * max_offset
                     new_offset = self.scrollbar_drag_start_offset + delta_offset
@@ -477,13 +453,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     self.queue_draw()
             return
 
-        # Handle pan gesture (highest priority when active)
         if self.pan_gesture_active:
             width = self.get_width()
-            # Calculate pan delta as fraction of visible duration
             delta_fraction = -offset_x / width  # Negative for natural scrolling
 
-            # Apply delta to viewport offset
             new_offset = (
                 self.pan_gesture_start_offset + delta_fraction / self.zoom_level
             )
@@ -533,7 +506,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not ok:
             return
 
-        # Calculate current x position
         current_x = start_x + offset_x
         width = self.get_width()
 
@@ -557,7 +529,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 self.seek_position_callback(here, False)
 
     def on_drag_end(self, gesture, offset_x, offset_y):
-        """Handle end of drag operation."""
         # End scrollbar dragging
         if self.is_dragging_scrollbar:
             self.is_dragging_scrollbar = False
@@ -582,7 +553,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.potential_drag_segment = None
         self.drag_start_pos = None
 
-        # Handle normal drag cleanup
         # The cleanup is handled in on_release_handler
 
     def on_scroll(self, controller, dx, dy):
@@ -598,7 +568,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 if success:
                     self.hover_x = mouse_x
 
-        # Check for Shift key for horizontal panning
         modifiers = event.get_modifier_state() if event else 0
         shift_pressed = (modifiers & Gdk.ModifierType.SHIFT_MASK) != 0
 
@@ -626,7 +595,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         else:  # Scroll down = zoom out
             new_zoom = self.zoom_level / zoom_factor
 
-        # Use the unified zoom method (same as slider)
         self.set_zoom_level(new_zoom, use_mouse_position=True)
 
         if self.zoom_changed_callback:
@@ -639,7 +607,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not self.duration > 0:
             return False
 
-        # Check for modifier keys
         ctrl_pressed = (state & Gdk.ModifierType.CONTROL_MASK) != 0
 
         if ctrl_pressed:
@@ -703,30 +670,24 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if new_zoom == self.zoom_level:
             return
 
-        # Determine anchor fraction (0.0 to 1.0 across visible area)
+        # Anchor: the hovered point, else the playback position, else the center.
         mouse_fraction = None
 
-        # First priority: Use hover position if available and requested
         if use_mouse_position and self.hover_x is not None:
             width = self.get_width()
             if width > 0:
                 mouse_fraction = self.hover_x / width
 
-        # Second priority: Use playback position if available
         if mouse_fraction is None and self.position > 0:
-            # Calculate where playback position appears in current view
             visible_duration = self.visible_duration
             start_time = self.viewport_offset * self.duration
             end_time = start_time + visible_duration
             if start_time <= self.position <= end_time:
-                # Calculate fraction of playback position in visible area
                 mouse_fraction = (self.position - start_time) / visible_duration
 
-        # Third priority: Default to center
         if mouse_fraction is None:
             mouse_fraction = 0.5
 
-        # Calculate anchor time
         visible_duration = self.visible_duration
         start_time = self.viewport_offset * self.duration
         anchor_time = start_time + mouse_fraction * visible_duration
@@ -767,7 +728,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             self.queue_draw()
 
     def on_motion(self, controller, x, y):
-        """Handle mouse motion for hover effects."""
         width = self.get_width()
 
         was_hovering_scrollbar = self.hovering_scrollbar
@@ -787,7 +747,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                 )  # Pointer cursor for scrollbar track
             return  # Exit early when over scrollbar
 
-        # Calculate hover time position and trigger redraw for hover line display
         if self.duration > 0:
             self.hover_x = x
             # Account for zoom and pan
@@ -798,7 +757,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             if self.hover_time_callback:
                 self.hover_time_callback(self.hover_time)
 
-            # Track which segment is being hovered for keyboard shortcuts and visual feedback
             old_hovered = self.hovered_segment_index
             self.hovered_segment_index = self._find_segment_at_position(x, y)
 
@@ -827,12 +785,10 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
         # Marker interactions work across full waveform height (no more manipulation zones)
         if not self.is_dragging_marker:
-            # Check delete button hover
             if self.hovering_delete_button:
                 self.set_cursor(Gdk.Cursor.new_from_name("pointer"))
                 return
 
-            # Check marker edge for resize cursor
             marker_info = self._find_marker_at_position(x, y)
             if marker_info:
                 if marker_info["type"] == "start":
@@ -841,7 +797,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
                     self.set_cursor(Gdk.Cursor.new_from_name("e-resize"))
                 return
 
-            # Check segment body for move cursor
             segment_body_index = self._find_segment_body_at_position(x, y)
             if segment_body_index >= 0:
                 self.set_cursor(Gdk.Cursor.new_from_name("move"))
@@ -883,7 +838,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
             bottom_margin = self.scrollbar_height + self.scrollbar_margin * 2 + 4
         tick_base_y = height - bottom_margin
 
-        # Calculate nice interval for marks
         target_spacing = 80
         marks_count = max(1, int(width / target_spacing))
         time_per_mark = visible_duration / marks_count
@@ -963,7 +917,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
 
     def _draw_scrollbar(self, cr, width, height):
         """Draw a simulated horizontal scrollbar for zoomed view."""
-        # Calculate scrollbar dimensions
         scrollbar_y = height - self.scrollbar_height  # No bottom margin
         scrollbar_width = width - (2 * self.scrollbar_margin)
         scrollbar_x = self.scrollbar_margin
@@ -972,7 +925,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.rectangle(scrollbar_x, scrollbar_y, scrollbar_width, self.scrollbar_height)
         cr.fill()
 
-        # Calculate thumb (handle) dimensions
         # Thumb width represents the visible portion (1/zoom_level)
         visible_fraction = 1.0 / self.zoom_level
         thumb_width = max(30, scrollbar_width * visible_fraction)  # Minimum 30px
@@ -1000,7 +952,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         cr.fill()
 
     def _get_scrollbar_bounds(self, width, height):
-        """Get the bounds of the scrollbar area for hit detection."""
         if self.zoom_level <= 1.0:
             return None
 
@@ -1016,7 +967,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         }
 
     def _get_scrollbar_thumb_bounds(self, width, height):
-        """Get the bounds of the scrollbar thumb for hit detection."""
         if self.zoom_level <= 1.0:
             return None
 
@@ -1024,7 +974,6 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         if not scrollbar_bounds:
             return None
 
-        # Calculate thumb dimensions
         visible_fraction = 1.0 / self.zoom_level
         thumb_width = max(30, scrollbar_bounds["width"] * visible_fraction)
 
@@ -1125,7 +1074,7 @@ class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
         self.cached_viewport_key = viewport_key
 
     def _draw_waveform(self, cr):
-        """One colour, so a marked part's lighter block stands out on it."""
+        """One color, so a marked part's lighter block stands out on it."""
         color = self.get_color()
         cr.set_source_rgb(color.red, color.green, color.blue)
         cr.mask_surface(self.cached_waveform_surface, 0, 0)

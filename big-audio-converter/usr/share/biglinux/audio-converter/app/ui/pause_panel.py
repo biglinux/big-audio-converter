@@ -235,7 +235,7 @@ class PausePanel(Adw.PreferencesGroup):
         else:
             text = _("Off")
         tile.show_value(text, applied)
-        # Like the other cuts: greyed with the reason until there is a file.
+        # Like the other cuts: grayed with the reason until there is a file.
         window = self.window()
         tile.set_unavailable(
             None

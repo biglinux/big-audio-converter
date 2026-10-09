@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audio Converter application entry point (``big-audio-converter-gui``)."""
+"""Big Audio Converter entry point (``big-audio-converter-gui``)."""
 
 import gettext
 import locale
@@ -41,8 +41,6 @@ except OSError:
 
 
 class Application(Adw.Application):
-    """Main application class for Audio Converter."""
-
     def __init__(self):
         super().__init__(
             application_id="br.com.biglinux.audio.converter",
@@ -71,11 +69,9 @@ class Application(Adw.Application):
         """Handle files opened from command line or file manager."""
         win = self._main_window
         if win is None or win._closed:
-            # If no window exists yet, create one
             win = MainWindow(application=self)
             self._main_window = win
 
-        # Let the desktop handle activation; never steal focus with a fake dialog.
         win.present()
 
         # Add each file to the queue in bounded GTK work slices.
@@ -137,7 +133,6 @@ class Application(Adw.Application):
         return 0
 
     def _create_actions(self):
-        """Create application actions."""
         actions = [
             ("quit", self.on_quit_action),
             ("about", self.on_about_action),
@@ -180,7 +175,6 @@ class Application(Adw.Application):
         )
 
     def do_activate(self):
-        """Called when the application is activated."""
         win = self._main_window
         if win is None or win._closed:
             win = MainWindow(application=self)
@@ -219,7 +213,6 @@ class Application(Adw.Application):
 
 def main():
     """Run the application."""
-    # Setup basic logging
     logging.basicConfig(
         level=logging.DEBUG if os.environ.get("BAC_DEBUG") == "1" else logging.WARNING,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

@@ -70,7 +70,7 @@ class EffectTile(Gtk.FlowBoxChild):
 
     reset = None  # returns the setting to its default
     counts = True  # an applied tile is an adjustment of the sound
-    unavailable = None  # why the tile is greyed
+    unavailable = None  # why the tile is grayed
 
     def __init__(self, icon, title, description, body, switch=None, on_activate=None):
         super().__init__(
@@ -89,7 +89,7 @@ class EffectTile(Gtk.FlowBoxChild):
 
         box = Gtk.Box(spacing=10)
         # Filled when the setting applies: the state shows in a shape too,
-        # not only in the colour of the value.
+        # not only in the color of the value.
         self.icon = Gtk.Image(
             valign=Gtk.Align.CENTER,
             css_classes=["effect-badge"],
@@ -118,7 +118,7 @@ class EffectTile(Gtk.FlowBoxChild):
                 css_classes=["heading"],
             )
         )
-        # Up to three lines: a greyed tile says here why, not in a tooltip
+        # Up to three lines: a grayed tile says here why, not in a tooltip
         # alone, and a reason cut short says nothing.
         self.value_label = Gtk.Label(
             xalign=0,
@@ -171,9 +171,9 @@ class EffectTile(Gtk.FlowBoxChild):
             self.reset_button.connect("clicked", lambda _b: owner.reset())
             card.append(self.reset_button)
         # A bounded width: a long line in the body wraps instead of widening
-        # the card past its neighbours.
+        # the card past its neighbors.
         # Beside the sidebar, over the queue: above or below the tile it
-        # covered the neighbouring tiles. EffectCards points it at the edge.
+        # covered the neighboring tiles. EffectCards points it at the edge.
         self.popover = Gtk.Popover(
             child=Adw.Clamp(child=card, maximum_size=340, tightening_threshold=340),
             position=Gtk.PositionType.RIGHT,

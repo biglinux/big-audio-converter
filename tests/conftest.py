@@ -29,8 +29,8 @@ def _private_session():
     Windows must never reach the desktop of the person running the tests:
     without WAYLAND_DISPLAY libwayland falls back to the live desktop's socket,
     and a GApplication on the live bus would hand its activation to a converter
-    the person has open. Sessions already in a private runtime directory (a
-    nested KWin harness) are kept as they are.
+    the person has open. A session already in a private runtime directory is
+    reused.
     """
     runtime = os.environ.get("XDG_RUNTIME_DIR", "")
     if os.environ.get("BAC_TESTS_KEEP_SESSION") or (

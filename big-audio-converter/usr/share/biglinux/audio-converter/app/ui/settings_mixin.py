@@ -28,10 +28,10 @@ _ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
-# Quality in words by bitrate. Opus reaches each level at a lower bitrate.
 # Intensity of each named compressor step after Off.
 COMPRESSOR_STEPS = (0.0, 0.35, 0.65, 1.0)
 
+# Quality in words by bitrate. Opus reaches each level at a lower bitrate.
 QUALITY_WORDS = {
     "opus": {32: "voice", 64: "good", 96: "very good", 128: "very good"},
     "other": {
@@ -60,7 +60,7 @@ def quality_labels(format_name, bitrates):
         kbps = int(bitrate.rstrip("k"))
         word = words[table.get(kbps, "best")]
         megabytes = locale.format_string("%.1f", kbps * 60 / 8 / 1000)
-        # The bitrate names each choice: neighbouring ones share a word.
+        # The bitrate names each choice: neighboring ones share a word.
         entries.append(
             f"{kbps} kbps — "
             + _("{quality}, about {size} MB per minute").format(
@@ -205,7 +205,7 @@ class SettingsManagerMixin:
         )
 
         # Files are cut wherever segments are marked on the waveform; these
-        # tiles stay in place and wait, greyed with the reason, until a part
+        # tiles stay in place and wait, grayed with the reason, until a part
         # is marked.
         self.cut_mode_row = ChoiceTile(
             "edit-cut-symbolic",
@@ -483,7 +483,6 @@ class SettingsManagerMixin:
             )
 
     def _on_channels_changed(self, row, pspec):
-        """Handle channels selection change and save setting."""
         self.app.config.set("audio_channels", str(row.get_selected()))
 
     def _on_volume_spin_changed(self, spin):
@@ -706,7 +705,6 @@ class SettingsManagerMixin:
         self._update_convert_label()
 
     def _on_cut_output_changed(self, row, pspec):
-        """Handle cut output mode change (separate files vs merge)."""
         self.app.config.set("cut_output_mode", str(row.get_selected()))
 
     def _update_preview_toggle(self):
@@ -872,7 +870,6 @@ class SettingsManagerMixin:
         self._set_processing_volume(self._config_float("conversion_volume", 100))
         self._set_processing_speed(self._config_float("conversion_speed", 1.0))
 
-        # Legacy GTCRN settings stay on disk but never enable a different model.
         engine = self.app.config.get("noise_engine", "dfn3")
         self.noise_model.set_selected(self.noise_engines.index(engine))
         self._on_noise_model_changed(self.noise_model, None)
@@ -882,8 +879,8 @@ class SettingsManagerMixin:
             else 0
         )
 
-        # Off is the first step; the strength is kept for later. A strength
-        # saved by the former slider takes the nearest step.
+        # Off is the first step; the strength is kept for later. A saved
+        # intensity between steps takes the nearest one.
         intensity = self._config_float("compressor_intensity", 1.0)
         self.compressor_tile.steps.set_selected(
             min(
@@ -894,7 +891,6 @@ class SettingsManagerMixin:
             else 0
         )
 
-        # Restore normalization
         self.normalize_tile.set_active(self._config_bool("normalize_enabled"))
 
         # The former cut mode 2 was "in the order marked".
