@@ -625,6 +625,17 @@ def test_closing_during_a_conversion_asks_first(window, monkeypatch):
     assert window._closed
 
 
+def test_the_applications_own_icons_resolve_by_name(window):
+    from gi.repository import Gtk
+
+    theme = Gtk.IconTheme.get_for_display(window.get_display())
+    for name in (
+        "big-audio-converter-equalizer-symbolic",
+        "big-audio-converter-remove-pauses-symbolic",
+    ):
+        assert theme.has_icon(name), name
+
+
 def test_closing_the_window_leaves_the_shared_player_and_converter(window):
     app = window.get_application()
     window.cleanup()

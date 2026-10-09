@@ -5,7 +5,6 @@ import logging
 import os
 import weakref
 from copy import deepcopy
-from pathlib import Path
 
 import gi
 
@@ -471,18 +470,8 @@ class MainWindow(
 
         # Bottom right, as in the players: it opens the equalizer above the
         # queue's foot and lights while the curve is not flat.
-        # The app's own icon, outside the theme's indexed folders: by file.
-        icon = Gio.FileIcon.new(
-            Gio.File.new_for_path(
-                str(
-                    Path(__file__).resolve().parents[4]
-                    / "icons/hicolor/symbolic/actions"
-                    / "big-audio-converter-equalizer-symbolic.svg"
-                )
-            )
-        )
         self.equalizer_button = Gtk.ToggleButton(
-            child=Gtk.Image(gicon=icon),
+            child=Gtk.Image(icon_name="big-audio-converter-equalizer-symbolic"),
             tooltip_text=_("Equalizer"),
             valign=Gtk.Align.CENTER,
             css_classes=["flat"],

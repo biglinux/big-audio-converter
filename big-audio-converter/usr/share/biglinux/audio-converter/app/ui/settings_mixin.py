@@ -5,7 +5,6 @@ import locale
 import logging
 import math
 import weakref
-from pathlib import Path
 
 import gi
 
@@ -13,7 +12,7 @@ from app.utils.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, GLib, Gtk
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 from app.ui.effect_cards import (
@@ -337,18 +336,13 @@ class SettingsManagerMixin:
         # the marked parts are saved and appear once there are some. Cuts
         # also apply to the original format, unlike the effects.
         self.pause_panel = PausePanel(self)
-        # The app's own icon, by file as the equalizer's: the player's pause
-        # glyph read as a Pause button.
-        icon = Gio.FileIcon.new(
-            Gio.File.new_for_path(
-                str(
-                    Path(__file__).resolve().parents[4]
-                    / "icons/hicolor/symbolic/actions"
-                    / "big-audio-converter-remove-pauses-symbolic.svg"
-                )
-            )
+        # The app's own glyph: the player's pause icon read as a Pause button.
+        self.pause_tile = EffectTile(
+            "big-audio-converter-remove-pauses-symbolic",
+            _("Remove pauses"),
+            None,
+            self.pause_panel,
         )
-        self.pause_tile = EffectTile(icon, _("Remove pauses"), None, self.pause_panel)
         self.pause_tile.counts = False  # what is kept, not how it sounds
         self.parts_group, parts_flow = cards.add_group(_("Cuts"), 2)
         self.parts_group.set_margin_start(12)
