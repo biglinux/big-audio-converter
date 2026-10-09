@@ -1024,6 +1024,32 @@ def test_cancelling_leaves_no_partial_output_and_offers_retry(window, audio):
     assert window.banner.get_button_label() == "Try Again"
 
 
+def test_try_again_uses_the_current_settings_and_queue(window, audio, monkeypatch):
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending)
+    window.format_row.set_selected(window._format_list.index("flac"))
+    window.activate_action("win.convert", None)
+    window.activate_action("win.cancel-conversion", None)
+    pump(lambda: window.conversion.last_batch is not None)
+    window.format_row.set_selected(window._format_list.index("mp3"))
+    started = []
+    monkeypatch.setattr(
+        window.converter,
+        "start_batch",
+        lambda files, settings, *_: started.append((files, settings["format"])),
+    )
+    window.conversion.banner_activated()
+    assert started == [((str(audio),), "mp3")]
+
+    started.clear()
+    window.conversion._banner_action = ("retry", (str(audio),))
+    queue.remove_file(0)
+    window.conversion.banner_activated()
+    assert started == []
+    assert not window.banner.get_revealed()
+
+
 def test_marked_speech_exports_as_one_file_without_the_pauses(window, audio):
     import json
     import subprocess

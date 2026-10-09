@@ -21,22 +21,17 @@ class ConversionController:
         self.sources = MainLoopSources()
         self.closed = False
         self.files = ()
-        self.settings = None
         self.last_batch = None
         self._inhibit_cookie = 0
         self._banner_action = None
 
-    def start(self, files=None, settings=None):
+    def start(self, files=None):
         window = self.window()
         if self.closed or window is None or self.converter.busy:
             return
         files = tuple(files if files is not None else window.file_queue.get_files())
         try:
-            self.settings = deepcopy(
-                settings
-                if settings is not None
-                else window._collect_conversion_settings()
-            )
+            settings = deepcopy(window._collect_conversion_settings())
         except (MediaError, ValueError, TypeError) as exc:
             window._show_message(_("Check conversion settings"), str(exc))
             return
@@ -46,7 +41,7 @@ class ConversionController:
             row.set_result(None)
         try:
             self.converter.start_batch(
-                files, self.settings, self._progress_received, self._finished
+                files, settings, self._progress_received, self._finished
             )
         except (MediaError, RuntimeError) as exc:
             window._show_message(_("Conversion could not start"), str(exc))
@@ -160,7 +155,14 @@ class ConversionController:
             return
         kind, value = self._banner_action
         if kind == "retry":
-            self.start(value, self.settings)
+            # With the settings and marks as they are now: the message may have
+            # asked for a change. Files removed since then stay out.
+            queued = self.window().file_queue.files
+            remaining = tuple(path for path in value if path in queued)
+            if remaining:
+                self.start(remaining)
+            else:
+                self.window().banner.set_revealed(False)
         else:
             self.window().file_queue.reveal(value)
 
