@@ -146,7 +146,19 @@ class SettingRow(Gtk.ListBoxRow):
             margin_start=6,
             margin_end=6,
         )
-        header = Gtk.Box(spacing=8)
+        # The row's icon and tint repeat here, so the card reads as the row's
+        # even where its arrow is far from the pointer.
+        header = Gtk.Box(spacing=8, css_classes=["card-header"])
+        header_icon = Gtk.Image(
+            valign=Gtk.Align.CENTER,
+            css_classes=["card-header-badge"],
+            accessible_role=Gtk.AccessibleRole.PRESENTATION,
+        )
+        if isinstance(icon, str):
+            header_icon.set_from_icon_name(icon)
+        else:
+            header_icon.set_from_gicon(icon)
+        header.append(header_icon)
         header.append(
             Gtk.Label(
                 label=title, xalign=0, hexpand=True, wrap=True, css_classes=["heading"]

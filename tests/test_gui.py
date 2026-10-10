@@ -1468,5 +1468,6 @@ def test_a_long_option_in_a_card_wraps_instead_of_widening_it(window):
     pump(lambda: row.get_mapped())
     window.effect_cards.hover_cards.open(row)
     pump(lambda: row.popover.get_mapped() and row.popover.get_width())
-    assert row.popover.get_width() <= 380
+    # The card's own box, not the popover's, which also holds its shadow.
+    assert row.popover.get_child().get_width() <= 340
     row.popover.popdown()

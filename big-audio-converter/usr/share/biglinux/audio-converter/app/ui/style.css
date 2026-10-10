@@ -33,8 +33,32 @@ popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shad
 
 /* Settings rows: an applied setting fills its badge and colors its value. */
 row.setting-row { padding: 6px 12px; min-height: 48px; }
-/* The row whose card is open stays marked while the pointer is in the card. */
-row.setting-row.card-open { background-color: alpha(currentColor, 0.06); }
+/* The row whose card is open stays marked while the pointer is in the card,
+   in the accent tint its card's header repeats. */
+row.setting-row.card-open { background-color: alpha(@accent_bg_color, 0.14); }
+row.setting-row.card-open .effect-badge {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+/* A card opens over the queue, which shares its light surface: an outline
+   and a deeper shadow lift it, and the header carries the row's tint. */
+popover.effect-card > contents {
+    box-shadow: 0 0 0 1px alpha(black, 0.10),
+                0 2px 4px alpha(black, 0.10),
+                0 10px 28px alpha(black, 0.22);
+}
+.card-header {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: alpha(@accent_bg_color, 0.14);
+}
+.card-header-badge {
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 9999px;
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
 /* A grayed row dims its name and icon, not the reason it gives in place of
    its value: that has to stay readable. */
 row.setting-row:disabled .effect-title,
