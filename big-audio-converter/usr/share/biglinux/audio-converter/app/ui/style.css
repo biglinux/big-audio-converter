@@ -70,6 +70,9 @@ list > row.setting-row.card-open {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+/* The tab runs over the sidebar's edge, where its overlay scrollbar would
+   show beside it. */
+scrolledwindow.sidebar.card-open > scrollbar { opacity: 0; }
 /* A grayed row dims its name and icon, not the reason it gives in place of
    its value: that has to stay readable. */
 row.setting-row:disabled .effect-title,

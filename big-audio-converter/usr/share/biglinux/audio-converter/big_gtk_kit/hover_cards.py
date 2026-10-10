@@ -522,7 +522,8 @@ class HoverCards:
     ``side`` is where every card opens relative to the line of anchors. The
     consumer styles ``.hover-card`` (the card) and ``.card-tab`` (its ``color``
     is the tab's, the same as the anchor's ``.card-open`` background and the
-    card's near edge). Hooks: ``can_open(name)`` may refuse to open;
+    card's near edge); a scrolled view holding an open card's anchor is
+    ``.card-open`` too. Hooks: ``can_open(name)`` may refuse to open;
     ``edge(name)`` gives the card's near edge in window coordinates (by
     default 12 px past the anchor); ``before_place(name, min_header)`` may
     make the card's header at least ``min_header`` tall, so the tab reads as
@@ -663,7 +664,7 @@ class HoverCards:
             self._fade[1].skip()
         panel.set_visible(False)
         self._tabs[name].set_visible(False)
-        self._anchors[name].remove_css_class(OPEN_CLASS)
+        self._mark_open(name, False)
         self._held.discard(name)
         self._intent.closed(name)
         if had_focus:
@@ -716,7 +717,7 @@ class HoverCards:
                     owner.close(other)
         panel, tab = self.panels[name], self._tabs[name]
         was_open = panel.get_visible()
-        self._anchors[name].add_css_class(OPEN_CLASS)
+        self._mark_open(name, True)
         if not was_open:
             panel.set_opacity(0)
             tab.set_opacity(0)
@@ -773,6 +774,18 @@ class HoverCards:
             None if cut_before else shown(anchor, Gtk.Widget.get_prev_sibling),
             None if cut_after else shown(anchor, Gtk.Widget.get_next_sibling),
         )
+
+    def _mark_open(self, name, is_open):
+        # The scrolled view holding the anchor is marked too, so its overlay
+        # scrollbar can stay out of the tab's way.
+        anchor = self._anchors[name]
+        for widget in (anchor, anchor.get_ancestor(Gtk.ScrolledWindow)):
+            if widget is None:
+                continue
+            if is_open:
+                widget.add_css_class(OPEN_CLASS)
+            else:
+                widget.remove_css_class(OPEN_CLASS)
 
     def _view_box(self, name):
         """The scrolled view the anchor sits in, or None."""

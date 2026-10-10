@@ -894,8 +894,11 @@ def test_a_card_opens_beside_the_sidebar_level_with_its_row(window):
     assert card[0] + 8 >= edge.x
     assert abs(card[1] + 8 - anchor[1]) <= 9
     assert row.has_css_class("card-open")
+    # Its scrollbar stays out of the tab's way while the card is open.
+    assert scrolled.has_css_class("card-open")
     cards.close(row)
     pump(lambda: not row.has_css_class("card-open"))
+    assert not scrolled.has_css_class("card-open")
 
 
 def test_the_top_rows_card_stays_inside_the_window(window):
