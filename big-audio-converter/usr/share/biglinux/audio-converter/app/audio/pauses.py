@@ -15,7 +15,7 @@ import threading
 from array import array
 from collections import OrderedDict
 
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 from .media import audio_duration, audio_stream, file_identity, probe_media
 from .process import CancelledError, MediaError, ProcessRunner

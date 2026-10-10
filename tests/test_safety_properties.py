@@ -15,8 +15,8 @@ from app.audio.media import MediaSource
 from app.audio.output import publish_all
 from app.audio.process import CancelledError, MediaError, ProcessRunner
 from app.audio.waveform import PeakCollector
-from app.utils.config import AppConfig
-from app.utils.main_loop import MainLoopSources
+from app.config import AppConfig
+from app.main_loop import MainLoopSources
 
 
 @pytest.mark.parametrize(

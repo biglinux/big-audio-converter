@@ -750,7 +750,7 @@ def test_joined_queue_is_one_file_in_queue_order(
 ):
     if cuts_per_run:
         # Three inputs then pass through lossless parts.
-        monkeypatch.setattr("app.audio.segment_processor.CUTS_PER_RUN", cuts_per_run)
+        monkeypatch.setattr("app.audio.segment_renderer.CUTS_PER_RUN", cuts_per_run)
     other = tone(tmp_path / "other.wav")
     cuts = [{"start": 1.5, "stop": 2}, {"start": 0.25, "stop": 0.5}]
     (tmp_path / "output").mkdir()

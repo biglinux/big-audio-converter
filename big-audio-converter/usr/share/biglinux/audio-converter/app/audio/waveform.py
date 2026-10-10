@@ -10,7 +10,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 from .media import (
     MediaSource,

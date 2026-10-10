@@ -10,7 +10,7 @@ elsewhere.
 
 from gi.repository import Gdk, Graphene, Gtk
 
-from app.utils.main_loop import weak_callback
+from app.main_loop import weak_callback
 
 CLOSE_DELAY_MS = 300
 

@@ -166,6 +166,6 @@ class TestSegmentValidation:
 )
 def test_unusable_loudness_measurement_falls_back_to_one_pass(report):
     from app.audio.profiles import LOUDNORM
-    from app.audio.segment_processor import linear_loudnorm
+    from app.audio.segment_renderer import linear_loudnorm
 
     assert linear_loudnorm(report) == LOUDNORM

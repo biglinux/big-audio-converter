@@ -8,7 +8,7 @@ import threading
 from copy import deepcopy
 from pathlib import Path
 
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 from .media import (
     BatchResult,
@@ -29,7 +29,7 @@ from .profiles import (
     copy_container,
     validate_settings,
 )
-from .segment_processor import SegmentProcessor
+from .segment_renderer import SegmentRenderer
 
 logger = logging.getLogger(__name__)
 
@@ -375,7 +375,7 @@ class AudioConverter:
                 for opened in others
                 for cut in opened[5] or [None]
             ]
-            processor = SegmentProcessor(self.ffmpeg_path, runner)
+            processor = SegmentRenderer(self.ffmpeg_path, runner)
             speed = settings.get("speed", 1) if format_name != "copy" else 1
             with staging_directory(output_path) as directory:
                 if (

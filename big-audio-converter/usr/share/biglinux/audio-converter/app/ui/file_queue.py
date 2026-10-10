@@ -16,12 +16,12 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from app.audio.media import audio_duration, audio_stream, track_identifier
-from app.audio.probe_service import ProbeService
+from app.audio.media_probe import MediaProbe
 from app.audio.process import MediaError
 from app.audio.profiles import copy_container
+from app.main_loop import MainLoopSources, weak_callback
 from app.ui.file_info import FileInfoWindow
-from app.utils.main_loop import MainLoopSources, weak_callback
-from app.utils.time_formatter import format_time_display
+from app.ui.time_formatter import format_time_display
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ class FileQueueRow(Adw.ActionRow):
         self.source_path = file_path
         self.stream_index = None
         self.duration = None  # seconds, once probed
-        self.probe_service = None
+        self.media_probe = None
         self._info_dialogs = []
         self.index = index
         self.on_remove_callback = on_remove_callback
@@ -242,11 +242,11 @@ class FileQueueRow(Adw.ActionRow):
         button.set_popover(menu)
 
     def _on_show_info(self, action, param):
-        if self.probe_service is None:
+        if self.media_probe is None:
             return
         dialog = FileInfoWindow(
             self.get_root(),
-            self.probe_service,
+            self.media_probe,
             self.source_path,
             os.path.basename(self.file_path),
             self.stream_index,
@@ -332,18 +332,18 @@ class FileQueueRow(Adw.ActionRow):
 class FileQueue(Gtk.Box):
     """Widget for managing a queue of files to be converted."""
 
-    def __init__(self, converter, tooltip_helper, file_markers):
+    def __init__(self, converter, help_tooltips, file_markers):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
         self.converter = converter
-        self._tooltip_helper = tooltip_helper
+        self._help_tooltips = help_tooltips
         # The window's cuts by entry; a file expanded into tracks hands its cuts on.
         self._file_markers = file_markers
         self.files = []  # List of file paths
         self.file_rows = []  # List of FileQueueRow widgets
         self.currently_playing_index = None
         self.active_file_index = None  # Index of file showing its waveform
-        self._probes = ProbeService(converter.ffmpeg_path)
+        self._probes = MediaProbe(converter.ffmpeg_path)
         self._sources = MainLoopSources()
         self._pending_probes = {}
         self._imports = deque()
@@ -458,7 +458,7 @@ class FileQueue(Gtk.Box):
             self.on_delete_file,
             self.on_activate_file,
         )
-        row.probe_service = self._probes
+        row.media_probe = self._probes
         self.files.append(identifier)
         self.file_rows.append(row)
         self.file_list.append(row)
@@ -946,4 +946,4 @@ class FileQueue(Gtk.Box):
     def _apply_row_tooltips(self, row):
         """Apply custom tooltips to a file queue row."""
         # The buttons' own tooltips take precedence over the row's.
-        self._tooltip_helper.add_tooltip(row, "right_click_options")
+        self._help_tooltips.add_tooltip(row, "right_click_options")

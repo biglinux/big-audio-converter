@@ -8,7 +8,7 @@ import weakref
 
 import gi
 
-from app.utils.main_loop import weak_callback
+from app.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -71,7 +71,7 @@ def quality_labels(format_name, bitrates):
     return entries, buttons
 
 
-class SettingsManagerMixin:
+class ConversionSettingsMixin:
     """Mixin providing all conversion-settings logic for MainWindow."""
 
     def setup_conversion_options(self, parent_box):

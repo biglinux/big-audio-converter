@@ -5,7 +5,7 @@ import time
 import weakref
 from types import SimpleNamespace
 
-from app.audio.probe_service import ProbeService
+from app.audio.media_probe import MediaProbe
 from app.audio.waveform import WaveformGenerator
 from gi.repository import GLib
 
@@ -19,7 +19,7 @@ def test_probe_worker_releases_callback_after_delivery(tmp_path):
 
     owner = Owner()
     reference = weakref.ref(owner)
-    service = ProbeService("ffmpeg")
+    service = MediaProbe("ffmpeg")
     try:
         service.request(str(tmp_path / "missing.wav"), owner.ready)
         deadline = time.monotonic() + 5

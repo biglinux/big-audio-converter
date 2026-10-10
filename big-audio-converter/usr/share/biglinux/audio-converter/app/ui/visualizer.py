@@ -9,12 +9,12 @@ import gi
 import numpy as np
 
 from app.ui.cairo_text import INK, rounded_rect, show_text, text_extents
-from app.ui.marker_manager import MarkerManagerMixin
-from app.utils.time_formatter import (
+from app.ui.time_formatter import (
     format_time_display,
     format_time_ruler,
     format_time_short,
 )
+from app.ui.waveform_segments import WaveformSegmentsMixin
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gtk
@@ -24,7 +24,7 @@ _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
-class AudioVisualizer(MarkerManagerMixin, Gtk.DrawingArea):
+class AudioVisualizer(WaveformSegmentsMixin, Gtk.DrawingArea):
     """The waveform with its marks, zoom, scrollbar and time ruler."""
 
     # Told of every change of the visible window: zoom, panning, scrollbar.

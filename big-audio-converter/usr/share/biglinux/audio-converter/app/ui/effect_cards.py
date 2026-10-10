@@ -14,8 +14,8 @@ import gi
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GLib, GObject, Graphene, Gtk, Pango
 
+from app.main_loop import MainLoopSources, weak_callback
 from app.ui.hover_popovers import HoverPopovers
-from app.utils.main_loop import MainLoopSources, weak_callback
 
 _ = gettext.gettext
 

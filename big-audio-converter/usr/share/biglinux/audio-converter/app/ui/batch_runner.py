@@ -7,12 +7,12 @@ from copy import deepcopy
 from gi.repository import Gio, Gtk
 
 from app.audio.process import MediaError
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 _ = gettext.gettext
 
 
-class ConversionController:
+class BatchRunner:
     """One batch at a time; the queue and settings stay locked while it runs."""
 
     def __init__(self, window):

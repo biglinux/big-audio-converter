@@ -10,14 +10,14 @@ from gi.repository import Adw
 from app.audio.media import Segment
 from app.audio.process import MediaError
 from app.ui.cairo_text import CUT, KEEP, rounded_rect, show_text, text_extents
-from app.utils.time_formatter import format_time_short
+from app.ui.time_formatter import format_time_short
 
 _ = gettext.gettext
 
 logger = logging.getLogger(__name__)
 
 
-class MarkerManagerMixin:
+class WaveformSegmentsMixin:
     """Marks of AudioVisualizer, which supplies duration, zoom and viewport."""
 
     @property

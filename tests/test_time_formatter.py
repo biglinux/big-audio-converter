@@ -1,7 +1,7 @@
 """Times on the seek bar, the queue and the waveform ruler."""
 
 import pytest
-from app.utils.time_formatter import (
+from app.ui.time_formatter import (
     format_time_display,
     format_time_ruler,
     format_time_short,

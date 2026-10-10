@@ -5,7 +5,7 @@ import logging
 import math
 from copy import deepcopy
 
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 from .media import MediaSource
 from .process import MediaError

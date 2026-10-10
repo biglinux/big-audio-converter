@@ -10,7 +10,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass
 
-from app.utils.main_loop import MainLoopSources
+from app.main_loop import MainLoopSources
 
 from .media import file_identity, probe_media
 from .process import CancelledError, MediaError, ProcessRunner
@@ -23,7 +23,7 @@ class ProbeRequest:
     callback: object
 
 
-class ProbeService:
+class MediaProbe:
     """One worker, bounded pending work, stat-keyed cache, and owned delivery.
 
     Requests contain paths and tokens, not widgets or mutable queue indices.

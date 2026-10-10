@@ -121,7 +121,7 @@ def progress_consumer(callback, duration, speed):
     return consume
 
 
-class SegmentProcessor:
+class SegmentRenderer:
     """Render the whole track or its cuts, or fail without publishing any output.
 
     Re-encoded cuts are decoded straight from the source and joined by the

@@ -19,7 +19,7 @@ TOOLTIPS = {
 }
 
 
-class TooltipHelper:
+class HelpTooltips:
     def __init__(self, config=None):
         self.config = config
         self.widgets = weakref.WeakKeyDictionary()

@@ -7,7 +7,7 @@ from app.audio.media import complement
 logger = logging.getLogger(__name__)
 
 
-class PlaybackControllerMixin:
+class PlaybackMixin:
     """Mixin providing all playback control logic for MainWindow."""
 
     def on_playback_finished(self, player):

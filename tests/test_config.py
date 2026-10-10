@@ -4,7 +4,7 @@ import json
 import os
 
 import pytest
-from app.utils.config import AppConfig
+from app.config import AppConfig
 
 
 @pytest.fixture

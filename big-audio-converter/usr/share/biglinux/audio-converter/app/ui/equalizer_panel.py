@@ -9,7 +9,7 @@ from typing import ClassVar
 import gi
 
 from app.audio.profiles import EQ_FREQUENCIES
-from app.utils.main_loop import weak_callback
+from app.main_loop import weak_callback
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")

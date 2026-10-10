@@ -28,8 +28,8 @@ from app.audio.media import parse_segments_arg
 from app.audio.player import AudioPlayer
 from app.audio.process import MediaError
 from app.audio.profiles import discover_noise_plugins
+from app.config import AppConfig
 from app.ui.main_window import MainWindow
-from app.utils.config import AppConfig
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 APP_NAME = "Big Audio Converter"
@@ -161,7 +161,7 @@ class Application(Adw.Application):
             "show_mouseover_tips", "true" if value.get_boolean() else "false"
         )
         if self._main_window is not None:
-            self._main_window.tooltip_helper.refresh()
+            self._main_window.help_tooltips.refresh()
 
     def do_startup(self):
         Adw.Application.do_startup(self)

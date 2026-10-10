@@ -17,8 +17,8 @@ from gi.repository import Adw, Gtk
 from app.audio.media import MediaSource
 from app.audio.pauses import PAUSE_LENGTHS, PauseFinder, find_pauses, find_speech
 from app.audio.process import MediaError
-from app.utils.main_loop import weak_callback
-from app.utils.time_formatter import format_time_display
+from app.main_loop import weak_callback
+from app.ui.time_formatter import format_time_display
 
 _ = gettext.gettext
 

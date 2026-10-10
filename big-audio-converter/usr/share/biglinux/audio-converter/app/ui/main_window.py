@@ -13,26 +13,26 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
 from app.audio.waveform import WaveformGenerator
-from app.ui.conversion_controller import ConversionController
+from app.main_loop import MainLoopSources, weak_callback
+from app.ui.batch_runner import BatchRunner
+from app.ui.conversion_settings import COMPRESSOR_STEPS, ConversionSettingsMixin
 from app.ui.effect_cards import EffectCards
 from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
+from app.ui.help_tooltips import HelpTooltips
 from app.ui.hover_popovers import HoverPopovers
-from app.ui.playback_controller import PlaybackControllerMixin
+from app.ui.playback import PlaybackMixin
 from app.ui.segment_editor import SegmentEditor
-from app.ui.settings_mixin import COMPRESSOR_STEPS, SettingsManagerMixin
+from app.ui.time_formatter import format_time_display
 from app.ui.visualizer import AudioVisualizer, SeekBar
-from app.utils.main_loop import MainLoopSources, weak_callback
-from app.utils.time_formatter import format_time_display
-from app.utils.tooltip_helper import TooltipHelper
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
 class MainWindow(
-    SettingsManagerMixin,
-    PlaybackControllerMixin,
+    ConversionSettingsMixin,
+    PlaybackMixin,
     Adw.ApplicationWindow,
 ):
     """Main application window."""
@@ -82,7 +82,7 @@ class MainWindow(
         self._playback_sources = MainLoopSources()
         self.waveform_generator = WaveformGenerator()
 
-        self.tooltip_helper = TooltipHelper(self.app.config)
+        self.help_tooltips = HelpTooltips(self.app.config)
 
         self.player = self.app.player
         self.converter = self.app.converter
@@ -108,7 +108,7 @@ class MainWindow(
                 pass
 
         self.setup_ui()
-        self.conversion = ConversionController(self)
+        self.conversion = BatchRunner(self)
         self.file_queue.on_probe_error = self._on_probe_error
         owner = weakref.proxy(self)
         self.file_queue.on_trash_error = lambda title, body: owner._show_message(
@@ -330,7 +330,7 @@ class MainWindow(
         right_box.add_top_bar(self.banner)
 
         self.file_queue = FileQueue(
-            self.converter, self.tooltip_helper, self.file_markers
+            self.converter, self.help_tooltips, self.file_markers
         )
 
         self.file_queue.on_queue_size_changed = self._show_queue_summary
@@ -900,7 +900,7 @@ class MainWindow(
             (self.play_selection_switch, "play_selection_switch"),
             (self.visualizer, "waveform_visualizer"),
         ):
-            self.tooltip_helper.add_tooltip(widget, key)
+            self.help_tooltips.add_tooltip(widget, key)
 
     def on_convert(self, button):
         """Delegate job presentation to the conversion controller."""
@@ -1017,7 +1017,7 @@ class MainWindow(
         # of them at shutdown: a window opened meanwhile still needs them.
         self.player.stop()
         self.visualizer.cleanup()
-        self.tooltip_helper.cleanup()
+        self.help_tooltips.cleanup()
         self.seekbar.connect_seek_handler(None)
         if self.app._main_window is self:
             self.app._main_window = None

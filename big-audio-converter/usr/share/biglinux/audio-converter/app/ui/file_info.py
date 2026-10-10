@@ -12,7 +12,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 
 from app.audio.media import audio_stream
 from app.audio.process import MediaError
-from app.utils.time_formatter import format_time_display
+from app.ui.time_formatter import format_time_display
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -183,7 +183,7 @@ def _group(title, items):
 class FileInfoWindow(Gtk.Window):
     """Shown at once; the details arrive from a probe off the GTK thread."""
 
-    def __init__(self, parent, probe_service, source_path, title, stream_index):
+    def __init__(self, parent, media_probe, source_path, title, stream_index):
         super().__init__(
             transient_for=parent,
             modal=True,
@@ -191,7 +191,7 @@ class FileInfoWindow(Gtk.Window):
             default_width=640,
             default_height=540,
         )
-        self._probes = probe_service
+        self._probes = media_probe
         self._stream_index = stream_index
         self._clipboard = []
         header = Gtk.HeaderBar()
@@ -230,7 +230,7 @@ class FileInfoWindow(Gtk.Window):
             )
         )
         try:
-            self._token = probe_service.request(source_path, self._ready, priority=True)
+            self._token = media_probe.request(source_path, self._ready, priority=True)
         except (MediaError, RuntimeError) as exc:
             self._token = None
             self._show_error(str(exc))
