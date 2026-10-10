@@ -823,7 +823,8 @@ def test_a_row_card_opens_for_the_keyboard_and_shows_the_amount(window):
     window.present()
     pump(lambda: row.get_mapped())
     row.activate()
-    assert row.popover.get_visible() and row.popover.get_autohide()
+    cards = window.effect_cards.hover_cards
+    assert cards.is_open(row) and cards.pinned is row
     pump(lambda: row.steps.buttons[0].has_focus())
     row.steps.set_selected(3)
     assert row.value_label.get_text() == "Strong"
@@ -831,8 +832,8 @@ def test_a_row_card_opens_for_the_keyboard_and_shows_the_amount(window):
     assert count.get_text() == "1 active"
     # Off is the default of a correction: there is nothing to reset to.
     assert row.reset_button is None
-    row.popover.popdown()
-    assert not row.popover.get_autohide()
+    cards.close(row)
+    assert cards.pinned is None
 
 
 def _wait(seconds):
@@ -852,7 +853,7 @@ def _hand_driven(cards):
     and a card opening under it would otherwise meet a second pointer."""
     from gi.repository import Gtk
 
-    widgets = [cards._watched[0], *cards._anchors.values(), *cards.popovers.values()]
+    widgets = [cards._watched[0], *cards._anchors.values(), *cards.panels.values()]
     for widget in widgets:
         for controller in widget.observe_controllers():
             if isinstance(controller, Gtk.EventControllerMotion):
@@ -865,7 +866,7 @@ def _open_by_rest(cards, row):
     box = cards._anchor_box(row)
     middle = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
     cards._intent.pointer(row, middle)
-    pump(lambda: row.popover.get_mapped() and cards._card_box(row) is not None)
+    pump(lambda: cards.is_open(row) and cards._card_box(row) is not None)
     return middle
 
 
@@ -893,7 +894,7 @@ def test_a_card_opens_beside_the_sidebar_level_with_its_row(window):
     assert card[0] + 8 >= edge.x
     assert abs(card[1] + 8 - anchor[1]) <= 9
     assert row.has_css_class("card-open")
-    row.popover.popdown()
+    cards.close(row)
     pump(lambda: not row.has_css_class("card-open"))
 
 
@@ -906,7 +907,7 @@ def test_the_top_rows_card_stays_inside_the_window(window):
     _open_by_rest(cards, row)
     _x0, top, _x1, bottom = cards._card_box(row)
     assert top >= 0 and bottom <= window.get_height()
-    row.popover.popdown()
+    cards.close(row)
 
 
 def test_straight_down_hands_the_card_to_the_next_row(window):
@@ -917,9 +918,9 @@ def test_straight_down_hands_the_card_to_the_next_row(window):
     x, y = _open_by_rest(cards, first)
     below = cards._anchor_box(second)
     _move(cards, *[(x, y + (below[1] + 12 - y) * i / 4) for i in range(1, 5)])
-    pump(lambda: second.popover.get_visible())
-    assert not first.popover.get_visible()
-    second.popover.popdown()
+    pump(lambda: cards.is_open(second))
+    assert not cards.is_open(first)
+    cards.close(second)
 
 
 def test_the_way_into_a_card_crosses_the_next_row_without_switching(window):
@@ -942,16 +943,16 @@ def test_the_way_into_a_card_crosses_the_next_row_without_switching(window):
     )
     assert cards._anchor_at(target) is second
     _wait(0.3)
-    assert first.popover.get_visible() and not second.popover.get_visible()
+    assert cards.is_open(first) and not cards.is_open(second)
     _move(cards, (card[0] + 30, target[1] + 6))
     cards._intent.entered_card(first)
     _wait(0.6)
-    assert first.popover.get_visible() and not second.popover.get_visible()
+    assert cards.is_open(first) and not cards.is_open(second)
     # Resting on that row instead hands it the card.
     cards._intent.left_card(first)
     _move(cards, target)
-    pump(lambda: second.popover.get_visible())
-    second.popover.popdown()
+    pump(lambda: cards.is_open(second))
+    cards.close(second)
 
 
 def test_escape_closes_a_card_the_pointer_opened(window):
@@ -963,12 +964,12 @@ def test_escape_closes_a_card_the_pointer_opened(window):
     pump(lambda: row.get_mapped())
     _open_by_rest(cards, row)
     assert cards._on_window_key(None, Gdk.KEY_Escape, 0, 0)
-    pump(lambda: not row.popover.get_visible())
+    pump(lambda: not cards.is_open(row))
     # It stays closed while the pointer stays on the row.
     box = cards._anchor_box(row)
     cards._intent.pointer(row, (box[0] + 20, box[1] + 10))
     _wait(0.5)
-    assert not row.popover.get_visible()
+    assert not cards.is_open(row)
 
 
 def test_the_pointer_never_replaces_a_card_opened_by_a_click(window):
@@ -977,12 +978,99 @@ def test_the_pointer_never_replaces_a_card_opened_by_a_click(window):
     window.present()
     pump(lambda: other.get_mapped())
     pinned.activate()
-    pump(lambda: pinned.popover.get_mapped())
+    pump(lambda: cards.is_open(pinned))
     box = cards._anchor_box(other)
     cards._intent.pointer(other, ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
     _wait(0.6)
-    assert pinned.popover.get_visible() and not other.popover.get_visible()
-    pinned.popover.popdown()
+    assert cards.is_open(pinned) and not cards.is_open(other)
+    cards.close(pinned)
+
+
+def test_a_click_gives_the_keyboard_to_a_card_without_a_chosen_control(window, audio):
+    cards = window.effect_cards.hover_cards
+    row = window.pause_row  # its card's body is a container
+    window.file_queue.add_file(str(audio))
+    window.present()
+    pump(lambda: row.get_mapped() and row.is_sensitive())
+    row.activate()
+    panel = cards.panels[row]
+    pump(lambda: cards.is_open(row))
+    assert window.get_focus() is not None and window.get_focus().is_ancestor(panel)
+    cards.close(row)
+    assert window.get_focus() is row
+
+
+def _focus_x11_window(window):
+    import gi
+
+    gi.require_version("GdkX11", "4.0")
+    from gi.repository import GdkX11
+
+    surface = window.get_native().get_surface()
+    assert isinstance(surface, GdkX11.X11Surface)
+    xid = str(surface.get_xid())
+    subprocess.run(["xdotool", "windowfocus", "--sync", xid], check=True, timeout=5)
+    return xid
+
+
+@pytest.mark.skipif(
+    not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",
+    reason="xdotool supplies native keys to X11 windows",
+)
+@pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
+def test_a_pinned_card_keeps_tab_inside_and_escape_returns_to_its_row(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_row
+    window.present()
+    pump(lambda: row.get_mapped())
+    _focus_x11_window(window)
+    row.grab_focus()
+    row.activate()
+    panel = cards.panels[row]
+    pump(
+        lambda: window.get_focus() is not None and window.get_focus().is_ancestor(panel)
+    )
+    seen = set()
+    for _ in range(8):
+        subprocess.run(["xdotool", "key", "Tab"], check=True, timeout=5)
+        pump(lambda: True)
+        focus = window.get_focus()
+        assert focus is not None and focus.is_ancestor(panel)
+        seen.add(focus)
+    assert len(seen) > 1  # it moved, and wrapped instead of leaving
+    subprocess.run(["xdotool", "key", "Escape"], check=True, timeout=5)
+    pump(lambda: not cards.is_open(row))
+    assert window.get_focus() is row
+
+
+@pytest.mark.skipif(
+    not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",
+    reason="xdotool supplies native pointer clicks to X11 windows",
+)
+@pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
+def test_a_click_outside_a_pinned_card_closes_it_and_still_lands(window):
+    from gi.repository import Graphene
+
+    cards = window.effect_cards.hover_cards
+    row, target = window.compressor_row, window.normalize_row
+    window.present()
+    pump(lambda: row.get_mapped() and target.get_mapped())
+    xid = _focus_x11_window(window)
+    row.activate()
+    pump(lambda: cards.is_open(row) and cards._card_box(row) is not None)
+    _found, point = target.compute_point(
+        window, Graphene.Point().init(target.get_width() / 2, target.get_height() / 2)
+    )
+    dx, dy = window.get_surface_transform()
+    x, y = str(round(point.x + dx)), str(round(point.y + dy))
+    subprocess.run(
+        ["xdotool", "mousemove", "--window", xid, x, y, "click", "1"],
+        check=True,
+        timeout=5,
+    )
+    pump(lambda: target.get_active())
+    assert not cards.is_open(row)
+    target.set_active(False)
 
 
 def test_an_open_card_follows_its_row_when_the_window_resizes(window):
@@ -1005,7 +1093,7 @@ def test_an_open_card_follows_its_row_when_the_window_resizes(window):
     assert anchor[2] < before_row[2]
     assert abs((card[0] - anchor[2]) - (before_card[0] - before_row[2])) <= 1
     assert card[1] >= 0 and card[3] <= window.get_height()
-    row.popover.popdown()
+    cards.close(row)
 
 
 def test_the_pointer_leaving_the_window_closes_its_card(window):
@@ -1016,10 +1104,10 @@ def test_the_pointer_leaving_the_window_closes_its_card(window):
     _open_by_rest(cards, row)
     # The window's controller was there before the pointer came in, so GTK
     # tells it when the pointer leaves.
-    root, (motion, _keys) = cards._watched
+    root, (motion, _keys, _press) = cards._watched
     assert root is window and motion.get_widget() is window
     cards._on_window_leave(motion)
-    pump(lambda: not row.popover.get_visible())
+    pump(lambda: not cards.is_open(row))
 
 
 def test_nothing_keeps_running_once_a_card_closed(window):
@@ -1030,7 +1118,7 @@ def test_nothing_keeps_running_once_a_card_closed(window):
     _open_by_rest(cards, row)
     assert cards._after_paint is not None and cards._root is window
     _move(cards, (window.get_width() - 5, window.get_height() - 5))
-    pump(lambda: not row.popover.get_visible())
+    pump(lambda: not cards.is_open(row))
     _wait(0.4)  # past the warm window
     # No timer or frame-clock handler is left behind; the window's pointer
     # controller returns at once while no card is open.
@@ -1048,7 +1136,7 @@ def test_scrolling_the_sidebar_closes_the_pointers_card(window):
     adjustment = window.effect_cards.scrolled.get_vadjustment()
     pump(lambda: adjustment.get_upper() > adjustment.get_page_size())
     adjustment.set_value(adjustment.get_value() + 40)
-    pump(lambda: not row.popover.get_visible())
+    pump(lambda: not cards.is_open(row))
 
 
 def test_the_bar_equalizer_button_shows_and_hides_its_panel(window):
@@ -1069,7 +1157,7 @@ def test_a_switch_row_flips_on_activation_without_a_card(window):
     row.activate()
     assert row.get_active() and window.player.normalize
     assert row.value_label.get_text() == "On"
-    assert not row.popover.get_visible()
+    assert not window.effect_cards.hover_cards.is_open(row)
     row.activate()
     assert not row.get_active()
 
@@ -1077,10 +1165,11 @@ def test_a_switch_row_flips_on_activation_without_a_card(window):
 def test_copy_mode_closes_the_card_and_disables_the_rows(window):
     window.present()
     pump(lambda: window.compressor_row.get_mapped())
+    cards = window.effect_cards.hover_cards
     window.compressor_row.activate()
-    assert window.compressor_row.popover.get_visible()
+    assert cards.is_open(window.compressor_row)
     window.format_row.set_selected(window._format_list.index("copy"))
-    assert not window.compressor_row.popover.get_visible()
+    assert not cards.is_open(window.compressor_row)
     assert not window.voice_scale.get_sensitive()
     assert not window.compressor_row.is_sensitive()
     # The row says why, where its value was.
@@ -1093,14 +1182,13 @@ def test_copy_mode_closes_the_card_and_disables_the_rows(window):
 
 
 def test_pause_progress_shows_on_the_row(window, audio, monkeypatch):
-    from gi.repository import Gtk
-
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
     panel = window.pause_panel
     # The panel is the card of a row in the Cuts section.
-    assert panel.get_ancestor(Gtk.Popover) is window.pause_row.popover
+    card = window.effect_cards.hover_cards.panels[window.pause_row]
+    assert panel.is_ancestor(card)
     assert window.pause_row.value_label.get_text() == "Off"
     running = [True]  # an analysis in progress
     monkeypatch.setattr(type(panel.finder), "busy", property(lambda _f: running[0]))
@@ -1309,8 +1397,6 @@ def test_marked_speech_exports_as_one_file_without_the_pauses(window, audio):
 
 
 def test_volume_speed_and_voice_sit_in_the_playback_bar(window):
-    from gi.repository import Gtk
-
     preview = window.original_preview
     window.volume_spin.set_value(150)
     assert window.volume_value.get_label() == "150"
@@ -1326,7 +1412,7 @@ def test_volume_speed_and_voice_sit_in_the_playback_bar(window):
     assert not preview.get_visible()
     # The voice and its model are in the bar's card, not in the sidebar.
     assert window.voice_value.get_label() == "0"
-    assert window.noise_model.get_ancestor(Gtk.Popover) is not None
+    assert window.noise_model.is_ancestor(window.bar_cards.panels["voice"])
 
 
 def test_bar_controls_keep_their_width_whatever_their_cards_hold(window, audio):
@@ -1341,17 +1427,16 @@ def test_bar_controls_keep_their_width_whatever_their_cards_hold(window, audio):
     pump(lambda: voice.get_mapped() and voice.get_width())
     closed = voice.get_width()
     # An open card's expanding choices must not widen the control it points
-    # at, which would aim the card's arrow past the button.
-    window.bar_popovers.open("voice")
-    card = window.bar_popovers.popovers["voice"]
-    pump(lambda: card.get_mapped())
+    # at, which would aim the card's tab past the button.
+    window.bar_cards.open("voice")
+    pump(lambda: window.bar_cards.is_open("voice"))
     # The next layouts would widen it; give them a few frames.
     context = GLib.MainContext.default()
     deadline = time.monotonic() + 0.3
     while time.monotonic() < deadline:
         context.iteration(False)
     assert voice.get_width() == closed
-    card.popdown()
+    window.bar_cards.close("voice")
 
 
 def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
@@ -1361,7 +1446,7 @@ def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
     # Themes such as the BigLinux one give cards a wide shadow.
     shadow = Gtk.CssProvider()
     shadow.load_from_string(
-        "popover > contents { box-shadow: 0 6px 40px 12px alpha(black, 0.3); }"
+        ".hover-card { box-shadow: 0 6px 40px 12px alpha(black, 0.3); }"
     )
     Gtk.StyleContext.add_provider_for_display(
         Gdk.Display.get_default(), shadow, Gtk.STYLE_PROVIDER_PRIORITY_USER
@@ -1369,11 +1454,11 @@ def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
     window.file_queue.add_file(str(audio))
     pump(lambda: not window.file_queue.pending)
     window.present()
-    popovers = window.bar_popovers
+    cards = window.bar_cards
     speed, voice = (b.get_parent() for b in (window.speed_button, window.voice_button))
     pump(lambda: speed.get_mapped())
-    popovers.open("speed")
-    pump(lambda: popovers.popovers["speed"].get_mapped())
+    cards.open("speed")
+    pump(lambda: cards.is_open("speed") and cards._card_box("speed") is not None)
     # The microphone lies under the speed card's shadow, not under the card:
     # resting there takes over.
     from gi.repository import Graphene
@@ -1381,35 +1466,57 @@ def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
     _found, point = voice.compute_point(
         window, Graphene.Point().init(4, voice.get_height() / 2)
     )
-    popovers._on_window_motion(None, point.x, point.y)
-    pump(lambda: popovers.popovers["voice"].get_visible())
-    assert not popovers.popovers["speed"].get_visible()
-    popovers.close_all()
+    cards._on_window_motion(None, point.x, point.y)
+    pump(lambda: cards.is_open("voice"))
+    assert not cards.is_open("speed")
+    cards.close_all()
     Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), shadow)
+
+
+def test_the_bar_and_the_sidebar_never_show_two_cards(window, audio):
+    window.file_queue.add_file(str(audio))
+    pump(lambda: not window.file_queue.pending)
+    window.present()
+    bar, cards = window.bar_cards, window.effect_cards.hover_cards
+    row = window.compressor_row
+    pump(lambda: row.get_mapped() and window.volume_button.get_mapped())
+    bar.open("volume")
+    pump(lambda: bar.is_open("volume"))
+    cards.open(row)
+    assert cards.is_open(row) and not bar.is_open("volume")
+    cards.close(row)
+    # A card a click opened stays; the pointer opens nothing beside it.
+    bar.open_for_keyboard("volume")
+    _hand_driven(cards)
+    box = cards._anchor_box(row)
+    cards._intent.pointer(row, ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
+    _wait(0.6)
+    assert bar.is_open("volume") and not cards.is_open(row)
+    bar.close("volume")
 
 
 def test_a_rows_card_opens_once_the_pointer_rests_on_the_row(window):
     import time
     from types import SimpleNamespace
 
-    popovers = window.effect_cards.hover_cards
+    cards = window.effect_cards.hover_cards
     row = window.compressor_row
     window.present()
     pump(lambda: row.get_mapped())
     controller = SimpleNamespace(get_widget=lambda: row)
     # Passing over: in and out within the wait opens nothing.
-    popovers._on_anchor_pointer(controller, 10, 10, row)
-    assert not row.popover.get_visible()
-    popovers._on_anchor_leave(controller, row)
+    cards._on_anchor_pointer(controller, 10, 10, row)
+    assert not cards.is_open(row)
+    cards._on_anchor_leave(controller, row)
     started = time.monotonic()
     pump(lambda: time.monotonic() - started > 0.3)
-    assert not row.popover.get_visible()
+    assert not cards.is_open(row)
     # Resting: it opens after the wait.
-    popovers._on_anchor_pointer(controller, 10, 10, row)
+    cards._on_anchor_pointer(controller, 10, 10, row)
     started = time.monotonic()
-    pump(lambda: row.popover.get_visible())
+    pump(lambda: cards.is_open(row))
     assert time.monotonic() - started >= 0.2
-    row.popover.popdown()
+    cards.close(row)
 
 
 def test_output_and_encoding_choices_are_rows_and_count_as_no_adjustment(
@@ -1479,8 +1586,8 @@ def test_a_long_option_in_a_card_wraps_instead_of_widening_it(window):
     row.set_selected(window._format_list.index("flac"))
     window.present()
     pump(lambda: row.get_mapped())
-    window.effect_cards.hover_cards.open(row)
-    pump(lambda: row.popover.get_mapped() and row.popover.get_width())
-    # The card's own box, not the popover's, which also holds its shadow.
-    assert row.popover.get_child().get_width() <= 340
-    row.popover.popdown()
+    cards = window.effect_cards.hover_cards
+    cards.open(row)
+    pump(lambda: cards.is_open(row) and row.card.get_width())
+    assert row.card.get_width() <= 340
+    cards.close(row)

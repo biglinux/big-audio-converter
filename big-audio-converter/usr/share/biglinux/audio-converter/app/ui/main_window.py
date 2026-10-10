@@ -10,7 +10,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from big_gtk_kit.hover_cards import HoverCards
+from big_gtk_kit.hover_cards import CardLayer, HoverCards
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
 from app.audio.waveform import WaveformGenerator
@@ -202,6 +202,9 @@ class MainWindow(
             child=Gtk.Overlay(child=self.vertical_paned)
         )
         self.toast_overlay.get_child().add_overlay(self.drop_overlay)
+        # The settings' and the playback bar's cards open above everything.
+        self.card_layer = CardLayer()
+        self.toast_overlay.get_child().add_overlay(self.card_layer)
         self.set_content(self.toast_overlay)
         self.vertical_paned.set_vexpand(True)
 
@@ -226,7 +229,7 @@ class MainWindow(
 
         left_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_bottom=12)
         left_scroll.set_child(left_content)
-        self.effect_cards = EffectCards(left_scroll)
+        self.effect_cards = EffectCards(left_scroll, self.card_layer)
         # The pause panel in the sidebar previews on the waveform.
         self.visualizer = AudioVisualizer()
         self.visualizer.player = self.player
@@ -364,7 +367,7 @@ class MainWindow(
         # As in the BigLinux players: volume, speed and voice on the left, the
         # transport in the middle, the preview and waveform tools on the right.
         # Their sliders open as the pointer reaches them.
-        self.bar_popovers = HoverCards(Gtk.PositionType.TOP)
+        self.bar_cards = HoverCards(self.card_layer, Gtk.PositionType.TOP)
         adjust = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
         self.volume_button, self.volume_value, _scale = self._bar_control(
             adjust,
@@ -700,7 +703,7 @@ class MainWindow(
     def _bar_control(self, parent, name, icon, title, adjustment, extras):
         """A button and readout whose slider opens on hover, as in the players.
 
-        The popover's heading names what the slider changes. A click opens it
+        The card's heading names what the slider changes. A click opens it
         for the keyboard; the wheel over the control moves the slider.
         """
         owner = weakref.proxy(self)
@@ -709,7 +712,7 @@ class MainWindow(
         )
         button.update_property([Gtk.AccessibleProperty.LABEL], [title])
         value = Gtk.Label(css_classes=["numeric"])
-        box = Gtk.Box(spacing=2)
+        box = Gtk.Box(spacing=2, css_classes=["bar-anchor"])
         box.append(button)
         box.append(value)
         scale = Gtk.Scale(
@@ -734,18 +737,8 @@ class MainWindow(
         for widget in extras:
             widget.set_halign(Gtk.Align.CENTER)
             content.append(widget)
-        # A popover is its anchor's child, so a control in it that expands
-        # would widen the anchor and aim the arrow past the button.
-        popover = Gtk.Popover(
-            child=content,
-            position=Gtk.PositionType.TOP,
-            hexpand=False,
-            vexpand=False,
-            css_classes=["bar-slider"],
-        )
-        popover.update_property([Gtk.AccessibleProperty.LABEL], [title])
-        self.bar_popovers.attach(name, box, popover, focus=scale)
-        button.connect("clicked", lambda _b: owner.bar_popovers.open_for_keyboard(name))
+        self.bar_cards.attach(name, box, content, title, ["bar-slider"], focus=scale)
+        button.connect("clicked", lambda _b: owner.bar_cards.open_for_keyboard(name))
         wheel = Gtk.EventControllerScroll(
             flags=Gtk.EventControllerScrollFlags.VERTICAL
             | Gtk.EventControllerScrollFlags.DISCRETE
@@ -1009,7 +1002,7 @@ class MainWindow(
         self.waveform_generator.cancel()
         self.pause_panel.cleanup()
         self.effect_cards.cleanup()
-        self.bar_popovers.unparent_all()
+        self.bar_cards.unparent_all()
         self.converter.cancel_conversion()
         self.file_queue.cleanup()
         self.waveform_generator.cleanup()

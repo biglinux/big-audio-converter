@@ -277,31 +277,118 @@ def test_the_region_joins_anchor_card_and_the_way_between():
 
 def test_a_card_beside_the_list_lines_up_with_its_row_inside_the_window():
     window = (1280, 800)
-    # GTK centers a card on its row; the offset moves its top to the row's.
-    assert hc.card_offset("right", (0, 100, 300, 148), (300, 200), window) == (
-        0,
-        76,
-        784,
+    # At the edge it is given, level with its row.
+    assert hc.card_box("right", (0, 100, 300, 148), 312, (300, 200), window) == (
+        312,
+        100,
+        612,
+        300,
     )
-    # Near the bottom it rises to stay 8 px inside.
-    dx, dy, _ = hc.card_offset("right", (0, 700, 300, 748), (300, 300), window)
-    assert 724 - 150 + dy == 800 - 8 - 300
-    # Near the top it stays 8 px below the edge.
-    dx, dy, _ = hc.card_offset("right", (0, 0, 300, 48), (300, 300), window)
-    assert 24 - 150 + dy == 8 and dx == 0
-    # Taller than the window: it shrinks to the window less the margins.
-    dx, dy, cap = hc.card_offset("right", (0, 100, 300, 148), (300, 2000), window)
-    assert cap == 784 and 124 - cap / 2 + dy == 8
+    # Too tall for the room below, but the room holds three rows: it stays
+    # level and is cut to the room, which then scrolls.
+    assert hc.card_box("right", (0, 500, 300, 548), 312, (300, 400), window) == (
+        312,
+        500,
+        612,
+        792,
+    )
+    # Less room than that: it rises to stay 8 px inside.
+    _x0, top, _x1, bottom = hc.card_box(
+        "right", (0, 700, 300, 748), 312, (300, 300), window
+    )
+    assert (top, bottom) == (492, 792)
+    # Taller than the window: cut to the window less the margins.
+    _x0, top, _x1, bottom = hc.card_box(
+        "right", (0, 0, 300, 48), 312, (300, 2000), window
+    )
+    assert (top, bottom) == (8, 792)
 
 
-def test_a_card_above_a_bar_stays_centered_unless_the_window_cuts_it():
+def test_a_card_above_a_bar_is_centered_and_meets_a_close_edge_flush():
     window = (1280, 800)
-    assert hc.card_offset("top", (600, 740, 640, 780), (120, 220), window) == (
-        0,
-        0,
-        732,
+    assert hc.card_box("top", (600, 740, 640, 780), 728, (120, 220), window) == (
+        560,
+        508,
+        680,
+        728,
     )
-    dx, _dy, _cap = hc.card_offset("top", (0, 740, 40, 780), (120, 220), window)
-    assert 20 - 60 + dx == 8
-    dx, _dy, _cap = hc.card_offset("top", (1260, 740, 1280, 780), (120, 220), window)
-    assert 1270 - 60 + dx == 1280 - 8 - 120
+    # Pushed inside the window, it would stop 4 px short of the control's
+    # edge: it lines up with it instead.
+    x0, _y0, _x1, _y1 = hc.card_box("top", (12, 740, 52, 780), 728, (120, 220), window)
+    assert x0 == 12
+    # Room above is the edge less the margin.
+    _x0, y0, _x1, y1 = hc.card_box("top", (600, 740, 640, 780), 100, (120, 220), window)
+    assert (y0, y1) == (8, 100)
+
+
+def _filled(polygons):
+    """Points on a 1 px grid inside the tab, as GSK would fill it."""
+    gi = pytest.importorskip("gi")
+    gi.require_version("Gsk", "4.0")
+    gi.require_version("Graphene", "1.0")
+    from gi.repository import Graphene, Gsk
+
+    path = hc._path(polygons)
+    x0, y0, x1, y1 = hc.shape_bounds(polygons)
+    return {
+        (x, y)
+        for x in range(int(x0), int(x1) + 1)
+        for y in range(int(y0), int(y1) + 1)
+        if path.in_fill(Graphene.Point().init(x + 0.5, y + 0.5), Gsk.FillRule.WINDING)
+    }
+
+
+def test_the_tab_spans_the_row_from_the_list_into_the_card():
+    row, card = (12, 100, 300, 160), (316, 100, 640, 400)
+    polygons, joined_start, joined_end = hc.tab_shape("right", row, card, (True, True))
+    assert joined_start and not joined_end
+    filled = _filled(polygons)
+    # Every pixel row of the band, from inside the list into the card.
+    assert all((x, y) in filled for x in range(297, 317) for y in range(100, 160))
+    # The top runs straight into the card's square corner; the list side
+    # leaves through a concave 12 px corner.
+    assert (300, 95) in filled and (300, 92) in filled
+    assert (300, 87) not in filled and (310, 99) not in filled
+    # Below, list and card share the 16 px gap: two 8 px corners, the gap
+    # between them ending in an arch.
+    assert (300, 163) in filled and (300, 169) not in filled
+    assert (315, 163) in filled and (315, 169) not in filled
+    assert (308, 163) not in filled
+    # Inside the list it stays within the row: the next rows are their own.
+    assert (297, 98) not in filled and (297, 162) not in filled
+
+
+def test_a_first_row_fills_the_lists_corner_and_a_cut_list_ends_plain():
+    row, card = (12, 0, 300, 60), (316, 0, 640, 300)
+    polygons, *_ = hc.tab_shape("right", row, card, (False, True))
+    filled = _filled(polygons)
+    # The list's rounded corner is filled square; nothing rises above it.
+    assert (299, 0) in filled and (290, 1) in filled
+    assert all((x, -1) not in filled for x in range(280, 320))
+    polygons, *_ = hc.tab_shape("right", row, card, (True, None))
+    filled = _filled(polygons)
+    # A scrolled view cuts the list below: no corner reaches past it.
+    assert all((x, 61) not in filled for x in range(296, 304))
+
+
+def test_a_risen_card_meets_the_tab_through_a_corner_and_stays_rounded():
+    row, card = (12, 500, 300, 560), (316, 300, 640, 592)
+    polygons, joined_start, joined_end = hc.tab_shape("right", row, card, (True, True))
+    assert not joined_start and not joined_end
+    filled = _filled(polygons)
+    # Both ends of the gap meet curves: 8 px each above.
+    assert (315, 496) in filled and (315, 491) not in filled
+    assert (300, 496) in filled and (300, 491) not in filled
+
+
+def test_a_bar_cards_corner_curve_never_outgrows_the_card():
+    control, card = (300, 700, 340, 740), (297, 400, 520, 688)
+    polygons, joined_start, _joined_end = hc.tab_shape("top", control, card, None)
+    assert not joined_start
+    filled = _filled(polygons)
+    # The card goes on 3 px past the control's left edge: a 3 px corner, not
+    # one that reaches beyond the card.
+    assert (296, 688) not in filled and (299, 688) in filled
+    # On the right the card goes on far: a 12 px corner.
+    assert (341, 689) in filled and (345, 688) in filled
+    assert (351, 688) not in filled and (351, 699) not in filled

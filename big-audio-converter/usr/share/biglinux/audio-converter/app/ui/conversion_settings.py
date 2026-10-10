@@ -734,7 +734,7 @@ class ConversionSettingsMixin:
         # nothing that processes it applies.
         if is_copy_mode:
             self.effect_cards.close()
-            self.bar_popovers.close_all()
+            self.bar_cards.close_all()
         kept = (
             _("The original format keeps the audio as it is.") if is_copy_mode else None
         )

@@ -12,15 +12,6 @@
    on the dark strip and apart from the marked parts' blocks. */
 .waveform, .seekbar { color: #4da6ff; }
 .playback-controls .play-button { min-width: 42px; min-height: 42px; }
-/* At fractional scales the content and the arrow end on different fractions
-   of a pixel, leaving a seam at the arrow's base that their borders and the
-   arrow's shadow darken. The content reaches a pixel into the arrow so the
-   two solid fills overlap: below for the bar's sliders, left for the cards
-   beside the sidebar. */
-popover.bar-slider > contents, popover.effect-card > contents { border: none; }
-popover.bar-slider > contents { margin-bottom: -1px; }
-popover.effect-card > contents { margin-left: -1px; }
-popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shadow: none; }
 /* A bar control whose setting changes the sound, such as a shaped curve. */
 .playback-controls button.applied { color: #4da6ff; }
 .playback-controls button:checked {
@@ -34,29 +25,50 @@ popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shad
 /* Settings rows: an applied setting fills its badge and colors its value. */
 row.setting-row { padding: 6px 12px; min-height: 48px; }
 /* The row takes the accent tint as soon as the pointer reaches it, before its
-   card opens, and keeps it while the pointer is in the card. The badge stays
-   as it is: filled means the setting applies. */
+   card opens, and keeps it while its card is open. One opaque tint is shared
+   by the row, the tab that joins it to its card and the card's header, so the
+   three read as one band. The badge stays as it is: filled means the setting
+   applies. */
 list > row.setting-row:hover:not(:disabled),
-list > row.setting-row.card-open {
-    background-color: mix(@card_bg_color, @accent_bg_color, 0.14);
+list > row.setting-row.card-open,
+.card-description {
+    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
 }
+.card-tab.effect-card { color: mix(@popover_bg_color, @accent_bg_color, 0.14); }
+/* The band covers the open row's separator too, as its tab does. */
+list > row.setting-row.card-open {
+    border-bottom-color: transparent;
+    background-clip: border-box;
+}
+.card-description { padding: 12px 14px; }
+
 /* A card opens over the queue, which shares its light surface: an outline
-   and a deeper shadow lift it. Its header, the description, carries the row's
-   tint edge to edge, and so does the arrow that leads from the row into it. */
-popover.effect-card > contents {
-    padding: 0;
+   and a shadow that falls away from the anchors lift it. The corner its tab
+   reaches level with the anchor is square. */
+.hover-card {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
     border-radius: 12px;
     box-shadow: 0 0 0 1px alpha(black, 0.10),
-                0 2px 4px alpha(black, 0.10),
-                0 10px 28px alpha(black, 0.22);
+                8px 10px 24px -6px alpha(black, 0.28);
 }
-.card-description {
-    padding: 12px 14px;
-    border-radius: 12px 12px 0 0;
-    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
+.hover-card.side-top {
+    box-shadow: 0 0 0 1px alpha(black, 0.10),
+                0 -8px 24px -6px alpha(black, 0.28);
 }
-popover.effect-card.with-header > arrow {
-    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
+.hover-card.side-right.joined-start { border-top-left-radius: 0; }
+.hover-card.side-right.joined-end { border-bottom-left-radius: 0; }
+.hover-card.side-top.joined-start { border-bottom-left-radius: 0; }
+.hover-card.side-top.joined-end { border-bottom-right-radius: 0; }
+/* A bar control whose card is open becomes the foot of its tab: the card's
+   own surface, rising into it. */
+.card-tab.bar-slider { color: @popover_bg_color; }
+.playback-controls .bar-anchor { border-radius: 10px; }
+.playback-controls .bar-anchor.card-open {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 /* A grayed row dims its name and icon, not the reason it gives in place of
    its value: that has to stay readable. */

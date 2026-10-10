@@ -1,9 +1,10 @@
 """The settings as rows of a list; each opens a card to adjust it.
 
 A row shows what it applies. Its card opens beside the sidebar, level with
-the row, as the pointer rests on the row, and holds a fuller description and
-the controls, like the sliders of the playback bar. A click, tap or Enter
-opens it for the keyboard until Escape or a click elsewhere.
+the row and joined to it by a tab, as the pointer rests on the row, and holds
+a short description and the controls, like the sliders of the playback bar. A
+click, tap or Enter opens it for the keyboard until Escape or a click
+elsewhere.
 """
 
 import gettext
@@ -13,7 +14,7 @@ import gi
 
 gi.require_version("Adw", "1")
 from big_gtk_kit.hover_cards import HoverCards
-from gi.repository import Adw, Gdk, GLib, GObject, Graphene, Gtk, Pango
+from gi.repository import Adw, GLib, GObject, Graphene, Gtk, Pango
 
 from app.main_loop import weak_callback
 
@@ -134,22 +135,21 @@ class SettingRow(Gtk.ListBoxRow):
         box.append(self.value_label)
         self.set_child(box)
 
-        self.popover = self.reset_button = None
+        self.card = self.header = self.reset_button = None
         if body is None:
             return
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=300)
         # The row beside the card already shows its name and value; the card's
         # header holds what the row lacks, in the row's tint, edge to edge.
         if description:
-            card.append(
-                Gtk.Label(
-                    label=description,
-                    xalign=0,
-                    wrap=True,
-                    max_width_chars=36,
-                    css_classes=["card-description"],
-                )
+            self.header = Gtk.Label(
+                label=description,
+                xalign=0,
+                wrap=True,
+                max_width_chars=36,
+                css_classes=["card-description"],
             )
+            card.append(self.header)
         controls = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=10,
@@ -166,23 +166,16 @@ class SettingRow(Gtk.ListBoxRow):
             controls.append(self.reset_button)
         card.append(controls)
         # A bounded width: a long line in the body wraps instead of widening
-        # the card. Beside the sidebar, over the queue; EffectCards points it
-        # at the sidebar's edge, level with the row.
-        self.popover = Gtk.Popover(
-            child=Adw.Clamp(child=card, maximum_size=340, tightening_threshold=340),
-            position=Gtk.PositionType.RIGHT,
-            css_classes=["effect-card", "with-header"]
-            if description
-            else ["effect-card"],
-        )
-        self.popover.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        # the card.
+        self.card = Adw.Clamp(child=card, maximum_size=340, tightening_threshold=340)
 
     def set_unavailable(self, reason):
         """Greyed with ``reason`` under its name in place of its value, or
         usable again."""
         self.unavailable = reason
-        if reason and self.popover is not None:
-            self.popover.popdown()
+        cards = self.cards() if self.cards else None
+        if reason and cards and self.card is not None:
+            cards.hover_cards.close(self)
         self.set_sensitive(reason is None)
         self.set_tooltip_text(reason)
         self.reason_label.set_text(reason or "")
@@ -338,11 +331,12 @@ class SwitchRow(SettingRow):
 class EffectCards:
     """The groups of rows in the sidebar and the cards they open."""
 
-    def __init__(self, scrolled):
+    def __init__(self, scrolled, layer):
         self.scrolled = scrolled
-        self.hover_cards = HoverCards(Gtk.PositionType.RIGHT)
+        self.hover_cards = HoverCards(layer, Gtk.PositionType.RIGHT)
         self.hover_cards.can_open = weak_callback(self._can_open)
-        self.hover_cards.point_at = weak_callback(self._point_at_edge)
+        self.hover_cards.edge = weak_callback(self._sidebar_edge)
+        self.hover_cards.before_place = weak_callback(self._fit_header)
         self.groups = []  # (rows, count label)
         self.on_changed = None  # told after any row's state changes
         self._scrolled_at = 0
@@ -378,11 +372,13 @@ class EffectCards:
         row.group_index = listbox.group_index
         self.groups[listbox.group_index][0].append(row)
         listbox.append(row)
-        if row.popover is not None:
+        if row.card is not None:
             # A click gives the keyboard to the chosen step, or the card's one
             # control.
             focus = getattr(row, "focus_target", lambda: row.body)
-            self.hover_cards.attach(row, row, row.popover, focus=focus)
+            self.hover_cards.attach(
+                row, row, row.card, row.title, ["effect-card"], focus=focus
+            )
         self.row_changed(row)
 
     def row_changed(self, row):
@@ -417,17 +413,17 @@ class EffectCards:
         # hover.
         return GLib.get_monotonic_time() - self._scrolled_at >= SCROLL_QUIET_US
 
-    def _point_at_edge(self, row):
-        """Point the card at the sidebar's edge level with the row, so it
-        opens over the queue."""
+    def _sidebar_edge(self, _row):
+        """Cards open at the sidebar's edge, over the queue."""
+        root = self.scrolled.get_root()
         found, edge = self.scrolled.compute_point(
-            row, Graphene.Point().init(self.scrolled.get_width(), 0)
+            root, Graphene.Point().init(self.scrolled.get_width(), 0)
         )
-        if found:
-            rect = Gdk.Rectangle()
-            rect.x, rect.y = int(edge.x) - 1, 0
-            rect.width, rect.height = 1, row.get_height()
-            row.popover.set_pointing_to(rect)
+        return edge.x if found else 0
+
+    def _fit_header(self, row, height):
+        if row.header is not None:
+            row.header.set_size_request(-1, height)
 
     def _note_scroll(self):
         self._scrolled_at = GLib.get_monotonic_time()
