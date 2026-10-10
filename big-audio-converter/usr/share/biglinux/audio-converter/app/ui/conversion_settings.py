@@ -114,9 +114,7 @@ class ConversionSettingsMixin:
         self.format_row = ChoiceRow(
             "audio-x-generic-symbolic",
             _("Format"),
-            _(
-                "Choose the output format. Keeping the original format applies no effects."
-            ),
+            _("The type of file to save. Keeping the original applies no effects."),
             [
                 _("MP3 — plays everywhere"),
                 _("M4A — good quality in small files"),
@@ -139,9 +137,7 @@ class ConversionSettingsMixin:
         self.bitrate_row = ChoiceRow(
             "starred-symbolic",
             _("Quality"),
-            _(
-                "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
-            ),
+            _("Higher quality sounds better and makes larger files."),
             *quality_labels("mp3", self._bitrate_list),
         )
         self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
@@ -210,7 +206,7 @@ class ConversionSettingsMixin:
         self.cut_mode_row = ChoiceRow(
             "edit-cut-symbolic",
             _("Segments"),
-            None,
+            _("Save only the marked segments, or everything except them."),
             [_("Keep them"), _("Remove them")],
         )
         self.cut_mode_row.connect(
@@ -219,7 +215,7 @@ class ConversionSettingsMixin:
         self.cut_order_row = ChoiceRow(
             "view-sort-ascending-symbolic",
             _("Order"),
-            _("Choose the order in which marked segments are exported."),
+            _("The order in which the segments are saved."),
             [_("In timeline order"), _("In the order marked")],
         )
         self.cut_order_row.connect(
@@ -228,7 +224,7 @@ class ConversionSettingsMixin:
         self.cut_output_row = ChoiceRow(
             "document-save-symbolic",
             _("Save segments"),
-            _("Export each segment separately or join the selected segments."),
+            _("One file per segment, or this file's segments joined."),
             [_("Separate files"), _("Join this file's segments")],
         )
         self.cut_output_row.connect(
@@ -238,7 +234,7 @@ class ConversionSettingsMixin:
         self.join_row = SwitchRow(
             "media-playlist-consecutive-symbolic",
             _("Join into one file"),
-            _("In queue order, named after the first file"),
+            _("Saves the queue as one file, in order, named after the first."),
         )
         self.join_row.counts = False
         self.join_row.switch.connect(
@@ -285,7 +281,7 @@ class ConversionSettingsMixin:
         self.channels_row = ChoiceRow(
             "audio-speakers-symbolic",
             _("Channels"),
-            _("Keep the original layout or explicitly downmix to mono or stereo."),
+            _("Keep the original channels, or mix down to mono or stereo."),
             [_("Original"), _("Mono"), _("Stereo")],
         )
         self.channels_row.connect(
@@ -297,7 +293,7 @@ class ConversionSettingsMixin:
         self.sample_rate_row = ChoiceRow(
             "audio-card-symbolic",
             _("Sample rate"),
-            None,
+            _("Keep the original unless a device needs a specific rate."),
             [_("Original")] + [f"{rate} Hz" for rate in SAMPLE_RATES["mp3"]],
         )
         self.sample_rate_row.connect(
@@ -306,9 +302,7 @@ class ConversionSettingsMixin:
         self.normalize_row = SwitchRow(
             "power-profile-balanced-symbolic",
             _("Standard volume"),
-            _(
-                "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
-            ),
+            _("Brings every file to the same standard loudness."),
         )
         self.normalize_row.switch.connect(
             "notify::active", weak_callback(self._on_normalize_switch_changed)
@@ -316,9 +310,7 @@ class ConversionSettingsMixin:
         self.compressor_row = StepRow(
             "multimedia-volume-control-symbolic",
             _("Lift quiet parts"),
-            _(
-                "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
-            ),
+            _("Makes quiet passages louder and loud ones softer."),
             [_("Off"), _("Light"), _("Medium"), _("Strong")],
         )
         self.compressor_row.steps.connect(
@@ -340,7 +332,7 @@ class ConversionSettingsMixin:
         self.pause_row = SettingRow(
             "big-audio-converter-remove-pauses-symbolic",
             _("Remove pauses"),
-            None,
+            _("Marks the speech, so the export leaves the pauses out."),
             self.pause_panel,
         )
         self.pause_row.counts = False  # what is kept, not how it sounds
