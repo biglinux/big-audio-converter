@@ -846,8 +846,22 @@ def _wait(seconds):
         context.iteration(False)
 
 
+def _hand_driven(cards):
+    """Silence the real pointer's motion controllers, so only the pointer the
+    test moves reaches the cards. Xvfb's pointer stays at the screen's center,
+    and a card opening under it would otherwise meet a second pointer."""
+    from gi.repository import Gtk
+
+    widgets = [cards._watched[0], *cards._anchors.values(), *cards.popovers.values()]
+    for widget in widgets:
+        for controller in widget.observe_controllers():
+            if isinstance(controller, Gtk.EventControllerMotion):
+                controller.set_propagation_phase(Gtk.PropagationPhase.NONE)
+
+
 def _open_by_rest(cards, row):
     """Rest the pointer in the middle of ``row`` until its card opens."""
+    _hand_driven(cards)
     box = cards._anchor_box(row)
     middle = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
     cards._intent.pointer(row, middle)
