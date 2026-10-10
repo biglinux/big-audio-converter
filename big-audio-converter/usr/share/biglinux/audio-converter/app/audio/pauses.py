@@ -199,7 +199,7 @@ class PauseFinder:
 
         def work():
             # Every outcome clears the runner before it is reported, so the
-            # popover never shows a finished analysis as still running.
+            # card never shows a finished analysis as still running.
             try:
                 levels = measure_levels(source, ffmpeg, denoiser, runner, report)
             except CancelledError:

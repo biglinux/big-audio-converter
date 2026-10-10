@@ -8,7 +8,7 @@ Convert audio files, extract audio tracks from videos and save selected sections
 
 On BigLinux, install **Big Audio Converter** from the software manager and open it from the applications menu. The package command is `big-audio-converter-gui`.
 
-Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.7 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv and python-mpv. Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
+Required components: Python 3.10 or newer, GTK 4.14 or newer, libadwaita 1.7 or newer, PyGObject, Pycairo, NumPy, FFmpeg/FFprobe, mpv and python-mpv. Speech noise reduction additionally requires one of the optional LADSPA packages listed below; an unavailable mode identifies the package to install.
 
 ## Convert files
 
@@ -21,7 +21,7 @@ While a batch runs, the settings and the queue wait; listening stays available, 
 
 In a narrow window the sidebar folds away; the button at the start of the queue header shows it and counts the active adjustments.
 
-**Channels** and **Sample rate** sit under **Format** and **Quality**, with **Standard volume** and **Lift quiet parts** (Off, Light, Medium or Strong) below them. A setting's card opens beside the sidebar, level with its row, as the pointer rests on the row, or on a click; Escape closes it. On the way from a row into its card the pointer can cross the rows below without switching cards; resting on another row switches. A row that cannot apply yet says why under its name. Original properties are preserved where the selected format supports them. If conversion requires resampling or a precision change, the result identifies it. WAV preserves the source PCM representation; exporting floating-point audio to FLAC requires explicitly allowing 24-bit conversion, in the **Format** card.
+**Channels** and **Sample rate** sit under **Format** and **Quality**, with **Standard volume** and **Lift quiet parts** (Off, Light, Medium or Strong) below them. A setting's card opens beside the sidebar, level with its row and joined to it, as the pointer rests on the row, or on a click; Escape or a click elsewhere closes it. On the way from a row into its card the pointer can cross the rows below without switching cards; resting on another row switches. A row that cannot apply yet says why under its name. Original properties are preserved where the selected format supports them. If conversion requires resampling or a precision change, the result identifies it. WAV preserves the source PCM representation; exporting floating-point audio to FLAC requires explicitly allowing 24-bit conversion, in the **Format** card.
 
 ## Cut audio
 
