@@ -836,41 +836,174 @@ def test_a_tile_card_opens_for_the_keyboard_and_shows_the_amount(window):
     assert not tile.popover.get_autohide()
 
 
-def test_a_card_opens_beside_the_sidebar_clear_of_the_other_tiles(window):
-    from types import SimpleNamespace
+def _wait(seconds):
+    import time
 
+    from gi.repository import GLib
+
+    context = GLib.MainContext.default()
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        context.iteration(False)
+
+
+def _open_by_rest(cards, row):
+    """Rest the pointer in the middle of ``row`` until its card opens."""
+    box = cards._anchor_box(row)
+    middle = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
+    cards._intent.pointer(row, middle)
+    pump(lambda: row.popover.get_mapped() and cards._card_box(row) is not None)
+    return middle
+
+
+def _move(cards, *points, step=0.016):
+    """The pointer through ``points`` in window coordinates, a frame apart."""
+    for point in points:
+        cards._on_window_motion(None, *point)
+        _wait(step)
+
+
+def test_a_card_opens_beside_the_sidebar_level_with_its_row(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_tile
+    window.present()
+    pump(lambda: row.get_mapped())
+    _open_by_rest(cards, row)
+    anchor, card = cards._anchor_box(row), cards._card_box(row)
+    scrolled = window.effect_cards.scrolled
     from gi.repository import Graphene
 
-    popovers = window.effect_cards.popovers
-    left, beside = window.normalize_tile, window.compressor_tile
-    root = window
-    window.present()
-    pump(lambda: left.get_mapped())
-    popovers.open(left)
-    pump(lambda: left.popover.get_mapped() and left.popover.get_width())
-    # The card starts past the sidebar's edge, over the queue.
-    scrolled = window.effect_cards.scrolled
     _found, edge = scrolled.compute_point(
-        root, Graphene.Point().init(scrolled.get_width(), 0)
+        window, Graphene.Point().init(scrolled.get_width(), 0)
     )
-    surface = left.popover.get_surface()
-    offset_x, _offset_y = root.get_surface_transform()
-    shadow_x, _shadow_y = left.popover.get_surface_transform()
-    _found, card = left.popover.get_child().compute_bounds(left.popover)
-    card_left = surface.get_position_x() - offset_x + shadow_x + card.get_x()
-    assert card_left >= edge.x
+    # Past the sidebar's edge, over the queue; its top level with the row.
+    assert card[0] + 8 >= edge.x
+    assert abs(card[1] + 8 - anchor[1]) <= 9
+    assert row.has_css_class("card-open")
+    row.popover.popdown()
+    pump(lambda: not row.has_css_class("card-open"))
 
-    def pointer_on(tile, x, y):
-        controller = SimpleNamespace(get_widget=lambda: tile)
-        popovers._on_anchor_pointer(controller, x, y, tile)
 
-    # Across the neighbor on the way to the card: kept.
-    pointer_on(beside, beside.get_width() - 4, beside.get_height() / 2)
-    assert left.popover.get_visible() and not beside.popover.get_visible()
-    # Resting on the neighbor: that one takes over.
-    pump(lambda: beside.popover.get_visible())
-    assert not left.popover.get_visible()
-    beside.popover.popdown()
+def test_the_top_rows_card_stays_inside_the_window(window):
+    cards = window.effect_cards.hover_cards
+    row = window.format_row  # the tallest card, on the first row
+    window.set_default_size(1100, 560)
+    window.present()
+    pump(lambda: row.get_mapped() and window.get_height() <= 600)
+    _open_by_rest(cards, row)
+    _x0, top, _x1, bottom = cards._card_box(row)
+    assert top >= 0 and bottom <= window.get_height()
+    row.popover.popdown()
+
+
+def test_straight_down_hands_the_card_to_the_next_row(window):
+    cards = window.effect_cards.hover_cards
+    first, second = window.format_row, window.bitrate_row
+    window.present()
+    pump(lambda: second.get_mapped())
+    x, y = _open_by_rest(cards, first)
+    below = cards._anchor_box(second)
+    _move(cards, *[(x, y + (below[1] + 12 - y) * i / 4) for i in range(1, 5)])
+    pump(lambda: second.popover.get_visible())
+    assert not first.popover.get_visible()
+    second.popover.popdown()
+
+
+def test_the_way_into_a_card_crosses_the_next_row_without_switching(window):
+    cards = window.effect_cards.hover_cards
+    first, second = window.format_row, window.bitrate_row
+    window.present()
+    pump(lambda: second.get_mapped())
+    x, y = _open_by_rest(cards, first)
+    card = cards._card_box(first)
+    below = cards._anchor_box(second)
+    # Down and right over the next row, short of the card: a hand undershoots
+    # and pauses before it corrects.
+    target = (below[2] - 6, below[1] + 10)
+    _move(
+        cards,
+        *[
+            (x + (target[0] - x) * i / 6, y + (target[1] - y) * i / 6)
+            for i in range(1, 7)
+        ],
+    )
+    assert cards._anchor_at(target) is second
+    _wait(0.3)
+    assert first.popover.get_visible() and not second.popover.get_visible()
+    _move(cards, (card[0] + 30, target[1] + 6))
+    cards._intent.entered_card(first)
+    _wait(0.6)
+    assert first.popover.get_visible() and not second.popover.get_visible()
+    # Resting on that row instead hands it the card.
+    cards._intent.left_card(first)
+    _move(cards, target)
+    pump(lambda: second.popover.get_visible())
+    second.popover.popdown()
+
+
+def test_escape_closes_a_card_the_pointer_opened(window):
+    from gi.repository import Gdk
+
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_tile
+    window.present()
+    pump(lambda: row.get_mapped())
+    _open_by_rest(cards, row)
+    assert cards._on_window_key(None, Gdk.KEY_Escape, 0, 0)
+    pump(lambda: not row.popover.get_visible())
+    # It stays closed while the pointer stays on the row.
+    box = cards._anchor_box(row)
+    cards._intent.pointer(row, (box[0] + 20, box[1] + 10))
+    _wait(0.5)
+    assert not row.popover.get_visible()
+
+
+def test_the_pointer_never_replaces_a_card_opened_by_a_click(window):
+    cards = window.effect_cards.hover_cards
+    pinned, other = window.bitrate_row, window.channels_row
+    window.present()
+    pump(lambda: other.get_mapped())
+    pinned.activate()
+    pump(lambda: pinned.popover.get_mapped())
+    box = cards._anchor_box(other)
+    cards._intent.pointer(other, ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
+    _wait(0.6)
+    assert pinned.popover.get_visible() and not other.popover.get_visible()
+    pinned.popover.popdown()
+
+
+def test_an_open_card_follows_its_row_when_the_window_resizes(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_tile
+    # Both sizes keep the sidebar beside the queue; it narrows with the window.
+    window.set_default_size(1340, 760)
+    window.present()
+    pump(lambda: row.get_mapped() and window.get_width() > 1300)
+    row.activate()
+    pump(lambda: cards._card_box(row) is not None)
+    before_card, before_row = cards._card_box(row), cards._anchor_box(row)
+    window.set_default_size(1120, 560)
+    pump(lambda: window.get_width() < 1200)
+    pump(lambda: cards._anchor_box(row) != before_row)
+    _wait(0.2)
+    anchor, card = cards._anchor_box(row), cards._card_box(row)
+    shift = before_row[2] - anchor[2]
+    assert shift > 0 and abs((before_card[0] - card[0]) - shift) <= 1
+    assert card[1] >= 0 and card[3] <= window.get_height()
+    row.popover.popdown()
+
+
+def test_scrolling_the_sidebar_closes_the_pointers_card(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_tile
+    window.set_default_size(1000, 480)
+    window.present()
+    pump(lambda: row.get_mapped())
+    _open_by_rest(cards, row)
+    adjustment = window.effect_cards.scrolled.get_vadjustment()
+    pump(lambda: adjustment.get_upper() > adjustment.get_page_size())
+    adjustment.set_value(adjustment.get_value() + 40)
+    pump(lambda: not row.popover.get_visible())
 
 
 def test_the_bar_equalizer_button_shows_and_hides_its_panel(window):
@@ -907,9 +1040,11 @@ def test_copy_mode_closes_the_card_and_disables_the_tiles(window):
     assert not window.compressor_tile.is_sensitive()
     # The tile says why, where its value was.
     reason = "The original format keeps the audio as it is."
-    assert window.compressor_tile.value_label.get_text() == reason
+    assert window.compressor_tile.reason_label.get_text() == reason
+    assert not window.compressor_tile.value_label.get_visible()
     window.format_row.set_selected(window._format_list.index("mp3"))
     assert window.compressor_tile.value_label.get_text() == "Off"
+    assert not window.compressor_tile.reason_label.get_visible()
 
 
 def test_pause_progress_shows_on_the_tile(window, audio, monkeypatch):
@@ -1175,7 +1310,6 @@ def test_bar_controls_keep_their_width_whatever_their_cards_hold(window, audio):
 
 
 def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
-    from types import SimpleNamespace
 
     from gi.repository import Gdk, Gtk
 
@@ -1195,10 +1329,15 @@ def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
     pump(lambda: speed.get_mapped())
     popovers.open("speed")
     pump(lambda: popovers.popovers["speed"].get_mapped())
-    # The microphone lies under the speed card's shadow, not under the card.
-    controller = SimpleNamespace(get_widget=lambda: voice)
-    popovers._on_anchor_pointer(controller, 4, voice.get_height() / 2, "voice")
-    assert popovers.popovers["voice"].get_visible()
+    # The microphone lies under the speed card's shadow, not under the card:
+    # resting there takes over.
+    from gi.repository import Graphene
+
+    _found, point = voice.compute_point(
+        window, Graphene.Point().init(4, voice.get_height() / 2)
+    )
+    popovers._on_window_motion(None, point.x, point.y)
+    pump(lambda: popovers.popovers["voice"].get_visible())
     assert not popovers.popovers["speed"].get_visible()
     popovers.close_all()
     Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), shadow)
@@ -1208,7 +1347,7 @@ def test_a_tile_card_opens_once_the_pointer_rests_on_the_tile(window):
     import time
     from types import SimpleNamespace
 
-    popovers = window.effect_cards.popovers
+    popovers = window.effect_cards.hover_cards
     tile = window.compressor_tile
     window.present()
     pump(lambda: tile.get_mapped())
@@ -1224,7 +1363,7 @@ def test_a_tile_card_opens_once_the_pointer_rests_on_the_tile(window):
     popovers._on_anchor_pointer(controller, 10, 10, tile)
     started = time.monotonic()
     pump(lambda: tile.popover.get_visible())
-    assert time.monotonic() - started >= 0.14
+    assert time.monotonic() - started >= 0.2
     tile.popover.popdown()
 
 
@@ -1265,13 +1404,15 @@ def test_part_choices_appear_with_marks_and_joining_with_two_files(
     # Every tile is in place from the start; unavailable ones say why on
     # the tile, where the value goes.
     assert not window.pause_tile.get_sensitive()
-    assert window.pause_tile.value_label.get_text() == "Add a file first."
+    assert window.pause_tile.reason_label.get_text() == "Add a file first."
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
     assert window.pause_tile.get_sensitive()
     assert not window.cut_mode_row.get_sensitive()
     assert window.cut_mode_row.unavailable == "Mark a segment on the waveform first."
-    assert window.cut_mode_row.value_label.get_text() == window.cut_mode_row.unavailable
+    assert (
+        window.cut_mode_row.reason_label.get_text() == window.cut_mode_row.unavailable
+    )
     assert window.join_row.unavailable == "Add another file to join them."
     assert not window.join_row.get_sensitive()
     window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
@@ -1293,7 +1434,7 @@ def test_a_long_option_in_a_card_wraps_instead_of_widening_it(window):
     tile.set_selected(window._format_list.index("flac"))
     window.present()
     pump(lambda: tile.get_mapped())
-    window.effect_cards.popovers.open(tile)
+    window.effect_cards.hover_cards.open(tile)
     pump(lambda: tile.popover.get_mapped() and tile.popover.get_width())
     assert tile.popover.get_width() <= 380
     tile.popover.popdown()

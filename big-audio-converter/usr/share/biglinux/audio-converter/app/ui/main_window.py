@@ -10,6 +10,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
+from big_gtk_kit.hover_cards import HoverCards
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
 from app.audio.waveform import WaveformGenerator
@@ -20,7 +21,6 @@ from app.ui.effect_cards import EffectCards
 from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
 from app.ui.help_tooltips import HelpTooltips
-from app.ui.hover_popovers import HoverPopovers
 from app.ui.playback import PlaybackMixin
 from app.ui.segment_editor import SegmentEditor
 from app.ui.time_formatter import format_time_display
@@ -364,7 +364,7 @@ class MainWindow(
         # As in the BigLinux players: volume, speed and voice on the left, the
         # transport in the middle, the preview and waveform tools on the right.
         # Their sliders open as the pointer reaches them.
-        self.bar_popovers = HoverPopovers(self._sources)
+        self.bar_popovers = HoverCards(Gtk.PositionType.TOP)
         adjust = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
         self.volume_button, self.volume_value, _scale = self._bar_control(
             adjust,

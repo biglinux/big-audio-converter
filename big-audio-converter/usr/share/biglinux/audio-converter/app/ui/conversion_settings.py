@@ -79,8 +79,8 @@ class ConversionSettingsMixin:
         owner = weakref.proxy(self)
         self._updating_profile = False
         cards = self.effect_cards
-        # What the files become, as tiles like the effects below.
-        output_box, output_flow = cards.add_group(None, 2)
+        # What the files become, as rows like the effects below.
+        output_box, output_flow = cards.add_group(None)
         output_box.set_margin_start(12)
         output_box.set_margin_end(12)
         output_box.set_margin_top(12)
@@ -205,7 +205,7 @@ class ConversionSettingsMixin:
         )
 
         # Files are cut wherever segments are marked on the waveform; these
-        # tiles stay in place and wait, grayed with the reason, until a part
+        # rows stay in place and wait, grayed with the reason, until a part
         # is marked.
         self.cut_mode_row = ChoiceTile(
             "edit-cut-symbolic",
@@ -279,9 +279,9 @@ class ConversionSettingsMixin:
             str(self.app.config.get("output_directory", "") or ""), save=False
         )
 
-        # Each setting is a tile saying what it applies; its card holds the
-        # controls and says what it does. In pairs under format and quality:
-        # the encoding, then the loudness.
+        # Each setting is a row saying what it applies; its card holds the
+        # controls and says what it does. Under format and quality: the
+        # encoding, then the loudness.
         self.channels_row = ChoiceTile(
             "audio-speakers-symbolic",
             _("Channels"),
@@ -332,9 +332,9 @@ class ConversionSettingsMixin:
         ):
             cards.add_tile(output_flow, tile)
 
-        # Cuts: finding pauses marks the speech; the tiles after it say how
-        # the marked parts are saved and appear once there are some. Cuts
-        # also apply to the original format, unlike the effects.
+        # Cuts: finding pauses marks the speech; the rows after it say how the
+        # marked parts are saved and wait until there are some. Cuts also
+        # apply to the original format, unlike the effects.
         self.pause_panel = PausePanel(self)
         # The app's own glyph: the player's pause icon read as a Pause button.
         self.pause_tile = EffectTile(
@@ -344,7 +344,7 @@ class ConversionSettingsMixin:
             self.pause_panel,
         )
         self.pause_tile.counts = False  # what is kept, not how it sounds
-        self.parts_group, parts_flow = cards.add_group(_("Cuts"), 2)
+        self.parts_group, parts_flow = cards.add_group(_("Cuts"))
         self.parts_group.set_margin_start(12)
         self.parts_group.set_margin_end(12)
         self.parts_group.set_margin_top(18)
@@ -354,15 +354,9 @@ class ConversionSettingsMixin:
             self.cut_mode_row,
             self.cut_order_row,
             self.cut_output_row,
+            self.join_row,
         ):
             cards.add_tile(parts_flow, tile)
-        # Alone on its line, so across the whole sidebar.
-        join_box, join_flow = cards.add_group(None, 1)
-        join_box.set_margin_start(12)
-        join_box.set_margin_end(12)
-        join_box.set_margin_top(6)
-        parent_box.append(join_box)
-        cards.add_tile(join_flow, self.join_row)
         self.pause_panel.show_on(self.pause_tile)
 
         self.copy_notice = Gtk.Label(
@@ -666,7 +660,7 @@ class ConversionSettingsMixin:
             )
         keeping = not self.removes_marked()
         self.play_selection_switch.set_visible(has_segments)
-        # Short: the reason shows on the tile. The first tile says where to
+        # Short: the reason shows on the row. The first row says where to
         # mark; the ones that wait for it only that it comes first.
         unmarked = None if has_segments else _("Mark a segment on the waveform first.")
         first = None if has_segments else _("Mark a segment first.")
@@ -710,7 +704,7 @@ class ConversionSettingsMixin:
     def _update_preview_toggle(self):
         """Listening without the adjustments only means something while one is on."""
         copy = self._format_list[self.format_row.get_selected()] == "copy"
-        # The sidebar's tiles and the playback bar's volume, speed and voice.
+        # The sidebar's rows and the playback bar's volume, speed and voice.
         count = (
             self.effect_cards.active_count()
             + (self.volume_spin.get_value() != 100)
