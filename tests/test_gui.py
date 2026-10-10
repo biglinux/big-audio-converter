@@ -717,14 +717,14 @@ def test_found_pauses_mark_the_speech_at_once_and_undo_restores_it(window, audio
     # One row says it all: what was marked, from what, and that it undoes.
     assert not panel.status_row.get_visible()
     assert panel.undo_row.get_visible()
-    assert panel.undo_row.get_title() == "Speech marked in 2 parts"
+    assert panel.undo_row.get_title() == "Speech marked in 2 segments"
     assert panel.undo_row.get_subtitle().split("\n") == [
         "1 pause · 0:00 shorter",
-        "This replaces the 1 mark already on the file.",
+        "This replaces the 1 segment already marked on the file.",
         "Nothing is deleted from the original file.",
     ]
     assert not panel.actions.get_visible()
-    # Another length replaces the panel's marks, never the person's.
+    # Another length replaces the panel's segments, never the user's.
     panel.length_buttons[2].set_active(True)  # 2 s: no pause that long
     assert marks(window) == [(0.1, 0.3)]
     assert not panel.undo_row.get_visible()
@@ -999,7 +999,7 @@ def test_delete_removes_the_focused_entry_and_keeps_the_file(window, audio, tmp_
     pump(lambda: window.visualizer.duration > 0)
     window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
     window._update_cut_rows()
-    assert queue.file_rows[0].get_subtitle().endswith(" · 1 part")
+    assert queue.file_rows[0].get_subtitle().endswith(" · 1 segment")
     queue.file_rows[0].grab_focus()
     assert queue._remove_focused_row()
     assert queue.files == [str(second)]
@@ -1270,7 +1270,7 @@ def test_part_choices_appear_with_marks_and_joining_with_two_files(
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
     assert window.pause_tile.get_sensitive()
     assert not window.cut_mode_row.get_sensitive()
-    assert window.cut_mode_row.unavailable == "Mark a part on the waveform first."
+    assert window.cut_mode_row.unavailable == "Mark a segment on the waveform first."
     assert window.cut_mode_row.value_label.get_text() == window.cut_mode_row.unavailable
     assert window.join_row.unavailable == "Add another file to join them."
     assert not window.join_row.get_sensitive()

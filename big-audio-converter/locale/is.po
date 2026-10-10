@@ -42,12 +42,12 @@ msgid "An unexpected error stopped this conversion."
 msgstr "Óvænt villa stöðvaði þessa umbreytingu."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:227
-msgid "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
-msgstr "Lengd þessarar skrár er óþekkt, svo ekki er hægt að fjarlægja merkta hluta. Haltu þeim frekar."
+msgid "The length of this file is unknown, so marked segments cannot be removed. Keep them instead."
+msgstr "Lengd þessarar skrár er óþekkt, svo ekki er hægt að fjarlægja merkta búta. Haltu þeim frekar."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:238
-msgid "Every part of this file is marked for removal."
-msgstr "Allir hlutar þessarar skrár eru merktir til fjarlægingar."
+msgid "The whole file is marked for removal."
+msgstr "Öll skráin er merkt til fjarlægingar."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:253
 msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
@@ -122,7 +122,8 @@ msgstr "Kóðarinn breytti umbeðnum fjölda rása. Ekkert úttak var vistað."
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "Þessi útgáfa af FFmpeg getur ekki varðveitt umbeðna FLAC-nákvæmni. Veldu WAV eða settu upp samhæfan FFmpeg-pakka."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:165
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:524
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:165
 msgid "Select a supported output format."
 msgstr "Veldu úttakssnið sem forritið styður."
 
@@ -182,7 +183,26 @@ msgstr "Þessi skrá inniheldur ekki völdu hljóðrásina."
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "Valdi WAV-kóðarinn getur ekki varðveitt þessa PCM-nákvæmni."
 
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:211 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:59
+msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
+msgstr "Of margar skrár bíða greiningar. Bíddu þar til nokkrar eru tilbúnar og bættu síðan fleirum við."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:80
+msgid "Select a regular local media file, not a folder or device."
+msgstr "Veldu venjulega staðbundna miðilsskrá, ekki möppu eða tæki."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:94
+msgid "The file changed during inspection. Add it again."
+msgstr "Skráin breyttist við greiningu. Bættu henni við aftur."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:129
+msgid "The file could not be inspected. Add it again or choose another file."
+msgstr "Ekki tókst að skoða skrána. Bættu henni við aftur eða veldu aðra skrá."
+
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:105
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:211
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
 msgid "The pauses could not be measured."
 msgstr "Ekki tókst að mæla hléin."
 
@@ -222,23 +242,8 @@ msgstr "Ekki tókst að fara á þennan stað í hljóðinu."
 msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
 msgstr "Ekki tókst að beita áhrifum við forhlustun. Athugaðu valin áhrif og uppsettar viðbætur."
 
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:59
-msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
-msgstr "Of margar skrár bíða greiningar. Bíddu þar til nokkrar eru tilbúnar og bættu síðan fleirum við."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:80
-msgid "Select a regular local media file, not a folder or device."
-msgstr "Veldu venjulega staðbundna miðilsskrá, ekki möppu eða tæki."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:94
-msgid "The file changed during inspection. Add it again."
-msgstr "Skráin breyttist við greiningu. Bættu henni við aftur."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:129
-msgid "The file could not be inspected. Add it again or choose another file."
-msgstr "Ekki tókst að skoða skrána. Bættu henni við aftur eða veldu aðra skrá."
-
-#: usr/share/biglinux/audio-converter/app/audio/process.py:116 usr/share/biglinux/audio-converter/app/audio/process.py:144
+#: usr/share/biglinux/audio-converter/app/audio/process.py:116
+#: usr/share/biglinux/audio-converter/app/audio/process.py:144
 msgid "The media command timed out."
 msgstr "Miðilsskipunin fór yfir tímamörk."
 
@@ -305,35 +310,35 @@ msgstr "Valin suðminnkunarviðbót er ekki tiltæk. Settu hana upp eða slökkt
 msgid "The audio plugin path is unsupported."
 msgstr "Slóð hljóðviðbótarinnar er ekki studd."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:40
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:40
 msgid "There is not enough free disk space. Free some space and try again."
 msgstr "Ekki er nóg laust diskpláss. Losaðu pláss og reyndu aftur."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:47
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:47
 msgid "The file or destination is not accessible. Check its permissions."
 msgstr "Ekki er hægt að fá aðgang að skránni eða áfangastaðnum. Athugaðu heimildir."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:54
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:54
 msgid "The required audio encoder is unavailable. Install a compatible FFmpeg package."
 msgstr "Nauðsynlegur hljóðkóðari er ekki tiltækur. Settu upp samhæfan FFmpeg-pakka."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:61
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:61
 msgid "A selected audio effect is unavailable in this FFmpeg installation."
 msgstr "Valin hljóðáhrif eru ekki tiltæk í þessari uppsetningu FFmpeg."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:67
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:67
 msgid "The audio could not be processed. Check the file and selected output settings."
 msgstr "Ekki tókst að vinna úr hljóðinu. Athugaðu skrána og valdar úttaksstillingar."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:164
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:164
 msgid "Effects need a new encoding. Select an audio format instead of keeping the original."
 msgstr "Áhrif krefjast nýrrar kóðunar. Veldu hljóðsnið í stað þess að halda upprunalegu."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:320
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:320
 msgid "An intermediate segment has an unsafe path."
 msgstr "Millibútur hefur óörugga slóð."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:403
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:403
 msgid "The output contains no readable audio. No file was published."
 msgstr "Úttakið inniheldur ekkert læsilegt hljóð. Engin skrá var vistuð."
 
@@ -349,7 +354,10 @@ msgstr "Afkóðaða hljóðið endar á ófullgerðum sýnaramma."
 msgid "The file contains no readable audio samples."
 msgstr "Skráin inniheldur engin læsileg hljóðsýni."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225 usr/share/biglinux/audio-converter/app/ui/visualizer.py:154 usr/share/biglinux/audio-converter/app/ui/visualizer.py:188 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1110
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:154
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:188
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1110
 msgid "Generating waveform..."
 msgstr "Bý til bylgjuform…"
 
@@ -365,64 +373,371 @@ msgstr "Ekki tókst að búa til bylgjuformið."
 msgid "The source changed while its waveform was being generated."
 msgstr "Frumskráin breyttist á meðan bylgjuform hennar var búið til."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:36
 msgid "Check conversion settings"
 msgstr "Athugaðu umbreytingarstillingar"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:47
 msgid "Conversion could not start"
 msgstr "Ekki tókst að hefja umbreytingu"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:55
 msgid "Converting audio"
 msgstr "Umbreyti hljóð"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1129 usr/share/biglinux/audio-converter/app/ui/main_window.py:1153 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:156 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:187 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:72
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:662
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1129
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1153
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:156
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:187
 msgid "Cancel"
 msgstr "Hætta við"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:85
 msgid "Cancelling…"
 msgstr "Hætti við…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "Umbreyti {current} af {total} · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "Ekki tókst að umbreyta {count} skrá"
 msgstr[1] "Ekki tókst að umbreyta {count} skrám"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:139
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "Reyna aftur"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} skrá umbreytt"
 msgstr[1] "{count} skrár umbreyttar"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:144
 msgid "Show Files"
 msgstr "Sýna skrár"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:51
+msgid "Voice only"
+msgstr "Aðeins fyrir tal"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:52
+msgid "Fair"
+msgstr "Sæmileg"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:53
+msgid "Good"
+msgstr "Góð"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:54
+msgid "Very good"
+msgstr "Mjög góð"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:55
+msgid "Best"
+msgstr "Best"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:66
+#, python-brace-format
+msgid "{quality}, about {size} MB per minute"
+msgstr "{quality}, um {size} MB á mínútu"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:92
+msgid "Allow conversion to 24-bit PCM"
+msgstr "Leyfa umbreytingu í 24 bita PCM"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:94
+msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+msgstr "Fyrir fleytitalshljóð sem er flutt út sem FLAC. Dregur úr nákvæmni; WAV varðveitir upprunalega framsetningu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:116
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119
+msgid "Format"
+msgstr "Snið"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:118
+msgid "Choose the output format. Keeping the original format applies no effects."
+msgstr "Veldu úttakssnið. Ef upprunalega sniðinu er haldið eru engin áhrif notuð."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:121
+msgid "MP3 — plays everywhere"
+msgstr "MP3 — spilast alls staðar"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:122
+msgid "M4A — good quality in small files"
+msgstr "M4A — góð gæði í litlum skrám"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:123
+msgid "Opus — smallest files, great for voice"
+msgstr "Opus — minnstu skrárnar, hentar vel fyrir tal"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:124
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — taplaust, minna en WAV"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:125
+msgid "WAV — uncompressed"
+msgstr "WAV — óþjappað"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:126
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — opið snið"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:127
+msgid "Keep the original format — no conversion, no effects"
+msgstr "Halda upprunalegu sniði — engin umbreyting, engin áhrif"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:129
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:301
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:452
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:468
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405
+msgid "Original"
+msgstr "Upprunalegt"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:141
+msgid "Quality"
+msgstr "Gæði"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:143
+msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
+msgstr "Meiri gæði hljóma betur og gera skrár stærri. Hvert val sýnir stærð sína á mínútu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:199
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386
+msgid "Cleaning quality"
+msgstr "Gæði hreinsunar"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:200
+msgid "Better, slower"
+msgstr "Betra, hægara"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:200
+msgid "Faster"
+msgstr "Hraðar"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:212
+msgid "Segments"
+msgstr "Bútar"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:214
+msgid "Keep them"
+msgstr "Halda þeim"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:214
+msgid "Remove them"
+msgstr "Fjarlægja þá"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:221
+msgid "Order"
+msgstr "Röð"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:222
+msgid "Choose the order in which marked segments are exported."
+msgstr "Veldu í hvaða röð merktir bútar eru fluttir út."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:223
+msgid "In the order marked"
+msgstr "Í þeirri röð sem merkt var"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:223
+msgid "In timeline order"
+msgstr "Í tímalínuröð"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:230
+msgid "Save segments"
+msgstr "Vista búta"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:231
+msgid "Export each segment separately or join the selected segments."
+msgstr "Flyttu hvern bút út sérstaklega eða sameinaðu valda búta."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Join this file's segments"
+msgstr "Sameina búta þessarar skrár"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Separate files"
+msgstr "Aðskildar skrár"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:240
+msgid "Join into one file"
+msgstr "Sameina í eina skrá"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:241
+msgid "In queue order, named after the first file"
+msgstr "Í röð biðraðarinnar, nefnd eftir fyrstu skránni"
+
+# File: big-video-converter/big-video-converter/usr/share/big-video-
+# converter/ui/conversion_page.py, line: 271
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251
+msgid "Folder to save"
+msgstr "Vistunarmappa"
+
+# File: big-video-converter/big-video-converter/usr/share/big-video-
+# converter/ui/conversion_page.py, line: 270
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251
+msgid "Save in the same folder as the original file"
+msgstr "Vista í sömu möppu og upprunalega skráin"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:255
+msgid "Save to"
+msgstr "Vista í"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:265
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:270
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:395
+msgid "Choose output folder"
+msgstr "Velja úttaksmöppu"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:287
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133
+msgid "Channels"
+msgstr "Rásir"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:288
+msgid "Keep the original layout or explicitly downmix to mono or stereo."
+msgstr "Haltu upprunalegri uppröðun rása eða blandaðu þeim niður í einrása eða víðóma hljóð."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+msgid "Mono"
+msgstr "Einrása"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+msgid "Stereo"
+msgstr "Víðóma"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:299
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128
+msgid "Sample rate"
+msgstr "Sýnatökutíðni"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:308
+msgid "Standard volume"
+msgstr "Staðalhljóðstyrkur"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:310
+msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
+msgstr "Stillir hverja skrá á staðlaðan hljóðstyrk tals og hlaðvarpa svo margar skrár spilist á sama stigi."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:318
+msgid "Lift quiet parts"
+msgstr "Lyfta lágu"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:320
+msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
+msgstr "Gerir lága kafla háværari og háa hljóðlátari svo allt heyrist vel án þess að hrófla við hljóðstyrknum."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Light"
+msgstr "Væg"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Medium"
+msgstr "Miðlungs"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236
+msgid "Off"
+msgstr "Af"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Strong"
+msgstr "Sterk"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:342
+msgid "Remove pauses"
+msgstr "Fjarlægja hlé"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:347
+msgid "Cuts"
+msgstr "Skurðir"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:370
+msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+msgstr "Upprunalegt snið heldur kóðaða hljóðinu. Klippingar fylgja mörkum pakka og hitta ekki endilega nákvæma tíma. Áhrif eru hunsuð í forhlustun og útflutningi."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:380
+msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
+msgstr "Hærri hljóðstyrkur eða hækkuð tónjafnarabönd geta bjagað hljóðið. Lækkaðu mögnunina eða kveiktu á Staðalhljóðstyrkur."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:409
+msgid "Local folder required"
+msgstr "Staðbundin mappa er nauðsynleg"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:410
+msgid "Choose a folder on the local filesystem."
+msgstr "Veldu möppu í staðbundna skráakerfinu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:452
+msgid "Lossless"
+msgstr "Án taps"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:576
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178
+#, python-brace-format
+msgid "Unavailable: install {package}"
+msgstr "Ekki tiltækt: settu upp {package}"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:671
+msgid "Mark a segment on the waveform first."
+msgstr "Merktu fyrst bút á bylgjuforminu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:672
+msgid "Mark a segment first."
+msgstr "Merktu fyrst bút."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:674
+msgid "Joining files makes one file of everything."
+msgstr "Þegar skrár eru sameinaðar verður til ein skrá úr öllu."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:680
+msgid "Removing keeps the timeline order."
+msgstr "Við fjarlægingu helst tímalínuröðin."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:684
+msgid "Removing leaves a single file."
+msgstr "Fjarlæging skilur eftir eina skrá."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:692
+msgid "The original format cannot join files"
+msgstr "Upprunalegt snið getur ekki sameinað skrár"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:694
+msgid "Add another file to join them."
+msgstr "Bættu við annarri skrá til að sameina þær."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:722
+#, python-brace-format
+msgid "{count} adjustment"
+msgid_plural "{count} adjustments"
+msgstr[0] "{count} aðlögun"
+msgstr[1] "{count} aðlaganir"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:753
+msgid "The original format keeps the audio as it is."
+msgstr "Upprunalegt snið heldur hljóðinu óbreyttu."
+
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
 msgid "Reset"
 msgstr "Endurstilla"
 
 #: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332
 msgid "On"
 msgstr "Kveikt"
-
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Off"
-msgstr "Af"
 
 #: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:403
 #, python-brace-format
@@ -471,7 +786,9 @@ msgstr "Meiri nærvera raddar"
 msgid "Custom"
 msgstr "Sérsniðið"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:470 usr/share/biglinux/audio-converter/app/ui/main_window.py:475
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:470
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:475
 msgid "Equalizer"
 msgstr "Tónjafnari"
 
@@ -500,27 +817,16 @@ msgstr "Óþekkt"
 msgid "Duration"
 msgstr "Lengd"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:116
-msgid "Format"
-msgstr "Snið"
-
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:124
 msgid "Bitrate"
 msgstr "Bitahraði"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:299
-msgid "Sample rate"
-msgstr "Sýnatökutíðni"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:287
-msgid "Channels"
-msgstr "Rásir"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:137
 msgid "Bit Depth"
 msgstr "Bitadýpt"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:172 usr/share/biglinux/audio-converter/app/ui/file_info.py:176
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:172
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:176
 msgid "Copy value"
 msgstr "Afrita gildi"
 
@@ -528,7 +834,8 @@ msgstr "Afrita gildi"
 msgid "File Information"
 msgstr "Upplýsingar um skrá"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:201 usr/share/biglinux/audio-converter/app/ui/file_info.py:204
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:201
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:204
 msgid "Copy information to clipboard"
 msgstr "Afrita upplýsingar á klippispjaldið"
 
@@ -569,7 +876,8 @@ msgstr "Loka"
 msgid "Converted with warnings"
 msgstr "Umbreytt með viðvörunum"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
 msgid "Failed"
 msgstr "Mistókst"
 
@@ -581,15 +889,18 @@ msgstr "Hætt við"
 msgid "Technical details"
 msgstr "Tæknilegar upplýsingar"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:170 usr/share/biglinux/audio-converter/app/ui/file_queue.py:175
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:170
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:175
 msgid "Remove from queue"
 msgstr "Fjarlægja úr biðröð"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185 usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
 msgid "File actions"
 msgstr "Skráaraðgerðir"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207 usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
 msgid "Move to Trash"
 msgstr "Færa í ruslið"
 
@@ -605,24 +916,26 @@ msgstr "Nánari upplýsingar…"
 msgid "Converted"
 msgstr "Umbreytt"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:287 usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:287
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
 msgid "Show output file"
 msgstr "Sýna úttaksskrá"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
-msgid "Stop"
-msgstr "Stöðva"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
 msgid "Play file"
 msgstr "Spila skrá"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:326 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:232
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
+msgid "Stop"
+msgstr "Stöðva"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:326
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:233
 #, python-brace-format
-msgid "{count} part"
-msgid_plural "{count} parts"
-msgstr[0] "{count} hluti"
-msgstr[1] "{count} hlutar"
+msgid "{count} segment"
+msgid_plural "{count} segments"
+msgstr[0] "{count} bútur"
+msgstr[1] "{count} bútar"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:396
 msgid "Add audio or video files"
@@ -633,7 +946,9 @@ msgstr "Bæta við hljóð- eða myndskrám"
 msgid "Drag files here or use {button}."
 msgstr "Dragðu skrár hingað eða notaðu {button}."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399 usr/share/biglinux/audio-converter/app/ui/main_window.py:292 usr/share/biglinux/audio-converter/app/ui/main_window.py:300
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:292
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:300
 msgid "Add Files"
 msgstr "Bæta við skrám"
 
@@ -691,9 +1006,34 @@ msgstr "Skráin er í notkun við umbreytingu. Hættu við hana áður en þú f
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "Ekki tókst að færa skrána í ruslið. Henni hefur ekki verið eytt."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849 usr/share/biglinux/audio-converter/main.py:88
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849
+#: usr/share/biglinux/audio-converter/main.py:88
 msgid "Download this file to a local folder before adding it."
 msgstr "Sæktu þessa skrá í staðbundna möppu áður en þú bætir henni við."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:10
+msgid "Click to listen from a point. Drag to mark a segment, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
+msgstr "Smelltu til að hlusta frá ákveðnum stað. Dragðu til að merkja bút og dragðu svo jaðra hans eða miðju til að stilla hann. Breyta bútum býður upp á talnareiti og lyklaborðsstýringu."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:12
+msgid "Preview the previous file."
+msgstr "Hlustaðu á fyrri skrá."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:13
+msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
+msgstr "Spila eða gera hlé. Flýtilykill: Ctrl+Bil."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:14
+msgid "Preview the next file."
+msgstr "Hlustaðu á næstu skrá."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:15
+msgid "Preview only the marked segments."
+msgstr "Hlustaðu aðeins á merkta búta."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:17
+msgid "More actions are available from the adjacent menu button."
+msgstr "Fleiri aðgerðir eru í valmyndarhnappinum við hliðina."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
@@ -703,11 +1043,13 @@ msgstr "Ekki tókst að lesa stillingarnar og þær voru endurstilltar"
 msgid "Drop to add"
 msgstr "Slepptu til að bæta við"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253 usr/share/biglinux/audio-converter/app/ui/main_window.py:256
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:256
 msgid "Show settings"
 msgstr "Sýna stillingar"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270 usr/share/biglinux/audio-converter/app/ui/main_window.py:277
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:277
 msgid "Clear queue"
 msgstr "Tæma biðröð"
 
@@ -715,7 +1057,9 @@ msgstr "Tæma biðröð"
 msgid "Show help on hover"
 msgstr "Sýna hjálp þegar bendill er yfir"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313 usr/share/biglinux/audio-converter/app/ui/main_window.py:1148 usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1148
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
 msgid "Clear Queue"
 msgstr "Tæma biðröð"
 
@@ -739,10 +1083,6 @@ msgstr "Hljóðstyrkur"
 msgid "Speed"
 msgstr "Hraði"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:199
-msgid "Cleaning quality"
-msgstr "Gæði hreinsunar"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:392
 msgid "Clean voice"
 msgstr "Hreinsa rödd"
@@ -750,10 +1090,6 @@ msgstr "Hreinsa rödd"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:404
 msgid "Adjusted"
 msgstr "Aðlagað"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
-msgid "Original"
-msgstr "Upprunalegt"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:408
 msgid "Listen with or without adjustments"
@@ -787,7 +1123,8 @@ msgstr "Þysja inn"
 msgid "Play the next file automatically"
 msgstr "Spila næstu skrá sjálfkrafa"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497 usr/share/biglinux/audio-converter/app/ui/main_window.py:499
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
 msgid "More playback options"
 msgstr "Fleiri spilunarvalkostir"
 
@@ -803,7 +1140,8 @@ msgstr "Hefur aðeins áhrif á hlustun. Umbreyttar skrár haldast óbreyttar."
 msgid "Audio output"
 msgstr "Hljóðúttak"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512 usr/share/biglinux/audio-converter/app/ui/main_window.py:877
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:877
 msgid "System default"
 msgstr "Sjálfgefið í kerfi"
 
@@ -840,7 +1178,8 @@ msgid_plural "Convert %d files"
 msgstr[0] "Umbreyta %d skrá"
 msgstr[1] "Umbreyta %d skrám"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967 usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
 msgid "OK"
 msgstr "Í lagi"
 
@@ -912,7 +1251,8 @@ msgstr "Hljóð- og myndskeiðsskrár"
 msgid "All files"
 msgstr "Allar skrár"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269 usr/share/biglinux/audio-converter/main.py:87
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269
+#: usr/share/biglinux/audio-converter/main.py:87
 msgid "Local files only"
 msgstr "Aðeins staðbundnar skrár"
 
@@ -924,32 +1264,8 @@ msgstr "Sumar valdar skrár eru á fjartengdum stað. Sæktu þær áður en þ�
 msgid "Files could not be selected"
 msgstr "Ekki tókst að velja skrárnar"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:153
-msgid "Delete All Segments"
-msgstr "Eyða öllum bútum"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:154
-msgid "Delete all marked segments? Source files will not be changed."
-msgstr "Eyða öllum merktum bútum? Frumskrám verður ekki breytt."
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:157 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
-msgid "Delete All"
-msgstr "Eyða öllum"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:184
-msgid "Delete Segment"
-msgstr "Eyða bút"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:185
-#, python-brace-format
-msgid "Delete segment {number}?"
-msgstr "Eyða bút {number}?"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:188
-msgid "Delete"
-msgstr "Eyða"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:61 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:73
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:61
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:73
 msgid "Pauses longer than"
 msgstr "Hlé lengri en"
 
@@ -969,7 +1285,8 @@ msgstr "2 s"
 msgid "Find Pauses"
 msgstr "Finna hlé"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:101 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:174
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:101
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:174
 msgid "Finding pauses"
 msgstr "Leita að hléum"
 
@@ -984,11 +1301,6 @@ msgstr "Tekur um eina mínútu fyrir hverja klukkustund af hljóði."
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:171
 msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
 msgstr "Ætlað fyrir tal. Hlé eru fundin í röddinni sem DPDFNet hefur hreinsað."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:576
-#, python-brace-format
-msgid "Unavailable: install {package}"
-msgstr "Ekki tiltækt: settu upp {package}"
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:181
 msgid "Open a file to find its pauses"
@@ -1005,7 +1317,9 @@ msgstr[1] "{count} hlé · {duration} styttra"
 msgid "No pauses found. Nothing would change."
 msgstr "Engin hlé fundust. Ekkert myndi breytast."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:309 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:324
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:309
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:324
 #, python-brace-format
 msgid "{percent}%"
 msgstr "{percent}%"
@@ -1016,17 +1330,17 @@ msgstr "Bættu fyrst við skrá."
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:259
 #, python-brace-format
-msgid "Speech marked in {count} part"
-msgid_plural "Speech marked in {count} parts"
-msgstr[0] "Tal merkt í {count} hluta"
-msgstr[1] "Tal merkt í {count} hlutum"
+msgid "Speech marked in {count} segment"
+msgid_plural "Speech marked in {count} segments"
+msgstr[0] "Tal merkt í {count} búti"
+msgstr[1] "Tal merkt í {count} bútum"
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:269
 #, python-brace-format
-msgid "This replaces the {count} mark already on the file."
-msgid_plural "This replaces the {count} marks already on the file."
-msgstr[0] "Þetta kemur í stað {count} merkingar sem skráin hefur þegar."
-msgstr[1] "Þetta kemur í stað {count} merkinga sem skráin hefur þegar."
+msgid "This replaces the {count} segment already marked on the file."
+msgid_plural "This replaces the {count} segments already marked on the file."
+msgstr[0] "Þetta kemur í stað {count} búts sem þegar er merktur í skránni."
+msgstr[1] "Þetta kemur í stað {count} búta sem þegar eru merktir í skránni."
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:274
 msgid "Nothing is deleted from the original file."
@@ -1116,273 +1430,13 @@ msgstr "Lok búts {number} í sekúndum"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "Virka skráin hefur breyst. Opnaðu bútaritilinn aftur fyrir núverandi skrá."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
-msgid "Voice only"
-msgstr "Aðeins fyrir tal"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
-msgid "Fair"
-msgstr "Sæmileg"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
-msgid "Good"
-msgstr "Góð"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
-msgid "Very good"
-msgstr "Mjög góð"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
-msgid "Best"
-msgstr "Best"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:66
-#, python-brace-format
-msgid "{quality}, about {size} MB per minute"
-msgstr "{quality}, um {size} MB á mínútu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:92
-msgid "Allow conversion to 24-bit PCM"
-msgstr "Leyfa umbreytingu í 24 bita PCM"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "Fyrir fleytitalshljóð sem er flutt út sem FLAC. Dregur úr nákvæmni; WAV varðveitir upprunalega framsetningu."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:118
-msgid "Choose the output format. Keeping the original format applies no effects."
-msgstr "Veldu úttakssnið. Ef upprunalega sniðinu er haldið eru engin áhrif notuð."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
-msgid "MP3 — plays everywhere"
-msgstr "MP3 — spilast alls staðar"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
-msgid "M4A — good quality in small files"
-msgstr "M4A — góð gæði í litlum skrám"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
-msgid "Opus — smallest files, great for voice"
-msgstr "Opus — minnstu skrárnar, hentar vel fyrir tal"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
-msgid "FLAC — lossless, smaller than WAV"
-msgstr "FLAC — taplaust, minna en WAV"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
-msgid "WAV — uncompressed"
-msgstr "WAV — óþjappað"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — opið snið"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
-msgid "Keep the original format — no conversion, no effects"
-msgstr "Halda upprunalegu sniði — engin umbreyting, engin áhrif"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:141
-msgid "Quality"
-msgstr "Gæði"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:143
-msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
-msgstr "Meiri gæði hljóma betur og gera skrár stærri. Hvert val sýnir stærð sína á mínútu."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
-msgid "Faster"
-msgstr "Hraðar"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
-msgid "Better, slower"
-msgstr "Betra, hægara"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
-msgid "Marks"
-msgstr "Merkingar"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
-msgid "Keep them"
-msgstr "Halda þeim"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
-msgid "Remove them"
-msgstr "Fjarlægja þá"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:221
-msgid "Order"
-msgstr "Röð"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
-msgid "Choose the order in which marked segments are exported."
-msgstr "Veldu í hvaða röð merktir bútar eru fluttir út."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
-msgid "In timeline order"
-msgstr "Í tímalínuröð"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
-msgid "In the order marked"
-msgstr "Í þeirri röð sem merkt var"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:230
-msgid "Save segments"
-msgstr "Vista búta"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
-msgid "Export each segment separately or join the selected segments."
-msgstr "Flyttu hvern bút út sérstaklega eða sameinaðu valda búta."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
-msgid "Separate files"
-msgstr "Aðskildar skrár"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
-msgid "Join this file's segments"
-msgstr "Sameina búta þessarar skrár"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:240
-msgid "Join into one file"
-msgstr "Sameina í eina skrá"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
-msgid "In queue order, named after the first file"
-msgstr "Í röð biðraðarinnar, nefnd eftir fyrstu skránni"
-
-# File: big-video-converter/big-video-converter/usr/share/big-video-
-# converter/ui/conversion_page.py, line: 270
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
-msgid "Save in the same folder as the original file"
-msgstr "Vista í sömu möppu og upprunalega skráin"
-
-# File: big-video-converter/big-video-converter/usr/share/big-video-
-# converter/ui/conversion_page.py, line: 271
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
-msgid "Folder to save"
-msgstr "Vistunarmappa"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:255
-msgid "Save to"
-msgstr "Vista í"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:265 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
-msgid "Choose output folder"
-msgstr "Velja úttaksmöppu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
-msgid "Keep the original layout or explicitly downmix to mono or stereo."
-msgstr "Haltu upprunalegri uppröðun rása eða blandaðu þeim niður í einrása eða víðóma hljóð."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
-msgid "Mono"
-msgstr "Einrása"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
-msgid "Stereo"
-msgstr "Víðóma"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
-msgid "Standard volume"
-msgstr "Staðalhljóðstyrkur"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:310
-msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
-msgstr "Stillir hverja skrá á staðlaðan hljóðstyrk tals og hlaðvarpa svo margar skrár spilist á sama stigi."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:318
-msgid "Lift quiet parts"
-msgstr "Lyfta lágu"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:320
-msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
-msgstr "Gerir lága kafla háværari og háa hljóðlátari svo allt heyrist vel án þess að hrófla við hljóðstyrknum."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Light"
-msgstr "Væg"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Medium"
-msgstr "Miðlungs"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Strong"
-msgstr "Sterk"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
-msgid "Remove pauses"
-msgstr "Fjarlægja hlé"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
-msgid "Cuts"
-msgstr "Skurðir"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
-msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-msgstr "Upprunalegt snið heldur kóðaða hljóðinu. Klippingar fylgja mörkum pakka og hitta ekki endilega nákvæma tíma. Áhrif eru hunsuð í forhlustun og útflutningi."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
-msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
-msgstr "Hærri hljóðstyrkur eða hækkuð tónjafnarabönd geta bjagað hljóðið. Lækkaðu mögnunina eða kveiktu á Staðalhljóðstyrkur."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
-msgid "Local folder required"
-msgstr "Staðbundin mappa er nauðsynleg"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
-msgid "Choose a folder on the local filesystem."
-msgstr "Veldu möppu í staðbundna skráakerfinu."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
-msgid "Lossless"
-msgstr "Án taps"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:671
-msgid "Mark a part on the waveform first."
-msgstr "Merktu fyrst hluta á bylgjuforminu."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:672
-msgid "Mark a part first."
-msgstr "Merktu fyrst hluta."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:674
-msgid "Joining files makes one file of everything."
-msgstr "Þegar skrár eru sameinaðar verður til ein skrá úr öllu."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:680
-msgid "Removing keeps the timeline order."
-msgstr "Við fjarlægingu helst tímalínuröðin."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:684
-msgid "Removing leaves a single file."
-msgstr "Fjarlæging skilur eftir eina skrá."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:692
-msgid "The original format cannot join files"
-msgstr "Upprunalegt snið getur ekki sameinað skrár"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:694
-msgid "Add another file to join them."
-msgstr "Bættu við annarri skrá til að sameina þær."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:722
-#, python-brace-format
-msgid "{count} adjustment"
-msgid_plural "{count} adjustments"
-msgstr[0] "{count} aðlögun"
-msgstr[1] "{count} aðlaganir"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:753
-msgid "The original format keeps the audio as it is."
-msgstr "Upprunalegt snið heldur hljóðinu óbreyttu."
-
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:51
 msgid "Audio waveform visualizer"
 msgstr "Birting hljóðbylgjuforms"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:895
-msgid "Click to listen from there · Drag to mark a part"
-msgstr "Smelltu til að hlusta þaðan · Dragðu til að merkja hluta"
+msgid "Click to listen from there · Drag to mark a segment"
+msgstr "Smelltu til að hlusta þaðan · Dragðu til að merkja bút"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1107
 msgid "Waveform could not be generated"
@@ -1400,41 +1454,44 @@ msgstr "Ekkert hljóð hlaðið inn"
 msgid "Audio position seekbar"
 msgstr "Staðsetningarstika hljóðs"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
-msgid "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
-msgstr "Smelltu til að hlusta frá ákveðnum stað. Dragðu til að merkja hluta og dragðu svo jaðra hans eða miðju til að stilla hann. Breyta bútum býður upp á talnareiti og lyklaborðsstýringu."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:153
+msgid "Delete All Segments"
+msgstr "Eyða öllum bútum"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:12
-msgid "Preview the previous file."
-msgstr "Hlustaðu á fyrri skrá."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:154
+msgid "Delete all marked segments? Source files will not be changed."
+msgstr "Eyða öllum merktum bútum? Frumskrám verður ekki breytt."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
-msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
-msgstr "Spila eða gera hlé. Flýtilykill: Ctrl+Bil."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:157
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:190
+msgid "Delete All"
+msgstr "Eyða öllum"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:14
-msgid "Preview the next file."
-msgstr "Hlustaðu á næstu skrá."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:184
+msgid "Delete Segment"
+msgstr "Eyða bút"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:15
-msgid "Preview only the marked segments."
-msgstr "Hlustaðu aðeins á merkta búta."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:185
+#, python-brace-format
+msgid "Delete segment {number}?"
+msgstr "Eyða bút {number}?"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:17
-msgid "More actions are available from the adjacent menu button."
-msgstr "Fleiri aðgerðir eru í valmyndarhnappinum við hliðina."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:188
+msgid "Delete"
+msgstr "Eyða"
 
-#: usr/share/biglinux/audio-converter/main.py:205 usr/share/biglinux/audio-converter/main.py:207
+#: usr/share/biglinux/audio-converter/main.py:205
+#: usr/share/biglinux/audio-converter/main.py:207
 msgid "BigLinux Team"
 msgstr "BigLinux-teymið"
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
-msgid "Extract Audio"
-msgstr "Draga út hljóð"
-
-#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Convert or Edit Audio"
 msgstr "Umbreyta eða breyta hljóði"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
+msgid "Extract Audio"
+msgstr "Draga út hljóð"
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:49
 msgid "No local media files"

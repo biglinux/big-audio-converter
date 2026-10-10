@@ -42,12 +42,12 @@ msgid "An unexpected error stopped this conversion."
 msgstr "An unexpected error stopped this conversion."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:227
-msgid "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
-msgstr "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
+msgid "The length of this file is unknown, so marked segments cannot be removed. Keep them instead."
+msgstr "The length of this file is unknown, so marked segments cannot be removed. Keep them instead."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:238
-msgid "Every part of this file is marked for removal."
-msgstr "Every part of this file is marked for removal."
+msgid "The whole file is marked for removal."
+msgstr "The whole file is marked for removal."
 
 #: usr/share/biglinux/audio-converter/app/audio/converter.py:253
 msgid "FFmpeg is not installed. Install the FFmpeg package and try again."
@@ -122,7 +122,8 @@ msgstr "The encoder changed the requested channel count. No output was published
 msgid "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 msgstr "This FFmpeg build cannot preserve the requested FLAC precision. Choose WAV or install a compatible FFmpeg package."
 
-#: usr/share/biglinux/audio-converter/app/audio/converter.py:524 usr/share/biglinux/audio-converter/app/audio/profiles.py:165
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:524
+#: usr/share/biglinux/audio-converter/app/audio/profiles.py:165
 msgid "Select a supported output format."
 msgstr "Select a supported output format."
 
@@ -182,7 +183,26 @@ msgstr "This file does not contain the selected audio track."
 msgid "This PCM precision cannot be preserved by the selected WAV encoder."
 msgstr "This PCM precision cannot be preserved by the selected WAV encoder."
 
-#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58 usr/share/biglinux/audio-converter/app/audio/pauses.py:105 usr/share/biglinux/audio-converter/app/audio/pauses.py:211 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:59
+msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
+msgstr "Too many files are waiting for inspection. Wait for some files to finish, then add more."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:80
+msgid "Select a regular local media file, not a folder or device."
+msgstr "Select a regular local media file, not a folder or device."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:94
+msgid "The file changed during inspection. Add it again."
+msgstr "The file changed during inspection. Add it again."
+
+#: usr/share/biglinux/audio-converter/app/audio/media_probe.py:129
+msgid "The file could not be inspected. Add it again or choose another file."
+msgstr "The file could not be inspected. Add it again or choose another file."
+
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:58
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:105
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:211
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:337
 msgid "The pauses could not be measured."
 msgstr "The pauses could not be measured."
 
@@ -222,23 +242,8 @@ msgstr "This audio position could not be reached."
 msgid "A preview effect could not be applied. Check the selected effects and installed plugins."
 msgstr "A preview effect could not be applied. Check the selected effects and installed plugins."
 
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:59
-msgid "Too many files are waiting for inspection. Wait for some files to finish, then add more."
-msgstr "Too many files are waiting for inspection. Wait for some files to finish, then add more."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:80
-msgid "Select a regular local media file, not a folder or device."
-msgstr "Select a regular local media file, not a folder or device."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:94
-msgid "The file changed during inspection. Add it again."
-msgstr "The file changed during inspection. Add it again."
-
-#: usr/share/biglinux/audio-converter/app/audio/probe_service.py:129
-msgid "The file could not be inspected. Add it again or choose another file."
-msgstr "The file could not be inspected. Add it again or choose another file."
-
-#: usr/share/biglinux/audio-converter/app/audio/process.py:116 usr/share/biglinux/audio-converter/app/audio/process.py:144
+#: usr/share/biglinux/audio-converter/app/audio/process.py:116
+#: usr/share/biglinux/audio-converter/app/audio/process.py:144
 msgid "The media command timed out."
 msgstr "The media command timed out."
 
@@ -305,35 +310,35 @@ msgstr "The selected noise reduction plugin is unavailable. Install it or turn n
 msgid "The audio plugin path is unsupported."
 msgstr "The audio plugin path is unsupported."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:40
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:40
 msgid "There is not enough free disk space. Free some space and try again."
 msgstr "There is not enough free disk space. Free some space and try again."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:47
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:47
 msgid "The file or destination is not accessible. Check its permissions."
 msgstr "The file or destination is not accessible. Check its permissions."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:54
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:54
 msgid "The required audio encoder is unavailable. Install a compatible FFmpeg package."
 msgstr "The required audio encoder is unavailable. Install a compatible FFmpeg package."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:61
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:61
 msgid "A selected audio effect is unavailable in this FFmpeg installation."
 msgstr "A selected audio effect is unavailable in this FFmpeg installation."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:67
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:67
 msgid "The audio could not be processed. Check the file and selected output settings."
 msgstr "The audio could not be processed. Check the file and selected output settings."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:164
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:164
 msgid "Effects need a new encoding. Select an audio format instead of keeping the original."
 msgstr "Effects need a new encoding. Select an audio format instead of keeping the original."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:320
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:320
 msgid "An intermediate segment has an unsafe path."
 msgstr "An intermediate segment has an unsafe path."
 
-#: usr/share/biglinux/audio-converter/app/audio/segment_processor.py:403
+#: usr/share/biglinux/audio-converter/app/audio/segment_renderer.py:403
 msgid "The output contains no readable audio. No file was published."
 msgstr "The output contains no readable audio. No file was published."
 
@@ -349,7 +354,10 @@ msgstr "The decoded audio ends with an incomplete sample frame."
 msgid "The file contains no readable audio samples."
 msgstr "The file contains no readable audio samples."
 
-#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225 usr/share/biglinux/audio-converter/app/ui/visualizer.py:154 usr/share/biglinux/audio-converter/app/ui/visualizer.py:188 usr/share/biglinux/audio-converter/app/ui/visualizer.py:1110
+#: usr/share/biglinux/audio-converter/app/audio/waveform.py:225
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:154
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:188
+#: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1110
 msgid "Generating waveform..."
 msgstr "Generating waveform..."
 
@@ -365,64 +373,367 @@ msgstr "The waveform could not be generated."
 msgid "The source changed while its waveform was being generated."
 msgstr "The source changed while its waveform was being generated."
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:36
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:36
 msgid "Check conversion settings"
 msgstr "Check conversion settings"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:47
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:47
 msgid "Conversion could not start"
 msgstr "Conversion could not start"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:55
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:55
 msgid "Converting audio"
 msgstr "Converting audio"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:72 usr/share/biglinux/audio-converter/app/ui/file_queue.py:662 usr/share/biglinux/audio-converter/app/ui/main_window.py:1129 usr/share/biglinux/audio-converter/app/ui/main_window.py:1153 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:156 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:187 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:72
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:662
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1129
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1153
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:82
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:156
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:187
 msgid "Cancel"
 msgstr "Cancel"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:85
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:85
 msgid "Cancelling…"
 msgstr "Cancelling…"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:101
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:101
 #, python-brace-format
 msgid "Converting {current} of {total} · {percent}%"
 msgstr "Converting {current} of {total} · {percent}%"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:135
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:135
 #, python-brace-format
 msgid "{count} file was not converted"
 msgid_plural "{count} files were not converted"
 msgstr[0] "{count} file was not converted"
 msgstr[1] "{count} files were not converted"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:139 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:139
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:83
 msgid "Try Again"
 msgstr "Try Again"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:142
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:142
 #, python-brace-format
 msgid "{count} file converted"
 msgid_plural "{count} files converted"
 msgstr[0] "{count} file converted"
 msgstr[1] "{count} files converted"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_controller.py:144
+#: usr/share/biglinux/audio-converter/app/ui/batch_runner.py:144
 msgid "Show Files"
 msgstr "Show Files"
 
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170 usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:51
+msgid "Voice only"
+msgstr "Voice only"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:52
+msgid "Fair"
+msgstr "Fair"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:53
+msgid "Good"
+msgstr "Good"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:54
+msgid "Very good"
+msgstr "Very good"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:55
+msgid "Best"
+msgstr "Best"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:66
+#, python-brace-format
+msgid "{quality}, about {size} MB per minute"
+msgstr "{quality}, about {size} MB per minute"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:92
+msgid "Allow conversion to 24-bit PCM"
+msgstr "Allow conversion to 24-bit PCM"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:94
+msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+msgstr "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:116
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119
+msgid "Format"
+msgstr "Format"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:118
+msgid "Choose the output format. Keeping the original format applies no effects."
+msgstr "Choose the output format. Keeping the original format applies no effects."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:121
+msgid "MP3 — plays everywhere"
+msgstr "MP3 — plays everywhere"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:122
+msgid "M4A — good quality in small files"
+msgstr "M4A — good quality in small files"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:123
+msgid "Opus — smallest files, great for voice"
+msgstr "Opus — smallest files, great for voice"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:124
+msgid "FLAC — lossless, smaller than WAV"
+msgstr "FLAC — lossless, smaller than WAV"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:125
+msgid "WAV — uncompressed"
+msgstr "WAV — uncompressed"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:126
+msgid "Ogg Vorbis — open format"
+msgstr "Ogg Vorbis — open format"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:127
+msgid "Keep the original format — no conversion, no effects"
+msgstr "Keep the original format — no conversion, no effects"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:129
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:301
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:452
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:468
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405
+msgid "Original"
+msgstr "Original"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:141
+msgid "Quality"
+msgstr "Quality"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:143
+msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
+msgstr "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:199
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386
+msgid "Cleaning quality"
+msgstr "Cleaning quality"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:200
+msgid "Better, slower"
+msgstr "Better, slower"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:200
+msgid "Faster"
+msgstr "Faster"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:212
+msgid "Segments"
+msgstr "Segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:214
+msgid "Keep them"
+msgstr "Keep them"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:214
+msgid "Remove them"
+msgstr "Remove them"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:221
+msgid "Order"
+msgstr "Order"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:222
+msgid "Choose the order in which marked segments are exported."
+msgstr "Choose the order in which marked segments are exported."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:223
+msgid "In the order marked"
+msgstr "In the order marked"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:223
+msgid "In timeline order"
+msgstr "In timeline order"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:230
+msgid "Save segments"
+msgstr "Save segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:231
+msgid "Export each segment separately or join the selected segments."
+msgstr "Export each segment separately or join the selected segments."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Join this file's segments"
+msgstr "Join this file's segments"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Separate files"
+msgstr "Separate files"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:240
+msgid "Join into one file"
+msgstr "Join into one file"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:241
+msgid "In queue order, named after the first file"
+msgstr "In queue order, named after the first file"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251
+msgid "Folder to save"
+msgstr "Save folder"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251
+msgid "Save in the same folder as the original file"
+msgstr "Save in the same folder as the original file"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:255
+msgid "Save to"
+msgstr "Save to"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:265
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:270
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:395
+msgid "Choose output folder"
+msgstr "Choose output folder"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:287
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133
+msgid "Channels"
+msgstr "Channels"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:288
+msgid "Keep the original layout or explicitly downmix to mono or stereo."
+msgstr "Keep the original layout or explicitly downmix to mono or stereo."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+msgid "Mono"
+msgstr "Mono"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:289
+msgid "Stereo"
+msgstr "Stereo"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:299
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128
+msgid "Sample rate"
+msgstr "Sample rate"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:308
+msgid "Standard volume"
+msgstr "Standard volume"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:310
+msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
+msgstr "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:318
+msgid "Lift quiet parts"
+msgstr "Lift quiet parts"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:320
+msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
+msgstr "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Light"
+msgstr "Light"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Medium"
+msgstr "Medium"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236
+msgid "Off"
+msgstr "Off"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:322
+msgid "Strong"
+msgstr "Strong"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:342
+msgid "Remove pauses"
+msgstr "Remove pauses"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:347
+msgid "Cuts"
+msgstr "Cuts"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:370
+msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+msgstr "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:380
+msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
+msgstr "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:409
+msgid "Local folder required"
+msgstr "Local folder required"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:410
+msgid "Choose a folder on the local filesystem."
+msgstr "Choose a folder on the local filesystem."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:452
+msgid "Lossless"
+msgstr "Lossless"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:576
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178
+#, python-brace-format
+msgid "Unavailable: install {package}"
+msgstr "Unavailable: install {package}"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:671
+msgid "Mark a segment on the waveform first."
+msgstr "Mark a segment on the waveform first."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:672
+msgid "Mark a segment first."
+msgstr "Mark a segment first."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:674
+msgid "Joining files makes one file of everything."
+msgstr "Joining files makes one file of everything."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:680
+msgid "Removing keeps the timeline order."
+msgstr "Removing keeps the timeline order."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:684
+msgid "Removing leaves a single file."
+msgstr "Removing leaves a single file."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:692
+msgid "The original format cannot join files"
+msgstr "The original format cannot join files"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:694
+msgid "Add another file to join them."
+msgstr "Add another file to join them."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:722
+#, python-brace-format
+msgid "{count} adjustment"
+msgid_plural "{count} adjustments"
+msgstr[0] "{count} adjustment"
+msgstr[1] "{count} adjustments"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:753
+msgid "The original format keeps the audio as it is."
+msgstr "The original format keeps the audio as it is."
+
+#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:170
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1130
 msgid "Reset"
 msgstr "Reset"
 
 #: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332
 msgid "On"
 msgstr "On"
-
-#: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:332 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:236 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Off"
-msgstr "Off"
 
 #: usr/share/biglinux/audio-converter/app/ui/effect_cards.py:403
 #, python-brace-format
@@ -471,7 +782,9 @@ msgstr "Present Voice"
 msgid "Custom"
 msgstr "Custom"
 
-#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122 usr/share/biglinux/audio-converter/app/ui/main_window.py:470 usr/share/biglinux/audio-converter/app/ui/main_window.py:475
+#: usr/share/biglinux/audio-converter/app/ui/equalizer_panel.py:122
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:470
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:475
 msgid "Equalizer"
 msgstr "Equalizer"
 
@@ -500,27 +813,16 @@ msgstr "Unknown"
 msgid "Duration"
 msgstr "Duration"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:119 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:116
-msgid "Format"
-msgstr "Format"
-
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:124
 msgid "Bitrate"
 msgstr "Bitrate"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:128 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:299
-msgid "Sample rate"
-msgstr "Sample rate"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:133 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:287
-msgid "Channels"
-msgstr "Channels"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:137
 msgid "Bit Depth"
 msgstr "Bit Depth"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:172 usr/share/biglinux/audio-converter/app/ui/file_info.py:176
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:172
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:176
 msgid "Copy value"
 msgstr "Copy value"
 
@@ -528,7 +830,8 @@ msgstr "Copy value"
 msgid "File Information"
 msgstr "File Information"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_info.py:201 usr/share/biglinux/audio-converter/app/ui/file_info.py:204
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:201
+#: usr/share/biglinux/audio-converter/app/ui/file_info.py:204
 msgid "Copy information to clipboard"
 msgstr "Copy information to clipboard"
 
@@ -569,7 +872,8 @@ msgstr "Close"
 msgid "Converted with warnings"
 msgstr "Converted with warnings"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:56
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:229
 msgid "Failed"
 msgstr "Failed"
 
@@ -581,15 +885,18 @@ msgstr "Cancelled"
 msgid "Technical details"
 msgstr "Technical details"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:170 usr/share/biglinux/audio-converter/app/ui/file_queue.py:175
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:170
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:175
 msgid "Remove from queue"
 msgstr "Remove from queue"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185 usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
 msgid "File actions"
 msgstr "File actions"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207 usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
 msgid "Move to Trash"
 msgstr "Move to Trash"
 
@@ -605,24 +912,26 @@ msgstr "More Information..."
 msgid "Converted"
 msgstr "Converted"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:287 usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:287
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:291
 msgid "Show output file"
 msgstr "Show output file"
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
-msgid "Stop"
-msgstr "Stop"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
 msgid "Play file"
 msgstr "Play file"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:326 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:232
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:302
+msgid "Stop"
+msgstr "Stop"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:326
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:233
 #, python-brace-format
-msgid "{count} part"
-msgid_plural "{count} parts"
-msgstr[0] "{count} part"
-msgstr[1] "{count} parts"
+msgid "{count} segment"
+msgid_plural "{count} segments"
+msgstr[0] "{count} segment"
+msgstr[1] "{count} segments"
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:396
 msgid "Add audio or video files"
@@ -633,7 +942,9 @@ msgstr "Add audio or video files"
 msgid "Drag files here or use {button}."
 msgstr "Drag files here or use {button}."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399 usr/share/biglinux/audio-converter/app/ui/main_window.py:292 usr/share/biglinux/audio-converter/app/ui/main_window.py:300
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:399
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:292
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:300
 msgid "Add Files"
 msgstr "Add Files"
 
@@ -691,9 +1002,34 @@ msgstr "The file is in use by a conversion. Cancel it before moving the input to
 msgid "The file could not be moved to Trash. It has not been deleted."
 msgstr "The file could not be moved to Trash. It has not been deleted."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849 usr/share/biglinux/audio-converter/main.py:88
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:849
+#: usr/share/biglinux/audio-converter/main.py:88
 msgid "Download this file to a local folder before adding it."
 msgstr "Download this file to a local folder before adding it."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:10
+msgid "Click to listen from a point. Drag to mark a segment, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
+msgstr "Click to listen from a point. Drag to mark a segment, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:12
+msgid "Preview the previous file."
+msgstr "Preview the previous file."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:13
+msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
+msgstr "Play or pause. Keyboard shortcut: Ctrl+Space."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:14
+msgid "Preview the next file."
+msgstr "Preview the next file."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:15
+msgid "Preview only the marked segments."
+msgstr "Preview only the marked segments."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:17
+msgid "More actions are available from the adjacent menu button."
+msgstr "More actions are available from the adjacent menu button."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
@@ -703,11 +1039,13 @@ msgstr "Settings could not be read and were reset"
 msgid "Drop to add"
 msgstr "Drop to add"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253 usr/share/biglinux/audio-converter/app/ui/main_window.py:256
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:253
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:256
 msgid "Show settings"
 msgstr "Show settings"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270 usr/share/biglinux/audio-converter/app/ui/main_window.py:277
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:270
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:277
 msgid "Clear queue"
 msgstr "Clear queue"
 
@@ -715,7 +1053,9 @@ msgstr "Clear queue"
 msgid "Show help on hover"
 msgstr "Show help on hover"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313 usr/share/biglinux/audio-converter/app/ui/main_window.py:1148 usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:313
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1148
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1154
 msgid "Clear Queue"
 msgstr "Clear Queue"
 
@@ -739,10 +1079,6 @@ msgstr "Volume"
 msgid "Speed"
 msgstr "Speed"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:386 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:199
-msgid "Cleaning quality"
-msgstr "Cleaning quality"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:392
 msgid "Clean voice"
 msgstr "Clean voice"
@@ -750,10 +1086,6 @@ msgstr "Clean voice"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:404
 msgid "Adjusted"
 msgstr "Adjusted"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:405 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:129 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:301 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:468
-msgid "Original"
-msgstr "Original"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:408
 msgid "Listen with or without adjustments"
@@ -787,7 +1119,8 @@ msgstr "Zoom in"
 msgid "Play the next file automatically"
 msgstr "Play the next file automatically"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497 usr/share/biglinux/audio-converter/app/ui/main_window.py:499
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
 msgid "More playback options"
 msgstr "More playback options"
 
@@ -803,7 +1136,8 @@ msgstr "Only affects listening. Converted files stay unchanged."
 msgid "Audio output"
 msgstr "Audio output"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512 usr/share/biglinux/audio-converter/app/ui/main_window.py:877
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:877
 msgid "System default"
 msgstr "System default"
 
@@ -840,7 +1174,8 @@ msgid_plural "Convert %d files"
 msgstr[0] "Convert %d file"
 msgstr[1] "Convert %d files"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967 usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:967
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1082
 msgid "OK"
 msgstr "OK"
 
@@ -912,7 +1247,8 @@ msgstr "Audio and Video files"
 msgid "All files"
 msgstr "All files"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269 usr/share/biglinux/audio-converter/main.py:87
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1269
+#: usr/share/biglinux/audio-converter/main.py:87
 msgid "Local files only"
 msgstr "Local files only"
 
@@ -924,32 +1260,8 @@ msgstr "Some selected files are remote. Download them before adding them."
 msgid "Files could not be selected"
 msgstr "Files could not be selected"
 
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:153
-msgid "Delete All Segments"
-msgstr "Delete All Segments"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:154
-msgid "Delete all marked segments? Source files will not be changed."
-msgstr "Delete all marked segments? Source files will not be changed."
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:157 usr/share/biglinux/audio-converter/app/ui/marker_manager.py:190
-msgid "Delete All"
-msgstr "Delete All"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:184
-msgid "Delete Segment"
-msgstr "Delete Segment"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:185
-#, python-brace-format
-msgid "Delete segment {number}?"
-msgstr "Delete segment {number}?"
-
-#: usr/share/biglinux/audio-converter/app/ui/marker_manager.py:188
-msgid "Delete"
-msgstr "Delete"
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:61 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:73
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:61
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:73
 msgid "Pauses longer than"
 msgstr "Pauses longer than"
 
@@ -969,7 +1281,8 @@ msgstr "2 s"
 msgid "Find Pauses"
 msgstr "Find Pauses"
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:101 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:174
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:101
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:174
 msgid "Finding pauses"
 msgstr "Finding pauses"
 
@@ -984,11 +1297,6 @@ msgstr "Takes about a minute for each hour of audio."
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:171
 msgid "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
 msgstr "Made for speech. Pauses are found on the voice cleaned by DPDFNet."
-
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:178 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:576
-#, python-brace-format
-msgid "Unavailable: install {package}"
-msgstr "Unavailable: install {package}"
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:181
 msgid "Open a file to find its pauses"
@@ -1005,7 +1313,9 @@ msgstr[1] "{count} pauses · {duration} shorter"
 msgid "No pauses found. Nothing would change."
 msgstr "No pauses found. Nothing would change."
 
-#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:309 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:324
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:227
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:309
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:324
 #, python-brace-format
 msgid "{percent}%"
 msgstr "{percent}%"
@@ -1016,17 +1326,17 @@ msgstr "Add a file first."
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:259
 #, python-brace-format
-msgid "Speech marked in {count} part"
-msgid_plural "Speech marked in {count} parts"
-msgstr[0] "Speech marked in {count} part"
-msgstr[1] "Speech marked in {count} parts"
+msgid "Speech marked in {count} segment"
+msgid_plural "Speech marked in {count} segments"
+msgstr[0] "Speech marked in {count} segment"
+msgstr[1] "Speech marked in {count} segments"
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:269
 #, python-brace-format
-msgid "This replaces the {count} mark already on the file."
-msgid_plural "This replaces the {count} marks already on the file."
-msgstr[0] "This replaces the {count} mark already on the file."
-msgstr[1] "This replaces the {count} marks already on the file."
+msgid "This replaces the {count} segment already marked on the file."
+msgid_plural "This replaces the {count} segments already marked on the file."
+msgstr[0] "This replaces the {count} segment already marked on the file."
+msgstr[1] "This replaces the {count} segments already marked on the file."
 
 #: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:274
 msgid "Nothing is deleted from the original file."
@@ -1116,269 +1426,13 @@ msgstr "Segment {number} end in seconds"
 msgid "The active file changed. Reopen the segment editor for the current file."
 msgstr "The active file changed. Reopen the segment editor for the current file."
 
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:51
-msgid "Voice only"
-msgstr "Voice only"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:52
-msgid "Fair"
-msgstr "Fair"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:53
-msgid "Good"
-msgstr "Good"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:54
-msgid "Very good"
-msgstr "Very good"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:55
-msgid "Best"
-msgstr "Best"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:66
-#, python-brace-format
-msgid "{quality}, about {size} MB per minute"
-msgstr "{quality}, about {size} MB per minute"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:92
-msgid "Allow conversion to 24-bit PCM"
-msgstr "Allow conversion to 24-bit PCM"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:94
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:118
-msgid "Choose the output format. Keeping the original format applies no effects."
-msgstr "Choose the output format. Keeping the original format applies no effects."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:121
-msgid "MP3 — plays everywhere"
-msgstr "MP3 — plays everywhere"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:122
-msgid "M4A — good quality in small files"
-msgstr "M4A — good quality in small files"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:123
-msgid "Opus — smallest files, great for voice"
-msgstr "Opus — smallest files, great for voice"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:124
-msgid "FLAC — lossless, smaller than WAV"
-msgstr "FLAC — lossless, smaller than WAV"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:125
-msgid "WAV — uncompressed"
-msgstr "WAV — uncompressed"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:126
-msgid "Ogg Vorbis — open format"
-msgstr "Ogg Vorbis — open format"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:127
-msgid "Keep the original format — no conversion, no effects"
-msgstr "Keep the original format — no conversion, no effects"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:141
-msgid "Quality"
-msgstr "Quality"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:143
-msgid "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
-msgstr "Higher quality sounds better and makes larger files. Each choice shows its size per minute."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
-msgid "Faster"
-msgstr "Faster"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:200
-msgid "Better, slower"
-msgstr "Better, slower"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:212
-msgid "Marks"
-msgstr "Marks"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
-msgid "Keep them"
-msgstr "Keep them"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:214
-msgid "Remove them"
-msgstr "Remove them"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:221
-msgid "Order"
-msgstr "Order"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:222
-msgid "Choose the order in which marked segments are exported."
-msgstr "Choose the order in which marked segments are exported."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
-msgid "In timeline order"
-msgstr "In timeline order"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:223
-msgid "In the order marked"
-msgstr "In the order marked"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:230
-msgid "Save segments"
-msgstr "Save segments"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:231
-msgid "Export each segment separately or join the selected segments."
-msgstr "Export each segment separately or join the selected segments."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
-msgid "Separate files"
-msgstr "Separate files"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:232
-msgid "Join this file's segments"
-msgstr "Join this file's segments"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:240
-msgid "Join into one file"
-msgstr "Join into one file"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:241
-msgid "In queue order, named after the first file"
-msgstr "In queue order, named after the first file"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
-msgid "Save in the same folder as the original file"
-msgstr "Save in the same folder as the original file"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:251
-msgid "Folder to save"
-msgstr "Save folder"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:255
-msgid "Save to"
-msgstr "Save to"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:265 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:270 usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:395
-msgid "Choose output folder"
-msgstr "Choose output folder"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:288
-msgid "Keep the original layout or explicitly downmix to mono or stereo."
-msgstr "Keep the original layout or explicitly downmix to mono or stereo."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
-msgid "Mono"
-msgstr "Mono"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:289
-msgid "Stereo"
-msgstr "Stereo"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:308
-msgid "Standard volume"
-msgstr "Standard volume"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:310
-msgid "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
-msgstr "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:318
-msgid "Lift quiet parts"
-msgstr "Lift quiet parts"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:320
-msgid "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
-msgstr "Makes quiet passages louder and loud ones softer, so everything is easy to hear without touching the volume."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Light"
-msgstr "Light"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Medium"
-msgstr "Medium"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:322
-msgid "Strong"
-msgstr "Strong"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:342
-msgid "Remove pauses"
-msgstr "Remove pauses"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:347
-msgid "Cuts"
-msgstr "Cuts"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:370
-msgid "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-msgstr "The original format keeps the encoded audio. Cuts follow packet boundaries and may not match the exact times. Effects are bypassed in preview and export."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:380
-msgid "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
-msgstr "Boosting volume or equalizer bands can distort audio. Reduce the gain or turn on Standard volume."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:409
-msgid "Local folder required"
-msgstr "Local folder required"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:410
-msgid "Choose a folder on the local filesystem."
-msgstr "Choose a folder on the local filesystem."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:452
-msgid "Lossless"
-msgstr "Lossless"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:671
-msgid "Mark a part on the waveform first."
-msgstr "Mark a part on the waveform first."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:672
-msgid "Mark a part first."
-msgstr "Mark a part first."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:674
-msgid "Joining files makes one file of everything."
-msgstr "Joining files makes one file of everything."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:680
-msgid "Removing keeps the timeline order."
-msgstr "Removing keeps the timeline order."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:684
-msgid "Removing leaves a single file."
-msgstr "Removing leaves a single file."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:692
-msgid "The original format cannot join files"
-msgstr "The original format cannot join files"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:694
-msgid "Add another file to join them."
-msgstr "Add another file to join them."
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:722
-#, python-brace-format
-msgid "{count} adjustment"
-msgid_plural "{count} adjustments"
-msgstr[0] "{count} adjustment"
-msgstr[1] "{count} adjustments"
-
-#: usr/share/biglinux/audio-converter/app/ui/settings_mixin.py:753
-msgid "The original format keeps the audio as it is."
-msgstr "The original format keeps the audio as it is."
-
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:51
 msgid "Audio waveform visualizer"
 msgstr "Audio waveform visualizer"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:895
-msgid "Click to listen from there · Drag to mark a part"
-msgstr "Click to listen from there · Drag to mark a part"
+msgid "Click to listen from there · Drag to mark a segment"
+msgstr "Click to listen from there · Drag to mark a segment"
 
 #: usr/share/biglinux/audio-converter/app/ui/visualizer.py:1107
 msgid "Waveform could not be generated"
@@ -1396,41 +1450,44 @@ msgstr "No audio loaded"
 msgid "Audio position seekbar"
 msgstr "Audio position seekbar"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:10
-msgid "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
-msgstr "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:153
+msgid "Delete All Segments"
+msgstr "Delete All Segments"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:12
-msgid "Preview the previous file."
-msgstr "Preview the previous file."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:154
+msgid "Delete all marked segments? Source files will not be changed."
+msgstr "Delete all marked segments? Source files will not be changed."
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:13
-msgid "Play or pause. Keyboard shortcut: Ctrl+Space."
-msgstr "Play or pause. Keyboard shortcut: Ctrl+Space."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:157
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:190
+msgid "Delete All"
+msgstr "Delete All"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:14
-msgid "Preview the next file."
-msgstr "Preview the next file."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:184
+msgid "Delete Segment"
+msgstr "Delete Segment"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:15
-msgid "Preview only the marked segments."
-msgstr "Preview only the marked segments."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:185
+#, python-brace-format
+msgid "Delete segment {number}?"
+msgstr "Delete segment {number}?"
 
-#: usr/share/biglinux/audio-converter/app/utils/tooltip_helper.py:17
-msgid "More actions are available from the adjacent menu button."
-msgstr "More actions are available from the adjacent menu button."
+#: usr/share/biglinux/audio-converter/app/ui/waveform_segments.py:188
+msgid "Delete"
+msgstr "Delete"
 
-#: usr/share/biglinux/audio-converter/main.py:205 usr/share/biglinux/audio-converter/main.py:207
+#: usr/share/biglinux/audio-converter/main.py:205
+#: usr/share/biglinux/audio-converter/main.py:207
 msgid "BigLinux Team"
 msgstr "BigLinux Team"
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
-msgid "Extract Audio"
-msgstr "Extract Audio"
-
-#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
 msgid "Convert or Edit Audio"
 msgstr "Convert or Edit Audio"
+
+#: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:24
+msgid "Extract Audio"
+msgstr "Extract Audio"
 
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:49
 msgid "No local media files"

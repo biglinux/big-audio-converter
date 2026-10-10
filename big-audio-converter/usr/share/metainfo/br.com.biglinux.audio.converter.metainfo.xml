@@ -9,12 +9,12 @@
     <name>BigLinux</name>
   </developer>
   <description>
-    <p>Convert local audio to MP3, M4A, Opus, FLAC, WAV or Ogg Vorbis, or extract an audio track from a video. Preview effects and mark parts to keep or remove on the waveform, or enter their times with the keyboard.</p>
+    <p>Convert local audio to MP3, M4A, Opus, FLAC, WAV or Ogg Vorbis, or extract an audio track from a video. Preview effects and mark segments to keep or remove on the waveform, or enter their times with the keyboard.</p>
     <p>Remove pauses marks the speech between the pauses, so the export leaves them out. Keeping the original format avoids re-encoding, with cut precision limited by the codec and container. Optional speech noise reduction uses DeepFilterNet3 or native DPDFNet-2. Tags and cover art are preserved where the destination supports them.</p>
   </description>
   <screenshots>
     <screenshot type="default">
-      <caption>Queue, conversion settings and the waveform with marked parts</caption>
+      <caption>Queue, conversion settings and the waveform with marked segments</caption>
       <image>https://raw.githubusercontent.com/biglinux/big-audio-converter/main/screenshot.png</image>
     </screenshot>
   </screenshots>
@@ -37,7 +37,7 @@
   <releases>
     <release version="26.10.05" date="2026-10-05">
       <description>
-        <p>Remove pauses from speech, keep marks per file across the queue, and remember the equalizer.</p>
+        <p>Remove pauses from speech, keep segments per file across the queue, and remember the equalizer.</p>
       </description>
     </release>
   </releases>

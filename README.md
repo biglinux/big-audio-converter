@@ -17,7 +17,7 @@ Required components: Python 3.10 or newer, GTK 4.12 or newer, libadwaita 1.7 or 
 3. Check where the files go, below the queue as in Big Video Converter. By default, each result goes beside its original; **Folder to save** picks another one.
 4. Select **Convert**. Each entry shows its progress, and the queue header counts the files done. When the batch ends, a banner above the queue shows the output folder, or offers **Try Again** for the files that were not converted. An entry's status icon explains its failure or warnings; its folder button shows its output.
 
-While a batch runs, the settings and the queue wait; listening stays available, and the computer does not suspend. The inputs stay in the list. Existing files are never overwritten: conflicting output names receive a numeric suffix. **Cancel** waits for the worker to stop and removes unfinished output. Removing an entry (its **×** button, or Delete on the focused entry) does not delete its source; **Move to Trash**, in the entry's menu, is a separate, confirmed action. **Clear Queue**, in the main menu, asks first only when entries have marked parts.
+While a batch runs, the settings and the queue wait; listening stays available, and the computer does not suspend. The inputs stay in the list. Existing files are never overwritten: conflicting output names receive a numeric suffix. **Cancel** waits for the worker to stop and removes unfinished output. Removing an entry (its **×** button, or Delete on the focused entry) does not delete its source; **Move to Trash**, in the entry's menu, is a separate, confirmed action. **Clear Queue**, in the main menu, asks first only when entries have marked segments.
 
 In a narrow window the sidebar folds away; the button at the start of the queue header shows it and counts the active adjustments.
 
@@ -25,13 +25,13 @@ In a narrow window the sidebar folds away; the button at the start of the queue 
 
 ## Cut audio
 
-Drag across the waveform to mark a part; drag its edges or the whole part to adjust it, and press Delete over it to remove it. **Edit Segments…** lists the same parts with their times in seconds, reachable by keyboard; its changes take effect when you select **Apply**.
+Drag across the waveform to mark a segment; drag its edges or the whole segment to adjust it, and press Delete over it to remove it. **Edit Segments…** lists the same segments with their times in seconds, reachable by keyboard; its changes take effect when you select **Apply**.
 
-Once a file has marks, the tiles beside **Remove pauses**, in the **Cuts** section, become available: **Marks** chooses whether they are kept or removed. Kept parts can be saved in timeline order or in the order marked (**Order**), as separate files or joined (**Save segments**). With several files in the queue, the **Join into one file** tile, last in **Cuts**, joins them in queue order. Files without marks are converted in full, and each file keeps its own marks.
+Once a file has segments, the tiles beside **Remove pauses**, in the **Cuts** section, become available: **Segments** chooses whether they are kept or removed. Kept segments can be saved in timeline order or in the order marked (**Order**), as separate files or joined (**Save segments**). With several files in the queue, the **Join into one file** tile, last in **Cuts**, joins them in queue order. Files without segments are converted in full, and each file keeps its own segments.
 
 **Remove pauses**, a tile in the sidebar's **Cuts** section whose card opens as the pointer rests on it, marks the speech between the pauses, so the export keeps what is marked as always: the speech, joined in order. It looks for the pauses in the voice cleaned by DPDFNet (package `dpdfnet-native`), so background noise does not hide one. It is made for speech: in songs, instruments can pass for a voice, above all in an intro before the singing starts.
 
-The analysis takes about a minute per hour of audio and runs in the background, its progress shown on the tile; when it ends, the speech is marked at once, **Marks** is set to keep it in timeline order, joined, and 0.15 s of each pause stays beside the speech. Choosing another pause length marks again; **Undo** restores the previous marks and settings. Once you edit the marks they are yours, and **Find Pauses** marks anew.
+The analysis takes about a minute per hour of audio and runs in the background, its progress shown on the tile; when it ends, the speech is marked at once, **Segments** is set to keep it in timeline order, joined, and 0.15 s of each pause stays beside the speech. Choosing another pause length marks again; **Undo** restores the previous segments and settings. Once you edit the segments they are yours, and **Find Pauses** marks anew.
 
 **Keep the original format** preserves the encoded audio without applying effects. Cuts follow packet boundaries and are approximate. Container support determines which metadata and artwork survive. Choose an audio format when you need precise cuts or effects.
 

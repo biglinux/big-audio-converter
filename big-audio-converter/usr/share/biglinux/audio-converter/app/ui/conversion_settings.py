@@ -209,7 +209,7 @@ class ConversionSettingsMixin:
         # is marked.
         self.cut_mode_row = ChoiceTile(
             "edit-cut-symbolic",
-            _("Marks"),
+            _("Segments"),
             None,
             [_("Keep them"), _("Remove them")],
         )
@@ -668,8 +668,8 @@ class ConversionSettingsMixin:
         self.play_selection_switch.set_visible(has_segments)
         # Short: the reason shows on the tile. The first tile says where to
         # mark; the ones that wait for it only that it comes first.
-        unmarked = None if has_segments else _("Mark a part on the waveform first.")
-        first = None if has_segments else _("Mark a part first.")
+        unmarked = None if has_segments else _("Mark a segment on the waveform first.")
+        first = None if has_segments else _("Mark a segment first.")
         joining = (
             _("Joining files makes one file of everything.")
             if self._joining()

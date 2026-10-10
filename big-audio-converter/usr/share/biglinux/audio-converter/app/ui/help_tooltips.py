@@ -7,7 +7,7 @@ _ = gettext.gettext
 
 TOOLTIPS = {
     "waveform_visualizer": _(
-        "Click to listen from a point. Drag to mark a part, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
+        "Click to listen from a point. Drag to mark a segment, then drag its edges or body to adjust it. Edit Segments provides numeric and keyboard controls."
     ),
     "prev_audio_btn": _("Preview the previous file."),
     "pause_play_btn": _("Play or pause. Keyboard shortcut: Ctrl+Space."),

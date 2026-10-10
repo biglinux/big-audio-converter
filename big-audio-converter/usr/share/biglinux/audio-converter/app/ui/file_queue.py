@@ -323,7 +323,7 @@ class FileQueueRow(Adw.ActionRow):
         if self._cut_count:
             parts.append(
                 gettext.ngettext(
-                    "{count} part", "{count} parts", self._cut_count
+                    "{count} segment", "{count} segments", self._cut_count
                 ).format(count=self._cut_count)
             )
         self.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))

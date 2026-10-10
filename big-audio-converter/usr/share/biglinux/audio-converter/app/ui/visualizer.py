@@ -892,7 +892,7 @@ class AudioVisualizer(WaveformSegmentsMixin, Gtk.DrawingArea):
 
     def _draw_hint(self, cr):
         """How to use the waveform, until the first segment exists."""
-        text = _("Click to listen from there · Drag to mark a part")
+        text = _("Click to listen from there · Drag to mark a segment")
         cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(12)
         extents = text_extents(cr, text)

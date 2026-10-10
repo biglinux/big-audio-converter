@@ -229,9 +229,9 @@ class PausePanel(Adw.PreferencesGroup):
             text = _("Failed")
         elif applied:
             count = len(self.undo.marks)
-            text = gettext.ngettext("{count} part", "{count} parts", count).format(
-                count=count
-            )
+            text = gettext.ngettext(
+                "{count} segment", "{count} segments", count
+            ).format(count=count)
         else:
             text = _("Off")
         tile.show_value(text, applied)
@@ -256,8 +256,8 @@ class PausePanel(Adw.PreferencesGroup):
             count = len(self.undo.marks)
             self.undo_row.set_title(
                 gettext.ngettext(
-                    "Speech marked in {count} part",
-                    "Speech marked in {count} parts",
+                    "Speech marked in {count} segment",
+                    "Speech marked in {count} segments",
                     count,
                 ).format(count=count)
             )
@@ -266,8 +266,8 @@ class PausePanel(Adw.PreferencesGroup):
             if replaced:
                 notes.append(
                     gettext.ngettext(
-                        "This replaces the {count} mark already on the file.",
-                        "This replaces the {count} marks already on the file.",
+                        "This replaces the {count} segment already marked on the file.",
+                        "This replaces the {count} segments already marked on the file.",
                         replaced,
                     ).format(count=replaced)
                 )

@@ -224,7 +224,7 @@ class AudioConverter:
             if end is None:
                 raise MediaError(
                     gettext.gettext(
-                        "The length of this file is unknown, so marked parts cannot be removed. Keep them instead."
+                        "The length of this file is unknown, so marked segments cannot be removed. Keep them instead."
                     )
                 )
             # What lies between the marked parts, as one file.
@@ -235,7 +235,7 @@ class AudioConverter:
             ]
             if not segments:
                 raise MediaError(
-                    gettext.gettext("Every part of this file is marked for removal.")
+                    gettext.gettext("The whole file is marked for removal.")
                 )
         elif settings.get("order_by_segment_number"):
             segments.sort(key=lambda s: s["segment_index"])
