@@ -981,16 +981,48 @@ def test_an_open_card_follows_its_row_when_the_window_resizes(window):
     pump(lambda: row.get_mapped() and window.get_width() > 1300)
     row.activate()
     pump(lambda: cards._card_box(row) is not None)
+    _wait(0.3)
     before_card, before_row = cards._card_box(row), cards._anchor_box(row)
     window.set_default_size(1120, 560)
     pump(lambda: window.get_width() < 1200)
     pump(lambda: cards._anchor_box(row) != before_row)
-    _wait(0.2)
+    _wait(0.3)
     anchor, card = cards._anchor_box(row), cards._card_box(row)
-    shift = before_row[2] - anchor[2]
-    assert shift > 0 and abs((before_card[0] - card[0]) - shift) <= 1
+    # The row narrowed with the sidebar, and the card kept its place beside it.
+    assert anchor[2] < before_row[2]
+    assert abs((card[0] - anchor[2]) - (before_card[0] - before_row[2])) <= 1
     assert card[1] >= 0 and card[3] <= window.get_height()
     row.popover.popdown()
+
+
+def test_the_pointer_leaving_the_window_closes_its_card(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_row
+    window.present()
+    pump(lambda: row.get_mapped())
+    _open_by_rest(cards, row)
+    # The window's controller was there before the pointer came in, so GTK
+    # tells it when the pointer leaves.
+    root, (motion, _keys) = cards._watched
+    assert root is window and motion.get_widget() is window
+    cards._on_window_leave(motion)
+    pump(lambda: not row.popover.get_visible())
+
+
+def test_nothing_keeps_running_once_a_card_closed(window):
+    cards = window.effect_cards.hover_cards
+    row = window.compressor_row
+    window.present()
+    pump(lambda: row.get_mapped())
+    _open_by_rest(cards, row)
+    assert cards._after_paint is not None and cards._root is window
+    _move(cards, (window.get_width() - 5, window.get_height() - 5))
+    pump(lambda: not row.popover.get_visible())
+    _wait(0.4)  # past the warm window
+    # No timer or frame-clock handler is left behind; the window's pointer
+    # controller returns at once while no card is open.
+    assert cards._sources == set()
+    assert cards._after_paint is None and cards._root is None
 
 
 def test_scrolling_the_sidebar_closes_the_pointers_card(window):

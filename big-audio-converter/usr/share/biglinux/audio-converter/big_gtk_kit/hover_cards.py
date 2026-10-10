@@ -330,8 +330,8 @@ class HoverCards:
         self._inside = {}  # name -> the popover's motion controller
         self._held = set()  # names with a button down inside
         self._sources = set()
-        self._root = None
-        self._root_controllers = ()
+        self._root = None  # the window whose frames move the open card
+        self._watched = None  # (window, its pointer and key controllers)
         self._after_paint = None  # (frame clock, handler) while a card is open
         self._placed = {}  # name -> (anchor box, window size) it was placed at
         self.can_open = None
@@ -385,6 +385,10 @@ class HoverCards:
         buttons.connect("event", _weak(self._on_popover_event), name)
         popover.add_controller(buttons)
         popover.connect("closed", _weak(self._on_closed), name)
+        # The window's controllers must be in place before the pointer enters:
+        # GTK tells a controller added later nothing when the pointer leaves.
+        self._watch(anchor.get_root())
+        anchor.connect("notify::root", _weak(self._on_anchor_rooted))
 
     def open(self, name):
         """Open ``name``'s card as the pointer resting on its anchor would."""
@@ -426,6 +430,11 @@ class HoverCards:
             GLib.source_remove(source)
         self._sources.clear()
         self._unfollow()
+        if self._watched is not None:
+            root, controllers = self._watched
+            self._watched = None
+            for controller in controllers:
+                root.remove_controller(controller)
         for popover in self.popovers.values():
             popover.unparent()
 
@@ -535,7 +544,7 @@ class HoverCards:
     # Events.
 
     def _on_anchor_pointer(self, controller, x, y, name):
-        if self._root_controllers:
+        if self._intent.owner is not None:
             return  # the window's controller follows the pointer meanwhile
         anchor = self._anchors[name]
         root = anchor.get_root()
@@ -555,10 +564,16 @@ class HoverCards:
         self._intent.left_card(name)
 
     def _on_window_leave(self, _controller):
-        self._intent.left_window()
+        if self._intent.owner is not None:
+            self._intent.left_window()
 
     def _on_window_motion(self, _controller, x, y):
-        self._intent.pointer(self._anchor_at((x, y)), (x, y))
+        # Only the way to an open card needs the whole window.
+        if self._intent.owner is not None:
+            self._intent.pointer(self._anchor_at((x, y)), (x, y))
+
+    def _on_anchor_rooted(self, anchor, _pspec):
+        self._watch(anchor.get_root())
 
     def _on_window_key(self, _controller, keyval, _keycode, _state):
         return bool(keyval == Gdk.KEY_Escape and self._intent.escape())
@@ -585,10 +600,10 @@ class HoverCards:
         if not any(p.get_visible() for p in self.popovers.values()):
             self._unfollow()
 
-    def _follow(self, root):
-        """While a card is open, follow the pointer over the whole window,
-        where the way to the card lies, and take Escape."""
-        if root is None or self._root_controllers:
+    def _watch(self, root):
+        """Follow the pointer over the whole window, where the way to a card
+        lies, and take Escape for a card the pointer opened."""
+        if root is None or (self._watched is not None and self._watched[0] is root):
             return
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", _weak(self._on_window_motion))
@@ -597,20 +612,22 @@ class HoverCards:
         keys.connect("key-pressed", _weak(self._on_window_key))
         root.add_controller(motion)
         root.add_controller(keys)
+        self._watched = (root, (motion, keys))
+
+    def _follow(self, root):
+        """While a card is open it follows its anchor whenever a frame moved
+        it: a resize, a reflow, a scroll. Frames are drawn only when something
+        changes."""
+        if root is None or self._after_paint is not None:
+            return
+        self._watch(root)
         self._root = root
-        self._root_controllers = (motion, keys)
-        # A card follows its anchor whenever a frame moved it: a resize, a
-        # reflow, a scroll. Frames are drawn only when something changes.
         clock = root.get_frame_clock()
         if clock is not None:
             handler = clock.connect("after-paint", _weak(self._on_after_paint))
             self._after_paint = (clock, handler)
 
     def _unfollow(self):
-        controllers, self._root_controllers = self._root_controllers, ()
-        for controller in controllers:
-            if controller.get_widget() is not None:
-                controller.get_widget().remove_controller(controller)
         self._cancel_after_paint()
         self._root = None
 

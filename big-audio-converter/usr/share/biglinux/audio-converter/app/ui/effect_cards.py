@@ -124,8 +124,9 @@ class SettingRow(Gtk.ListBoxRow):
             wrap=True,
             lines=2,
             ellipsize=Pango.EllipsizeMode.END,
-            # Room for "Very good · 192 kbps" on one line in a usual sidebar.
-            max_width_chars=22,
+            # Asks for its unwrapped width, so "Very good · 192 kbps" keeps to
+            # one line and wraps only in a narrow sidebar.
+            natural_wrap_mode=Gtk.NaturalWrapMode.NONE,
             valign=Gtk.Align.CENTER,
             css_classes=["effect-value"],
         )
