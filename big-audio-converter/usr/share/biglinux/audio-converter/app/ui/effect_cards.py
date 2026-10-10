@@ -146,27 +146,9 @@ class SettingRow(Gtk.ListBoxRow):
             margin_start=6,
             margin_end=6,
         )
-        # The row's icon and tint repeat here, so the card reads as the row's
-        # even where its arrow is far from the pointer.
-        header = Gtk.Box(spacing=8, css_classes=["card-header"])
-        header_icon = Gtk.Image(
-            valign=Gtk.Align.CENTER,
-            css_classes=["card-header-badge"],
-            accessible_role=Gtk.AccessibleRole.PRESENTATION,
-        )
-        if isinstance(icon, str):
-            header_icon.set_from_icon_name(icon)
-        else:
-            header_icon.set_from_gicon(icon)
-        header.append(header_icon)
-        header.append(
-            Gtk.Label(
-                label=title, xalign=0, hexpand=True, wrap=True, css_classes=["heading"]
-            )
-        )
-        self.card_value = Gtk.Label(css_classes=["effect-value", "numeric"])
-        header.append(self.card_value)
-        card.append(header)
+        # The row beside the card already shows its name and value; the card
+        # opens on what the row lacks, in the row's tint, so it reads as the
+        # row's even where its arrow is far from the pointer.
         if description:
             card.append(
                 Gtk.Label(
@@ -174,7 +156,7 @@ class SettingRow(Gtk.ListBoxRow):
                     xalign=0,
                     wrap=True,
                     max_width_chars=36,
-                    css_classes=["dim-label"],
+                    css_classes=["card-description"],
                 )
             )
         card.append(body)
@@ -215,13 +197,11 @@ class SettingRow(Gtk.ListBoxRow):
         )
 
     def show_value(self, text, applied):
-        """Show the value on the row, in its card and to screen readers."""
+        """Show the value on the row and to screen readers."""
         self.applied = applied
         self._value = text
         self.value_label.set_text(text)
         (self.add_css_class if applied else self.remove_css_class)("applied")
-        if self.popover is not None:
-            self.card_value.set_text(text)
         if self.reset_button is not None:
             self.reset_button.set_sensitive(applied)
         self._describe()

@@ -827,7 +827,6 @@ def test_a_row_card_opens_for_the_keyboard_and_shows_the_amount(window):
     pump(lambda: row.steps.buttons[0].has_focus())
     row.steps.set_selected(3)
     assert row.value_label.get_text() == "Strong"
-    assert row.card_value.get_text() == "Strong"
     [count] = [c for rows, c in window.effect_cards.groups if row in rows]
     assert count.get_text() == "1 active"
     # Off is the default of a correction: there is nothing to reset to.
