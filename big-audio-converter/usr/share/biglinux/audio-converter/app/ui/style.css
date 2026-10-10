@@ -33,24 +33,30 @@ popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shad
 
 /* Settings rows: an applied setting fills its badge and colors its value. */
 row.setting-row { padding: 6px 12px; min-height: 48px; }
-/* The row whose card is open stays marked while the pointer is in the card,
-   in the accent tint its card's description repeats. */
-row.setting-row.card-open { background-color: alpha(@accent_bg_color, 0.14); }
-row.setting-row.card-open .effect-badge {
-    background-color: @accent_bg_color;
-    color: @accent_fg_color;
+/* The row takes the accent tint as soon as the pointer reaches it, before its
+   card opens, and keeps it while the pointer is in the card. The badge stays
+   as it is: filled means the setting applies. */
+list > row.setting-row:hover:not(:disabled),
+list > row.setting-row.card-open {
+    background-color: mix(@card_bg_color, @accent_bg_color, 0.14);
 }
 /* A card opens over the queue, which shares its light surface: an outline
-   and a deeper shadow lift it, and its description carries the row's tint. */
+   and a deeper shadow lift it. Its header, the description, carries the row's
+   tint edge to edge, and so does the arrow that leads from the row into it. */
 popover.effect-card > contents {
+    padding: 0;
+    border-radius: 12px;
     box-shadow: 0 0 0 1px alpha(black, 0.10),
                 0 2px 4px alpha(black, 0.10),
                 0 10px 28px alpha(black, 0.22);
 }
 .card-description {
-    padding: 10px 12px;
-    border-radius: 8px;
-    background-color: alpha(@accent_bg_color, 0.14);
+    padding: 12px 14px;
+    border-radius: 12px 12px 0 0;
+    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
+}
+popover.effect-card.with-header > arrow {
+    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
 }
 /* A grayed row dims its name and icon, not the reason it gives in place of
    its value: that has to stay readable. */

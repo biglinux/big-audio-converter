@@ -137,18 +137,9 @@ class SettingRow(Gtk.ListBoxRow):
         self.popover = self.reset_button = None
         if body is None:
             return
-        card = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=10,
-            width_request=300,
-            margin_top=6,
-            margin_bottom=6,
-            margin_start=6,
-            margin_end=6,
-        )
-        # The row beside the card already shows its name and value; the card
-        # opens on what the row lacks, in the row's tint, so it reads as the
-        # row's even where its arrow is far from the pointer.
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=300)
+        # The row beside the card already shows its name and value; the card's
+        # header holds what the row lacks, in the row's tint, edge to edge.
         if description:
             card.append(
                 Gtk.Label(
@@ -159,19 +150,30 @@ class SettingRow(Gtk.ListBoxRow):
                     css_classes=["card-description"],
                 )
             )
-        card.append(body)
+        controls = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=10,
+            margin_top=10,
+            margin_bottom=12,
+            margin_start=12,
+            margin_end=12,
+        )
+        controls.append(body)
         if self.reset is not None:
             owner = weakref.proxy(self)
             self.reset_button = Gtk.Button(label=_("Reset"), halign=Gtk.Align.END)
             self.reset_button.connect("clicked", lambda _b: owner.reset())
-            card.append(self.reset_button)
+            controls.append(self.reset_button)
+        card.append(controls)
         # A bounded width: a long line in the body wraps instead of widening
         # the card. Beside the sidebar, over the queue; EffectCards points it
         # at the sidebar's edge, level with the row.
         self.popover = Gtk.Popover(
             child=Adw.Clamp(child=card, maximum_size=340, tightening_threshold=340),
             position=Gtk.PositionType.RIGHT,
-            css_classes=["effect-card"],
+            css_classes=["effect-card", "with-header"]
+            if description
+            else ["effect-card"],
         )
         self.popover.update_property([Gtk.AccessibleProperty.LABEL], [title])
 
