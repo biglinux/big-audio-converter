@@ -923,9 +923,9 @@ class MainWindow(
             "noise_engine": self._noise_engine(),
             "noise_strength": self.noise_adjustment.get_value(),
             # Each correction is off at its first step.
-            "compressor_enabled": self.compressor_tile.steps.get_selected() > 0,
+            "compressor_enabled": self.compressor_row.steps.get_selected() > 0,
             "compressor_intensity": COMPRESSOR_STEPS[
-                self.compressor_tile.steps.get_selected()
+                self.compressor_row.steps.get_selected()
             ],
             "eq_enabled": any(
                 self.eq_panel.band_scales[f].get_value() != 0
@@ -935,7 +935,7 @@ class MainWindow(
                 str(self.eq_panel.band_scales[f].get_value())
                 for _, f in self.eq_panel.BANDS
             ),
-            "normalize": self.normalize_tile.get_active(),
+            "normalize": self.normalize_row.get_active(),
             "cut_merge": self.cut_output_row.get_selected() == 1,
             "cut_remove": self.removes_marked(),
             "join_files": self._joining(),

@@ -3,7 +3,7 @@
 What is marked is what is exported, so the pauses go by marking the speech to
 keep and joining it.
 
-The panel is the card of the sidebar's "Remove pauses" tile; the tile shows how
+The panel is the card of the sidebar's "Remove pauses" row; the row shows how
 an analysis of a long file goes while the rest of the window stays usable.
 """
 
@@ -42,7 +42,7 @@ class PausePanel(Adw.PreferencesGroup):
     def __init__(self, window):
         super().__init__()
         self.window = weakref.ref(window)
-        self.tile = None  # weak reference to the tile whose card this is
+        self.row = None  # weak reference to the row whose card this is
         self._failed = False
         self.finder = PauseFinder()
         self.source_id = None  # queue entry the analysis or levels belong to
@@ -213,14 +213,14 @@ class PausePanel(Adw.PreferencesGroup):
     def _summarize(self):
         self.status_row.set_title(self._pause_summary())
 
-    def show_on(self, tile):
-        """Tell ``tile``, whose card this panel is, where the work stands."""
-        self.tile = weakref.ref(tile)
-        self._show_tile()
+    def show_on(self, row):
+        """Tell ``row``, whose card this panel is, where the work stands."""
+        self.row = weakref.ref(row)
+        self._show_row()
 
-    def _show_tile(self):
-        tile = self.tile() if self.tile else None
-        if tile is None:
+    def _show_row(self):
+        row = self.row() if self.row else None
+        if row is None:
             return
         applied = self._applied()
         if self.finder.busy:
@@ -234,10 +234,10 @@ class PausePanel(Adw.PreferencesGroup):
             ).format(count=count)
         else:
             text = _("Off")
-        tile.show_value(text, applied)
+        row.show_value(text, applied)
         # Like the other cuts: grayed with the reason until there is a file.
         window = self.window()
-        tile.set_unavailable(
+        row.set_unavailable(
             None
             if window and window.active_audio_id is not None
             else _("Add a file first.")
@@ -273,7 +273,7 @@ class PausePanel(Adw.PreferencesGroup):
                 )
             notes.append(_("Nothing is deleted from the original file."))
             self.undo_row.set_subtitle("\n".join(notes))
-        self._show_tile()
+        self._show_row()
 
     def markers_changed(self, markers):
         """An edit after marking makes the earlier marks no longer undoable."""
@@ -325,7 +325,7 @@ class PausePanel(Adw.PreferencesGroup):
         self.status_row.set_title(
             _("Finding pauses: {percent}%").format(percent=percent)
         )
-        self._show_tile()
+        self._show_row()
 
     def _on_found(self, _key, levels):
         self.levels = levels
@@ -336,7 +336,7 @@ class PausePanel(Adw.PreferencesGroup):
         self._show_state("failed")
         self.status_row.set_title(message or _("The pauses could not be measured."))
         self.actions.set_visible_child_name("retry")
-        self._show_tile()
+        self._show_row()
 
     def _on_cancel(self):
         self.finder.cancel()

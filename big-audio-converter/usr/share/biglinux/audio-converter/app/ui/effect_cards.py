@@ -58,7 +58,7 @@ class ChoiceToggles(Gtk.Box):
         self.selected = index
 
 
-class EffectTile(Gtk.ListBoxRow):
+class SettingRow(Gtk.ListBoxRow):
     """An icon badge, the setting's name and its value, with a card.
 
     ``body`` holds the controls shown in the row's card; a row without one
@@ -73,14 +73,14 @@ class EffectTile(Gtk.ListBoxRow):
     unavailable = None  # why the row is grayed
 
     def __init__(self, icon, title, description, body, switch=None, on_activate=None):
-        super().__init__(css_classes=["effect-tile"], activatable=True)
+        super().__init__(css_classes=["setting-row"], activatable=True)
         self.title = title
         self.description = description
         self.body = body
         self.switch = switch
         self.on_activate = on_activate
         self.applied = False
-        self.cards = None  # weak reference, set by EffectCards.add_tile
+        self.cards = None  # weak reference, set by EffectCards.add_row
         self.update_property([Gtk.AccessibleProperty.LABEL], [title])
 
         box = Gtk.Box(spacing=12)
@@ -214,14 +214,14 @@ class EffectTile(Gtk.ListBoxRow):
         self._describe()
         cards = self.cards() if self.cards else None
         if cards:
-            cards.tile_changed(self)
+            cards.row_changed(self)
 
 
-class ChoiceTile(EffectTile):
-    """One of a few choices, named on the tile and picked in its card.
+class ChoiceRow(SettingRow):
+    """One of a few choices, named on the row and picked in its card.
 
     It has the ``selected`` API of a combo row. A choice is no effect: the
-    tile never counts as an applied adjustment. "Name — detail" entries show
+    row never counts as an applied adjustment. "Name — detail" entries show
     the detail under the name.
     """
 
@@ -301,7 +301,7 @@ class ChoiceTile(EffectTile):
         return self._model.get_item(self.selected)
 
 
-class StepTile(EffectTile):
+class StepRow(SettingRow):
     """A correction in a few named steps, picked in its card; the first is off."""
 
     def __init__(self, icon, title, description, labels):
@@ -319,8 +319,8 @@ class StepTile(EffectTile):
         return self.steps.buttons[self.steps.get_selected()]
 
 
-class SwitchTile(EffectTile):
-    """A correction that is on or off; activating the tile flips it."""
+class SwitchRow(SettingRow):
+    """A correction that is on or off; activating the row flips it."""
 
     def __init__(self, icon, title, description):
         switch = Gtk.Switch(halign=Gtk.Align.START)
@@ -367,32 +367,32 @@ class EffectCards:
             )
             header.append(count)
             box.append(header)
-        rows = Gtk.ListBox(
+        listbox = Gtk.ListBox(
             selection_mode=Gtk.SelectionMode.NONE,
             activate_on_single_click=True,
             css_classes=["boxed-list"],
         )
-        rows.connect("row-activated", weak_callback(self._on_activated))
-        box.append(rows)
+        listbox.connect("row-activated", weak_callback(self._on_activated))
+        box.append(listbox)
         self.groups.append(([], count))
-        rows.group_index = len(self.groups) - 1
-        return box, rows
+        listbox.group_index = len(self.groups) - 1
+        return box, listbox
 
-    def add_tile(self, rows, tile):
-        tile.cards = weakref.ref(self)
-        tile.group_index = rows.group_index
-        self.groups[rows.group_index][0].append(tile)
-        rows.append(tile)
-        if tile.popover is not None:
+    def add_row(self, listbox, row):
+        row.cards = weakref.ref(self)
+        row.group_index = listbox.group_index
+        self.groups[listbox.group_index][0].append(row)
+        listbox.append(row)
+        if row.popover is not None:
             # A click gives the keyboard to the chosen step, or the card's one
             # control.
-            focus = getattr(tile, "focus_target", lambda: tile.body)
-            self.hover_cards.attach(tile, tile, tile.popover, focus=focus)
-        self.tile_changed(tile)
+            focus = getattr(row, "focus_target", lambda: row.body)
+            self.hover_cards.attach(row, row, row.popover, focus=focus)
+        self.row_changed(row)
 
-    def tile_changed(self, tile):
-        tiles, count = self.groups[tile.group_index]
-        active = sum(t.applied and t.counts for t in tiles)
+    def row_changed(self, row):
+        rows, count = self.groups[row.group_index]
+        active = sum(t.applied and t.counts for t in rows)
         count.set_text(
             gettext.ngettext("{count} active", "{count} active", active).format(
                 count=active
@@ -405,36 +405,34 @@ class EffectCards:
 
     def active_count(self):
         return sum(
-            tile.applied and tile.counts
-            for tiles, _count in self.groups
-            for tile in tiles
+            row.applied and row.counts for rows, _count in self.groups for row in rows
         )
 
-    def _on_activated(self, _rows, tile):
-        if tile.switch is not None:
-            tile.switch.set_active(not tile.switch.get_active())
-        elif tile.on_activate is not None:
+    def _on_activated(self, _listbox, row):
+        if row.switch is not None:
+            row.switch.set_active(not row.switch.get_active())
+        elif row.on_activate is not None:
             self.close()
-            tile.on_activate()
+            row.on_activate()
         else:
-            self.hover_cards.open_for_keyboard(tile)
+            self.hover_cards.open_for_keyboard(row)
 
-    def _can_open(self, tile):
+    def _can_open(self, row):
         # Rows moving under a still pointer (wheel, kinetic scroll) are not
         # hover.
         return GLib.get_monotonic_time() - self._scrolled_at >= SCROLL_QUIET_US
 
-    def _point_at_edge(self, tile):
+    def _point_at_edge(self, row):
         """Point the card at the sidebar's edge level with the row, so it
         opens over the queue."""
         found, edge = self.scrolled.compute_point(
-            tile, Graphene.Point().init(self.scrolled.get_width(), 0)
+            row, Graphene.Point().init(self.scrolled.get_width(), 0)
         )
         if found:
             rect = Gdk.Rectangle()
             rect.x, rect.y = int(edge.x) - 1, 0
-            rect.width, rect.height = 1, tile.get_height()
-            tile.popover.set_pointing_to(rect)
+            rect.width, rect.height = 1, row.get_height()
+            row.popover.set_pointing_to(rect)
 
     def _note_scroll(self):
         self._scrolled_at = GLib.get_monotonic_time()

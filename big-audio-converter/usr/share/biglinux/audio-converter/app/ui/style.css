@@ -32,14 +32,14 @@ popover.bar-slider > arrow, popover.effect-card > arrow { border: none; box-shad
 .compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }
 
 /* Settings rows: an applied setting fills its badge and colors its value. */
-row.effect-tile { padding: 6px 12px; min-height: 48px; }
+row.setting-row { padding: 6px 12px; min-height: 48px; }
 /* The row whose card is open stays marked while the pointer is in the card. */
-row.effect-tile.card-open { background-color: alpha(currentColor, 0.06); }
+row.setting-row.card-open { background-color: alpha(currentColor, 0.06); }
 /* A grayed row dims its name and icon, not the reason it gives in place of
    its value: that has to stay readable. */
-row.effect-tile:disabled .effect-title,
-row.effect-tile:disabled .effect-badge { opacity: 0.45; }
-row.effect-tile:disabled .effect-reason {
+row.setting-row:disabled .effect-title,
+row.setting-row:disabled .effect-badge { opacity: 0.45; }
+row.setting-row:disabled .effect-reason {
     color: @card_fg_color;
     opacity: 0.7;
     filter: none;
@@ -50,15 +50,15 @@ row.effect-tile:disabled .effect-reason {
     border-radius: 9999px;
     background-color: alpha(currentColor, 0.08);
 }
-.effect-tile.applied .effect-badge {
+.setting-row.applied .effect-badge {
     background-color: @accent_bg_color;
     color: @accent_fg_color;
 }
-.effect-tile .effect-value { opacity: 0.7; }
+.setting-row .effect-value { opacity: 0.7; }
 .effect-card .effect-value { font-weight: bold; }
 /* The card is the row's popover, so this colors its value too: an accent
    only while the setting applies, never on "Off". */
-.effect-tile.applied .effect-value {
+.setting-row.applied .effect-value {
     opacity: 1;
     color: @accent_color;
     font-weight: bold;

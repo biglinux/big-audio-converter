@@ -16,11 +16,11 @@ from gi.repository import Adw, GLib, Gtk
 
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 from app.ui.effect_cards import (
-    ChoiceTile,
+    ChoiceRow,
     ChoiceToggles,
-    EffectTile,
-    StepTile,
-    SwitchTile,
+    SettingRow,
+    StepRow,
+    SwitchRow,
 )
 from app.ui.pause_panel import PausePanel
 
@@ -80,7 +80,7 @@ class ConversionSettingsMixin:
         self._updating_profile = False
         cards = self.effect_cards
         # What the files become, as rows like the effects below.
-        output_box, output_flow = cards.add_group(None)
+        output_box, output_rows = cards.add_group(None)
         output_box.set_margin_start(12)
         output_box.set_margin_end(12)
         output_box.set_margin_top(12)
@@ -111,7 +111,7 @@ class ConversionSettingsMixin:
         # Most requests name the format, so the common ones come first and the
         # packet copy, which ignores every other choice, comes last.
         self._format_list = ["mp3", "m4a", "opus", "flac", "wav", "ogg", "copy"]
-        self.format_row = ChoiceTile(
+        self.format_row = ChoiceRow(
             "audio-x-generic-symbolic",
             _("Format"),
             _(
@@ -133,10 +133,10 @@ class ConversionSettingsMixin:
         self.format_row.connect(
             "notify::selected", weak_callback(self._on_format_changed)
         )
-        cards.add_tile(output_flow, self.format_row)
+        cards.add_row(output_rows, self.format_row)
 
         self._bitrate_list = list(BITRATES["mp3"])
-        self.bitrate_row = ChoiceTile(
+        self.bitrate_row = ChoiceRow(
             "starred-symbolic",
             _("Quality"),
             _(
@@ -148,7 +148,7 @@ class ConversionSettingsMixin:
         self.bitrate_row.connect(
             "notify::selected", weak_callback(self._on_bitrate_changed)
         )
-        cards.add_tile(output_flow, self.bitrate_row)
+        cards.add_row(output_rows, self.bitrate_row)
 
         # The playback bar's sliders move in their own units; the spin buttons
         # take exact amounts.
@@ -207,7 +207,7 @@ class ConversionSettingsMixin:
         # Files are cut wherever segments are marked on the waveform; these
         # rows stay in place and wait, grayed with the reason, until a part
         # is marked.
-        self.cut_mode_row = ChoiceTile(
+        self.cut_mode_row = ChoiceRow(
             "edit-cut-symbolic",
             _("Segments"),
             None,
@@ -216,7 +216,7 @@ class ConversionSettingsMixin:
         self.cut_mode_row.connect(
             "notify::selected", weak_callback(self._on_cut_mode_changed)
         )
-        self.cut_order_row = ChoiceTile(
+        self.cut_order_row = ChoiceRow(
             "view-sort-ascending-symbolic",
             _("Order"),
             _("Choose the order in which marked segments are exported."),
@@ -225,7 +225,7 @@ class ConversionSettingsMixin:
         self.cut_order_row.connect(
             "notify::selected", weak_callback(self._on_cut_order_changed)
         )
-        self.cut_output_row = ChoiceTile(
+        self.cut_output_row = ChoiceRow(
             "document-save-symbolic",
             _("Save segments"),
             _("Export each segment separately or join the selected segments."),
@@ -235,7 +235,7 @@ class ConversionSettingsMixin:
             "notify::selected", weak_callback(self._on_cut_output_changed)
         )
         # Joining decides what the files become; it closes the cuts.
-        self.join_row = SwitchTile(
+        self.join_row = SwitchRow(
             "media-playlist-consecutive-symbolic",
             _("Join into one file"),
             _("In queue order, named after the first file"),
@@ -282,7 +282,7 @@ class ConversionSettingsMixin:
         # Each setting is a row saying what it applies; its card holds the
         # controls and says what it does. Under format and quality: the
         # encoding, then the loudness.
-        self.channels_row = ChoiceTile(
+        self.channels_row = ChoiceRow(
             "audio-speakers-symbolic",
             _("Channels"),
             _("Keep the original layout or explicitly downmix to mono or stereo."),
@@ -294,7 +294,7 @@ class ConversionSettingsMixin:
         self._sample_rate_list = ["original"] + [
             str(rate) for rate in SAMPLE_RATES["mp3"]
         ]
-        self.sample_rate_row = ChoiceTile(
+        self.sample_rate_row = ChoiceRow(
             "audio-card-symbolic",
             _("Sample rate"),
             None,
@@ -303,17 +303,17 @@ class ConversionSettingsMixin:
         self.sample_rate_row.connect(
             "notify::selected", weak_callback(self._on_sample_rate_changed)
         )
-        self.normalize_tile = SwitchTile(
+        self.normalize_row = SwitchRow(
             "power-profile-balanced-symbolic",
             _("Standard volume"),
             _(
                 "Brings each file to the standard loudness of speech and podcasts, so several files play at the same level."
             ),
         )
-        self.normalize_tile.switch.connect(
+        self.normalize_row.switch.connect(
             "notify::active", weak_callback(self._on_normalize_switch_changed)
         )
-        self.compressor_tile = StepTile(
+        self.compressor_row = StepRow(
             "multimedia-volume-control-symbolic",
             _("Lift quiet parts"),
             _(
@@ -321,43 +321,43 @@ class ConversionSettingsMixin:
             ),
             [_("Off"), _("Light"), _("Medium"), _("Strong")],
         )
-        self.compressor_tile.steps.connect(
+        self.compressor_row.steps.connect(
             "notify::selected", weak_callback(self._on_compressor_changed)
         )
-        for tile in (
+        for row in (
             self.channels_row,
             self.sample_rate_row,
-            self.normalize_tile,
-            self.compressor_tile,
+            self.normalize_row,
+            self.compressor_row,
         ):
-            cards.add_tile(output_flow, tile)
+            cards.add_row(output_rows, row)
 
         # Cuts: finding pauses marks the speech; the rows after it say how the
         # marked parts are saved and wait until there are some. Cuts also
         # apply to the original format, unlike the effects.
         self.pause_panel = PausePanel(self)
         # The app's own glyph: the player's pause icon read as a Pause button.
-        self.pause_tile = EffectTile(
+        self.pause_row = SettingRow(
             "big-audio-converter-remove-pauses-symbolic",
             _("Remove pauses"),
             None,
             self.pause_panel,
         )
-        self.pause_tile.counts = False  # what is kept, not how it sounds
-        self.parts_group, parts_flow = cards.add_group(_("Cuts"))
+        self.pause_row.counts = False  # what is kept, not how it sounds
+        self.parts_group, parts_rows = cards.add_group(_("Cuts"))
         self.parts_group.set_margin_start(12)
         self.parts_group.set_margin_end(12)
         self.parts_group.set_margin_top(18)
         parent_box.append(self.parts_group)
-        for tile in (
-            self.pause_tile,
+        for row in (
+            self.pause_row,
             self.cut_mode_row,
             self.cut_order_row,
             self.cut_output_row,
             self.join_row,
         ):
-            cards.add_tile(parts_flow, tile)
-        self.pause_panel.show_on(self.pause_tile)
+            cards.add_row(parts_rows, row)
+        self.pause_panel.show_on(self.pause_row)
 
         self.copy_notice = Gtk.Label(
             label=_(
@@ -746,13 +746,13 @@ class ConversionSettingsMixin:
         kept = (
             _("The original format keeps the audio as it is.") if is_copy_mode else None
         )
-        for tile in (
+        for row in (
             self.channels_row,
             self.sample_rate_row,
-            self.normalize_tile,
-            self.compressor_tile,
+            self.normalize_row,
+            self.compressor_row,
         ):
-            tile.set_unavailable(kept)
+            row.set_unavailable(kept)
         bar_controls = (self.volume_button, self.speed_button, self.voice_button)
         for widget in (
             *(b.get_parent() for b in bar_controls),
@@ -844,8 +844,8 @@ class ConversionSettingsMixin:
         self._set_processing_speed(1.0)
         self.noise_model.set_selected(0)
         self.noise_adjustment.set_value(0)
-        self.compressor_tile.steps.set_selected(0)
-        self.normalize_tile.set_active(False)
+        self.compressor_row.steps.set_selected(0)
+        self.normalize_row.set_active(False)
         self.eq_panel.preset_dropdown.set_selected(
             self.eq_panel.PRESET_KEYS.index("flat")
         )
@@ -876,7 +876,7 @@ class ConversionSettingsMixin:
         # Off is the first step; the strength is kept for later. A saved
         # intensity between steps takes the nearest one.
         intensity = self._config_float("compressor_intensity", 1.0)
-        self.compressor_tile.steps.set_selected(
+        self.compressor_row.steps.set_selected(
             min(
                 range(1, len(COMPRESSOR_STEPS)),
                 key=lambda step: abs(COMPRESSOR_STEPS[step] - intensity),
@@ -885,7 +885,7 @@ class ConversionSettingsMixin:
             else 0
         )
 
-        self.normalize_tile.set_active(self._config_bool("normalize_enabled"))
+        self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
         # The former cut mode 2 was "in the order marked".
         self.cut_order_row.set_selected(
