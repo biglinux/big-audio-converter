@@ -5,8 +5,9 @@ import logging
 
 import gi
 
+gi.require_version("Gdk", "4.0")
 gi.require_version("Nautilus", "4.0")
-from gi.repository import Gio, GLib, GObject, Nautilus
+from gi.repository import Gdk, Gio, GLib, GObject, Nautilus
 
 _translation = gettext.translation(
     "big-audio-converter", "/usr/share/locale", fallback=True
@@ -60,8 +61,12 @@ class BigAudioConverterExtension(GObject.GObject, Nautilus.MenuProvider):
                     "Big Audio Converter",
                     Gio.AppInfoCreateFlags.NONE,
                 )
-            # GIO owns child reaping, field-code expansion, quoting and activation.
-            application.launch(selected, None)
+            # GIO owns child reaping, field-code expansion and quoting; the
+            # display's context hands the window an activation token.
+            display = Gdk.Display.get_default()
+            application.launch(
+                selected, display.get_app_launch_context() if display else None
+            )
         except GLib.Error:
             logger.debug("Could not launch the audio converter", exc_info=True)
             self._show_error_notification(
