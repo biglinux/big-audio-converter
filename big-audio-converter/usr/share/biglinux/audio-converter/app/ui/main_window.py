@@ -483,7 +483,7 @@ class MainWindow(
         """Collect an immutable request before the worker starts."""
         self._save_current_file_state()
         settings = {
-            "format": self._format_list[self.format_row.get_selected()],
+            "format": self.selected_format(),
             "bitrate": self._bitrate_list[self.bitrate_row.get_selected()],
             "volume": self.volume_spin.get_value() / 100,
             "speed": self.speed_spin.get_value(),

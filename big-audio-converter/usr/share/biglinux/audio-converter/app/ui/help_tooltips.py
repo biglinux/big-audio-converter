@@ -1,7 +1,6 @@
 """Help tooltips by key, and the choice to show tooltips at all."""
 
 import gettext
-import weakref
 
 from big_gtk_kit import tooltip
 
@@ -24,7 +23,6 @@ TOOLTIPS = {
 class HelpTooltips:
     def __init__(self, config=None):
         self.config = config
-        self.widgets = weakref.WeakKeyDictionary()
         self.closed = False
 
     def is_enabled(self):
@@ -37,7 +35,6 @@ class HelpTooltips:
         """big_gtk_kit.tooltip draws the card; the text stays while tooltips
         are off, as the widget's accessible description."""
         if not self.closed:
-            self.widgets[widget] = TOOLTIPS[tooltip_key]
             widget.set_tooltip_text(TOOLTIPS[tooltip_key])
 
     def refresh(self):
@@ -48,5 +45,4 @@ class HelpTooltips:
 
     def cleanup(self):
         self.closed = True
-        self.widgets.clear()
         self.config = None

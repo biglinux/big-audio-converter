@@ -778,7 +778,7 @@ class AudioVisualizer(WaveformSegmentsMixin, WaveformDrawingMixin, Gtk.DrawingAr
             self.set_cursor(None)
             return
 
-        # Marker interactions work across full waveform height (no more manipulation zones)
+        # Markers and segments answer across the waveform's full height.
         if not self.is_dragging_marker:
             if self.hovering_delete_button:
                 self.set_cursor(Gdk.Cursor.new_from_name("pointer"))

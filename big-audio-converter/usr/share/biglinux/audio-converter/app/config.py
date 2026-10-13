@@ -103,7 +103,7 @@ class AppConfig:
     def _sanitize(self, values):
         if not isinstance(values, dict):
             raise TypeError("Configuration must be a JSON object")
-        # Raw .aac output became .m4a; keep the choice of people who saved it.
+        # A saved raw AAC choice is M4A, the AAC output the program offers.
         if values.get("conversion_format") == "aac":
             values = values | {"conversion_format": "m4a"}
         return {key: value for key, value in values.items() if self._valid(key, value)}

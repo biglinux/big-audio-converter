@@ -50,7 +50,6 @@ class AudioPlayer:
         self.volume = 1.0
         self.speed = 1.0
         self.effects_bypassed = False
-        self.pitch_correction = True
         self.noise_reduction = False
         self.noise_engine = "dfn3"
         self.noise_strength = 100.0
@@ -112,7 +111,6 @@ class AudioPlayer:
             self._last_filter_graph = None
             self._graph_shape = None
             self.mpv_instance.speed = 1.0 if self.effects_bypassed else self.speed
-            self.mpv_instance.audio_pitch_correction = self.pitch_correction
 
             @self.mpv_instance.event_callback("start-file")
             def starting(event):
@@ -508,11 +506,6 @@ class AudioPlayer:
         self.speed = speed
         if self.mpv_instance:
             self.mpv_instance.speed = 1.0 if self.effects_bypassed else speed
-
-    def set_pitch_correction(self, enabled):
-        self.pitch_correction = bool(enabled)
-        if self.mpv_instance:
-            self.mpv_instance.audio_pitch_correction = self.pitch_correction
 
     def set_equalizer_bands(self, bands):
         if any(frequency not in EQ_FREQUENCIES for frequency, _ in bands):

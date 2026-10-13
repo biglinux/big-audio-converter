@@ -77,9 +77,14 @@ def _attention(widget, on):
     (widget.add_css_class if on else widget.remove_css_class)("attention")
 
 
-class ConversionSettingsMixin:
-    """Mixin providing all conversion-settings logic for MainWindow."""
+def _boxed_list(row):
+    """A card's lone switch row, framed as the format and quality lists are."""
+    box = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE, css_classes=["boxed-list"])
+    box.append(row)
+    return box
 
+
+class ConversionSettingsMixin:
     def setup_conversion_options(self, parent_box):
         """One compact list: common choices first, rare ones in closed rows."""
         owner = weakref.proxy(self)
@@ -107,12 +112,7 @@ class ConversionSettingsMixin:
                 "allow_precision_reduction", row.get_active()
             ),
         )
-        self.precision_list = Gtk.ListBox(
-            selection_mode=Gtk.SelectionMode.NONE, css_classes=["boxed-list"]
-        )
-        self.precision_list.append(self.precision_row)
-
-        # Restoring settings runs handlers before the waveform exists.
+        self.precision_list = _boxed_list(self.precision_row)
 
         # Most requests name the format, so the common ones come first and the
         # packet copy, which ignores every other choice, comes last.
@@ -134,7 +134,6 @@ class ConversionSettingsMixin:
             (self.precision_list,),
             wide=(6,),
         )
-        self.format_row.set_selected(0)
         self.format_row.connect(
             "notify::selected", weak_callback(self._on_format_changed)
         )
@@ -156,17 +155,13 @@ class ConversionSettingsMixin:
                 "bitrate_per_channel", row.get_active()
             ),
         )
-        bitrate_channels_list = Gtk.ListBox(
-            selection_mode=Gtk.SelectionMode.NONE, css_classes=["boxed-list"]
-        )
-        bitrate_channels_list.append(self.bitrate_channels_row)
         self._bitrate_list = list(BITRATES["mp3"])
         self.bitrate_row = ChoiceRow(
             "starred-symbolic",
             _("Quality"),
             _("The higher the bitrate, the better the sound and the bigger the file."),
             *quality_labels("mp3", self._bitrate_list),
-            extra=(bitrate_channels_list,),
+            extra=(_boxed_list(self.bitrate_channels_row),),
         )
         self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
         self.bitrate_row.connect(
@@ -197,13 +192,15 @@ class ConversionSettingsMixin:
         self.volume_spin = Gtk.SpinButton.new_with_range(0, 1000, 1)
         self.volume_spin.set_value(100)
         self.volume_spin.connect(
-            "notify::value", lambda spin, _pspec: owner._on_volume_spin_changed(spin)
+            "notify::value",
+            lambda spin, _pspec: owner._set_processing_volume(spin.get_value()),
         )
         self.speed_spin = Gtk.SpinButton.new_with_range(0.10, 5.0, 0.01)
         self.speed_spin.set_digits(2)
         self.speed_spin.set_value(1.0)
         self.speed_spin.connect(
-            "notify::value", lambda spin, _pspec: owner._on_speed_spin_changed(spin)
+            "notify::value",
+            lambda spin, _pspec: owner._set_processing_speed(spin.get_value()),
         )
 
         # Strength 0 is off.
@@ -323,7 +320,6 @@ class ConversionSettingsMixin:
 
         # Where the files go: below the queue, as in Big Video Converter.
         self.destination_choice = Gtk.DropDown.new_from_strings(
-            # Big Video Converter's words, so both say it the same way.
             [_("Save in the same folder as the original file"), _("Folder to save")]
         )
         self.destination_choice.add_css_class("flat")
@@ -569,6 +565,9 @@ class ConversionSettingsMixin:
         self._updating_profile = False
         self._set_copy_mode_ui(format_name == "copy")
 
+    def selected_format(self):
+        return self._format_list[self.format_row.get_selected()]
+
     def _on_bitrate_changed(self, row, _pspec):
         if not self._updating_profile and row.get_selected() < len(self._bitrate_list):
             self.app.config.set(
@@ -577,9 +576,6 @@ class ConversionSettingsMixin:
 
     def _on_channels_changed(self, row, pspec):
         self.app.config.set("audio_channels", str(row.get_selected()))
-
-    def _on_volume_spin_changed(self, spin):
-        self._set_processing_volume(spin.get_value())
 
     def _set_processing_volume(self, volume):
         if self._syncing_volume:
@@ -631,9 +627,6 @@ class ConversionSettingsMixin:
         self._update_gain_notice()
         self._update_preview_toggle()
 
-    def _on_speed_spin_changed(self, spin):
-        self._set_processing_speed(spin.get_value())
-
     def _set_processing_speed(self, speed):
         if self._syncing_speed:
             return
@@ -645,7 +638,6 @@ class ConversionSettingsMixin:
             self.speed_value.set_label(f"{speed:.2f}x")
             _attention(self.speed_button.get_parent(), round(speed, 2) != 1)
             self.player.set_playback_speed(speed)
-            self.player.set_pitch_correction(True)
             self.app.config.set("conversion_speed", str(speed))
             self._update_preview_toggle()
         finally:
@@ -660,8 +652,9 @@ class ConversionSettingsMixin:
     def _update_noise_availability(self):
         engine = self._noise_engine()
         self.noise_available = engine in self.player.noise_plugins
-        is_copy = self._format_list[self.format_row.get_selected()] == "copy"
-        self.voice_scale.set_sensitive(self.noise_available and not is_copy)
+        self.voice_scale.set_sensitive(
+            self.noise_available and self.selected_format() != "copy"
+        )
         package = "deepfilternet3-native" if engine == "dfn3" else "dpdfnet-native"
         self.noise_status.set_label(
             _("Unavailable: install {package}").format(package=package)
@@ -736,14 +729,13 @@ class ConversionSettingsMixin:
         self.player.set_normalize(state)
 
     def _on_cut_order_changed(self, row, _pspec):
-        # Saved as the former cut mode: 2 was "in the order marked".
+        # Saved as cut_audio_mode, where 2 means in the order marked.
         self.app.config.set("cut_audio_mode", "2" if row.get_selected() else "0")
 
     def _on_cut_mode_changed(self, row, _pspec):
         # Not saved: marks do not outlive the session, and a saved "remove"
         # would turn the next session's marks into cuts.
-        remove = self.removes_marked()
-        self.visualizer.remove_marked = remove
+        self.visualizer.remove_marked = self.removes_marked()
         self.visualizer.queue_draw()
         self._on_markers_updated(self.visualizer.get_marker_pairs())
 
@@ -791,10 +783,9 @@ class ConversionSettingsMixin:
 
     def _sync_join(self):
         """Joining needs two files and an encoded format."""
-        copy = self._format_list[self.format_row.get_selected()] == "copy"
         self.join_row.set_unavailable(
             _("The original format cannot join files")
-            if copy
+            if self.selected_format() == "copy"
             else _("Add another file to join them.")
             if len(self.file_queue.files) < 2
             else None,
@@ -813,7 +804,6 @@ class ConversionSettingsMixin:
 
     def _update_preview_toggle(self):
         """Listening without the adjustments only means something while one is on."""
-        copy = self._format_list[self.format_row.get_selected()] == "copy"
         # The sidebar's rows and the playback bar's volume, speed and voice.
         count = (
             self.effect_cards.active_count()
@@ -830,24 +820,22 @@ class ConversionSettingsMixin:
         self.sidebar_button.update_property(
             [Gtk.AccessibleProperty.DESCRIPTION], [summary]
         )
-        shown = not copy and count > 0
+        shown = count > 0 and self.selected_format() != "copy"
         if not shown:
             self.original_preview.set_active_name("adjusted")
         self.original_preview.set_visible(shown)
         self._apply_effects_bypass()
 
     def _apply_effects_bypass(self):
-        copy = self._format_list[self.format_row.get_selected()] == "copy"
         self.player.set_effects_bypassed(
-            copy or self.original_preview.get_active_name() == "original"
+            self.selected_format() == "copy"
+            or self.original_preview.get_active_name() == "original"
         )
 
     def _set_copy_mode_ui(self, is_copy_mode):
         """Bypass effects without discarding the user's saved processing choices."""
         self.copy_notice.set_visible(is_copy_mode)
-        self.precision_list.set_visible(
-            self._format_list[self.format_row.get_selected()] == "flac"
-        )
+        self.precision_list.set_visible(self.selected_format() == "flac")
         # Copy keeps the encoded audio as it is: no encoding to choose, and
         # nothing that processes it applies.
         if is_copy_mode:
@@ -863,12 +851,9 @@ class ConversionSettingsMixin:
             self.compressor_row,
         ):
             row.set_unavailable(kept)
-        bar_controls = (self.volume_button, self.speed_button, self.voice_button)
-        for widget in (
-            *(b.get_parent() for b in bar_controls),
-            self.equalizer_button,
-        ):
-            widget.set_sensitive(not is_copy_mode)
+        for button in (self.volume_button, self.speed_button, self.voice_button):
+            button.get_parent().set_sensitive(not is_copy_mode)
+        self.equalizer_button.set_sensitive(not is_copy_mode)
         self._update_noise_availability()
         self._update_preview_toggle()
         self._sync_join()
@@ -895,44 +880,15 @@ class ConversionSettingsMixin:
             return 0.0
         return math.log10(speed / 0.10) / math.log10(50.0) * 100.0
 
-    def _config_float(self, key, default):
-        """Get a float config value, returning default on missing/invalid."""
-        saved = self.app.config.get(key)
-        if saved is not None:
-            try:
-                return float(saved)
-            except (ValueError, TypeError):
-                pass
-        return default
-
-    def _config_int(self, key, default, lo=None, hi=None):
-        """Get an int config value, clamped to [lo, hi] if given."""
-        saved = self.app.config.get(key)
-        if saved is not None:
-            try:
-                val = int(saved)
-                if lo is not None and val < lo:
-                    return default
-                if hi is not None and val > hi:
-                    return default
-                return val
-            except (ValueError, TypeError):
-                pass
-        return default
+    def _config_number(self, key, default, kind=float):
+        """The saved number; AppConfig has already checked its range."""
+        try:
+            return kind(self.app.config.get(key, default))
+        except (ValueError, TypeError):
+            return default
 
     def _config_bool(self, key, default=False):
-        """Get a boolean config value."""
-        saved = self.app.config.get(key)
-        if saved is not None:
-            return str(saved).lower() == "true"
-        return default
-
-    def _config_list_index(self, key, valid_list, default_idx):
-        """Get a config value's index in valid_list, or default_idx."""
-        saved = self.app.config.get(key)
-        if saved and saved in valid_list:
-            return valid_list.index(saved)
-        return default_idx
+        return str(self.app.config.get(key, default)).lower() == "true"
 
     def show_delete_mode(self):
         """Say where originals go: the Trash, or deleted outright."""
@@ -989,27 +945,28 @@ class ConversionSettingsMixin:
 
     def _restore_conversion_settings(self):
         """Restore saved conversion settings once every control exists."""
+        saved_format = self.app.config.get("conversion_format")
         self.format_row.set_selected(
-            self._config_list_index("conversion_format", self._format_list, 0)
+            self._format_list.index(saved_format)
+            if saved_format in self._format_list
+            else 0
         )
-        self.channels_row.set_selected(
-            self._config_int("audio_channels", 0, lo=0, hi=2)
-        )
+        self.channels_row.set_selected(self._config_number("audio_channels", 0, int))
         # Through the setters, which also show a value equal to the default.
-        self._set_processing_volume(self._config_float("conversion_volume", 100))
-        self._set_processing_speed(self._config_float("conversion_speed", 1.0))
+        self._set_processing_volume(self._config_number("conversion_volume", 100))
+        self._set_processing_speed(self._config_number("conversion_speed", 1.0))
 
         engine = self.app.config.get("noise_engine", "dfn3")
         self.noise_model.set_active(self.noise_engines.index(engine))
         self._on_noise_model_changed(self.noise_model, None)
         self.noise_adjustment.set_value(
-            self._config_float("noise_strength", 100)
+            self._config_number("noise_strength", 100)
             if self._config_bool("noise_reduction_enabled")
             else 0
         )
         self.voice_only_switch.set_active(self._config_bool("voice_only_enabled"))
         self.voice_only_scale.set_value(
-            self._config_float("voice_only_sensitivity", DEFAULT_VOICE_SENSITIVITY)
+            self._config_number("voice_only_sensitivity", DEFAULT_VOICE_SENSITIVITY)
         )
         self._on_voice_only_changed()
         # Connected once the saved choice shows, which is no new choice.
@@ -1022,7 +979,7 @@ class ConversionSettingsMixin:
 
         # Off is the first step; the strength is kept for later. A saved
         # intensity between steps takes the nearest one.
-        intensity = self._config_float("compressor_intensity", 1.0)
+        intensity = self._config_number("compressor_intensity", 1.0)
         self.compressor_row.steps.set_selected(
             min(
                 range(1, len(COMPRESSOR_STEPS)),
@@ -1034,10 +991,7 @@ class ConversionSettingsMixin:
 
         self.normalize_row.set_active(self._config_bool("normalize_enabled"))
 
-        # The former cut mode 2 was "in the order marked".
         self.cut_order_row.set_selected(
-            int(self._config_int("cut_audio_mode", 1, lo=0, hi=2) == 2)
+            int(self._config_number("cut_audio_mode", 1, int) == 2)
         )
-        self.cut_output_row.set_selected(
-            self._config_int("cut_output_mode", 0, lo=0, hi=1)
-        )
+        self.cut_output_row.set_selected(self._config_number("cut_output_mode", 0, int))
