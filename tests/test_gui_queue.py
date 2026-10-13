@@ -115,6 +115,24 @@ def test_removed_pending_row_stays_removed(window, audio):
     assert window.active_audio_id is None
 
 
+def test_full_inspection_waits_without_timer(window, tmp_path, monkeypatch):
+    from app.ui.file_queue import MAX_INSPECTING
+
+    queue = window.file_queue
+    tokens = iter(range(1, 10000))
+    monkeypatch.setattr(queue._probes, "request", lambda *_a, **_k: next(tokens))
+    queue.add_files([str(tmp_path / f"{n}.wav") for n in range(MAX_INSPECTING + 2)])
+    pump(lambda: len(queue._pending_probes) == MAX_INSPECTING)
+    pump()
+    assert len(queue._imports) == 2
+    assert queue._import_source is None
+    path, token = next(iter(queue._pending_probes.items()))
+    queue._probe_ready(token, path, None, "unreadable")
+    pump(lambda: len(queue._imports) == 1)
+    assert len(queue._pending_probes) == MAX_INSPECTING
+    assert queue._import_source is None
+
+
 def test_multitrack_expands_off_the_gtk_thread(window, tmp_path):
     video = tmp_path / "tracks.mkv"
     subprocess.run(

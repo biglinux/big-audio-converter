@@ -25,6 +25,8 @@ from app.ui.time_formatter import format_time_display
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
+# Files waiting for inspection at once; the rest of an import waits its turn.
+MAX_INSPECTING = 128
 
 
 def open_containing_folder(widget, path):
@@ -473,6 +475,7 @@ class FileQueue(Gtk.Box):
         if self._closed or self._pending_probes.get(path) != token:
             return
         self._pending_probes.pop(path, None)
+        self._resume_imports()
         if path not in self.files:
             self._pending_changed()
             return
@@ -598,20 +601,28 @@ class FileQueue(Gtk.Box):
                 )
                 break
             self._imports.append(path)
-        if self._imports and self._import_source is None:
-            self._import_source = self._sources.idle(self._import_chunk)
+        self._resume_imports()
         self._pending_changed()
+
+    def _resume_imports(self):
+        # A full inspection queue waits for a probe to end, not for a timer.
+        if (
+            self._imports
+            and self._import_source is None
+            and len(self._pending_probes) < MAX_INSPECTING
+        ):
+            self._import_source = self._sources.idle(self._import_chunk)
 
     def _import_chunk(self):
         self._import_source = None
         deadline = time.monotonic() + 0.008
         while (
             self._imports
-            and len(self._pending_probes) < 128
+            and len(self._pending_probes) < MAX_INSPECTING
             and time.monotonic() < deadline
         ):
             self.add_file(self._imports.popleft())
-        if self._imports:
+        if self._imports and len(self._pending_probes) < MAX_INSPECTING:
             self._import_source = self._sources.later(16, self._import_chunk)
         self._pending_changed()
 
@@ -728,6 +739,7 @@ class FileQueue(Gtk.Box):
         token = self._pending_probes.pop(identifier, None)
         if token is not None:
             self._probes.cancel(token)
+            self._resume_imports()
         was_playing = self.currently_playing_index == index
         if was_playing and self.on_stop_playback:
             self.on_stop_playback()
