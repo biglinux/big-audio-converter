@@ -12,7 +12,6 @@ from big_gtk_kit.hover_cards import HoverCards
 from gi.repository import Adw, Gio, GLib, GObject, Gtk
 
 from app.main_loop import weak_callback
-from app.ui.effect_cards import ChoiceTiles
 from app.ui.seek_bar import SeekBar
 
 # Volume percentages a drag settles on, and how near, in slider units (of 100).
@@ -52,19 +51,15 @@ class PlaybackPanelMixin:
             self.speed_adjustment,
             (self.speed_spin,),
         )
-        quality = Gtk.Label(
-            label=_("Cleaning quality"), css_classes=["caption", "dim-label"]
-        )
         self.voice_button, self.voice_value, self.voice_scale = self._bar_control(
             adjust,
             "voice",
             "audio-input-microphone-symbolic",
             _("Clean voice"),
             self.noise_adjustment,
-            (quality, self.noise_model, self.voice_only_box, self.noise_status),
+            (),
+            side=self._voice_settings(),
         )
-        # Its label and slider span the card, as the tiles above do.
-        self.voice_only_box.set_halign(Gtk.Align.FILL)
         self.voice_value.set_label("0")
         self._update_noise_availability()
         end_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
@@ -287,7 +282,28 @@ class PlaybackPanelMixin:
             "notify::max-position", weak_callback(self._on_paned_allocated)
         )
 
-    def _bar_control(self, parent, name, icon, title, adjustment, extras, magnets=()):
+    def _voice_settings(self):
+        """The cleaning's settings beside its slider, as in the BigLinux players."""
+        settings = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=10,
+            width_request=300,
+            valign=Gtk.Align.CENTER,
+            margin_top=10,
+            margin_bottom=10,
+        )
+        settings.append(
+            Gtk.Label(label=_("Cleaning quality"), xalign=0, css_classes=["heading"])
+        )
+        settings.append(self.noise_model)
+        settings.append(self.noise_status)
+        settings.append(Gtk.Separator())
+        settings.append(self.voice_only_box)
+        return settings
+
+    def _bar_control(
+        self, parent, name, icon, title, adjustment, extras, magnets=(), side=None
+    ):
         """A button and readout whose slider opens on hover, as in the players.
 
         The card's heading names what the slider changes. A click opens it
@@ -336,13 +352,17 @@ class PlaybackPanelMixin:
         content.append(Gtk.Label(label=title, css_classes=["heading"]))
         content.append(scale)
         for widget in extras:
-            # Tiles fill the card as in the sidebar's; centered, their
-            # wrapping names would be measured for a height they do not fit.
-            if not isinstance(widget, ChoiceTiles):
-                widget.set_halign(Gtk.Align.CENTER)
+            widget.set_halign(Gtk.Align.CENTER)
             content.append(widget)
+        card = content
+        if side is not None:
+            # Settings that need more room than the slider's column sit beside it.
+            card = Gtk.Box(spacing=16, margin_end=12)
+            card.append(content)
+            card.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+            card.append(side)
         self.bar_cards.attach(
-            name, box, content, title, ["bar-slider"], focus=scale, point_at=button
+            name, box, card, title, ["bar-slider"], focus=scale, point_at=button
         )
         button.connect("clicked", lambda _b: owner.bar_cards.open_for_keyboard(name))
         wheel = Gtk.EventControllerScroll(

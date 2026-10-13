@@ -18,7 +18,6 @@ from app.audio.pauses import DEFAULT_VOICE_SENSITIVITY, PAUSE_LENGTHS
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 from app.ui.effect_cards import (
     ChoiceRow,
-    ChoiceTiles,
     SettingRow,
     StepRow,
     SwitchRow,
@@ -219,12 +218,14 @@ class ConversionSettingsMixin:
             "value-changed", weak_callback(self._on_noise_strength_changed)
         )
         # DeepFilterNet3 and DPDFNet-2, named by what the choice changes.
-        # Stacked, so the playback bar's card stays as narrow as its slider.
-        self.noise_model = ChoiceTiles(
-            _("Cleaning quality"), [_("Faster"), _("Better, slower")], columns=1
+        self.noise_model = Adw.ToggleGroup(homogeneous=True, hexpand=True)
+        for label in (_("Faster"), _("Better, slower")):
+            self.noise_model.add(Adw.Toggle(label=label))
+        self.noise_model.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Cleaning quality")]
         )
         self.noise_model.connect(
-            "notify::selected", weak_callback(self._on_noise_model_changed)
+            "notify::active", weak_callback(self._on_noise_model_changed)
         )
         # The denoiser mutes what its voice detector does not take for a voice:
         # music, noise and the silence between words.
@@ -232,7 +233,7 @@ class ConversionSettingsMixin:
             label=_("Audio only when a voice is detected"),
             xalign=0,
             wrap=True,
-            max_width_chars=16,
+            max_width_chars=26,
             hexpand=True,
         )
         self.voice_only_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
@@ -651,7 +652,7 @@ class ConversionSettingsMixin:
             self._syncing_speed = False
 
     def _noise_engine(self):
-        return self.noise_engines[self.noise_model.get_selected()]
+        return self.noise_engines[self.noise_model.get_active()]
 
     def _noise_active(self):
         return self.noise_available and self.noise_adjustment.get_value() > 0
@@ -972,7 +973,7 @@ class ConversionSettingsMixin:
         self.cut_output_row.set_selected(0)
         self._set_processing_volume(100)
         self._set_processing_speed(1.0)
-        self.noise_model.set_selected(0)
+        self.noise_model.set_active(0)
         self.noise_adjustment.set_value(0)
         self.compressor_row.steps.set_selected(0)
         self.normalize_row.set_active(False)
@@ -999,7 +1000,7 @@ class ConversionSettingsMixin:
         self._set_processing_speed(self._config_float("conversion_speed", 1.0))
 
         engine = self.app.config.get("noise_engine", "dfn3")
-        self.noise_model.set_selected(self.noise_engines.index(engine))
+        self.noise_model.set_active(self.noise_engines.index(engine))
         self._on_noise_model_changed(self.noise_model, None)
         self.noise_adjustment.set_value(
             self._config_float("noise_strength", 100)

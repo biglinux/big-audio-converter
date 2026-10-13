@@ -131,7 +131,7 @@ def test_noise_modes_preview_and_plugin_recovery(window, audio):
     assert player.load(str(audio))
     pump(lambda: player._loaded)
     for index, engine in enumerate(window.noise_engines):
-        window.noise_model.set_selected(index)
+        window.noise_model.set_active(index)
         window.noise_adjustment.set_value(25)
         # 25 % of the model's useful cap: 6 dB for DFN3, 12 dB for DPDFNet-2.
         attenuation = {"dfn3": "c0=6.00", "dpdfnet": "c0=12.00"}[engine]
@@ -163,7 +163,7 @@ def test_noise_modes_preview_and_plugin_recovery(window, audio):
     assert "dpdfnet-native" in window.noise_status.get_label()
     assert window.noise_status.get_visible()
     assert window.noise_model.get_sensitive()
-    window.noise_model.set_selected(0)
+    window.noise_model.set_active(0)
     assert window.voice_scale.get_sensitive()
     assert player.noise_reduction and player.noise_engine == "dfn3"
     assert window.voice_value.get_label() == "25"
