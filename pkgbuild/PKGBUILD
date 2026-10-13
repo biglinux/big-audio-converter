@@ -71,10 +71,6 @@ package() {
     cp -a big-audio-converter/usr "${pkgdir}/"
     printf '%s\n' "${pkgver}-${pkgrel}" > "${pkgdir}/usr/share/biglinux/audio-converter/VERSION"
     find "${pkgdir}/usr" -type d -name __pycache__ -prune -exec rm -r {} +
-    # /usr/share is read-only at run time: without bytecode here every launch
-    # compiles every module again.
-    python -m compileall -q -d /usr/share/biglinux/audio-converter \
-        "${pkgdir}/usr/share/biglinux/audio-converter"
 
     install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
     install -Dm644 big-audio-converter/usr/share/biglinux/audio-converter/big_gtk_kit/LICENSE \
