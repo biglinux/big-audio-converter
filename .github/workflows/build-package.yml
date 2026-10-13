@@ -23,10 +23,6 @@ concurrency:
   group: build-package-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
-
   build:
     needs: tests
     runs-on: ubuntu-latest
