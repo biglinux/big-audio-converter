@@ -7,11 +7,16 @@ import numpy as np
 import pytest
 from app.audio.converter import AudioConverter
 from app.audio.waveform import WaveformGenerator
-from conftest import pcm, probe, pump
+from conftest import convert_batch, pcm, probe, pump
 
 
 def converter():
     return AudioConverter()
+
+
+def convert(path, settings):
+    [result] = convert_batch([str(path)], settings)
+    return result
 
 
 def run(argv):
@@ -62,40 +67,39 @@ def settings(path, **kwargs):
     }
 
 
-def test_unmodified_flac_preserves_pcm(tone, tmp_path):
-    out = tmp_path / "control.flac"
-    assert converter().convert_file(
-        str(tone), str(out), {"format": "flac"}, lambda _: None
-    )
-    assert np.array_equal(samples(tone), samples(out))
+def test_unmodified_flac_preserves_pcm(tone):
+    result = convert(tone, {"format": "flac"})
+    assert result.successful
+    assert np.array_equal(samples(tone), samples(result.outputs[0]))
 
 
-def test_cut_respects_zero_volume(tone, tmp_path):
-    out = tmp_path / "muted.wav"
-    assert converter().convert_file(str(tone), str(out), settings(tone, volume=0))
-    assert np.max(np.abs(samples(out))) == 0
+def test_cut_respects_zero_volume(tone):
+    result = convert(tone, settings(tone, volume=0))
+    assert result.successful
+    assert np.max(np.abs(samples(result.outputs[0]))) == 0
 
 
-def test_cut_respects_double_speed(tone, tmp_path):
-    out = tmp_path / "fast.wav"
-    assert converter().convert_file(str(tone), str(out), settings(tone, speed=2))
+def test_cut_respects_double_speed(tone):
+    result = convert(tone, settings(tone, speed=2))
+    assert result.successful
     assert (
-        abs(len(samples(out)) - 24000) <= 480
+        abs(len(samples(result.outputs[0])) - 24000) <= 480
     )  # atempo has algorithm-dependent end padding.
 
 
 def test_segments_never_overwrite_unrelated_output(tone, tmp_path):
-    target = tmp_path / "cut_segment1.wav"
+    # The first segment's name beside the output a WAV source gets.
+    target = tmp_path / "tone-converted_segment1.wav"
     target.write_bytes(b"UNRELATED USER DATA")
     st = settings(tone, cut_merge=False)
     st["file_markers"][str(tone)].append(
         {"start": 1.5, "stop": 2.5, "start_str": "1.5", "stop_str": "2.5"}
     )
-    converter().convert_file(str(tone), str(tmp_path / "cut.wav"), st)
+    convert(tone, st)
     assert target.read_bytes() == b"UNRELATED USER DATA"
 
 
-def test_exhausted_numbered_names_do_not_select_existing_file(tone, tmp_path):
+def test_exhausted_numbered_names_pick_free_path(tone, tmp_path):
     (tmp_path / "tone.mp3").write_bytes(b"old")
     for i in range(1, 101):
         (tmp_path / f"tone-converted-{i}.mp3").write_bytes(b"old")
@@ -103,59 +107,53 @@ def test_exhausted_numbered_names_do_not_select_existing_file(tone, tmp_path):
     assert not Path(selected).exists()
 
 
-def test_all_rejected_segments_are_not_success(tone, tmp_path):
+def test_all_rejected_segments_fail(tone):
     st = settings(tone, cut_merge=False)
     st["file_markers"][str(tone)] = [{"start": 0, "stop": 0}, {"start": 1, "stop": 1}]
-    assert not converter().convert_file(str(tone), str(tmp_path / "none.wav"), st)
+    assert not convert(tone, st).successful
 
 
-def test_removing_marked_parts_keeps_the_rest_in_order(tone, tmp_path):
-    out = tmp_path / "rest.wav"
-    assert converter().convert_file(
-        str(tone), str(out), settings(tone, cut_remove=True)
-    )
+def test_removing_parts_keeps_rest_in_order(tone):
+    result = convert(tone, settings(tone, cut_remove=True))
+    assert result.successful
     source = samples(tone)
     assert np.array_equal(
-        samples(out), np.concatenate([source[:24000], source[72000:]])
+        samples(result.outputs[0]), np.concatenate([source[:24000], source[72000:]])
     )
 
 
 def test_removing_every_part_publishes_nothing(tone, tmp_path):
     st = settings(tone, cut_remove=True)
     st["file_markers"][str(tone)] = [{"start": 0, "stop": 2}, {"start": 1.5, "stop": 3}]
-    out = tmp_path / "nothing.wav"
-    assert not converter().convert_file(str(tone), str(out), st)
-    assert not out.exists()
+    assert not convert(tone, st).successful
+    assert list(tmp_path.iterdir()) == [tone]
 
 
-def test_merge_is_not_silent_partial_success(tone, tmp_path):
+def test_partial_merge_fails(tone):
     st = settings(tone, cut_merge=True)
     st["file_markers"][str(tone)].append(
         {"start": 100, "stop": 101, "start_str": "100", "stop_str": "101"}
     )
-    assert not converter().convert_file(str(tone), str(tmp_path / "incomplete.wav"), st)
+    assert not convert(tone, st).successful
 
 
 def test_real_filename_with_double_colon_works(tone, tmp_path):
     source = tmp_path / "real::name.wav"
     source.write_bytes(tone.read_bytes())
-    assert converter().convert_file(
-        str(source), str(tmp_path / "out.flac"), {"format": "flac"}, lambda _: None
-    )
+    assert convert(source, {"format": "flac"}).successful
 
 
-def test_normalization_preserves_requested_original_rate(tone, tmp_path):
-    out = tmp_path / "normalized.wav"
-    assert converter().convert_file(
-        str(tone), str(out), {"format": "wav", "normalize": True}, lambda _: None
-    )
-    assert probe(out)["streams"][0]["sample_rate"] == "48000"
+def test_normalization_preserves_requested_original_rate(tone):
+    result = convert(tone, {"format": "wav", "normalize": True})
+    assert result.successful
+    assert probe(result.outputs[0])["streams"][0]["sample_rate"] == "48000"
 
 
-def test_cut_retains_title_metadata(tone, tmp_path):
-    out = tmp_path / "tagged.wav"
-    assert converter().convert_file(str(tone), str(out), settings(tone))
-    assert probe(out)["format"].get("tags", {}).get("title") == "Título 東京 🎵"
+def test_cut_retains_title_metadata(tone):
+    result = convert(tone, settings(tone))
+    assert result.successful
+    tags = probe(result.outputs[0])["format"].get("tags", {})
+    assert tags.get("title") == "Título 東京 🎵"
 
 
 def test_waveform_represents_right_channel(tmp_path):
@@ -187,22 +185,26 @@ def test_waveform_represents_right_channel(tmp_path):
             pass
 
     sink = Sink()
-    WaveformGenerator().generate(str(source), converter(), sink)
-    pump(lambda: sink.data is not None)
+    generator = WaveformGenerator()
+    generator.request(str(source), converter(), sink)
+    try:
+        pump(lambda: sink.data is not None)
+    finally:
+        generator.cleanup()
     assert np.max(np.abs(sink.data["peaks"])) > 0.01
 
 
-def test_short_segments_produce_actual_outputs(tone, tmp_path):
+def test_short_segments_produce_actual_outputs(tone):
     """A 10 ms cut still produces a file."""
     st = settings(tone, cut_merge=False)
     st["file_markers"][str(tone)] = [
         {"start": 0, "stop": 0.01},
         {"start": 1, "stop": 1.01},
     ]
-    conv = converter()
-    assert conv.convert_file(str(tone), str(tmp_path / "short.wav"), st)
-    assert len(conv.last_result.outputs) == 2
-    for output in conv.last_result.outputs:
+    result = convert(tone, st)
+    assert result.successful
+    assert len(result.outputs) == 2
+    for output in result.outputs:
         assert len(samples(output)) == 480
 
 

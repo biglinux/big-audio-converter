@@ -5,7 +5,7 @@ import json
 import pytest
 from app.audio.converter import AudioConverter
 from app.audio.media import track_identifier
-from conftest import command, pcm, probe
+from conftest import command, convert_batch, pcm, probe
 
 
 @pytest.fixture
@@ -28,19 +28,19 @@ def source(tmp_path):
     return path
 
 
-def convert(source, output, settings):
-    engine = AudioConverter()
-    assert engine.convert_file(str(source), str(output), settings), engine.last_result
-    return engine.last_result
+def convert(source, settings, engine=None):
+    [result] = convert_batch([str(source)], settings, engine)
+    assert result.successful, result
+    return result
 
 
-def test_a_missing_output_folder_fails_instead_of_being_created(tmp_path, source):
+def test_missing_output_folder_fails(tmp_path, source):
     folder = tmp_path / "unmounted drive"
-    engine = AudioConverter()
-    assert not engine.convert_file(
-        str(source), str(folder / "out.flac"), {"format": "flac"}
+    [result] = convert_batch(
+        [str(source)], {"format": "flac", "output_directory": str(folder)}
     )
-    assert "could not be accessed" in engine.last_result.message
+    assert not result.successful
+    assert "could not be accessed" in result.message
     assert not folder.exists()
 
 
@@ -61,7 +61,7 @@ def test_wav_preserves_every_supported_pcm_representation(tmp_path, codec):
         codec,
         str(source),
     )
-    result = convert(source, tmp_path / "output.wav", {"format": "wav"})
+    result = convert(source, {"format": "wav"})
     output = result.outputs[0]
     assert probe(output)["streams"][0]["codec_name"] == codec
     assert pcm(source) == pcm(output)
@@ -70,9 +70,7 @@ def test_wav_preserves_every_supported_pcm_representation(tmp_path, codec):
 @pytest.mark.parametrize(
     "codec,bits", [("pcm_s16le", 16), ("pcm_s24le", 24), ("pcm_s32le", 32)]
 )
-def test_flac_preserves_integer_pcm_without_silent_24_bit_truncation(
-    tmp_path, codec, bits
-):
+def test_flac_preserves_integer_pcm_exactly(tmp_path, codec, bits):
     source = tmp_path / "input.wav"
     command(
         "ffmpeg",
@@ -86,14 +84,14 @@ def test_flac_preserves_integer_pcm_without_silent_24_bit_truncation(
         codec,
         str(source),
     )
-    result = convert(source, tmp_path / "output.flac", {"format": "flac"})
+    result = convert(source, {"format": "flac"})
     output = result.outputs[0]
     assert int(probe(output)["streams"][0]["bits_per_raw_sample"]) >= bits
     assert pcm(source) == pcm(output)
 
 
 @pytest.mark.parametrize("codec", ["pcm_f32le", "pcm_f64le"])
-def test_float_to_flac_requires_explicit_precision_reduction(tmp_path, codec):
+def test_float_flac_requires_precision_opt_in(tmp_path, codec):
     source = tmp_path / "input.wav"
     command(
         "ffmpeg",
@@ -107,14 +105,11 @@ def test_float_to_flac_requires_explicit_precision_reduction(tmp_path, codec):
         codec,
         str(source),
     )
-    engine = AudioConverter()
-    output = tmp_path / "output.flac"
-    assert not engine.convert_file(str(source), str(output), {"format": "flac"})
-    assert not output.exists()
-    result = convert(
-        source, output, {"format": "flac", "allow_precision_reduction": True}
-    )
-    assert int(probe(output)["streams"][0]["bits_per_raw_sample"]) == 24
+    [refused] = convert_batch([str(source)], {"format": "flac"})
+    assert not refused.successful
+    assert list(tmp_path.iterdir()) == [source]
+    result = convert(source, {"format": "flac", "allow_precision_reduction": True})
+    assert int(probe(result.outputs[0])["streams"][0]["bits_per_raw_sample"]) == 24
     assert result.notes
 
 
@@ -130,9 +125,7 @@ def test_float_to_flac_requires_explicit_precision_reduction(tmp_path, codec):
     ],
 )
 def test_every_advertised_encoding_profile(source, tmp_path, format, codec):
-    result = convert(
-        source, tmp_path / f"output.{format}", {"format": format, "bitrate": "192k"}
-    )
+    result = convert(source, {"format": format, "bitrate": "192k"})
     output = probe(result.outputs[0])
     audio = next(s for s in output["streams"] if s["codec_type"] == "audio")
     assert audio["codec_name"] == codec and audio["channels"] == 1
@@ -144,7 +137,7 @@ def test_every_advertised_encoding_profile(source, tmp_path, format, codec):
 
 @pytest.mark.parametrize("format,codec", [("mp3", "libmp3lame"), ("flac", "flac")])
 @pytest.mark.parametrize("cut,merge", [(False, False), (True, False), (True, True)])
-def test_supported_cover_and_tags_survive_full_cut_and_merged_output(
+def test_cover_and_tags_survive_every_output(
     source, tmp_path, format, codec, cut, merge
 ):
     picture = tmp_path / "cover.png"
@@ -192,7 +185,7 @@ def test_supported_cover_and_tags_survive_full_cut_and_merged_output(
         if cut
         else {},
     }
-    result = convert(tagged, tmp_path / f"edited.{format}", options)
+    result = convert(tagged, options)
     for path in result.outputs:
         info = probe(path)
         assert info["format"]["tags"]["title"] == "Title 東京 🎵"
@@ -218,9 +211,7 @@ def test_supported_cover_and_tags_survive_full_cut_and_merged_output(
         assert cover == picture.read_bytes()
 
 
-def test_reordered_adjacent_overlapping_segments_have_exact_lossless_samples(
-    source, tmp_path
-):
+def test_reordered_overlapping_segments_stay_lossless(source, tmp_path):
     segments = [
         {"start": 1, "stop": 1.5, "segment_index": 1},
         {"start": 0, "stop": 0.5, "segment_index": 2},
@@ -229,7 +220,6 @@ def test_reordered_adjacent_overlapping_segments_have_exact_lossless_samples(
     ]
     result = convert(
         source,
-        tmp_path / "joined.flac",
         {
             "format": "flac",
             "cut_merge": True,
@@ -258,14 +248,14 @@ def test_reordered_adjacent_overlapping_segments_have_exact_lossless_samples(
         "real::name.wav",
     ],
 )
-def test_special_filenames_are_not_shell_syntax(source, tmp_path, name):
+def test_special_filenames_convert_verbatim(source, tmp_path, name):
     path = tmp_path / name
     path.write_bytes(source.read_bytes())
-    result = convert(path, tmp_path / "export.flac", {"format": "flac"})
+    result = convert(path, {"format": "flac"})
     assert pcm(path) == pcm(result.outputs[0])
 
 
-def test_explicit_second_track_remains_second_after_opaque_identifier(source, tmp_path):
+def test_track_identifier_keeps_second_track(source, tmp_path):
     video = tmp_path / "multi.mkv"
     command(
         "ffmpeg",
@@ -293,18 +283,14 @@ def test_explicit_second_track_remains_second_after_opaque_identifier(source, tm
             "output_name": "track-2.flac",
         }
     }
-    result = convert(
-        identifier,
-        tmp_path / "track.flac",
-        {"format": "flac", "track_metadata": metadata},
-    )
+    result = convert(identifier, {"format": "flac", "track_metadata": metadata})
     expected = command(
         "ffmpeg", "-v", "error", "-i", str(video), "-map", "0:a:1", "-f", "s16le", "-"
     ).stdout
     assert pcm(result.outputs[0], "s16le") == expected
 
 
-def test_invalid_batch_entry_does_not_prevent_next_file(source, tmp_path):
+def test_batch_continues_after_invalid_entry(source, tmp_path):
     (tmp_path / "output").mkdir()
     engine = AudioConverter()
     engine.start_batch(
@@ -322,9 +308,7 @@ def test_invalid_batch_entry_does_not_prevent_next_file(source, tmp_path):
 
 @pytest.mark.parametrize("engine_name", ["dfn3", "dpdfnet"])
 @pytest.mark.parametrize("rate,channels", [(48000, 2), (44100, 1), (96000, 2)])
-def test_denoiser_preserves_timing_channels_and_cut_tail(
-    tmp_path, engine_name, rate, channels
-):
+def test_denoiser_keeps_timing_channels_and_tail(tmp_path, engine_name, rate, channels):
     import numpy as np
     from app.audio.profiles import discover_noise_plugins
 
@@ -364,10 +348,7 @@ def test_denoiser_preserves_timing_channels_and_cut_tail(
                 request.update(
                     file_markers={str(source): [{"start": 0.1, "stop": 0.4}]},
                 )
-            target = tmp_path / f"output-{cut}.wav"
-            assert converter.convert_file(str(source), str(target), request), (
-                converter.last_result
-            )
+            target = convert(source, request, converter).outputs[0]
             info = probe(target)["streams"][0]
             assert int(info["sample_rate"]) == rate
             assert info["channels"] == channels
@@ -395,24 +376,23 @@ def test_missing_noise_plugin_never_publishes_output(tmp_path):
     converter = AudioConverter(noise_plugins={})
     converter.offline_denoiser = None
     try:
-        target = tmp_path / "output.wav"
-        assert not converter.convert_file(
-            str(source),
-            str(target),
+        [result] = convert_batch(
+            [str(source)],
             {
                 "format": "wav",
                 "noise_reduction": True,
                 "noise_engine": "dpdfnet",
             },
+            converter,
         )
-        assert "unavailable" in converter.last_result.message
-        assert not target.exists()
+        assert "unavailable" in result.message
+        assert list(tmp_path.iterdir()) == [source]
     finally:
         converter.cleanup()
 
 
 @pytest.mark.parametrize("cut", [False, True])
-def test_offline_dpdfnet_export_matches_the_plugin_bit_for_bit(tmp_path, cut):
+def test_offline_dpdfnet_matches_plugin_exactly(tmp_path, cut):
     import numpy as np
     from app.audio.profiles import discover_noise_plugins
 
@@ -453,10 +433,7 @@ def test_offline_dpdfnet_export_matches_the_plugin_bit_for_bit(tmp_path, cut):
     try:
         for denoiser in (None, tool):
             converter.offline_denoiser = denoiser
-            target = tmp_path / f"output-{bool(denoiser)}.wav"
-            assert converter.convert_file(str(source), str(target), settings), (
-                converter.last_result
-            )
+            target = convert(source, settings, converter).outputs[0]
             outputs.append(np.frombuffer(pcm(target, "f32le"), "<f4"))
         assert outputs[0].size and np.array_equal(outputs[0], outputs[1])
     finally:
@@ -477,10 +454,8 @@ def test_dpdfnet_missing_model_never_publishes_output(tmp_path, monkeypatch, cut
     monkeypatch.setenv("DPDFNET_NATIVE_MODEL", str(tmp_path / "missing-model"))
     converter = AudioConverter(noise_plugins=plugins)
     try:
-        target = tmp_path / "output.wav"
-        assert not converter.convert_file(
-            str(source),
-            str(target),
+        [result] = convert_batch(
+            [str(source)],
             {
                 "format": "wav",
                 "noise_reduction": True,
@@ -489,15 +464,16 @@ def test_dpdfnet_missing_model_never_publishes_output(tmp_path, monkeypatch, cut
                 if cut
                 else {},
             },
+            converter,
         )
-        assert "could not be processed" in converter.last_result.message
-        assert not target.exists()
+        assert "could not be processed" in result.message
+        assert list(tmp_path.iterdir()) == [source]
     finally:
         converter.cleanup()
 
 
 @pytest.mark.parametrize("engine_name", ["dfn3", "dpdfnet"])
-def test_noise_reduction_attenuates_with_each_installed_model(tmp_path, engine_name):
+def test_each_installed_model_attenuates_noise(tmp_path, engine_name):
     import numpy as np
     from app.audio.profiles import discover_noise_plugins
 
@@ -519,18 +495,14 @@ def test_noise_reduction_attenuates_with_each_installed_model(tmp_path, engine_n
     )
     converter = AudioConverter(noise_plugins=plugins)
     try:
-        target = tmp_path / "output.wav"
-        assert converter.convert_file(
-            str(source),
-            str(target),
-            {
-                "format": "wav",
-                "noise_reduction": True,
-                "noise_engine": engine_name,
-                # Keep a dry floor: pure noise may be fully suppressed at 100 dB.
-                "noise_strength": 20,
-            },
-        ), converter.last_result
+        settings = {
+            "format": "wav",
+            "noise_reduction": True,
+            "noise_engine": engine_name,
+            # Keep a dry floor: pure noise may be fully suppressed at 100 dB.
+            "noise_strength": 20,
+        }
+        target = convert(source, settings, converter).outputs[0]
         original = np.frombuffer(pcm(source, "f32le"), "<f4")
         actual = np.frombuffer(pcm(target, "f32le"), "<f4")
         assert len(actual) == len(original)
@@ -545,7 +517,7 @@ def duration(path):
     return float(probe(path)["format"]["duration"])
 
 
-def test_cut_to_the_container_end_is_accepted_when_the_audio_ends_earlier(tmp_path):
+def test_cut_to_container_end_is_accepted(tmp_path):
     # Players hand over the container's end: 2.0 s, while this track ends at 1.9 s.
     source = tmp_path / "two.mov"
     command(
@@ -570,7 +542,6 @@ def test_cut_to_the_container_end_is_accepted_when_the_audio_ends_earlier(tmp_pa
     )
     result = convert(
         source,
-        tmp_path / "end.flac",
         {
             "format": "flac",
             "file_markers": {str(source): [{"start": 1, "stop": 2.0}]},
@@ -580,7 +551,7 @@ def test_cut_to_the_container_end_is_accepted_when_the_audio_ends_earlier(tmp_pa
 
 
 @pytest.mark.parametrize("merge", [False, True])
-def test_cut_output_drops_source_chapters_at_unedited_times(tmp_path, merge):
+def test_cut_output_drops_source_chapters(tmp_path, merge):
     chapters = tmp_path / "chapters.txt"
     chapters.write_text(
         ";FFMETADATA1\n"
@@ -616,11 +587,10 @@ def test_cut_output_drops_source_chapters_at_unedited_times(tmp_path, merge):
             )["chapters"]
         )
 
-    full = convert(source, tmp_path / "full.mp3", {"format": "mp3"})
+    full = convert(source, {"format": "mp3"})
     assert chapter_count(full.outputs[0]) == 3
     cut = convert(
         source,
-        tmp_path / "cut.mp3",
         {
             "format": "mp3",
             "cut_merge": merge,
@@ -632,7 +602,7 @@ def test_cut_output_drops_source_chapters_at_unedited_times(tmp_path, merge):
     assert [chapter_count(path) for path in cut.outputs] == [0] * len(cut.outputs)
 
 
-def test_one_corrupt_frame_does_not_abort_the_conversion(tmp_path):
+def test_conversion_survives_a_corrupt_frame(tmp_path):
     source = tmp_path / "clean.mp3"
     command(
         "ffmpeg",
@@ -652,11 +622,11 @@ def test_one_corrupt_frame_does_not_abort_the_conversion(tmp_path):
         data[offset] ^= 0xFF
     damaged = tmp_path / "damaged.mp3"
     damaged.write_bytes(data)
-    result = convert(damaged, tmp_path / "damaged.flac", {"format": "flac"})
+    result = convert(damaged, {"format": "flac"})
     assert duration(result.outputs[0]) > 9.5
 
 
-def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
+def test_joined_cuts_normalize_at_source_rate(tmp_path):
     source = tmp_path / "quiet.wav"
     command(
         "ffmpeg",
@@ -672,9 +642,8 @@ def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
     )
     fractions = []
     engine = AudioConverter()
-    assert engine.convert_file(
-        str(source),
-        str(tmp_path / "loud.wav"),
+    engine.start_batch(
+        [str(source)],
         {
             "format": "wav",
             "normalize": True,
@@ -682,9 +651,13 @@ def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
                 str(source): [{"start": 1, "stop": 5}, {"start": 6, "stop": 11}]
             },
         },
-        fractions.append,
-    ), engine.last_result
-    output = engine.last_result.outputs[0]
+        lambda _index, _path, fraction: fractions.append(fraction),
+        lambda: None,
+    ).join(120)
+    [result] = engine.last_batch_result.items
+    engine.cleanup()
+    assert result.successful, result
+    output = result.outputs[0]
     assert probe(output)["streams"][0]["sample_rate"] == "44100"
     assert duration(output) == pytest.approx(9)
     summary = command(
@@ -696,11 +669,10 @@ def test_normalization_measures_the_joined_cuts_and_keeps_the_rate(tmp_path):
     assert any(0 < fraction < 1 for fraction in fractions)
 
 
-def test_hundreds_of_cuts_are_joined_with_exact_samples(source, tmp_path):
+def test_hundreds_of_cuts_join_exactly(source, tmp_path):
     segments = [{"start": n * 0.005, "stop": n * 0.005 + 0.002} for n in range(300)]
     result = convert(
         source,
-        tmp_path / "many.flac",
         {
             "format": "flac",
             "file_markers": {str(source): segments},
@@ -715,7 +687,7 @@ def test_hundreds_of_cuts_are_joined_with_exact_samples(source, tmp_path):
     assert probe(result.outputs[0])["format"]["tags"]["title"] == "Title 東京 🎵"
 
 
-def test_batch_cuts_only_the_file_that_has_markers(source, tmp_path):
+def test_batch_cuts_only_marked_files(source, tmp_path):
     other = tmp_path / "other.wav"
     other.write_bytes(source.read_bytes())
     (tmp_path / "output").mkdir()
@@ -745,9 +717,7 @@ def tone(path, *filters):
 
 
 @pytest.mark.parametrize("cuts_per_run", [None, 2])
-def test_joined_queue_is_one_file_in_queue_order(
-    source, tmp_path, monkeypatch, cuts_per_run
-):
+def test_queue_joins_into_one_ordered_file(source, tmp_path, monkeypatch, cuts_per_run):
     if cuts_per_run:
         # Three inputs then pass through lossless parts.
         monkeypatch.setattr("app.audio.segment_renderer.CUTS_PER_RUN", cuts_per_run)
@@ -781,7 +751,7 @@ def test_joined_queue_is_one_file_in_queue_order(
     assert tags["artist"] == "Artist"
 
 
-def test_joining_keeps_a_stereo_file_after_a_mono_one(source, tmp_path):
+def test_joining_keeps_stereo_after_mono(source, tmp_path):
     import numpy as np
 
     stereo = tone(tmp_path / "wide.wav", "-af", "pan=stereo|c0=c0|c1=-1*c0")
@@ -819,3 +789,15 @@ def test_fast_copy_refuses_to_join(source, tmp_path):
     assert [item.status for item in items] == ["failed", "failed"]
     assert "Keeping the original format cannot join" in items[1].message
     assert not (tmp_path / "out").exists()
+
+
+def test_mono_gets_half_the_stereo_bitrate(source, tmp_path):
+    def bitrate(result):
+        output = probe(result.outputs[0])
+        audio = next(s for s in output["streams"] if s["codec_type"] == "audio")
+        return int(audio["bit_rate"])
+
+    settings = {"format": "mp3", "bitrate": "192k", "bitrate_per_channel": True}
+    assert bitrate(convert(source, settings)) == 96000
+    settings["bitrate_per_channel"] = False
+    assert bitrate(convert(source, settings)) == 192000

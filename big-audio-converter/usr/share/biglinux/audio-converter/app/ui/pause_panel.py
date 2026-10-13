@@ -15,7 +15,13 @@ from typing import NamedTuple
 from gi.repository import Adw, Gtk
 
 from app.audio.media import MediaSource
-from app.audio.pauses import PAUSE_LENGTHS, PauseFinder, find_pauses, find_speech
+from app.audio.pauses import (
+    DEFAULT_VOICE_SENSITIVITY,
+    PAUSE_LENGTHS,
+    PauseFinder,
+    find_pauses,
+    find_speech,
+)
 from app.audio.process import MediaError
 from app.main_loop import weak_callback
 from app.ui.time_formatter import format_time_display
@@ -53,7 +59,7 @@ class PausePanel(Adw.PreferencesGroup):
         owner = weakref.proxy(self)
 
         lengths = Gtk.Box(
-            css_classes=["linked"],
+            css_classes=["segmented"],
             valign=Gtk.Align.CENTER,
             accessible_role=Gtk.AccessibleRole.GROUP,
         )
@@ -74,8 +80,68 @@ class PausePanel(Adw.PreferencesGroup):
         self.length_row.add_suffix(lengths)
         self.add(self.length_row)
 
+        # Five named steps from 1, very sensitive, to 5, very strict: their
+        # names side by side would be twice the card's width, so a slider
+        # picks the step and the row names it.
+        self.sensitivity_names = (
+            _("Very sensitive"),
+            _("Sensitive"),
+            _("Normal"),
+            _("Strict"),
+            _("Very strict"),
+        )
+        self.sensitivity = Gtk.Scale(
+            adjustment=Gtk.Adjustment(
+                lower=1, upper=5, step_increment=1, page_increment=1
+            ),
+            round_digits=0,
+            hexpand=True,
+        )
+        for level in range(1, 6):
+            self.sensitivity.add_mark(level, Gtk.PositionType.BOTTOM, None)
+        help_text = _(
+            "Sensitive keeps quiet or unusual voices and lets more noise and "
+            "music through; strict removes more music and may cut faint words."
+        )
+        self.sensitivity.update_property(
+            [Gtk.AccessibleProperty.LABEL, Gtk.AccessibleProperty.DESCRIPTION],
+            [_("Voice detection"), help_text],
+        )
+        self.sensitivity_label = Gtk.Label(css_classes=["dim-label"])
+        heading = Gtk.Box(spacing=12)
+        heading.append(Gtk.Label(label=_("Voice detection"), xalign=0, hexpand=True))
+        heading.append(self.sensitivity_label)
+        sensitivity_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=4,
+            margin_start=12,
+            margin_end=12,
+            margin_top=10,
+            margin_bottom=10,
+        )
+        sensitivity_box.append(heading)
+        sensitivity_box.append(self.sensitivity)
+        sensitivity_box.append(
+            Gtk.Label(
+                label=help_text,
+                xalign=0,
+                wrap=True,
+                css_classes=["caption", "dim-label"],
+            )
+        )
+        # Not a stop of its own: the keyboard goes straight to the slider.
+        self.sensitivity_row = Gtk.ListBoxRow(
+            child=sensitivity_box,
+            activatable=False,
+            selectable=False,
+            focusable=False,
+        )
+
         # One row says where the analysis stands and offers its next step.
-        self.status_row = Adw.ActionRow(title_lines=3, subtitle_lines=3)
+        # Unlimited lines: errors and the speech note are read in full.
+        self.status_row = Adw.ActionRow(
+            title_lines=0, subtitle_lines=0, use_markup=False
+        )
         self.actions = Gtk.Stack(valign=Gtk.Align.CENTER, hhomogeneous=False)
         for name, label, handler, suggested in (
             ("find", _("Find Pauses"), lambda _b: owner._on_find(), True),
@@ -105,11 +171,14 @@ class PausePanel(Adw.PreferencesGroup):
         )
         self.add(self.progress_row)
 
-        self.undo_row = Adw.ActionRow(visible=False)
+        self.undo_row = Adw.ActionRow(visible=False, use_markup=False)
         undo = Gtk.Button(label=_("Undo"), valign=Gtk.Align.CENTER)
         undo.connect("clicked", lambda _b: owner.undo_apply())
         self.undo_row.add_suffix(undo)
         self.add(self.undo_row)
+        # Under the action, which stays in view on short screens: the detection
+        # is chosen once, the analysis run for every file.
+        self.add(self.sensitivity_row)
 
         try:
             chosen = PAUSE_LENGTHS.index(
@@ -117,10 +186,25 @@ class PausePanel(Adw.PreferencesGroup):
             )
         except (TypeError, ValueError):
             chosen = 1
+        try:
+            level = round(
+                float(
+                    window.app.config.get(
+                        "voice_sensitivity", DEFAULT_VOICE_SENSITIVITY
+                    )
+                )
+            )
+        except (TypeError, ValueError):
+            level = DEFAULT_VOICE_SENSITIVITY
         # Connected after showing the saved choice, which is no new choice.
         self.length_buttons[chosen].set_active(True)
+        self.sensitivity.set_value(level)
+        self._show_sensitivity()
         for button in self.length_buttons:
             button.connect("toggled", weak_callback(self._on_length_toggled))
+        self.sensitivity.connect(
+            "value-changed", weak_callback(self._on_sensitivity_changed)
+        )
         self.sync()
 
     def sync(self):
@@ -140,6 +224,14 @@ class PausePanel(Adw.PreferencesGroup):
 
     def _length(self):
         return next(b.seconds for b in self.length_buttons if b.get_active())
+
+    def _sensitivity(self):
+        return round(self.sensitivity.get_value())
+
+    def _show_sensitivity(self):
+        name = self.sensitivity_names[self._sensitivity() - 1]
+        self.sensitivity_label.set_text(name)
+        self.sensitivity.update_property([Gtk.AccessibleProperty.VALUE_TEXT], [name])
 
     def _show_state(self, name=None):
         if name is None:
@@ -162,6 +254,7 @@ class PausePanel(Adw.PreferencesGroup):
         )
         # Without a file or the denoiser, one line says why and nothing waits.
         self.length_row.set_visible(name not in ("idle", "missing"))
+        self.sensitivity_row.set_visible(self.length_row.get_visible())
         self.status_row.set_subtitle("")
         if name in ("start", "ready"):
             self.actions.set_visible_child_name("find")
@@ -276,7 +369,7 @@ class PausePanel(Adw.PreferencesGroup):
         self._show_row()
 
     def markers_changed(self, markers):
-        """An edit after marking makes the earlier marks no longer undoable."""
+        """An edit after marking drops the undo of the earlier marks."""
         if self.undo and mark_spans(markers) != mark_spans(self.undo.marks):
             self.undo = None
             if self.levels is not None and not self.finder.busy:
@@ -292,7 +385,7 @@ class PausePanel(Adw.PreferencesGroup):
             source = MediaSource.resolve(
                 window.active_audio_id, window.file_queue.track_metadata
             )
-            key = PauseFinder.identity(source)
+            key = PauseFinder.identity(source, self._sensitivity())
         except (MediaError, OSError) as exc:
             self._fail(str(exc))
             return
@@ -312,6 +405,7 @@ class PausePanel(Adw.PreferencesGroup):
             source,
             window.converter.ffmpeg_path,
             denoiser,
+            self._sensitivity(),
             weak_callback(self._on_progress),
             weak_callback(self._on_found),
             weak_callback(self._fail),
@@ -351,6 +445,20 @@ class PausePanel(Adw.PreferencesGroup):
         if self.levels is not None:
             self._find()
             self._mark()
+
+    def _on_sensitivity_changed(self, _scale):
+        self._show_sensitivity()
+        window = self.window()
+        if window:
+            window.app.config.set("voice_sensitivity", self._sensitivity())
+        if self.levels is None and not self.finder.busy:
+            return
+        # The levels heard the voice at the old step: what they marked goes
+        # and the file is measured again, or taken from the cache.
+        if self._applied():
+            self.undo_apply()
+        self.levels = None
+        self._on_find()
 
     def _mark(self):
         """Mark the speech found, kept in order and joined: the pauses go.

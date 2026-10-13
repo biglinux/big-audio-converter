@@ -1,7 +1,7 @@
 """The settings as rows of a list; each opens a card to adjust it.
 
 A row shows what it applies. Its card opens beside the sidebar, level with
-the row and joined to it by a tab, as the pointer rests on the row, and holds
+the row and joined to it by a tab, as the pointer reaches the row, and holds
 a short description and the controls, like the sliders of the playback bar. A
 click, tap or Enter opens it for the keyboard until Escape or a click
 elsewhere.
@@ -24,39 +24,101 @@ _ = gettext.gettext
 SCROLL_QUIET_US = 300_000
 
 
-class ChoiceToggles(Gtk.Box):
-    """Linked toggle buttons with the ``selected`` API of a combo row."""
+class ChoiceTiles(Gtk.Grid):
+    """Choices as tiles in a grid of ``columns``, with the ``selected`` API of
+    a combo row; the choices at ``wide`` take a whole line.
+
+    A label whose name and detail are joined by an em dash shows the detail
+    under the name; a tile without one centers its name. Each tile is a radio for screen readers and the
+    keyboard, its radio out of sight: the picked tile is outlined instead.
+    """
 
     selected = GObject.Property(type=GObject.TYPE_UINT, maximum=GLib.MAXUINT32)
 
-    def __init__(self, title, labels, orientation=Gtk.Orientation.HORIZONTAL):
-        # Not homogeneous: two buttons at the widest label's width overflow
-        # a narrow card.
-        super().__init__(css_classes=["linked"], orientation=orientation)
-        self.set_accessible_role(Gtk.AccessibleRole.GROUP)
+    def __init__(self, title, labels, columns=2, wide=()):
+        super().__init__(
+            row_spacing=6,
+            column_spacing=6,
+            column_homogeneous=True,
+            accessible_role=Gtk.AccessibleRole.GROUP,
+        )
         self.update_property([Gtk.AccessibleProperty.LABEL], [title])
+        self.columns, self.wide = columns, wide
         self.buttons = []
+        self.connect("notify::selected", weak_callback(self._show_selected))
+        self.set_labels(labels)
+
+    def set_labels(self, labels):
+        while child := self.get_first_child():
+            self.remove(child)
+        self.buttons = []
+        column = line = 0
         for index, label in enumerate(labels):
-            button = Gtk.ToggleButton(label=label, active=index == 0, hexpand=True)
+            button = _tile(label)
             if self.buttons:
                 button.set_group(self.buttons[0])
             button.connect("toggled", weak_callback(self._on_toggled), index)
-            self.append(button)
+            if index in self.wide:
+                if column:
+                    column, line = 0, line + 1
+                self.attach(button, 0, line, self.columns, 1)
+                line += 1
+            else:
+                self.attach(button, column, line, 1, 1)
+                column += 1
+                if column == self.columns:
+                    column, line = 0, line + 1
             self.buttons.append(button)
-        self.connect("notify::selected", weak_callback(self._show_selected))
+        if self.selected >= len(self.buttons):
+            self.selected = 0
+        self._show_selected()
 
     def _on_toggled(self, button, index):
         if button.get_active() and self.selected != index:
             self.selected = index
 
     def _show_selected(self, *_args):
-        self.buttons[self.selected].set_active(True)
+        if self.buttons:
+            self.buttons[self.selected].set_active(True)
 
     def get_selected(self):
         return self.selected
 
     def set_selected(self, index):
-        self.selected = index
+        # As Adw.ComboRow: setting the shown value again notifies no one.
+        if self.selected != index:
+            self.selected = index
+
+
+def _tile(label):
+    name, _dash, detail = label.partition(" — ")
+    text = Gtk.Box(
+        orientation=Gtk.Orientation.VERTICAL,
+        spacing=2,
+        hexpand=True,
+        valign=Gtk.Align.CENTER,
+    )
+    text.append(
+        Gtk.Label(
+            label=name,
+            xalign=0 if detail else 0.5,
+            justify=Gtk.Justification.CENTER,
+            wrap=True,
+            css_classes=["option-name"],
+        )
+    )
+    if detail:
+        detail = detail[:1].upper() + detail[1:]
+        text.append(
+            Gtk.Label(label=detail, xalign=0, wrap=True, css_classes=["option-detail"])
+        )
+    tile = Gtk.CheckButton(child=text, css_classes=["option"])
+    # Named by its name alone, its detail read after it: GTK would name it by
+    # both labels run together.
+    tile.update_property([Gtk.AccessibleProperty.LABEL], [name])
+    if detail:
+        tile.update_property([Gtk.AccessibleProperty.DESCRIPTION], [detail])
+    return tile
 
 
 class SettingRow(Gtk.ListBoxRow):
@@ -135,26 +197,27 @@ class SettingRow(Gtk.ListBoxRow):
         box.append(self.value_label)
         self.set_child(box)
 
-        self.card = self.header = self.reset_button = None
+        self.card = self.reset_button = None
         if body is None:
             return
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=300)
-        # The row beside the card already shows its name and value; the card's
-        # header holds what the row lacks, in the row's tint, edge to edge.
-        if description:
-            self.header = Gtk.Label(
-                label=description,
-                xalign=0,
-                wrap=True,
-                max_width_chars=36,
-                css_classes=["card-description"],
-            )
-            card.append(self.header)
+        # The row beside the card already shows its name and value; the card
+        # opens with what the row lacks.
+        about = Gtk.Label(
+            label=description or "",
+            xalign=0,
+            wrap=True,
+            max_width_chars=36,
+            hexpand=True,
+            visible=bool(description),
+            css_classes=["card-description"],
+        )
+        card.append(about)
         controls = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
-            spacing=10,
-            margin_top=10,
-            margin_bottom=12,
+            spacing=12,
+            margin_top=12,
+            margin_bottom=16,
             margin_start=12,
             margin_end=12,
         )
@@ -209,69 +272,50 @@ class ChoiceRow(SettingRow):
     """One of a few choices, named on the row and picked in its card.
 
     It has the ``selected`` API of a combo row. A choice is no effect: the
-    row never counts as an applied adjustment. "Name — detail" entries show
-    the detail under the name.
+    row never counts as an applied adjustment. Its card shows the choices as
+    :class:`ChoiceTiles` of ``columns``, ``wide`` and labels.
     """
 
     selected = GObject.Property(type=GObject.TYPE_UINT, maximum=GLib.MAXUINT32)
 
-    def __init__(self, icon, title, description, labels, short_labels=None, extra=()):
-        self._choices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        body.append(
-            Gtk.ScrolledWindow(
-                child=self._choices,
-                hscrollbar_policy=Gtk.PolicyType.NEVER,
-                propagate_natural_height=True,
-                max_content_height=360,
-            )
-        )
+    def __init__(
+        self,
+        icon,
+        title,
+        description,
+        labels,
+        short_labels=None,
+        extra=(),
+        columns=2,
+        wide=(),
+    ):
+        self.tiles = ChoiceTiles(title, labels, columns, wide)
+        # The card scrolls as a whole once the window is too short for it.
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        body.append(self.tiles)
         for widget in extra:
             body.append(widget)
         super().__init__(icon, title, description, body)
-        self._buttons = []
-        self._model = None
-        self.short_labels = []
+        self._model = Gtk.StringList.new(labels)
+        self.short_labels = list(short_labels or ())
+        self.bind_property(
+            "selected",
+            self.tiles,
+            "selected",
+            GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
+        )
         self.connect("notify::selected", weak_callback(self._show_selected))
-        self.set_model(Gtk.StringList.new(labels), short_labels)
+        self._show_selected()
 
     def set_model(self, model, short_labels=None):
         self._model = model
         self.short_labels = list(short_labels or ())
-        while child := self._choices.get_first_child():
-            self._choices.remove(child)
-        self._buttons = []
-        for index in range(model.get_n_items()):
-            name, _dash, detail = model.get_string(index).partition(" — ")
-            content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-            content.append(Gtk.Label(label=name, xalign=0, wrap=True))
-            if detail:
-                content.append(
-                    Gtk.Label(
-                        label=detail[:1].upper() + detail[1:],
-                        xalign=0,
-                        wrap=True,
-                        css_classes=["caption", "dim-label"],
-                    )
-                )
-            button = Gtk.CheckButton(child=content)
-            if self._buttons:
-                button.set_group(self._buttons[0])
-            button.connect("toggled", weak_callback(self._on_toggled), index)
-            self._choices.append(button)
-            self._buttons.append(button)
-        if self.selected >= len(self._buttons):
-            self.selected = 0
+        self.tiles.set_labels(
+            [model.get_string(index) for index in range(model.get_n_items())]
+        )
         self._show_selected()
 
-    def _on_toggled(self, button, index):
-        if button.get_active() and self.selected != index:
-            self.selected = index
-
     def _show_selected(self, *_args):
-        if not self._buttons:
-            return
-        self._buttons[self.selected].set_active(True)
         text = (
             self.short_labels[self.selected]
             if self.selected < len(self.short_labels)
@@ -279,11 +323,16 @@ class ChoiceRow(SettingRow):
         )
         self.show_value(text, False)
 
+    def focus_target(self):
+        return self.tiles.buttons[self.selected]
+
     def get_selected(self):
         return self.selected
 
     def set_selected(self, index):
-        self.selected = index
+        # As Adw.ComboRow: setting the shown value again notifies no one.
+        if self.selected != index:
+            self.selected = index
 
     def get_selected_item(self):
         return self._model.get_item(self.selected)
@@ -293,7 +342,7 @@ class StepRow(SettingRow):
     """A correction in a few named steps, picked in its card; the first is off."""
 
     def __init__(self, icon, title, description, labels):
-        self.steps = ChoiceToggles(title, labels)
+        self.steps = ChoiceTiles(title, labels)
         super().__init__(icon, title, description, self.steps)
         self.labels = labels
         self.steps.connect("notify::selected", weak_callback(self._show))
@@ -308,18 +357,26 @@ class StepRow(SettingRow):
 
 
 class SwitchRow(SettingRow):
-    """A correction that is on or off; activating the row flips it."""
+    """A correction that is on or off, picked in its card's two tiles;
+    activating the row flips it. ``switch`` holds the state."""
 
     def __init__(self, icon, title, description):
-        switch = Gtk.Switch(halign=Gtk.Align.START)
-        switch.update_property([Gtk.AccessibleProperty.LABEL], [title])
-        super().__init__(icon, title, description, switch, switch=switch)
-        switch.connect("notify::active", weak_callback(self._show))
+        self.tiles = ChoiceTiles(title, [_("Off"), _("On")])
+        super().__init__(icon, title, description, self.tiles, switch=Gtk.Switch())
+        self.switch.connect("notify::active", weak_callback(self._show))
+        self.tiles.connect("notify::selected", weak_callback(self._on_picked))
         self._show()
+
+    def _on_picked(self, *_args):
+        self.switch.set_active(self.tiles.get_selected() == 1)
 
     def _show(self, *_args):
         active = self.switch.get_active()
+        self.tiles.set_selected(int(active))
         self.show_value(_("On") if active else _("Off"), active)
+
+    def focus_target(self):
+        return self.tiles.buttons[self.tiles.get_selected()]
 
     def get_active(self):
         return self.switch.get_active()
@@ -333,10 +390,11 @@ class EffectCards:
 
     def __init__(self, scrolled, layer):
         self.scrolled = scrolled
-        self.hover_cards = HoverCards(layer, Gtk.PositionType.RIGHT)
+        # A card rises from its row: a bridge as tall as the row's ring joins
+        # them.
+        self.hover_cards = HoverCards(layer, Gtk.PositionType.RIGHT, bridge=True)
         self.hover_cards.can_open = weak_callback(self._can_open)
         self.hover_cards.edge = weak_callback(self._sidebar_edge)
-        self.hover_cards.before_place = weak_callback(self._fit_header)
         self.groups = []  # (rows, count label)
         self.on_changed = None  # told after any row's state changes
         self._scrolled_at = 0
@@ -414,16 +472,12 @@ class EffectCards:
         return GLib.get_monotonic_time() - self._scrolled_at >= SCROLL_QUIET_US
 
     def _sidebar_edge(self, _row):
-        """Cards open at the sidebar's edge, over the queue."""
+        """Cards open just past the sidebar's edge, over the queue."""
         root = self.scrolled.get_root()
         found, edge = self.scrolled.compute_point(
-            root, Graphene.Point().init(self.scrolled.get_width(), 0)
+            root, Graphene.Point().init(self.scrolled.get_width() + 6, 0)
         )
         return edge.x if found else 0
-
-    def _fit_header(self, row, height):
-        if row.header is not None:
-            row.header.set_size_request(-1, height)
 
     def _note_scroll(self):
         self._scrolled_at = GLib.get_monotonic_time()

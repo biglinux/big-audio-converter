@@ -5,8 +5,12 @@ import logging
 import os
 import shutil
 import threading
+from collections import Counter
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
+
+from gi.repository import Gio, GLib
 
 from app.main_loop import MainLoopSources
 
@@ -34,6 +38,120 @@ from .segment_renderer import SegmentRenderer
 logger = logging.getLogger(__name__)
 
 
+def trash_originals(items, track_metadata, permanent=False):
+    """Move each source to the Trash, or delete it when ``permanent``, once
+    every queue entry made from it, every track of a video, converted all of it
+    in this batch. Anything less keeps the original and says why on its
+    entries."""
+    entries = {}
+    for index, item in enumerate(items):
+        try:
+            entries.setdefault(
+                MediaSource.resolve(item.source, track_metadata).path, []
+            ).append(index)
+        except MediaError:
+            continue
+    # Every audio track the video has, counted when it was opened: a track
+    # taken off the queue still keeps its video.
+    videos = [
+        (os.path.abspath(data.get("source_video", "")), data.get("track_count", 0))
+        for data in (track_metadata or {}).values()
+    ]
+    queued = Counter(path for path, _count in videos)
+    tracks = {path: max(queued[path], count) for path, count in videos}
+    # Each entry saw the source when it opened it; all must have seen one file.
+    identities = {}
+    partial = set()
+    for item in items:
+        for path, identity, whole in item.originals:
+            identities.setdefault(path, set()).add(identity)
+            if not whole:
+                partial.add(path)
+    items = list(items)
+    for path, indexes in entries.items():
+        if not all(items[i].successful for i in indexes):
+            reason = gettext.gettext(
+                "Another entry made from this original was not converted, "
+                "so the original was kept."
+            )
+        elif len(indexes) < tracks.get(path, 0):
+            reason = gettext.gettext(
+                "Not every audio track of this video was converted in this run, "
+                "so the original was kept."
+            )
+        elif path in partial:
+            reason = gettext.gettext(
+                "The converted file holds only part of the original, "
+                "so the original was kept."
+            )
+        else:
+            # A joined file's output belongs to every source it read.
+            outputs = [
+                output
+                for item in items
+                if any(source == path for source, _identity, _whole in item.originals)
+                for output in item.outputs
+            ]
+            seen = identities.get(path, set())
+            identity = next(iter(seen)) if len(seen) == 1 else None
+            reason = _trash_original(path, identity, outputs, permanent)
+        kept = reason is not None
+        if kept:
+            message = reason
+        elif permanent:
+            message = gettext.gettext("The original was deleted.")
+        else:
+            message = gettext.gettext("The original was moved to the Trash.")
+        for i in indexes:
+            if items[i].successful:
+                items[i] = replace(items[i], original=message, original_kept=kept)
+    return items
+
+
+def only_audio(info):
+    """Every stream is audio or a cover image: nothing else lives only in
+    the original (a picture, subtitles, fonts, data)."""
+    return all(
+        stream.get("codec_type") == "audio"
+        or stream.get("disposition", {}).get("attached_pic")
+        for stream in info.get("streams", ())
+    )
+
+
+def _trash_original(path, identity, outputs, permanent):
+    """None once ``path`` is in the Trash or, when ``permanent``, deleted;
+    else why it stays, as a sentence. Publishing synced the outputs, so they
+    outlive a power cut that follows the deletion."""
+    try:
+        if os.path.islink(path):
+            return gettext.gettext(
+                "The original is a link and was kept; its target is not moved."
+            )
+        if identity is None or file_identity(path) != identity:
+            return gettext.gettext(
+                "The original changed after it was converted and was kept."
+            )
+        if not outputs or any(
+            os.stat(output).st_size == 0 or os.path.samefile(output, path)
+            for output in outputs
+        ):
+            return gettext.gettext(
+                "The converted file could not be verified, so the original was kept."
+            )
+        if permanent:
+            Gio.File.new_for_path(path).delete(None)
+        else:
+            Gio.File.new_for_path(path).trash(None)
+    except (OSError, GLib.Error) as exc:
+        logger.debug("Original kept: %s", exc)
+        if permanent:
+            return gettext.gettext("The original could not be deleted and was kept.")
+        return gettext.gettext(
+            "The original could not be moved to the Trash and was kept."
+        )
+    return None
+
+
 class AudioConverter:
     def __init__(self, noise_plugins=None):
         self.ffmpeg_path = self._find_ffmpeg()
@@ -46,7 +164,6 @@ class AudioConverter:
         self._thread = None
         self._disposed = False
         self._sources = MainLoopSources()
-        self.last_result = None
         self.last_batch_result = BatchResult()
 
     def _find_ffmpeg(self):
@@ -129,12 +246,8 @@ class AudioConverter:
                         settings.get("format", "mp3"),
                         settings.get("track_metadata"),
                         bool(joined),
+                        settings.get("output_directory"),
                     )
-                    if settings.get("output_directory"):
-                        target = str(
-                            Path(settings["output_directory"]).absolute()
-                            / Path(target).name
-                        )
                 except (MediaError, OSError, ValueError, TypeError) as exc:
                     batch.items.append(
                         ConversionResult(
@@ -176,6 +289,12 @@ class AudioConverter:
                     )
                     for path in joined
                 ]
+            if settings.get("delete_originals") and not runner.cancelled.is_set():
+                batch.items = trash_originals(
+                    batch.items,
+                    settings.get("track_metadata"),
+                    settings.get("skip_trash", False),
+                )
         except Exception as exc:
             logger.exception("Unexpected batch failure")
             handled = len(batch.items)
@@ -194,17 +313,6 @@ class AudioConverter:
             self.last_batch_result = batch
             self._end()
         self._sources.idle(finish_callback)
-
-    def convert_file(self, input_path, output_path, settings, progress_callback=None):
-        """Convert one file synchronously; ``last_result`` holds paths and details."""
-        runner = self._begin()
-        try:
-            self.last_result = self._convert_result(
-                input_path, output_path, deepcopy(settings), progress_callback, runner
-            )
-            return self.last_result.successful
-        finally:
-            self._end()
 
     def _open(self, input_path, settings, runner):
         """Probe one source and plan its cuts: a list, empty for all of it."""
@@ -254,7 +362,7 @@ class AudioConverter:
                     )
                 )
             settings = validate_settings(settings)
-            source, source_identity, info, stream, _duration, segments = self._open(
+            source, source_identity, info, stream, duration, segments = self._open(
                 input_path, settings, runner
             )
             others = [self._open(path, settings, runner) for path in joined]
@@ -441,6 +549,13 @@ class AudioConverter:
                 outputs,
                 warnings=tuple(warnings),
                 notes=tuple(notes),
+                originals=tuple(
+                    (read.path, identity, not cuts and only_audio(probe))
+                    for read, identity, probe, _stream, _duration, cuts in (
+                        (source, source_identity, info, stream, duration, segments),
+                        *others,
+                    )
+                ),
             )
         except CancelledError:
             return ConversionResult(
@@ -508,7 +623,7 @@ class AudioConverter:
                 )
 
     def _get_output_path(
-        self, input_path, output_format, track_metadata=None, joined=False
+        self, input_path, output_format, track_metadata=None, joined=False, folder=""
     ):
         path = Path(input_path)
         entry = (track_metadata or {}).get(input_path)
@@ -531,7 +646,10 @@ class AudioConverter:
             if path.suffix.lower() == "." + extension
             else ""
         )
-        return available_path(str(path.with_name(f"{path.stem}{suffix}.{extension}")))
+        name = f"{path.stem}{suffix}.{extension}"
+        # The free name is looked up where the file goes, not beside its source.
+        target = Path(folder).absolute() / name if folder else path.with_name(name)
+        return available_path(str(target))
 
     def cancel_conversion(self):
         with self._state_lock:

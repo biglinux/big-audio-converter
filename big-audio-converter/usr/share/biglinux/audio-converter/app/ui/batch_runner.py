@@ -119,8 +119,14 @@ class BatchRunner:
         for row in queue.file_rows:
             row.progress_bar.set_visible(False)
         for item in self.last_batch.items:
-            if item.source in queue.files:
-                queue.file_rows[queue.files.index(item.source)].set_result(item)
+            if item.source not in queue.files:
+                continue
+            index = queue.files.index(item.source)
+            # A source in the Trash has nothing left to play or convert again.
+            if item.original and not item.original_kept:
+                queue.remove_file(index)
+            else:
+                queue.file_rows[index].set_result(item)
         self._show_running(window, False)
         window._show_queue_summary(len(queue.files))
         self._show_outcome(window)

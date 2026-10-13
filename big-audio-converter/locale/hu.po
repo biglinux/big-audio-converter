@@ -454,18 +454,10 @@ msgstr "{quality}, percenként kb. {size} MB"
 msgid "Allow conversion to 24-bit PCM"
 msgstr "Átalakítás engedélyezése 24 bites PCM-re"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:94
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "FLAC-ba exportált lebegőpontos hanghoz. Csökkenti a pontosságot; a WAV megőrzi az eredeti ábrázolást."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:116
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:119
 msgid "Format"
 msgstr "Formátum"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:117
-msgid "The type of file to save. Keeping the original applies no effects."
-msgstr "A mentett fájl típusa. Az eredeti megtartásakor nem érvényesülnek effektek."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:119
 msgid "MP3 — plays everywhere"
@@ -508,10 +500,6 @@ msgstr "Eredeti"
 msgid "Quality"
 msgstr "Minőség"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:140
-msgid "Higher quality sounds better and makes larger files."
-msgstr "A jobb minőség jobban szól, de nagyobb fájlokat eredményez."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:195
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:386
 msgid "Cleaning quality"
@@ -529,10 +517,6 @@ msgstr "Gyorsabb"
 msgid "Segments"
 msgstr "Szakaszok"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:209
-msgid "Save only the marked segments, or everything except them."
-msgstr "Csak a megjelölt szakaszokat menti, vagy mindent azokon kívül."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:210
 msgid "Keep them"
 msgstr "Megtartás"
@@ -544,10 +528,6 @@ msgstr "Eltávolítás"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:217
 msgid "Order"
 msgstr "Sorrend"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:218
-msgid "The order in which the segments are saved."
-msgstr "A szakaszok mentési sorrendje."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:219
 msgid "In the order marked"
@@ -561,10 +541,6 @@ msgstr "Idővonal szerinti sorrendben"
 msgid "Save segments"
 msgstr "Szakaszok mentése"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:227
-msgid "One file per segment, or this file's segments joined."
-msgstr "Szakaszonként külön fájl, vagy a fájl szakaszai egyesítve."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:228
 msgid "Join this file's segments"
 msgstr "A fájl szakaszainak egyesítése"
@@ -576,10 +552,6 @@ msgstr "Külön fájlok"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:236
 msgid "Join into one file"
 msgstr "Egyesítés egy fájlba"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:237
-msgid "Saves the queue as one file, in order, named after the first."
-msgstr "A sort egyetlen fájlba menti, sorrendben, az első fájl nevével."
 
 # File: big-video-converter/big-video-converter/usr/share/big-video-
 # converter/ui/conversion_page.py, line: 271
@@ -608,10 +580,6 @@ msgstr "Kimeneti mappa kiválasztása"
 msgid "Channels"
 msgstr "Csatornák"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:284
-msgid "Keep the original channels, or mix down to mono or stereo."
-msgstr "Megtartja az eredeti csatornákat, vagy monóvá, illetve sztereóvá keveri le."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:285
 msgid "Mono"
 msgstr "Monó"
@@ -625,25 +593,13 @@ msgstr "Sztereó"
 msgid "Sample rate"
 msgstr "Mintavételi frekvencia"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:296
-msgid "Keep the original unless a device needs a specific rate."
-msgstr "Hagyja meg az eredetit, hacsak egy eszköz nem igényel adott frekvenciát."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:304
 msgid "Standard volume"
 msgstr "Normál hangerő"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:305
-msgid "Brings every file to the same standard loudness."
-msgstr "Minden fájlt azonos, szabványos hangerőre hoz."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:312
 msgid "Lift quiet parts"
 msgstr "Halkak erősítése"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:313
-msgid "Makes quiet passages louder and loud ones softer."
-msgstr "A halk részeket hangosabbá, a hangosakat halkabbá teszi."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:314
 msgid "Light"
@@ -666,10 +622,6 @@ msgstr "Erős"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:334
 msgid "Remove pauses"
 msgstr "Szünetek eltávolítása"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:335
-msgid "Marks the speech, so the export leaves the pauses out."
-msgstr "Megjelöli a beszédet, így az exportból kimaradnak a szünetek."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:339
 msgid "Cuts"
@@ -902,11 +854,6 @@ msgstr "Technikai részletek"
 msgid "Remove from queue"
 msgstr "Eltávolítás a sorból"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
-msgid "File actions"
-msgstr "Fájlműveletek"
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
 msgid "Move to Trash"
@@ -959,10 +906,6 @@ msgstr "Húzza ide a fájlokat, vagy használja: {button}."
 msgid "Add Files"
 msgstr "Fájlok hozzáadása"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:403
-msgid "Each audio track of a video becomes its own entry. The originals are never changed."
-msgstr "A videók minden hangsávja külön elem lesz. Az eredeti fájlok sosem módosulnak."
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:429
 #, python-brace-format
 msgid "Track {number}"
@@ -992,10 +935,6 @@ msgstr "Hang vizsgálata…"
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "A sor legfeljebb 10 000 fájlt tartalmazhat. További fájlok hozzáadása előtt alakítsa át ezt az adagot."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:651
-msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
-msgstr "A bemeneti fájl Kukába helyezése előtt szakítsa meg az átalakítást, vagy várja meg a befejezését."
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:657
 msgid "Move File to Trash?"
 msgstr "Áthelyezi a fájlt a Kukába?"
@@ -1004,10 +943,6 @@ msgstr "Áthelyezi a fájlt a Kukába?"
 #, python-brace-format
 msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
 msgstr "Áthelyezi a(z) „{name}” fájlt a Kukába? Az összes sávja kikerül a sorból."
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:676
-msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
-msgstr "A fájlt egy átalakítás használja. A bemeneti fájl Kukába helyezése előtt szakítsa meg az átalakítást."
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:688
 msgid "The file could not be moved to Trash. It has not been deleted."
@@ -1037,10 +972,6 @@ msgstr "A következő fájl előnézeti lejátszása."
 #: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:15
 msgid "Preview only the marked segments."
 msgstr "Csak a megjelölt szakaszok előnézeti lejátszása."
-
-#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:17
-msgid "More actions are available from the adjacent menu button."
-msgstr "További műveletek a mellette lévő menügombbal érhetők el."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
@@ -1110,38 +1041,17 @@ msgstr "Csak a kijelölés"
 msgid "Play only selected area"
 msgstr "Csak a kijelölt terület lejátszása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:434
-msgid "Edit Segments…"
-msgstr "Szakaszok szerkesztése…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:446
-msgid "Zoom out"
-msgstr "Kicsinyítés"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:447
 msgid "Reset zoom"
 msgstr "Nagyítás visszaállítása"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:448
-msgid "Zoom in"
-msgstr "Nagyítás"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:487
 msgid "Play the next file automatically"
 msgstr "A következő fájl automatikus lejátszása"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
-msgid "More playback options"
-msgstr "További lejátszási beállítások"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
 msgid "Playback"
 msgstr "Lejátszás"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:504
-msgid "Only affects listening. Converted files stay unchanged."
-msgstr "Csak a meghallgatásra van hatással. Az átalakított fájlok nem változnak."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
 msgid "Audio output"
@@ -1155,10 +1065,6 @@ msgstr "Rendszer alapértelmezése"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:538
 msgid "Previous track"
 msgstr "Előző sáv"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
-msgid "Play or pause"
-msgstr "Lejátszás vagy szünet"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:563
 msgid "Next track"
@@ -1234,10 +1140,6 @@ msgstr "Hang előnézeti lejátszása"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:1123
 msgid "Reset all settings?"
 msgstr "Visszaállítja az összes beállítást?"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1125
-msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
-msgstr "A formátum, a minőség, a kimeneti mappa, a vágás, az effektek és a hangszínszabályzó visszaáll az alapértékekre. A sor és a forrásfájlok megmaradnak."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:1150
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
@@ -1509,3 +1411,204 @@ msgstr "Alkalmazásindítási hiba"
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
 msgid "Big Audio Converter could not be started. Check that it is installed."
 msgstr "A Big Audio Converter nem indítható el. Ellenőrizze, hogy telepítve van-e."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:384
+msgid "Each audio track of a video becomes its own entry."
+msgstr "A videók minden hangsávja külön elem lesz."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:101
+msgid "Only for floating-point audio saved as FLAC. It lowers the precision. WAV keeps the original as it is."
+msgstr "Csak FLAC formátumban mentett lebegőpontos hanghoz. Csökkenti a pontosságot. A WAV változatlanul megtartja az eredetit."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:124
+msgid "If you are not sure, pick MP3. It plays on any device."
+msgstr "Ha nem biztos benne, válassza az MP3-at. Bármilyen eszközön lejátszható."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:168
+msgid "The higher the bitrate, the better the sound and the bigger the file."
+msgstr "Minél nagyobb a bitráta, annál jobb a hang és annál nagyobb a fájl."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:283
+msgid "Keep saves only the segments you marked. Remove takes them out and saves the rest."
+msgstr "A „Megtartás” csak a megjelölt szakaszokat menti. Az „Eltávolítás” kivágja őket, és a többit menti."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:294
+msgid "The segments can follow the audio from start to end, or the order in which you marked them."
+msgstr "A szakaszok követhetik a hanganyagot az elejétől a végéig, vagy azt a sorrendet, amelyben megjelölte őket."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:304
+msgid "Each segment can become its own file, or they can all go into one."
+msgstr "Minden szakasz lehet külön fájl, vagy mind egy fájlba kerülhet."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:315
+msgid "Puts all the files in the queue into one, in the order they appear. It is named after the first file."
+msgstr "A sor összes fájlját egy fájlba egyesíti, abban a sorrendben, ahogy szerepelnek. A neve az első fájlé lesz."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:379
+msgid "Keep it on Original. Mono makes the file about half the size."
+msgstr "Hagyja Eredeti értéken. A monó nagyjából felére csökkenti a fájl méretét."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:393
+msgid "Leave it on Original unless a device or website asks for a specific rate."
+msgstr "Hagyja Eredeti értéken, hacsak egy eszköz vagy weboldal nem kér adott frekvenciát."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:406
+msgid "Evens out the volume between files, so when you play several in a row none sounds louder or quieter than the others."
+msgstr "Kiegyenlíti a fájlok hangerejét, így ha többet egymás után játszik le, egyik sem szól hangosabban vagy halkabban a többinél."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:416
+msgid "Works inside each file, making its quiet parts louder and its loud parts softer. Standard volume evens out whole files instead."
+msgstr "Minden fájlon belül hat: a halk részeket felerősíti, a hangosakat lehalkítja. A „Normál hangerő” viszont egész fájlokat egyenlít ki."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:440
+msgid "Finds the silences between sentences and leaves them out of the saved file."
+msgstr "Megkeresi a mondatok közötti csendet, és kihagyja a mentett fájlból."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:19
+msgid "Set the exact times of each segment. Keyboard shortcut: Ctrl+E."
+msgstr "Az egyes szakaszok pontos időpontjainak megadása. Gyorsbillentyű: Ctrl+E."
+
+#: usr/share/biglinux/audio-converter/app/ui/playback_panel.py:134
+msgid "Zoom"
+msgstr "Nagyítás"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:147
+msgid "Adjust to the number of channels"
+msgstr "Igazítás a csatornák számához"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:149
+msgid "The quality above is for stereo. Mono uses half of it, and 5.1 three times as much."
+msgstr "A fenti minőség sztereóra vonatkozik. A monó ennek a felét, az 5.1 a háromszorosát használja."
+
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:117
+msgid "Update dpdfnet-native to find pauses."
+msgstr "Frissítse a dpdfnet-native csomagot a szünetek kereséséhez."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:79
+msgid "Not every audio track of this video was converted in this run, so the original was kept."
+msgstr "A videó nem minden hangsávja lett átalakítva ebben a futtatásban, ezért az eredeti megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:84
+msgid "The converted file holds only part of the original, so the original was kept."
+msgstr "Az átalakított fájl az eredetinek csak egy részét tartalmazza, ezért az eredeti megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:104
+msgid "The original was moved to the Trash."
+msgstr "Az eredeti a Kukába került."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:128
+msgid "The original is a link and was kept; its target is not moved."
+msgstr "Az eredeti egy link, és megmaradt; a célja nem kerül áthelyezésre."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:132
+msgid "The original changed after it was converted and was kept."
+msgstr "Az eredeti az átalakítás után megváltozott, és megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:139
+msgid "The converted file could not be verified, so the original was kept."
+msgstr "Az átalakított fájlt nem sikerült ellenőrizni, ezért az eredeti megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:150
+msgid "The original could not be moved to the Trash and was kept."
+msgstr "Az eredetit nem sikerült a Kukába helyezni, ezért megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:351
+msgid "Delete original files"
+msgstr "Eredeti fájlok törlése"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:946
+msgid "Originals go to the Trash only after every file converted from them is checked"
+msgstr "Az eredeti fájlok csak akkor kerülnek a Kukába, ha minden belőlük átalakított fájl ellenőrizve lett"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:57
+msgid "Converted, original kept"
+msgstr "Átalakítva, az eredeti megmaradt"
+
+#: usr/share/biglinux/audio-converter/app/ui/playback_panel.py:178 usr/share/biglinux/audio-converter/app/ui/playback.py:356
+msgid "Play"
+msgstr "Lejátszás"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:703
+msgid "Format, quality, output folder, deleting originals, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
+msgstr "A formátum, a minőség, a kimeneti mappa, az eredeti fájlok törlése, a vágás, az effektek és a hangszínszabályzó visszaáll az alapértékekre. A sor és a forrásfájlok megmaradnak."
+
+#: usr/share/biglinux/audio-converter/app/ui/playback.py:356
+msgid "Pause"
+msgstr "Szünet"
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:74
+msgid "Another entry made from this original was not converted, so the original was kept."
+msgstr "Egy másik, ebből az eredetiből készült elem nem lett átalakítva, ezért az eredeti megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:102
+msgid "The original was deleted."
+msgstr "Az eredeti törlődött."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:148
+msgid "The original could not be deleted and was kept."
+msgstr "Az eredetit nem sikerült törölni, ezért megmaradt."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:941
+msgid "Originals are deleted permanently, without the Trash, only after every file converted from them is checked"
+msgstr "Az eredeti fájlok csak akkor törlődnek véglegesen, a Kuka megkerülésével, ha minden belőlük átalakított fájl ellenőrizve lett"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:279 usr/share/biglinux/audio-converter/app/ui/file_queue.py:651
+msgid "Delete Permanently"
+msgstr "Végleges törlés"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:637
+msgid "Cancel the conversion or wait for it to finish before deleting its input."
+msgstr "A bemeneti fájl törlése előtt szakítsa meg az átalakítást, vagy várja meg a befejezését."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:645
+msgid "Delete File Permanently?"
+msgstr "Véglegesen törli a fájlt?"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:647
+#, python-brace-format
+msgid "'{name}' will be deleted without going to the Trash and cannot be recovered. All of its tracks will be removed from the queue."
+msgstr "A(z) „{name}” fájl a Kuka megkerülésével törlődik, és nem állítható helyre. Az összes sávja kikerül a sorból."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:673
+msgid "The file is in use by a conversion. Cancel it before deleting the input."
+msgstr "A fájlt egy átalakítás használja. A bemeneti fájl törlése előtt szakítsa meg az átalakítást."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:688
+msgid "The file could not be deleted."
+msgstr "A fájlt nem sikerült törölni."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:323
+msgid "Delete Without Using the Trash"
+msgstr "Törlés a Kuka használata nélkül"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:247 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:87
+msgid "Very sensitive"
+msgstr "Nagyon érzékeny"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:248 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:88
+msgid "Sensitive"
+msgstr "Érzékeny"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:249 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:89
+msgid "Normal"
+msgstr "Normál"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:250 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:90
+msgid "Strict"
+msgstr "Szigorú"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:91
+msgid "Very strict"
+msgstr "Nagyon szigorú"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:103
+msgid "Sensitive keeps quiet or unusual voices and lets more noise and music through; strict removes more music and may cut faint words."
+msgstr "Az érzékeny beállítás megtartja a halk vagy szokatlan hangú beszédet, és több zajt és zenét enged át. A szigorú több zenét eltávolít, és levághatja a halk szavakat."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:263 usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:267 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:108 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:112
+msgid "Voice detection"
+msgstr "Beszédészlelés"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Audio only when a voice is detected"
+msgstr "Hang csak beszéd észlelésekor"

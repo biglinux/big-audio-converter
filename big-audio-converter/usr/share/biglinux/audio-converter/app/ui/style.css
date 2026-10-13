@@ -12,39 +12,106 @@
    on the dark strip and apart from the marked parts' blocks. */
 .waveform, .seekbar { color: #4da6ff; }
 .playback-controls .play-button { min-width: 42px; min-height: 42px; }
-/* A bar control whose setting changes the sound, such as a shaped curve. */
-.playback-controls button.applied { color: #4da6ff; }
 .playback-controls button:checked {
     background-color: alpha(@accent_bg_color, 0.55);
     color: #ffffff;
 }
+/* A bar setting far from neutral (volume, speed, voice, a shaped curve):
+   an amber pill, as the players show a muted volume. */
+.playback-controls .bar-anchor.attention,
+.playback-controls button.attention {
+    background-color: @warning_bg_color;
+    color: @warning_fg_color;
+    border-radius: 999px;
+}
+.playback-controls .bar-anchor.attention { padding-right: 10px; }
+.playback-controls .bar-anchor.attention > label { font-weight: bold; }
 .queue-pane headerbar { background: none; box-shadow: none; }
 /* Compact rows, only the list's own: a dropdown's popup is a descendant too. */
 .compact-options list > row { padding: 0; margin-top: -1px; margin-bottom: -1px; }
 
 /* Settings rows: an applied setting fills its badge and colors its value. */
-row.setting-row { padding: 6px 12px; min-height: 48px; }
-/* The row takes the accent tint as soon as the pointer reaches it, before its
-   card opens, and keeps it while its card is open. One opaque tint is shared
-   by the row, the tab that joins it to its card and the card's header, so the
-   three read as one band. The badge stays as it is: filled means the setting
-   applies. */
-list > row.setting-row:hover:not(:disabled),
-list > row.setting-row.card-open,
-.card-description {
-    background-color: mix(@popover_bg_color, @accent_bg_color, 0.14);
-}
-.card-tab.effect-card { color: mix(@popover_bg_color, @accent_bg_color, 0.14); }
-/* The band covers the open row's separator too, as its tab does. */
+/* The ring and tint come and go at once: Adwaita would fade them. */
+row.setting-row { padding: 6px 12px; min-height: 48px; transition: none; }
+/* The row under the pointer takes a rounded ring in the accent, 3 px inside
+   its edges. Once its card opens, a bridge as tall as the ring joins the row
+   to the card in the card's surface, the ring running straight along it
+   into the card's own (2 px wide and 3 px in, as the kit's RING and
+   RING_INSET). While a card is open no other row lights up. The badge stays
+   as it is: filled means the setting applies. */
+scrolledwindow.sidebar:not(.card-open) list > row.setting-row:hover:not(:disabled),
 list > row.setting-row.card-open {
-    border-bottom-color: transparent;
-    background-clip: border-box;
+    border-radius: 13px;
+    outline: 2px solid alpha(@accent_bg_color, 0.6);
+    outline-offset: -5px;
 }
-.card-description { padding: 12px 14px; }
+list > row.setting-row.card-open {
+    background-color: @popover_bg_color;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.card-tab.effect-card { color: @popover_bg_color; }
+.card-tab > .card-tab-edge { color: transparent; }
+.card-tab.effect-card > .card-tab-edge { color: alpha(@accent_bg_color, 0.6); }
+.card-description { padding: 16px 16px 0; opacity: 0.75; }
+
+/* Every card's choices are tiles with a faint outline; the picked one is
+   tinted, outlined in the accent and named in bold. The radio stays for
+   screen readers and the keyboard, out of sight. */
+checkbutton.option {
+    min-height: 24px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px alpha(currentColor, 0.18);
+}
+checkbutton.option > radio {
+    opacity: 0;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    -gtk-icon-size: 0;
+}
+checkbutton.option:hover { background-color: alpha(currentColor, 0.06); }
+checkbutton.option:checked {
+    background-color: alpha(@accent_bg_color, 0.12);
+    box-shadow: inset 0 0 0 2px alpha(@accent_bg_color, 0.7);
+}
+checkbutton.option:checked .option-name { font-weight: 600; }
+/* Solid, so the focus stands out 3:1 from the card, and outside the tile,
+   apart from the outline that marks it picked. */
+checkbutton.option:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
+}
+/* A choice's detail: a size easy to read, and dimmed only to 4.5:1 on the
+   card and on a picked choice's tint. */
+.option-detail { font-size: 0.9em; opacity: 0.75; }
+
+/* The pause lengths in their row: a segmented control, the picked one a
+   raised pill on a track a shade under the card, the pill a shade over it. */
+.segmented {
+    background-color: mix(@popover_bg_color, black, 0.07);
+    border-radius: 10px;
+    padding: 3px;
+}
+.segmented > button {
+    background: none;
+    box-shadow: none;
+    border-radius: 7px;
+    min-height: 28px;
+    padding: 2px 12px;
+}
+.segmented > button:hover:not(:checked) { background-color: alpha(currentColor, 0.06); }
+.segmented > button:checked {
+    background-color: mix(@popover_bg_color, white, 0.14);
+    box-shadow: 0 1px 3px alpha(black, 0.16), 0 0 0 1px alpha(black, 0.04);
+    font-weight: 600;
+}
 
 /* A card opens over the queue, which shares its light surface: an outline
-   and a shadow that falls away from the anchors lift it. The corner its tab
-   reaches level with the anchor is square. */
+   and a shadow lift it. */
 .hover-card {
     background-color: @popover_bg_color;
     color: @popover_fg_color;
@@ -52,25 +119,19 @@ list > row.setting-row.card-open {
     box-shadow: 0 0 0 1px alpha(black, 0.10),
                 8px 10px 24px -6px alpha(black, 0.28);
 }
-.hover-card.side-top {
-    box-shadow: 0 0 0 1px alpha(black, 0.10),
-                0 -8px 24px -6px alpha(black, 0.28);
-}
+/* A setting's card and its bridge cast one shadow, drawn by the kit in this
+   color: a dark blue-gray, as the light under a sheet over the window. */
+.hover-card.effect-card { box-shadow: inset 0 0 0 2px alpha(@accent_bg_color, 0.6); }
+.card-shade.effect-card { color: #10131e; }
 .hover-card.side-right.joined-start { border-top-left-radius: 0; }
 .hover-card.side-right.joined-end { border-bottom-left-radius: 0; }
-.hover-card.side-top.joined-start { border-bottom-left-radius: 0; }
-.hover-card.side-top.joined-end { border-bottom-right-radius: 0; }
-/* A bar control whose card is open becomes the foot of its tab: the card's
-   own surface, rising into it. */
+/* A bar control's card floats above it, as in the players, its arrow in the
+   card's surface; its button stays lit while the card is open. */
 .card-tab.bar-slider { color: @popover_bg_color; }
-.playback-controls .bar-anchor { border-radius: 10px; }
-.playback-controls .bar-anchor.card-open {
-    background-color: @popover_bg_color;
-    color: @popover_fg_color;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+.playback-controls .bar-anchor.card-open > button {
+    background-color: alpha(currentColor, 0.1);
 }
-/* The tab runs over the sidebar's edge, where its overlay scrollbar would
+/* The bridge runs over the sidebar's edge, where its overlay scrollbar would
    show beside it. */
 scrolledwindow.sidebar.card-open > scrollbar { opacity: 0; }
 /* A grayed row dims its name and icon, not the reason it gives in place of
@@ -92,13 +153,14 @@ row.setting-row:disabled .effect-reason {
     background-color: @accent_bg_color;
     color: @accent_fg_color;
 }
-.setting-row .effect-value { opacity: 0.7; }
 /* An accent only while the setting applies, never on "Off". */
 .setting-row.applied .effect-value {
-    opacity: 1;
     color: @accent_color;
     font-weight: bold;
 }
+/* While its card is open the card shows the value, so the row's own hides,
+   keeping its place so nothing on the row moves. */
+.setting-row.card-open .effect-value { opacity: 0; }
 
 /* Files dragged over the window: one target, the whole window. */
 .drop-overlay {
@@ -115,15 +177,10 @@ row.setting-row:disabled .effect-reason {
     background: none;
     box-shadow: none;
 }
-/* A row's play button leads it as a round badge. */
-.queue-badge {
-    min-width: 40px;
-    min-height: 40px;
-    background-color: alpha(@accent_bg_color, 0.12);
-    color: @accent_color;
-}
-.queue-badge:hover { background-color: alpha(@accent_bg_color, 0.22); }
-.queue-badge:disabled { background-color: alpha(currentColor, 0.06); }
+/* A row's file actions fade in with the pointer on the row, or the keyboard
+   focus on them: a click never focuses them (file_queue.py). */
+row .row-actions { opacity: 0; transition: opacity 200ms ease-in-out; }
+row:hover .row-actions, .row-actions:focus-within { opacity: 1; }
 /* The file whose waveform is shown. */
 .active-waveform-file { background-color: alpha(@accent_bg_color, 0.15); }
 

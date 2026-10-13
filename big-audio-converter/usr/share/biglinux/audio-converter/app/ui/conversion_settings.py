@@ -14,10 +14,11 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk
 
+from app.audio.pauses import DEFAULT_VOICE_SENSITIVITY, PAUSE_LENGTHS
 from app.audio.profiles import BITRATES, SAMPLE_RATES
 from app.ui.effect_cards import (
     ChoiceRow,
-    ChoiceToggles,
+    ChoiceTiles,
     SettingRow,
     StepRow,
     SwitchRow,
@@ -71,6 +72,12 @@ def quality_labels(format_name, bitrates):
     return entries, buttons
 
 
+def _attention(widget, on):
+    """A bar setting that changes the sound a lot stays in sight, amber as
+    the players show a muted volume: easy to forget once changed."""
+    (widget.add_css_class if on else widget.remove_css_class)("attention")
+
+
 class ConversionSettingsMixin:
     """Mixin providing all conversion-settings logic for MainWindow."""
 
@@ -91,7 +98,7 @@ class ConversionSettingsMixin:
         self.precision_row = Adw.SwitchRow(
             title=_("Allow conversion to 24-bit PCM"),
             subtitle=_(
-                "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
+                "Only for floating-point audio saved as FLAC. It lowers the precision. WAV keeps the original as it is."
             ),
             active=self.app.config.get("allow_precision_reduction", False) is True,
         )
@@ -114,7 +121,7 @@ class ConversionSettingsMixin:
         self.format_row = ChoiceRow(
             "audio-x-generic-symbolic",
             _("Format"),
-            _("The type of file to save. Keeping the original applies no effects."),
+            _("If you are not sure, pick MP3. It plays on any device."),
             [
                 _("MP3 — plays everywhere"),
                 _("M4A — good quality in small files"),
@@ -126,6 +133,7 @@ class ConversionSettingsMixin:
             ],
             ["MP3", "M4A", "Opus", "FLAC", "WAV", "Ogg", _("Original")],
             (self.precision_list,),
+            wide=(6,),
         )
         self.format_row.set_selected(0)
         self.format_row.connect(
@@ -133,12 +141,33 @@ class ConversionSettingsMixin:
         )
         cards.add_row(output_rows, self.format_row)
 
+        # The quality chosen is the one for stereo; on by default, other
+        # channel counts get their share of it.
+        self.bitrate_channels_row = Adw.SwitchRow(
+            title=_("Adjust to the number of channels"),
+            subtitle=_(
+                "The quality above is for stereo. Mono uses half of it, and 5.1 three times as much."
+            ),
+            active=str(self.app.config.get("bitrate_per_channel", True)).lower()
+            != "false",
+        )
+        self.bitrate_channels_row.connect(
+            "notify::active",
+            lambda row, _pspec: owner.app.config.set(
+                "bitrate_per_channel", row.get_active()
+            ),
+        )
+        bitrate_channels_list = Gtk.ListBox(
+            selection_mode=Gtk.SelectionMode.NONE, css_classes=["boxed-list"]
+        )
+        bitrate_channels_list.append(self.bitrate_channels_row)
         self._bitrate_list = list(BITRATES["mp3"])
         self.bitrate_row = ChoiceRow(
             "starred-symbolic",
             _("Quality"),
-            _("Higher quality sounds better and makes larger files."),
+            _("The higher the bitrate, the better the sound and the bigger the file."),
             *quality_labels("mp3", self._bitrate_list),
+            extra=(bitrate_channels_list,),
         )
         self.bitrate_row.set_selected(self._bitrate_list.index("192k"))
         self.bitrate_row.connect(
@@ -166,12 +195,12 @@ class ConversionSettingsMixin:
                 owner._slider_to_speed(adjustment.get_value())
             ),
         )
-        self.volume_spin = Gtk.SpinButton.new_with_range(0, 1000, 5)
+        self.volume_spin = Gtk.SpinButton.new_with_range(0, 1000, 1)
         self.volume_spin.set_value(100)
         self.volume_spin.connect(
             "notify::value", lambda spin, _pspec: owner._on_volume_spin_changed(spin)
         )
-        self.speed_spin = Gtk.SpinButton.new_with_range(0.10, 5.0, 0.05)
+        self.speed_spin = Gtk.SpinButton.new_with_range(0.10, 5.0, 0.01)
         self.speed_spin.set_digits(2)
         self.speed_spin.set_value(1.0)
         self.speed_spin.connect(
@@ -191,14 +220,58 @@ class ConversionSettingsMixin:
         )
         # DeepFilterNet3 and DPDFNet-2, named by what the choice changes.
         # Stacked, so the playback bar's card stays as narrow as its slider.
-        self.noise_model = ChoiceToggles(
-            _("Cleaning quality"),
-            [_("Faster"), _("Better, slower")],
-            Gtk.Orientation.VERTICAL,
+        self.noise_model = ChoiceTiles(
+            _("Cleaning quality"), [_("Faster"), _("Better, slower")], columns=1
         )
         self.noise_model.connect(
             "notify::selected", weak_callback(self._on_noise_model_changed)
         )
+        # The denoiser mutes what its voice detector does not take for a voice:
+        # music, noise and the silence between words.
+        voice_only_label = Gtk.Label(
+            label=_("Audio only when a voice is detected"),
+            xalign=0,
+            wrap=True,
+            max_width_chars=16,
+            hexpand=True,
+        )
+        self.voice_only_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.voice_only_switch.update_property(
+            [Gtk.AccessibleProperty.LABEL], [voice_only_label.get_label()]
+        )
+        voice_only_row = Gtk.Box(spacing=12)
+        voice_only_row.append(voice_only_label)
+        voice_only_row.append(self.voice_only_switch)
+        # The pause finder's five steps, named the same way.
+        self.voice_only_names = (
+            _("Very sensitive"),
+            _("Sensitive"),
+            _("Normal"),
+            _("Strict"),
+            _("Very strict"),
+        )
+        self.voice_only_scale = Gtk.Scale(
+            adjustment=Gtk.Adjustment(
+                lower=1, upper=5, step_increment=1, page_increment=1
+            ),
+            round_digits=0,
+            hexpand=True,
+        )
+        for level in range(1, 6):
+            self.voice_only_scale.add_mark(level, Gtk.PositionType.BOTTOM, None)
+        self.voice_only_scale.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Voice detection")]
+        )
+        self.voice_only_level = Gtk.Label(css_classes=["dim-label"])
+        heading = Gtk.Box(spacing=12)
+        heading.append(Gtk.Label(label=_("Voice detection"), xalign=0, hexpand=True))
+        heading.append(self.voice_only_level)
+        self.voice_only_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self.voice_only_box.append(voice_only_row)
+        self.voice_only_detection = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.voice_only_detection.append(heading)
+        self.voice_only_detection.append(self.voice_only_scale)
+        self.voice_only_box.append(self.voice_only_detection)
 
         # Files are cut wherever segments are marked on the waveform; these
         # rows stay in place and wait, grayed with the reason, until a part
@@ -206,7 +279,9 @@ class ConversionSettingsMixin:
         self.cut_mode_row = ChoiceRow(
             "edit-cut-symbolic",
             _("Segments"),
-            _("Save only the marked segments, or everything except them."),
+            _(
+                "Keep saves only the segments you marked. Remove takes them out and saves the rest."
+            ),
             [_("Keep them"), _("Remove them")],
         )
         self.cut_mode_row.connect(
@@ -215,7 +290,9 @@ class ConversionSettingsMixin:
         self.cut_order_row = ChoiceRow(
             "view-sort-ascending-symbolic",
             _("Order"),
-            _("The order in which the segments are saved."),
+            _(
+                "The segments can follow the audio from start to end, or the order in which you marked them."
+            ),
             [_("In timeline order"), _("In the order marked")],
         )
         self.cut_order_row.connect(
@@ -224,7 +301,7 @@ class ConversionSettingsMixin:
         self.cut_output_row = ChoiceRow(
             "document-save-symbolic",
             _("Save segments"),
-            _("One file per segment, or this file's segments joined."),
+            _("Each segment can become its own file, or they can all go into one."),
             [_("Separate files"), _("Join this file's segments")],
         )
         self.cut_output_row.connect(
@@ -234,7 +311,9 @@ class ConversionSettingsMixin:
         self.join_row = SwitchRow(
             "media-playlist-consecutive-symbolic",
             _("Join into one file"),
-            _("Saves the queue as one file, in order, named after the first."),
+            _(
+                "Puts all the files in the queue into one, in the order they appear. It is named after the first file."
+            ),
         )
         self.join_row.counts = False
         self.join_row.switch.connect(
@@ -268,9 +347,25 @@ class ConversionSettingsMixin:
         self.destination_button.connect(
             "clicked", weak_callback(self._choose_output_folder)
         )
+        # On the right, as in Big Video Converter, in its words.
+        delete_label = Gtk.Label(label=_("Delete original files"))
+        self.delete_originals_switch = Gtk.Switch(
+            active=self._config_bool("delete_originals", False),
+            valign=Gtk.Align.CENTER,
+        )
+        self.delete_originals_switch.update_property(
+            [Gtk.AccessibleProperty.LABEL], [delete_label.get_label()]
+        )
+        self.delete_originals_switch.connect(
+            "notify::active", weak_callback(self._on_delete_originals_changed)
+        )
+        self.delete_box = Gtk.Box(spacing=8, hexpand=True, halign=Gtk.Align.END)
+        self.delete_box.append(delete_label)
+        self.delete_box.append(self.delete_originals_switch)
         self.destination_bar = Gtk.Box(spacing=6, css_classes=["destination-bar"])
         self.destination_bar.append(self.destination_choice)
         self.destination_bar.append(self.destination_button)
+        self.destination_bar.append(self.delete_box)
         self._set_output_folder(
             str(self.app.config.get("output_directory", "") or ""), save=False
         )
@@ -281,8 +376,9 @@ class ConversionSettingsMixin:
         self.channels_row = ChoiceRow(
             "audio-speakers-symbolic",
             _("Channels"),
-            _("Keep the original channels, or mix down to mono or stereo."),
+            _("Keep it on Original. Mono makes the file about half the size."),
             [_("Original"), _("Mono"), _("Stereo")],
+            wide=(0,),
         )
         self.channels_row.connect(
             "notify::selected", weak_callback(self._on_channels_changed)
@@ -293,8 +389,12 @@ class ConversionSettingsMixin:
         self.sample_rate_row = ChoiceRow(
             "audio-card-symbolic",
             _("Sample rate"),
-            _("Keep the original unless a device needs a specific rate."),
+            _(
+                "Leave it on Original unless a device or website asks for a specific rate."
+            ),
             [_("Original")] + [f"{rate} Hz" for rate in SAMPLE_RATES["mp3"]],
+            columns=3,
+            wide=(0,),
         )
         self.sample_rate_row.connect(
             "notify::selected", weak_callback(self._on_sample_rate_changed)
@@ -302,7 +402,9 @@ class ConversionSettingsMixin:
         self.normalize_row = SwitchRow(
             "power-profile-balanced-symbolic",
             _("Standard volume"),
-            _("Brings every file to the same standard loudness."),
+            _(
+                "Evens out the volume between files, so when you play several in a row none sounds louder or quieter than the others."
+            ),
         )
         self.normalize_row.switch.connect(
             "notify::active", weak_callback(self._on_normalize_switch_changed)
@@ -310,7 +412,9 @@ class ConversionSettingsMixin:
         self.compressor_row = StepRow(
             "multimedia-volume-control-symbolic",
             _("Lift quiet parts"),
-            _("Makes quiet passages louder and loud ones softer."),
+            _(
+                "Works inside each file, making its quiet parts louder and its loud parts softer. Standard volume evens out whole files instead."
+            ),
             [_("Off"), _("Light"), _("Medium"), _("Strong")],
         )
         self.compressor_row.steps.connect(
@@ -332,7 +436,9 @@ class ConversionSettingsMixin:
         self.pause_row = SettingRow(
             "big-audio-converter-remove-pauses-symbolic",
             _("Remove pauses"),
-            _("Marks the speech, so the export leaves the pauses out."),
+            _(
+                "Finds the silences between sentences and leaves them out of the saved file."
+            ),
             self.pause_panel,
         )
         self.pause_row.counts = False  # what is kept, not how it sounds
@@ -493,6 +599,7 @@ class ConversionSettingsMixin:
             )
             self.volume_button.set_icon_name(f"audio-volume-{icon}-symbolic")
             self.volume_value.set_label(f"{volume:.0f}")
+            _attention(self.volume_button.get_parent(), not 50 <= volume <= 100)
             self.player.set_volume(volume / 100)
             self.app.config.set("conversion_volume", str(volume))
             self._update_gain_notice()
@@ -515,11 +622,7 @@ class ConversionSettingsMixin:
         """A changed curve lights the bar's button, which names the preset to
         screen readers; boosted bands may distort."""
         button = self.equalizer_button
-        (
-            button.add_css_class
-            if self._equalizer_applied()
-            else button.remove_css_class
-        )("applied")
+        _attention(button, self._equalizer_applied())
         button.update_property(
             [Gtk.AccessibleProperty.DESCRIPTION],
             [self.eq_panel.preset_dropdown.get_selected_item().get_string()],
@@ -539,6 +642,7 @@ class ConversionSettingsMixin:
             self.speed_spin.set_value(speed)
             self.speed_adjustment.set_value(self._speed_to_slider(speed))
             self.speed_value.set_label(f"{speed:.2f}x")
+            _attention(self.speed_button.get_parent(), round(speed, 2) != 1)
             self.player.set_playback_speed(speed)
             self.player.set_pitch_correction(True)
             self.app.config.set("conversion_speed", str(speed))
@@ -568,11 +672,24 @@ class ConversionSettingsMixin:
         self._show_noise_strength()
 
     def _show_noise_strength(self):
+        _attention(self.voice_button.get_parent(), self._noise_active())
         # The model matters once the voice is cleaned, or to leave a missing
         # one; it stays in place so the open card keeps its height.
         self.noise_model.set_sensitive(
             self.noise_adjustment.get_value() > 0 or not self.noise_available
         )
+        self.voice_only_box.set_sensitive(self._noise_active())
+        self.voice_only_detection.set_sensitive(self.voice_only_switch.get_active())
+        level = round(self.voice_only_scale.get_value())
+        self.voice_only_level.set_label(self.voice_only_names[level - 1])
+
+    def _on_voice_only_changed(self, *_args):
+        active = self.voice_only_switch.get_active()
+        level = round(self.voice_only_scale.get_value())
+        self.app.config.set("voice_only_enabled", str(active).lower())
+        self.app.config.set("voice_only_sensitivity", str(level))
+        self.player.set_voice_only(active, level)
+        self._show_noise_strength()
 
     def _on_noise_strength_changed(self, scale):
         percent = scale.get_value()
@@ -759,7 +876,7 @@ class ConversionSettingsMixin:
 
     def _slider_to_volume(self, slider_value):
         """Convert slider position (0-100) to volume (0-1000) with quadratic curve."""
-        return (slider_value / 100.0) ** 2 * 1000.0
+        return round((slider_value / 100.0) ** 2 * 1000.0)
 
     def _volume_to_slider(self, volume):
         """Convert volume (0-1000) to slider position (0-100)."""
@@ -816,6 +933,25 @@ class ConversionSettingsMixin:
             return valid_list.index(saved)
         return default_idx
 
+    def show_delete_mode(self):
+        """Say where originals go: the Trash, or deleted outright."""
+        permanent = self._config_bool("skip_trash", False)
+        self.delete_box.set_tooltip_text(
+            _(
+                "Originals are deleted permanently, without the Trash, only "
+                "after every file converted from them is checked"
+            )
+            if permanent
+            else _(
+                "Originals go to the Trash only after every file converted "
+                "from them is checked"
+            )
+        )
+        self.file_queue.set_permanent_delete(permanent)
+
+    def _on_delete_originals_changed(self, switch, _pspec):
+        self.app.config.set("delete_originals", switch.get_active())
+
     def reset_settings(self):
         """Return every option to its first-run value through its own control.
 
@@ -827,7 +963,9 @@ class ConversionSettingsMixin:
         self.channels_row.set_selected(0)
         self.sample_rate_row.set_selected(0)
         self.precision_row.set_active(False)
+        self.bitrate_channels_row.set_active(True)
         self._set_output_folder("")
+        self.delete_originals_switch.set_active(False)
         self.set_removes_marked(False)
         self.join_row.set_active(False)
         self.cut_order_row.set_selected(0)
@@ -841,8 +979,12 @@ class ConversionSettingsMixin:
         self.eq_panel.preset_dropdown.set_selected(
             self.eq_panel.PRESET_KEYS.index("flat")
         )
-        self.auto_advance_switch.set_active(True)
+        self.auto_advance_action.change_state(GLib.Variant.new_boolean(True))
         self.original_preview.set_active_name("adjusted")
+        self.pause_panel.length_buttons[PAUSE_LENGTHS.index(1.0)].set_active(True)
+        self.pause_panel.sensitivity.set_value(DEFAULT_VOICE_SENSITIVITY)
+        self.voice_only_switch.set_active(False)
+        self.voice_only_scale.set_value(DEFAULT_VOICE_SENSITIVITY)
 
     def _restore_conversion_settings(self):
         """Restore saved conversion settings once every control exists."""
@@ -863,6 +1005,18 @@ class ConversionSettingsMixin:
             self._config_float("noise_strength", 100)
             if self._config_bool("noise_reduction_enabled")
             else 0
+        )
+        self.voice_only_switch.set_active(self._config_bool("voice_only_enabled"))
+        self.voice_only_scale.set_value(
+            self._config_float("voice_only_sensitivity", DEFAULT_VOICE_SENSITIVITY)
+        )
+        self._on_voice_only_changed()
+        # Connected once the saved choice shows, which is no new choice.
+        self.voice_only_switch.connect(
+            "notify::active", weak_callback(self._on_voice_only_changed)
+        )
+        self.voice_only_scale.connect(
+            "value-changed", weak_callback(self._on_voice_only_changed)
         )
 
         # Off is the first step; the strength is kept for later. A saved

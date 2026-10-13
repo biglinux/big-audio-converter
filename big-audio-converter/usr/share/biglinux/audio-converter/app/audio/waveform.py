@@ -181,33 +181,6 @@ class WaveformGenerator:
                 self._execute(*job)
             del job
 
-    def generate(
-        self,
-        file_path,
-        converter_instance,
-        visualizer,
-        file_markers=None,
-        track_metadata=None,
-    ):
-        """Decode on the calling thread; results are still delivered on GLib."""
-        with self._condition:
-            if self._disposed:
-                return
-            self._generation += 1
-            generation = self._generation
-            if self._runner:
-                self._runner.cancel()
-            runner = self._runner = ProcessRunner()
-        self._execute(
-            generation,
-            runner,
-            file_path,
-            converter_instance.ffmpeg_path,
-            weakref.ref(visualizer),
-            deepcopy(file_markers or {}),
-            deepcopy(track_metadata or {}),
-        )
-
     def _schedule(self, generation, callback):
         self._sources.idle(self._if_current, generation, callback)
 

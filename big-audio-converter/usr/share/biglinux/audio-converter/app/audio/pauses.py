@@ -2,9 +2,13 @@
 
 Background noise fills the pauses of a raw recording. DPDFNet at full strength
 leaves it near -70 dBFS, so a threshold set from the speech level separates the
-words from the pauses between them. The analysis is mono: a pause on one
-channel only, such as an interview recorded on separate channels, reads as
-sound.
+words from the pauses between them. DPDFNet also lets music and sound effects
+through as if they were a voice; with --speech-only, dpdfnet-enhance silences
+what its voice detector does not hear as speech, as strictly as the voice
+sensitivity asks: 1 keeps quiet or unusual voices and lets more music through,
+5 removes more music and may cut faint words. The analysis is mono: a pause
+on one channel only, such as an interview recorded on separate channels, reads
+as sound.
 """
 
 import gettext
@@ -27,16 +31,22 @@ logger = logging.getLogger(__name__)
 STEP = 0.01  # seconds per level: 480 samples at 48 kHz
 KEEP = 0.15  # seconds of each pause kept beside speech, so words do not collide
 PAUSE_LENGTHS = (0.5, 1.0, 2.0)
+DEFAULT_VOICE_SENSITIVITY = 3
 
 LEVEL = b"lavfi.astats.Overall.Peak_level="
-# One peak level per 10 ms of mono audio, cleaned at the model's full strength.
+# One peak level per 10 ms of the speech in mono audio, cleaned at the model's
+# full strength.
 PIPELINE = (
-    '"$@" | "$DENOISER" --channels 1 --attenuation "$ATTENUATION" | '
+    '"$@" | "$DENOISER" --channels 1 --attenuation "$ATTENUATION" --speech-only '
+    '--voice-sensitivity "$SENSITIVITY" | '
     '"$FFMPEG" -hide_banner -nostdin -v error -f f32le -ar 48000 -ac 1 -i pipe:0 '
     "-af asetnsamples=n=480:p=0,astats=metadata=1:reset=1:measure_perchannel=none:"
     "measure_overall=Peak_level,ametadata=mode=print:"
     "key=lavfi.astats.Overall.Peak_level:file=- -f null -"
 )
+# How dpdfnet-enhance before its voice detector or its sensitivity rejects the
+# option: with its usage or, in later builds, by name.
+OLD_DENOISER = ("dpdfnet-enhance: usage", "--speech-only", "--voice-sensitivity")
 
 
 class LevelReader:
@@ -61,8 +71,8 @@ class LevelReader:
             self.progress(min(1.0, len(self.levels) * STEP / self.duration))
 
 
-def measure_levels(source, ffmpeg, denoiser, runner, progress=None):
-    """Peak levels in dBFS, one per STEP, of the cleaned mono source."""
+def measure_levels(source, ffmpeg, denoiser, sensitivity, runner, progress=None):
+    """Peak levels in dBFS, one per STEP, of the speech in the mono source."""
     info = probe_media(source.path, runner, ffmpeg)
     stream = audio_stream(info, source.stream_index)
     reader = LevelReader(audio_duration(info, stream), progress)
@@ -99,9 +109,12 @@ def measure_levels(source, ffmpeg, denoiser, runner, progress=None):
             "DENOISER": denoiser,
             "FFMPEG": ffmpeg,
             "ATTENUATION": str(NOISE_PLUGINS["dpdfnet"][3]),
+            "SENSITIVITY": str(sensitivity),
         },
     )
     if result.returncode:
+        if any(text in (result.stderr or "") for text in OLD_DENOISER):
+            raise MediaError(_("Update dpdfnet-native to find pauses."), result.stderr)
         raise MediaError(_("The pauses could not be measured."), result.stderr)
     return reader.levels
 
@@ -169,8 +182,13 @@ class PauseFinder:
         self._sources = MainLoopSources()
 
     @staticmethod
-    def identity(source):
-        return (source.path, *file_identity(source.path), source.stream_index)
+    def identity(source, sensitivity):
+        return (
+            source.path,
+            *file_identity(source.path),
+            source.stream_index,
+            sensitivity,
+        )
 
     def cached(self, key):
         with self._lock:
@@ -179,7 +197,7 @@ class PauseFinder:
                 self._cache.move_to_end(key)
             return levels
 
-    def start(self, key, source, ffmpeg, denoiser, progress, done, failed):
+    def start(self, key, source, ffmpeg, denoiser, sensitivity, progress, done, failed):
         self.cancel()
         with self._lock:
             generation = self._generation
@@ -201,7 +219,9 @@ class PauseFinder:
             # Every outcome clears the runner before it is reported, so the
             # card never shows a finished analysis as still running.
             try:
-                levels = measure_levels(source, ffmpeg, denoiser, runner, report)
+                levels = measure_levels(
+                    source, ffmpeg, denoiser, sensitivity, runner, report
+                )
             except CancelledError:
                 return
             except (MediaError, OSError, ValueError) as exc:

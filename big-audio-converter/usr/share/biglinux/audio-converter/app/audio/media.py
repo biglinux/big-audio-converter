@@ -125,6 +125,12 @@ class ConversionResult:
     warnings: tuple[str, ...] = ()
     # Shown under technical details: how the file was made.
     notes: tuple[str, ...] = ()
+    # Each source this conversion read: its path, its identity when it was
+    # opened, and whether the output holds all of it.
+    originals: tuple[tuple[str, tuple, bool], ...] = ()
+    # What became of the original when the batch asked to delete it.
+    original: str = ""
+    original_kept: bool = False
 
     @property
     def successful(self):

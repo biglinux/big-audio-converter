@@ -1,240 +1,16 @@
 """Native GTK integration contracts, run under Xvfb and a session bus."""
 
-import importlib.util
 import os
 import shutil
 import subprocess
-import time
-import uuid
-from pathlib import Path
 
 import pytest
-from conftest import pump
+from conftest import pump, start_window, stop_window
 
 pytestmark = pytest.mark.skipif(
     not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")),
     reason="A graphical display is required",
 )
-
-
-def start_window():
-    """A running application window, configured under $XDG_CONFIG_HOME."""
-    root = (
-        Path(__file__).resolve().parents[1]
-        / "big-audio-converter/usr/share/biglinux/audio-converter"
-    )
-    spec = importlib.util.spec_from_file_location("bac_test_main", root / "main.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    from gi.repository import Gio
-
-    app = module.Application()
-    app.set_flags(app.get_flags() | Gio.ApplicationFlags.NON_UNIQUE)
-    app.set_application_id("br.com.biglinux.audio.converter.Test" + uuid.uuid4().hex)
-    app.player._mpv_options["ao"] = "null"
-    app.register(None)
-    app.activate()
-    win = app.get_active_window()
-    assert win is not None
-    win._test_errors = []
-    win.file_queue.on_probe_error = lambda path, message: win._test_errors.append(
-        (path, message)
-    )
-    return win
-
-
-def stop_window(win):
-    app = win.get_application()
-    win.cleanup()
-    win.destroy()
-    app.player.cleanup()
-    app.converter.cleanup()
-    app.config.close()
-    app.quit()
-
-
-@pytest.fixture
-def window(tmp_path, monkeypatch):
-    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    win = start_window()
-    yield win
-    stop_window(win)
-
-
-@pytest.fixture
-def audio(tmp_path):
-    result = tmp_path / 'speech 東京 :: [sample] " & ;.wav'
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-v",
-            "error",
-            "-f",
-            "lavfi",
-            "-i",
-            "sine=frequency=880:sample_rate=44100:duration=2",
-            str(result),
-        ],
-        check=True,
-        timeout=10,
-    )
-    return result
-
-
-def test_queue_probe_lifecycle_and_numeric_editor(window, audio):
-    queue = window.file_queue
-    assert queue.add_file(str(audio))
-    assert queue.pending
-    assert not window.convert_button.get_sensitive()
-    pump(lambda: not queue.pending and window.visualizer.duration > 0)
-    assert not window._test_errors
-    assert len(queue.files) == 1
-    assert window.seekbar.duration == pytest.approx(2)
-    assert queue.file_rows[0].get_subtitle() == "0:02 · WAV · 44.1 kHz"
-    assert window.convert_button.get_sensitive()
-    window.on_edit_segments()
-    editor = window.segment_editor
-    editor.add_segment(0.1, 0.11)
-    editor.apply()
-    assert window.visualizer.get_marker_pairs()[0]["stop"] == pytest.approx(0.11)
-    window.format_row.set_selected(window._format_list.index("flac"))
-    window.on_convert(None)
-    pump(lambda: window.conversion.last_batch is not None)
-    assert window.conversion.last_batch.items[0].successful
-    output = Path(window.conversion.last_batch.outputs[0])
-    assert output.is_file()
-    assert queue.files == [str(audio)]  # Repeating an operation keeps the input.
-    queue.remove_file(0)
-    assert not queue.track_metadata
-    assert not queue.pending
-
-
-def test_join_offered_for_several_files_and_not_in_fast_copy(window, audio, tmp_path):
-    queue = window.file_queue
-    second = tmp_path / "second.wav"
-    second.write_bytes(audio.read_bytes())
-    assert queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    assert not window.join_row.get_sensitive()
-    assert queue.add_file(str(second))
-    pump(lambda: not queue.pending)
-    assert window.join_row.get_sensitive()
-    window.join_row.set_active(True)
-    assert window.convert_button.get_label() == "Join 2 files"
-    assert window._collect_conversion_settings()["join_files"]
-    window.format_row.set_selected(window._format_list.index("copy"))
-    assert not window.join_row.get_sensitive()
-    assert window.convert_button.get_label() == "Convert 2 files"
-    assert not window._collect_conversion_settings()["join_files"]
-    window.format_row.set_selected(window._format_list.index("flac"))
-    window.on_convert(None)
-    pump(lambda: window.conversion.last_batch is not None)
-    [output] = window.conversion.last_batch.outputs
-    assert output.endswith("-joined.flac")
-
-
-def test_handed_over_cuts_follow_each_track_of_a_multi_track_file(window, tmp_path):
-    video = tmp_path / "multi.mkv"
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-v",
-            "error",
-            "-f",
-            "lavfi",
-            "-i",
-            "sine=frequency=440:sample_rate=48000:duration=2",
-            "-f",
-            "lavfi",
-            "-i",
-            "sine=frequency=880:sample_rate=48000:duration=2",
-            "-map",
-            "0",
-            "-map",
-            "1",
-            "-c:a",
-            "flac",
-            str(video),
-        ],
-        check=True,
-        timeout=10,
-    )
-    queue = window.file_queue
-    assert queue.add_file(str(video))
-    # main.py records a player's cuts while the file is still being inspected.
-    window.file_markers[str(video)] = [{"start": 0.5, "stop": 1.0}]
-    pump(lambda: not queue.pending)
-    assert len(queue.files) == 2
-    assert str(video) not in window.file_markers
-    for identifier in queue.files:
-        (cut,) = window.file_markers[identifier]
-        assert (cut["start"], cut["stop"]) == pytest.approx((0.5, 1.0))
-
-
-def test_removed_pending_row_never_receives_stale_result(window, audio):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    queue.remove_file(0)
-    pump(lambda: not queue._probes._active)
-    assert queue.files == []
-    assert queue.file_rows == []
-    assert window.active_audio_id is None
-
-
-def test_multitrack_is_expanded_without_gtk_thread_probes(window, tmp_path):
-    video = tmp_path / "tracks.mkv"
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-v",
-            "error",
-            "-f",
-            "lavfi",
-            "-i",
-            "sine=duration=2",
-            "-f",
-            "lavfi",
-            "-i",
-            "sine=frequency=880:duration=2",
-            "-map",
-            "0:a",
-            "-map",
-            "1:a",
-            "-c:a",
-            "flac",
-            str(video),
-        ],
-        check=True,
-        timeout=10,
-    )
-    queue = window.file_queue
-    assert queue.add_file(str(video))
-    pump(lambda: not queue.pending)
-    assert not window._test_errors
-    assert len(queue.files) == 2
-    assert {value["track_index"] for value in queue.track_metadata.values()} == {0, 1}
-    assert not queue.add_file(str(video))
-    queue.clear_queue()
-    assert queue.track_metadata == {}
-    assert queue.active_file_index is None
-    assert queue.currently_playing_index is None
-
-
-def test_information_dialog_is_nonblocking_and_preserves_rate(window, audio):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    row = queue.file_rows[0]
-    started = time.monotonic()
-    assert row.more_button.get_popover() is None
-    row.more_button.popup()
-    assert row.more_button.get_popover() is not None
-    assert row.activate_action("row.info", None)
-    row.more_button.popdown()
-    assert time.monotonic() - started < 0.5
-    pump(lambda: not queue._probes._active)
-    row.cleanup()
-    assert not row._info_dialogs
 
 
 def test_bitrate_preview_and_waveform_marks(window, audio):
@@ -307,7 +83,7 @@ def test_bitrate_preview_and_waveform_marks(window, audio):
 )
 # GTK deprecated its whole X11 API without a replacement; xdotool needs the XID.
 @pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
-def test_segment_editor_apply_is_reachable_by_keyboard(window, audio):
+def test_segment_editor_apply_reachable_by_keyboard(window, audio):
     import gi
 
     gi.require_version("GdkX11", "4.0")
@@ -341,7 +117,7 @@ def test_segment_editor_apply_is_reachable_by_keyboard(window, audio):
     assert window.file_markers[window.active_audio_id][0]["stop"] == pytest.approx(0.8)
 
 
-def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
+def test_noise_modes_preview_and_plugin_recovery(window, audio):
     from app.audio.profiles import discover_noise_plugins
 
     plugins = discover_noise_plugins()
@@ -393,6 +169,20 @@ def test_noise_modes_preview_and_missing_plugin_recovery(window, audio):
     assert window.voice_value.get_label() == "25"
 
 
+def test_volume_drag_settles_on_magnets(window):
+    from gi.repository import Gtk
+
+    scale = window.volume_scale
+    hundred = window._volume_to_slider(100)
+    scale.emit("change-value", Gtk.ScrollType.JUMP, hundred + 2)
+    assert window.volume_spin.get_value() == 100
+    scale.emit("change-value", Gtk.ScrollType.STEP_FORWARD, hundred + 0.5)
+    assert window.volume_spin.get_value() > 100
+    window.volume_spin.set_value(100)
+    window.volume_spin.spin(Gtk.SpinType.STEP_FORWARD, 1)
+    assert window.volume_spin.get_value() == 101
+
+
 def test_reset_settings_restores_first_run_values(window, tmp_path):
     config = window.app.config
     window.format_row.set_selected(window._format_list.index("opus"))
@@ -405,9 +195,22 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     window.compressor_row.steps.set_selected(2)
     window.normalize_row.set_active(True)
     window.eq_panel.band_scales[window.eq_panel.BANDS[0][1]].set_value(6)
-    window.auto_advance_switch.set_active(False)
+    window.activate_action("win.auto-advance", None)
+    assert window.app.config.get("auto_advance_enabled") is False
+    window.delete_originals_switch.set_active(True)
+    assert window._collect_conversion_settings()["delete_originals"]
+    window.voice_only_scale.set_value(5)
+    window.voice_only_switch.set_active(True)
+    assert window.player.voice_only and window.player.voice_only_sensitivity == 5
+    assert window.app.config.get("voice_only_enabled") == "true"
+    settings = window._collect_conversion_settings()
+    assert settings["voice_only"] and settings["voice_only_sensitivity"] == 5
 
-    assert window.equalizer_button.has_css_class("applied")
+    volume, speed = (
+        b.get_parent() for b in (window.volume_button, window.speed_button)
+    )
+    assert window.equalizer_button.has_css_class("attention")
+    assert volume.has_css_class("attention") and speed.has_css_class("attention")
     window._on_reset_settings_response(None, "cancel")
     assert window.compressor_row.steps.get_selected() == 2
 
@@ -423,9 +226,15 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert window.compressor_row.steps.get_selected() == 0
     assert not window.normalize_row.get_active()
     assert all(s.get_value() == 0 for s in window.eq_panel.band_scales.values())
-    assert window.auto_advance_switch.get_active()
+    assert window.auto_advance_action.get_state().get_boolean()
     assert not window.player.normalize
-    assert not window.equalizer_button.has_css_class("applied")
+    assert not window.equalizer_button.has_css_class("attention")
+    assert not window.delete_originals_switch.get_active()
+    assert not window.voice_only_switch.get_active()
+    assert not window.player.voice_only
+    assert window.app.config.get("delete_originals") is False
+    assert not volume.has_css_class("attention")
+    assert not speed.has_css_class("attention")
     for key, value in (
         ("conversion_format", "mp3"),
         ("audio_channels", "0"),
@@ -441,26 +250,18 @@ def test_reset_settings_restores_first_run_values(window, tmp_path):
     assert float(config.get("conversion_volume")) == 100
 
 
-def test_information_size_is_the_file_unless_other_tracks_share_it(audio):
-    from app.ui.file_info import audio_properties, format_size, shares_file
-
-    track = {"index": 0, "codec_type": "audio", "duration": "2.0"}
-    cover = {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 1}}
-    video = {"index": 1, "codec_type": "video", "disposition": {"attached_pic": 0}}
-    assert not shares_file({"streams": [track]}, track)
-    assert not shares_file({"streams": [track, cover]}, track)
-    assert shares_file({"streams": [track, video]}, track)
-
-    def size(stream, shares):
-        info = {"streams": [stream], "format": {}}
-        return dict(audio_properties(stream, info, shares, str(audio)))["Size"]
-
-    assert size(track, False) == format_size(audio.stat().st_size)
-    assert size(track, True) == "Unknown"
-    assert size({**track, "bit_rate": "128000"}, True) == format_size(32000)
+def test_reset_restores_pause_choices(window):
+    panel = window.pause_panel
+    panel.length_buttons[2].set_active(True)
+    panel.sensitivity.set_value(5)
+    window._on_reset_settings_response(None, "reset")
+    assert panel.length_buttons[1].get_active()
+    assert panel.sensitivity_label.get_text() == "Normal"
+    assert window.app.config.get("pause_length") == 1.0
+    assert window.app.config.get("voice_sensitivity") == 3
 
 
-def test_panning_the_waveform_moves_the_seek_bar_window(window):
+def test_waveform_panning_moves_the_seekbar_window(window):
     window.visualizer.zoom_level = 4.0
     window.visualizer.viewport_offset = 0.5
     assert window.seekbar._viewport_offset == 0.5
@@ -468,7 +269,7 @@ def test_panning_the_waveform_moves_the_seek_bar_window(window):
     assert window.seekbar._viewport_offset == 0.25
 
 
-def test_the_compressor_is_set_in_named_steps_and_off_at_the_first(window):
+def test_compressor_uses_named_steps_starting_off(window):
     config = window.app.config
     window.compressor_row.steps.set_selected(2)
     settings = window._collect_conversion_settings()
@@ -523,7 +324,7 @@ def test_auto_advance_keeps_each_files_marks(window, audio, tmp_path):
     assert [(m["start"], m["stop"]) for m in window.file_markers[first]] == [(0.2, 0.5)]
 
 
-def test_removed_and_cleared_files_forget_their_cuts(window, audio):
+def test_removed_or_cleared_files_forget_cuts(window, audio):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -544,9 +345,7 @@ def test_removed_and_cleared_files_forget_their_cuts(window, audio):
     assert window.file_markers == {}
 
 
-def test_play_does_not_resume_another_file_when_loading_fails(
-    window, audio, monkeypatch
-):
+def test_failed_load_keeps_playback_stopped(window, audio, monkeypatch):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending)
@@ -556,63 +355,6 @@ def test_play_does_not_resume_another_file_when_loading_fails(
     monkeypatch.setattr(window.player, "play", lambda: played.append(True))
     window._on_pause_play_clicked(None)
     assert played == []
-
-
-def test_command_line_files_resolve_in_the_callers_directory(
-    window, audio, tmp_path, monkeypatch
-):
-    from gi.repository import Gio, GLib
-
-    app = window.get_application()
-    shutil.copyfile(audio, tmp_path / "relative.wav")
-    line = Gio.ApplicationCommandLine(
-        arguments=GLib.Variant(
-            "aay",
-            [b"big-audio-converter\0", b"relative.wav\0", b"bac-test://host/a.wav\0"],
-        ),
-        platform_data=GLib.Variant(
-            "a{sv}", {"cwd": GLib.Variant("ay", str(tmp_path).encode() + b"\0")}
-        ),
-    )
-    opened = []
-    monkeypatch.setattr(app, "do_open", lambda files, count, hint: opened.extend(files))
-    assert app.do_command_line(line) == 0
-    assert [f.get_path() for f in opened] == [str(tmp_path / "relative.wav"), None]
-
-
-def test_files_dropped_on_the_window_are_all_added(window, audio, tmp_path):
-    from gi.repository import Gdk, Gio, Gtk
-
-    second = tmp_path / "second.wav"
-    second.write_bytes(audio.read_bytes())
-    files = Gdk.FileList.new_from_list(
-        [
-            Gio.File.new_for_path(str(audio)),
-            Gio.File.new_for_path(str(second)),
-            Gio.File.new_for_uri("bac-test://host/remote.wav"),
-        ]
-    )
-    target = next(
-        c for c in window.observe_controllers() if isinstance(c, Gtk.DropTarget)
-    )
-    assert target.emit("drop", files, 0, 0)
-    pump(lambda: len(window.file_queue.files) == 2 and not window.file_queue.pending)
-    assert [path for path, _message in window._test_errors] == [
-        "bac-test://host/remote.wav"
-    ]
-
-
-def test_a_failed_trash_is_not_reported_as_a_failed_add(window, audio, monkeypatch):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    shown = []
-    monkeypatch.setattr(window, "_show_message", lambda *args: shown.append(args))
-    audio.unlink()  # Trash then fails: the file is already gone.
-    queue._on_delete_response(None, "trash", str(audio))
-    pump(lambda: shown)
-    assert shown[0][0] == "Could not move the file to Trash"
-    assert window._test_errors == []
 
 
 def test_closing_during_a_conversion_asks_first(window, monkeypatch):
@@ -625,7 +367,7 @@ def test_closing_during_a_conversion_asks_first(window, monkeypatch):
     assert window._closed
 
 
-def test_the_applications_own_icons_resolve_by_name(window):
+def test_application_icons_resolve_by_name(window):
     from gi.repository import Gtk
 
     theme = Gtk.IconTheme.get_for_display(window.get_display())
@@ -636,7 +378,7 @@ def test_the_applications_own_icons_resolve_by_name(window):
         assert theme.has_icon(name), name
 
 
-def test_closing_the_window_leaves_the_shared_player_and_converter(window):
+def test_window_cleanup_keeps_shared_player_converter(window):
     app = window.get_application()
     window.cleanup()
     assert not app.player._closed
@@ -660,7 +402,7 @@ def test_quitting_during_a_conversion_asks_first(window, monkeypatch):
     assert not quits and not window._closed
 
 
-def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypatch):
+def test_custom_equalizer_persists_across_sessions(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     win = start_window()
     try:
@@ -676,7 +418,7 @@ def test_custom_equalizer_is_named_and_kept_between_sessions(tmp_path, monkeypat
         assert win.eq_panel.band_scales[1000].get_value() == 7
         assert win.eq_panel.band_scales[31].get_value() == 5  # from Radio Host
         assert win.eq_panel.preset_dropdown.get_selected_item().get_string() == "Custom"
-        assert win.equalizer_button.has_css_class("applied")
+        assert win.equalizer_button.has_css_class("attention")
     finally:
         stop_window(win)
 
@@ -700,7 +442,7 @@ def test_unreadable_settings_are_announced_once(tmp_path, monkeypatch):
         stop_window(win)
 
 
-def test_found_pauses_mark_the_speech_at_once_and_undo_restores_it(window, audio):
+def test_found_pauses_mark_speech_with_undo(window, audio):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -736,7 +478,46 @@ def test_found_pauses_mark_the_speech_at_once_and_undo_restores_it(window, audio
     assert not panel.undo_row.get_visible()
 
 
-def test_marks_edited_after_finding_stay_and_finding_again_is_offered(window, audio):
+def test_voice_detection_step_measures_again(window, audio, monkeypatch):
+    from app.audio.media import MediaSource
+    from app.audio.pauses import PauseFinder
+
+    queue = window.file_queue
+    queue.add_file(str(audio))
+    pump(lambda: not queue.pending and window.visualizer.duration > 0)
+    panel = window.pause_panel
+    assert panel.sensitivity.get_value() == 3
+    assert panel.sensitivity_label.get_text() == "Normal"
+    started = []
+    monkeypatch.setattr(
+        PauseFinder, "start", lambda _f, key, *args: started.append((key, args))
+    )
+    monkeypatch.setattr("shutil.which", lambda name: f"/usr/bin/{name}")
+    levels = [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50
+    panel.length_buttons[0].set_active(True)
+    panel._on_found(None, levels)
+    assert marks(window) == [(0.0, 0.65), (1.35, 2.0)]
+
+    # The levels were heard at Normal: another step drops their marks and
+    # measures the file at that step.
+    panel.sensitivity.set_value(5)
+    assert window.app.config.get("voice_sensitivity") == 5
+    assert panel.sensitivity_label.get_text() == "Very strict"
+    assert marks(window) == []
+    [(key, args)] = started
+    assert key[-1] == 5 and args[3] == 5
+    assert panel.progress_row.get_visible()
+
+    # Each step has its own cache entry: Normal marks again without measuring.
+    source = MediaSource.resolve(window.active_audio_id, queue.track_metadata)
+    panel.finder._cache[PauseFinder.identity(source, 3)] = levels
+    monkeypatch.setattr(type(panel.finder), "busy", property(lambda _f: True))
+    panel.sensitivity.set_value(3)
+    assert len(started) == 1
+    assert marks(window) == [(0.0, 0.65), (1.35, 2.0)]
+
+
+def test_editing_found_marks_reoffers_finding(window, audio):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -750,7 +531,7 @@ def test_marks_edited_after_finding_stay_and_finding_again_is_offered(window, au
     assert panel.actions.get_visible_child_name() == "find"
 
 
-def test_pauses_past_the_end_of_the_file_are_reported(window, audio, monkeypatch):
+def test_pauses_past_file_end_are_reported(window, audio, monkeypatch):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -762,9 +543,7 @@ def test_pauses_past_the_end_of_the_file_are_reported(window, audio, monkeypatch
     assert marks(window) == []
 
 
-def test_installing_the_denoiser_is_noticed_without_a_restart(
-    window, audio, monkeypatch
-):
+def test_installed_denoiser_is_noticed_live(window, audio, monkeypatch):
     queue = window.file_queue
     queue.add_file(str(audio))
     pump(lambda: not queue.pending and window.visualizer.duration > 0)
@@ -780,7 +559,7 @@ def test_installing_the_denoiser_is_noticed_without_a_restart(
     assert panel.actions.get_visible_child_name() == "find"
 
 
-def test_marked_parts_are_kept_in_a_new_session(tmp_path, monkeypatch):
+def test_new_session_keeps_marked_parts(tmp_path, monkeypatch):
     """Marks do not outlive the session, so neither does removing them: a
     saved mode would silently turn the next session's marks into cuts."""
     config = tmp_path / "config" / "audio-converter"
@@ -801,7 +580,7 @@ def test_marked_parts_are_kept_in_a_new_session(tmp_path, monkeypatch):
         stop_window(win)
 
 
-def test_saved_volume_and_speed_come_back_in_a_new_session(tmp_path, monkeypatch):
+def test_volume_and_speed_persist_across_sessions(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     win = start_window()
     try:
@@ -818,331 +597,7 @@ def test_saved_volume_and_speed_come_back_in_a_new_session(tmp_path, monkeypatch
         stop_window(win)
 
 
-def test_a_row_card_opens_for_the_keyboard_and_shows_the_amount(window):
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    row.activate()
-    cards = window.effect_cards.hover_cards
-    assert cards.is_open(row) and cards.pinned is row
-    pump(lambda: row.steps.buttons[0].has_focus())
-    row.steps.set_selected(3)
-    assert row.value_label.get_text() == "Strong"
-    [count] = [c for rows, c in window.effect_cards.groups if row in rows]
-    assert count.get_text() == "1 active"
-    # Off is the default of a correction: there is nothing to reset to.
-    assert row.reset_button is None
-    cards.close(row)
-    assert cards.pinned is None
-
-
-def _wait(seconds):
-    import time
-
-    from gi.repository import GLib
-
-    context = GLib.MainContext.default()
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        context.iteration(False)
-
-
-def _hand_driven(cards):
-    """Silence the real pointer's motion controllers, so only the pointer the
-    test moves reaches the cards. Xvfb's pointer stays at the screen's center,
-    and a card opening under it would otherwise meet a second pointer."""
-    from gi.repository import Gtk
-
-    widgets = [cards._watched[0], *cards._anchors.values(), *cards.panels.values()]
-    for widget in widgets:
-        for controller in widget.observe_controllers():
-            if isinstance(controller, Gtk.EventControllerMotion):
-                controller.set_propagation_phase(Gtk.PropagationPhase.NONE)
-
-
-def _open_by_rest(cards, row):
-    """Rest the pointer in the middle of ``row`` until its card opens."""
-    _hand_driven(cards)
-    box = cards._anchor_box(row)
-    middle = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
-    cards._intent.pointer(row, middle)
-    pump(lambda: cards.is_open(row) and cards._card_box(row) is not None)
-    return middle
-
-
-def _move(cards, *points, step=0.016):
-    """The pointer through ``points`` in window coordinates, a frame apart."""
-    for point in points:
-        cards._on_window_motion(None, *point)
-        _wait(step)
-
-
-def test_a_card_opens_beside_the_sidebar_level_with_its_row(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    _open_by_rest(cards, row)
-    anchor, card = cards._anchor_box(row), cards._card_box(row)
-    scrolled = window.effect_cards.scrolled
-    from gi.repository import Graphene
-
-    _found, edge = scrolled.compute_point(
-        window, Graphene.Point().init(scrolled.get_width(), 0)
-    )
-    # Past the sidebar's edge, over the queue; its top level with the row.
-    assert card[0] + 8 >= edge.x
-    assert abs(card[1] + 8 - anchor[1]) <= 9
-    assert row.has_css_class("card-open")
-    # Its scrollbar stays out of the tab's way while the card is open.
-    assert scrolled.has_css_class("card-open")
-    cards.close(row)
-    pump(lambda: not row.has_css_class("card-open"))
-    assert not scrolled.has_css_class("card-open")
-
-
-def test_the_top_rows_card_stays_inside_the_window(window):
-    cards = window.effect_cards.hover_cards
-    row = window.format_row  # the tallest card, on the first row
-    window.set_default_size(1100, 560)
-    window.present()
-    pump(lambda: row.get_mapped() and window.get_height() <= 600)
-    _open_by_rest(cards, row)
-    _x0, top, _x1, bottom = cards._card_box(row)
-    assert top >= 0 and bottom <= window.get_height()
-    cards.close(row)
-
-
-def test_straight_down_hands_the_card_to_the_next_row(window):
-    cards = window.effect_cards.hover_cards
-    first, second = window.format_row, window.bitrate_row
-    window.present()
-    pump(lambda: second.get_mapped())
-    x, y = _open_by_rest(cards, first)
-    below = cards._anchor_box(second)
-    _move(cards, *[(x, y + (below[1] + 12 - y) * i / 4) for i in range(1, 5)])
-    pump(lambda: cards.is_open(second))
-    assert not cards.is_open(first)
-    cards.close(second)
-
-
-def test_the_way_into_a_card_crosses_the_next_row_without_switching(window):
-    cards = window.effect_cards.hover_cards
-    first, second = window.format_row, window.bitrate_row
-    window.present()
-    pump(lambda: second.get_mapped())
-    x, y = _open_by_rest(cards, first)
-    card = cards._card_box(first)
-    below = cards._anchor_box(second)
-    # Down and right over the next row, short of the card: a hand undershoots
-    # and pauses before it corrects.
-    target = (below[2] - 6, below[1] + 10)
-    _move(
-        cards,
-        *[
-            (x + (target[0] - x) * i / 6, y + (target[1] - y) * i / 6)
-            for i in range(1, 7)
-        ],
-    )
-    assert cards._anchor_at(target) is second
-    _wait(0.3)
-    assert cards.is_open(first) and not cards.is_open(second)
-    _move(cards, (card[0] + 30, target[1] + 6))
-    cards._intent.entered_card(first)
-    _wait(0.6)
-    assert cards.is_open(first) and not cards.is_open(second)
-    # Resting on that row instead hands it the card.
-    cards._intent.left_card(first)
-    _move(cards, target)
-    pump(lambda: cards.is_open(second))
-    cards.close(second)
-
-
-def test_escape_closes_a_card_the_pointer_opened(window):
-    from gi.repository import Gdk
-
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    _open_by_rest(cards, row)
-    assert cards._on_window_key(None, Gdk.KEY_Escape, 0, 0)
-    pump(lambda: not cards.is_open(row))
-    # It stays closed while the pointer stays on the row.
-    box = cards._anchor_box(row)
-    cards._intent.pointer(row, (box[0] + 20, box[1] + 10))
-    _wait(0.5)
-    assert not cards.is_open(row)
-
-
-def test_the_pointer_never_replaces_a_card_opened_by_a_click(window):
-    cards = window.effect_cards.hover_cards
-    pinned, other = window.bitrate_row, window.channels_row
-    window.present()
-    pump(lambda: other.get_mapped())
-    pinned.activate()
-    pump(lambda: cards.is_open(pinned))
-    box = cards._anchor_box(other)
-    cards._intent.pointer(other, ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
-    _wait(0.6)
-    assert cards.is_open(pinned) and not cards.is_open(other)
-    cards.close(pinned)
-
-
-def test_a_click_gives_the_keyboard_to_a_card_without_a_chosen_control(window, audio):
-    cards = window.effect_cards.hover_cards
-    row = window.pause_row  # its card's body is a container
-    window.file_queue.add_file(str(audio))
-    window.present()
-    pump(lambda: row.get_mapped() and row.is_sensitive())
-    row.activate()
-    panel = cards.panels[row]
-    pump(lambda: cards.is_open(row))
-    assert window.get_focus() is not None and window.get_focus().is_ancestor(panel)
-    cards.close(row)
-    assert window.get_focus() is row
-
-
-def _focus_x11_window(window):
-    import gi
-
-    gi.require_version("GdkX11", "4.0")
-    from gi.repository import GdkX11
-
-    surface = window.get_native().get_surface()
-    assert isinstance(surface, GdkX11.X11Surface)
-    xid = str(surface.get_xid())
-    subprocess.run(["xdotool", "windowfocus", "--sync", xid], check=True, timeout=5)
-    return xid
-
-
-@pytest.mark.skipif(
-    not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",
-    reason="xdotool supplies native keys to X11 windows",
-)
-@pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
-def test_a_pinned_card_keeps_tab_inside_and_escape_returns_to_its_row(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    _focus_x11_window(window)
-    row.grab_focus()
-    row.activate()
-    panel = cards.panels[row]
-    pump(
-        lambda: window.get_focus() is not None and window.get_focus().is_ancestor(panel)
-    )
-    seen = set()
-    for _ in range(8):
-        subprocess.run(["xdotool", "key", "Tab"], check=True, timeout=5)
-        pump(lambda: True)
-        focus = window.get_focus()
-        assert focus is not None and focus.is_ancestor(panel)
-        seen.add(focus)
-    assert len(seen) > 1  # it moved, and wrapped instead of leaving
-    subprocess.run(["xdotool", "key", "Escape"], check=True, timeout=5)
-    pump(lambda: not cards.is_open(row))
-    assert window.get_focus() is row
-
-
-@pytest.mark.skipif(
-    not shutil.which("xdotool") or os.environ.get("GDK_BACKEND") != "x11",
-    reason="xdotool supplies native pointer clicks to X11 windows",
-)
-@pytest.mark.filterwarnings("ignore:GdkX11.X11Surface.get_xid:DeprecationWarning")
-def test_a_click_outside_a_pinned_card_closes_it_and_still_lands(window):
-    from gi.repository import Graphene
-
-    cards = window.effect_cards.hover_cards
-    row, target = window.compressor_row, window.normalize_row
-    window.present()
-    pump(lambda: row.get_mapped() and target.get_mapped())
-    xid = _focus_x11_window(window)
-    row.activate()
-    pump(lambda: cards.is_open(row) and cards._card_box(row) is not None)
-    _found, point = target.compute_point(
-        window, Graphene.Point().init(target.get_width() / 2, target.get_height() / 2)
-    )
-    dx, dy = window.get_surface_transform()
-    x, y = str(round(point.x + dx)), str(round(point.y + dy))
-    subprocess.run(
-        ["xdotool", "mousemove", "--window", xid, x, y, "click", "1"],
-        check=True,
-        timeout=5,
-    )
-    pump(lambda: target.get_active())
-    assert not cards.is_open(row)
-    target.set_active(False)
-
-
-def test_an_open_card_follows_its_row_when_the_window_resizes(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    # Both sizes keep the sidebar beside the queue; it narrows with the window.
-    window.set_default_size(1340, 760)
-    window.present()
-    pump(lambda: row.get_mapped() and window.get_width() > 1300)
-    row.activate()
-    pump(lambda: cards._card_box(row) is not None)
-    _wait(0.3)
-    before_card, before_row = cards._card_box(row), cards._anchor_box(row)
-    window.set_default_size(1120, 560)
-    pump(lambda: window.get_width() < 1200)
-    pump(lambda: cards._anchor_box(row) != before_row)
-    _wait(0.3)
-    anchor, card = cards._anchor_box(row), cards._card_box(row)
-    # The row narrowed with the sidebar, and the card kept its place beside it.
-    assert anchor[2] < before_row[2]
-    assert abs((card[0] - anchor[2]) - (before_card[0] - before_row[2])) <= 1
-    assert card[1] >= 0 and card[3] <= window.get_height()
-    cards.close(row)
-
-
-def test_the_pointer_leaving_the_window_closes_its_card(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    _open_by_rest(cards, row)
-    # The window's controller was there before the pointer came in, so GTK
-    # tells it when the pointer leaves.
-    root, (motion, _keys, _press) = cards._watched
-    assert root is window and motion.get_widget() is window
-    cards._on_window_leave(motion)
-    pump(lambda: not cards.is_open(row))
-
-
-def test_nothing_keeps_running_once_a_card_closed(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    _open_by_rest(cards, row)
-    assert cards._after_paint is not None and cards._root is window
-    _move(cards, (window.get_width() - 5, window.get_height() - 5))
-    pump(lambda: not cards.is_open(row))
-    _wait(0.4)  # past the warm window
-    # No timer or frame-clock handler is left behind; the window's pointer
-    # controller returns at once while no card is open.
-    assert cards._sources == set()
-    assert cards._after_paint is None and cards._root is None
-
-
-def test_scrolling_the_sidebar_closes_the_pointers_card(window):
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.set_default_size(1000, 480)
-    window.present()
-    pump(lambda: row.get_mapped())
-    _open_by_rest(cards, row)
-    adjustment = window.effect_cards.scrolled.get_vadjustment()
-    pump(lambda: adjustment.get_upper() > adjustment.get_page_size())
-    adjustment.set_value(adjustment.get_value() + 40)
-    pump(lambda: not cards.is_open(row))
-
-
-def test_the_bar_equalizer_button_shows_and_hides_its_panel(window):
+def test_equalizer_button_toggles_its_panel(window):
     button = window.equalizer_button
     button.set_active(True)
     assert window.eq_revealer.get_reveal_child()
@@ -1155,7 +610,7 @@ def test_the_bar_equalizer_button_shows_and_hides_its_panel(window):
     assert window.adjustments_label.get_label() == "1 adjustment"
 
 
-def test_a_switch_row_flips_on_activation_without_a_card(window):
+def test_switch_row_flips_on_activation(window):
     row = window.normalize_row
     row.activate()
     assert row.get_active() and window.player.normalize
@@ -1165,7 +620,7 @@ def test_a_switch_row_flips_on_activation_without_a_card(window):
     assert not row.get_active()
 
 
-def test_copy_mode_closes_the_card_and_disables_the_rows(window):
+def test_copy_mode_disables_the_effect_rows(window):
     window.present()
     pump(lambda: window.compressor_row.get_mapped())
     cards = window.effect_cards.hover_cards
@@ -1208,7 +663,7 @@ def test_pause_progress_shows_on_the_row(window, audio, monkeypatch):
     assert window.pause_row.value_label.get_text() == "Off"
 
 
-def test_the_original_preview_shows_only_while_an_adjustment_is_on(window):
+def test_original_preview_needs_an_active_adjustment(window):
     preview = window.original_preview
     assert not preview.get_visible()
     window.compressor_row.steps.set_selected(1)
@@ -1222,7 +677,7 @@ def test_the_original_preview_shows_only_while_an_adjustment_is_on(window):
     assert not window.player.effects_bypassed
 
 
-def test_the_bar_shows_the_time_and_zooms_with_buttons(window, audio):
+def test_bar_shows_time_and_zoom_slider(window, audio):
     window.file_queue.add_file(str(audio))
     pump(lambda: window.visualizer.duration > 0)
     assert (window.elapsed_label.get_label(), window.total_label.get_label()) == (
@@ -1231,300 +686,27 @@ def test_the_bar_shows_the_time_and_zooms_with_buttons(window, audio):
     )
     window.seekbar.set_position(1.4)
     assert window.elapsed_label.get_label() == "0:01"
-    assert not window.zoom_out_button.get_sensitive()
-    window.zoom_out_button.get_parent().get_last_child().emit("clicked")
-    assert window.visualizer.zoom_level > 1
-    assert window.zoom_out_button.get_sensitive()
+    assert not window.zoom_reset_button.get_sensitive()
+    # Halfway up the slider is the square root of the deepest zoom.
+    window.zoom_adjustment.set_value(50)
+    assert round(window.visualizer.zoom_level) == round(window.visualizer.max_zoom**0.5)
+    assert window.zoom_value.get_label() == "32×"
+    window.zoom_adjustment.set_value(100)
+    assert window.zoom_value.get_label() == "1000×"
+    window.zoom_adjustment.set_value(5)
+    assert window.zoom_value.get_label() == "1.4×"
+    window.zoom_adjustment.set_value(50)
+    assert window.zoom_reset_button.get_sensitive()
+    # Zooming on the waveform moves the slider with it.
+    window.visualizer.zoom_out()
+    assert window.zoom_adjustment.get_value() < 50
     window.zoom_reset_button.emit("clicked")
     assert window.visualizer.zoom_level == 1
-    assert window.zoom_reset_button.get_label() == "1×"
+    assert window.zoom_adjustment.get_value() == 0
+    assert window.zoom_value.get_label() == "1×"
 
 
-def test_an_empty_queue_offers_adding_files_and_no_player(window, audio):
-    queue = window.file_queue
-    assert queue.stack.get_visible_child_name() == "empty"
-    assert not window.visualizer_container.get_visible()
-    assert not window.lookup_action("clear-queue").get_enabled()
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending and window.visualizer.duration > 0)
-    assert queue.stack.get_visible_child_name() == "files"
-    assert window.visualizer_container.get_visible()
-    assert window.queue_label.get_label() == "1 file · 0:02"
-    # Cuts are work: clearing them asks first.
-    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
-    window.activate_action("win.clear-queue", None)
-    assert queue.files == [str(audio)]
-    window.visualizer.clear_all_markers()
-    window.activate_action("win.clear-queue", None)
-    assert queue.files == []
-    assert queue.stack.get_visible_child_name() == "empty"
-    assert not window.visualizer_container.get_visible()
-
-
-def test_delete_removes_the_focused_entry_and_keeps_the_file(window, audio, tmp_path):
-    queue = window.file_queue
-    second = tmp_path / "second.wav"
-    second.write_bytes(audio.read_bytes())
-    queue.add_files([str(audio), str(second)])
-    pump(lambda: len(queue.files) == 2 and not queue.pending)
-    pump(lambda: window.visualizer.duration > 0)
-    window.visualizer.restore_markers([{"start": 0.2, "stop": 0.5}])
-    window._update_cut_rows()
-    assert queue.file_rows[0].get_subtitle().endswith(" · 1 segment")
-    queue.file_rows[0].grab_focus()
-    assert queue._remove_focused_row()
-    assert queue.files == [str(second)]
-    assert audio.is_file()
-    assert queue.file_list.get_focus_child() is queue.file_rows[0]
-
-
-def test_converting_locks_the_queue_and_reports_in_a_banner(window, audio):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    window.format_row.set_selected(window._format_list.index("flac"))
-    window.activate_action("win.convert", None)
-    assert window.converter.busy
-    assert window.convert_button.get_label() == "Cancel"
-    assert not window.options_scroll.get_sensitive()
-    assert not window.lookup_action("add-files").get_enabled()
-    assert not queue.file_rows[0].remove_button.get_sensitive()
-    assert window.queue_label.get_label().startswith("Converting 1 of 1")
-    pump(lambda: window.conversion.last_batch is not None)
-    assert window.convert_button.get_label() == "Convert 1 file"
-    assert window.options_scroll.get_sensitive()
-    assert queue.file_rows[0].remove_button.get_sensitive()
-    assert window.banner.get_revealed()
-    assert window.banner.get_title() == "1 file converted"
-    assert queue.file_rows[0].result_box.get_first_child() is not None
-    assert window.queue_label.get_label() == "1 file · 0:02"
-
-
-def test_cancelling_leaves_no_partial_output_and_offers_retry(window, audio):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    window.format_row.set_selected(window._format_list.index("flac"))
-    before = set(audio.parent.iterdir())
-    window.activate_action("win.convert", None)
-    window.activate_action("win.cancel-conversion", None)
-    pump(lambda: window.conversion.last_batch is not None)
-    assert window.conversion.last_batch.items[0].status == "cancelled"
-    assert set(audio.parent.iterdir()) == before
-    assert window.banner.get_title() == "1 file was not converted"
-    assert window.banner.get_button_label() == "Try Again"
-
-
-def test_a_video_expanding_into_tracks_keeps_the_shown_file(
-    window, audio, tmp_path, monkeypatch
-):
-    video = tmp_path / "two tracks.mka"
-    subprocess.run(
-        ["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=duration=1"]
-        + ["-f", "lavfi", "-i", "sine=frequency=500:duration=1"]
-        + ["-map", "0", "-map", "1", str(video)],
-        check=True,
-    )
-    queue = window.file_queue
-    deliver = queue._probe_ready
-    held = []
-
-    # The video's tracks arrive after the plain file is already shown below it.
-    def probe_ready(token, path, info, error):
-        if path == str(video):
-            held.append((token, path, info, error))
-        else:
-            deliver(token, path, info, error)
-
-    monkeypatch.setattr(queue, "_probe_ready", probe_ready)
-    queue.add_file(str(video))
-    queue.add_file(str(audio))
-    pump(lambda: held and queue.active_file_index is not None)
-    assert queue.files[queue.active_file_index] == str(audio)
-    deliver(*held[0])
-    assert len(queue.files) == 3
-    assert queue.files[queue.active_file_index] == str(audio)
-
-
-def test_try_again_uses_the_current_settings_and_queue(window, audio, monkeypatch):
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending)
-    window.format_row.set_selected(window._format_list.index("flac"))
-    window.activate_action("win.convert", None)
-    window.activate_action("win.cancel-conversion", None)
-    pump(lambda: window.conversion.last_batch is not None)
-    window.format_row.set_selected(window._format_list.index("mp3"))
-    started = []
-    monkeypatch.setattr(
-        window.converter,
-        "start_batch",
-        lambda files, settings, *_: started.append((files, settings["format"])),
-    )
-    window.conversion.banner_activated()
-    assert started == [((str(audio),), "mp3")]
-
-    started.clear()
-    window.conversion._banner_action = ("retry", (str(audio),))
-    queue.remove_file(0)
-    window.conversion.banner_activated()
-    assert started == []
-    assert not window.banner.get_revealed()
-
-
-def test_marked_speech_exports_as_one_file_without_the_pauses(window, audio):
-    import json
-    import subprocess
-
-    queue = window.file_queue
-    queue.add_file(str(audio))
-    pump(lambda: not queue.pending and window.visualizer.duration > 0)
-    panel = window.pause_panel
-    panel.length_buttons[0].set_active(True)
-    panel._on_found(None, [-6.0] * 50 + [-80.0] * 100 + [-6.0] * 50)
-    window.format_row.set_selected(window._format_list.index("flac"))
-    window.on_convert(None)
-    pump(lambda: window.conversion.last_batch is not None)
-    [item] = window.conversion.last_batch.items
-    assert item.successful and len(item.outputs) == 1
-    probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_format", "-of", "json", item.outputs[0]],
-        capture_output=True,
-        check=True,
-        text=True,
-    )
-    # 0.65 s + 0.65 s of speech; the 0.7 s pause is gone.
-    assert float(json.loads(probe.stdout)["format"]["duration"]) == pytest.approx(
-        1.3, abs=0.05
-    )
-
-
-def test_volume_speed_and_voice_sit_in_the_playback_bar(window):
-    preview = window.original_preview
-    window.volume_spin.set_value(150)
-    assert window.volume_value.get_label() == "150"
-    assert window.volume_button.get_icon_name() == "audio-volume-high-symbolic"
-    # A bar adjustment counts like a row: the original can be heard.
-    assert preview.get_visible()
-    assert window.adjustments_label.get_label() == "1 adjustment"
-    window.speed_spin.set_value(1.25)
-    assert window.speed_value.get_label() == "1.25x"
-    assert window.adjustments_label.get_label() == "2 adjustments"
-    window.volume_spin.set_value(100)
-    window.speed_spin.set_value(1.0)
-    assert not preview.get_visible()
-    # The voice and its model are in the bar's card, not in the sidebar.
-    assert window.voice_value.get_label() == "0"
-    assert window.noise_model.is_ancestor(window.bar_cards.panels["voice"])
-
-
-def test_bar_controls_keep_their_width_whatever_their_cards_hold(window, audio):
-    import time
-
-    from gi.repository import GLib
-
-    window.file_queue.add_file(str(audio))
-    pump(lambda: not window.file_queue.pending)
-    window.present()
-    voice = window.voice_button.get_parent()
-    pump(lambda: voice.get_mapped() and voice.get_width())
-    closed = voice.get_width()
-    # An open card's expanding choices must not widen the control it points
-    # at, which would aim the card's tab past the button.
-    window.bar_cards.open("voice")
-    pump(lambda: window.bar_cards.is_open("voice"))
-    # The next layouts would widen it; give them a few frames.
-    context = GLib.MainContext.default()
-    deadline = time.monotonic() + 0.3
-    while time.monotonic() < deadline:
-        context.iteration(False)
-    assert voice.get_width() == closed
-    window.bar_cards.close("voice")
-
-
-def test_moving_along_the_bar_hands_the_card_to_the_next_control(window, audio):
-
-    from gi.repository import Gdk, Gtk
-
-    # Themes such as the BigLinux one give cards a wide shadow.
-    shadow = Gtk.CssProvider()
-    shadow.load_from_string(
-        ".hover-card { box-shadow: 0 6px 40px 12px alpha(black, 0.3); }"
-    )
-    Gtk.StyleContext.add_provider_for_display(
-        Gdk.Display.get_default(), shadow, Gtk.STYLE_PROVIDER_PRIORITY_USER
-    )
-    window.file_queue.add_file(str(audio))
-    pump(lambda: not window.file_queue.pending)
-    window.present()
-    cards = window.bar_cards
-    speed, voice = (b.get_parent() for b in (window.speed_button, window.voice_button))
-    pump(lambda: speed.get_mapped())
-    cards.open("speed")
-    pump(lambda: cards.is_open("speed") and cards._card_box("speed") is not None)
-    # The microphone lies under the speed card's shadow, not under the card:
-    # resting there takes over.
-    from gi.repository import Graphene
-
-    _found, point = voice.compute_point(
-        window, Graphene.Point().init(4, voice.get_height() / 2)
-    )
-    cards._on_window_motion(None, point.x, point.y)
-    pump(lambda: cards.is_open("voice"))
-    assert not cards.is_open("speed")
-    cards.close_all()
-    Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), shadow)
-
-
-def test_the_bar_and_the_sidebar_never_show_two_cards(window, audio):
-    window.file_queue.add_file(str(audio))
-    pump(lambda: not window.file_queue.pending)
-    window.present()
-    bar, cards = window.bar_cards, window.effect_cards.hover_cards
-    row = window.compressor_row
-    pump(lambda: row.get_mapped() and window.volume_button.get_mapped())
-    bar.open("volume")
-    pump(lambda: bar.is_open("volume"))
-    cards.open(row)
-    assert cards.is_open(row) and not bar.is_open("volume")
-    cards.close(row)
-    # A card a click opened stays; the pointer opens nothing beside it.
-    bar.open_for_keyboard("volume")
-    _hand_driven(cards)
-    box = cards._anchor_box(row)
-    cards._intent.pointer(row, ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
-    _wait(0.6)
-    assert bar.is_open("volume") and not cards.is_open(row)
-    bar.close("volume")
-
-
-def test_a_rows_card_opens_once_the_pointer_rests_on_the_row(window):
-    import time
-    from types import SimpleNamespace
-
-    cards = window.effect_cards.hover_cards
-    row = window.compressor_row
-    window.present()
-    pump(lambda: row.get_mapped())
-    controller = SimpleNamespace(get_widget=lambda: row)
-    # Passing over: in and out within the wait opens nothing.
-    cards._on_anchor_pointer(controller, 10, 10, row)
-    assert not cards.is_open(row)
-    cards._on_anchor_leave(controller, row)
-    started = time.monotonic()
-    pump(lambda: time.monotonic() - started > 0.3)
-    assert not cards.is_open(row)
-    # Resting: it opens after the wait.
-    cards._on_anchor_pointer(controller, 10, 10, row)
-    started = time.monotonic()
-    pump(lambda: cards.is_open(row))
-    assert time.monotonic() - started >= 0.2
-    cards.close(row)
-
-
-def test_output_and_encoding_choices_are_rows_and_count_as_no_adjustment(
-    window, tmp_path
-):
+def test_output_choices_count_as_no_adjustment(window, tmp_path):
     format_choice, quality = window.format_row, window.bitrate_row
     assert format_choice.value_label.get_text() == "MP3"
     assert quality.value_label.get_text() == "Very good · 192 kbps"
@@ -1552,9 +734,7 @@ def test_output_and_encoding_choices_are_rows_and_count_as_no_adjustment(
     assert not window.destination_button.get_visible()
 
 
-def test_part_choices_appear_with_marks_and_joining_with_two_files(
-    window, audio, tmp_path
-):
+def test_part_choices_unlock_when_usable(window, audio, tmp_path):
     queue = window.file_queue
     # Every row is in place from the start; unavailable ones say why on
     # the row, where the value goes.
@@ -1583,14 +763,70 @@ def test_part_choices_appear_with_marks_and_joining_with_two_files(
     assert window.effect_cards.active_count() == 0
 
 
-def test_a_long_option_in_a_card_wraps_instead_of_widening_it(window):
-    # FLAC adds the 24-bit row, whose explanation is one long line.
-    row = window.format_row
-    row.set_selected(window._format_list.index("flac"))
-    window.present()
-    pump(lambda: row.get_mapped())
-    cards = window.effect_cards.hover_cards
-    cards.open(row)
-    pump(lambda: cards.is_open(row) and row.card.get_width())
-    assert row.card.get_width() <= 340
-    cards.close(row)
+def test_hover_help_toggles_every_tooltip_card(window):
+    from big_gtk_kit import tooltip
+    from gi.repository import GLib
+
+    tips = window.get_application().lookup_action("toggle-tips")
+    tips.change_state(GLib.Variant.new_boolean(False))
+    assert not tooltip._enabled and not window.visualizer.show_hint
+    # Screen readers keep the text as the button's description.
+    assert window.segment_edit_button.get_tooltip_text()
+    tips.change_state(GLib.Variant.new_boolean(True))
+    assert tooltip._enabled and window.visualizer.show_hint
+
+
+def test_kept_parts_draw_green_with_edges():
+    import gi
+
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Adw", "1")
+    import cairo
+    import numpy as np
+    from app.ui.visualizer import AudioVisualizer
+
+    view = AudioVisualizer()
+    view.set_waveform({"peaks": np.full(6000, 0.8, dtype=np.float32), "rate": 1000}, 6)
+    view.duration = 6.0
+    # A two-second part and one of 10 ms, two pixels at this width.
+    assert view.restore_markers([{"start": 1, "stop": 3}, {"start": 4, "stop": 4.01}])
+    width, height = 1200, 120
+    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
+    view.on_draw(view, cairo.Context(surface), width, height)
+    surface.flush()
+    data, stride = surface.get_data(), surface.get_stride()
+
+    def rgb(x, y):
+        b, g, r = data[y * stride + 4 * x : y * stride + 4 * x + 3]
+        return r, g, b
+
+    inside, outside = rgb(400, 60), rgb(100, 60)
+    assert inside[1] > inside[0] + 60 and inside[1] > inside[2] + 60
+    assert not outside[1] > outside[2] + 60
+    start, stop = rgb(799, 60), rgb(802, 60)
+    assert start[0] > start[1] + 60  # red start edge
+    assert stop[1] > stop[0] + 60  # green end edge
+
+
+def test_seekbar_lines_up_with_waveform(window, audio):
+    window.file_queue.add_file(str(audio))
+    pump(lambda: window.visualizer.duration > 0)
+    pump()
+
+    def span(widget):
+        found, box = widget.compute_bounds(window)
+        assert found
+        return box.get_x(), box.get_x() + box.get_width()
+
+    # The track, inset for the thumb, covers the waveform's width exactly.
+    seek_x0, _seek_x1 = span(window.seekbar)
+    track_x0 = seek_x0 + window.seekbar._track_x
+    track = (track_x0, track_x0 + window.seekbar._track_w)
+    assert track == span(window.visualizer)
+    # "Only the selection" on the left, "Edit Segments" on the right, before
+    # the zoom.
+    _sel_x0, sel_x1 = span(window.play_selection_switch)
+    play_x0, play_x1 = span(window.pause_play_btn)
+    edit_x0, edit_x1 = span(window.segment_edit_button)
+    assert sel_x1 < play_x0 and play_x1 < edit_x0
+    assert edit_x1 < span(window.zoom_button)[0]

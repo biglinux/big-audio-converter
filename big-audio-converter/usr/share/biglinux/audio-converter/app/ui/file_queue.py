@@ -52,7 +52,9 @@ def open_containing_folder(widget, path):
 def _result_details(item):
     """A status button whose popover says what went wrong and why."""
     status = {
-        "success": _("Converted with warnings"),
+        "success": _("Converted with warnings")
+        if item.warnings
+        else _("Converted, original kept"),
         "failed": _("Failed"),
         "cancelled": _("Cancelled"),
     }[item.status]
@@ -66,7 +68,7 @@ def _result_details(item):
     )
     heading = Gtk.Label(label=status, xalign=0, css_classes=["heading"])
     box.append(heading)
-    for text in (item.message, *item.warnings):
+    for text in (item.message, *item.warnings, item.original):
         if text:
             # Not selectable: a popover would focus and select it on opening.
             box.append(Gtk.Label(label=text, wrap=True, xalign=0, max_width_chars=50))
@@ -143,15 +145,28 @@ class FileQueueRow(Adw.ActionRow):
                 lambda row: row.on_activate_callback(row.file_path, row.index),
             )
 
-        # The row's own play button, a round badge leading the row.
-        self.play_button = Gtk.Button(
-            valign=Gtk.Align.CENTER, css_classes=["circular", "queue-badge"]
-        )
+        self.play_button = Gtk.Button(valign=Gtk.Align.CENTER, css_classes=["flat"])
         self.show_playing(False)
         self.play_button.connect(
             "clicked", lambda btn: owner.on_play_callback(owner.file_path, owner.index)
         )
         self.add_prefix(self.play_button)
+
+        # Only the entry: the delete action at the row's end deletes the file.
+        # Prefixes go before the earlier ones: this leads the row.
+        self.remove_button = Gtk.Button(
+            icon_name="edit-delete-symbolic",
+            tooltip_text=_("Remove from queue"),
+            valign=Gtk.Align.CENTER,
+            css_classes=["flat"],
+        )
+        self.remove_button.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Remove from queue")]
+        )
+        self.remove_button.connect(
+            "clicked", lambda btn: owner.on_remove_callback(owner.index)
+        )
+        self.add_prefix(self.remove_button)
 
         # Progress bar (right side)
         self.progress_bar = Gtk.ProgressBar()
@@ -164,84 +179,45 @@ class FileQueueRow(Adw.ActionRow):
         self.result_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
         self.add_suffix(self.result_box)
 
-        # Only the entry: the menu's "Move to Trash" is the one that deletes.
-        self.remove_button = Gtk.Button(
-            icon_name="window-close-symbolic",
-            tooltip_text=_("Remove from queue"),
-            valign=Gtk.Align.CENTER,
-            css_classes=["flat", "circular"],
-        )
-        self.remove_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Remove from queue")]
-        )
-        self.remove_button.connect(
-            "clicked", lambda btn: owner.on_remove_callback(owner.index)
-        )
-        self.add_suffix(self.remove_button)
+        # Shown while the pointer is on the row or the keyboard focus on them
+        # (style.css). A click leaves the focus where it was, or a closed
+        # dialog would give it back here and keep them shown. The deleting
+        # one last and red, apart from the queue's own remove.
+        actions = Gtk.Box(valign=Gtk.Align.CENTER, css_classes=["row-actions"])
+        for icon, label, callback, classes in (
+            (
+                "folder-open-symbolic",
+                _("Open Containing Folder"),
+                lambda _b: open_containing_folder(owner, owner.source_path),
+                [],
+            ),
+            (
+                "help-about-symbolic",
+                _("More Information..."),
+                lambda _b: owner._on_show_info(),
+                [],
+            ),
+            (
+                "user-trash-symbolic",
+                _("Move to Trash"),
+                lambda _b: owner.on_delete_callback(owner.index, owner.file_path),
+                ["error"],
+            ),
+        ):
+            button = Gtk.Button(
+                icon_name=icon,
+                tooltip_text=label,
+                css_classes=["flat", *classes],
+                focus_on_click=False,
+            )
+            button.update_property([Gtk.AccessibleProperty.LABEL], [label])
+            button.connect("clicked", callback)
+            actions.append(button)
+        self.info_button = actions.get_first_child().get_next_sibling()
+        self.delete_button = actions.get_last_child()
+        self.add_suffix(actions)
 
-        self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic")
-        self.more_button.add_css_class("flat")
-        self.more_button.set_valign(Gtk.Align.CENTER)
-        self.more_button.set_tooltip_text(_("File actions"))
-        self.more_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("File actions")]
-        )
-        self.more_button.set_create_popup_func(
-            lambda button: owner._setup_context_menu(button)
-        )
-        self.add_suffix(self.more_button)
-        right_click = Gtk.GestureClick.new()
-        right_click.set_button(3)
-        right_click.connect(
-            "pressed", lambda gesture, *_: gesture.get_widget().more_button.popup()
-        )
-        self.add_controller(right_click)
-
-    def _setup_context_menu(self, button, *_args):
-        """Allocate a row's menu only when it is opened, including by keyboard."""
-        owner = weakref.proxy(self)
-        menu = Gtk.PopoverMenu()
-        menu_model = Gio.Menu()
-
-        # Delete file from filesystem action
-        menu_model.append(_("Move to Trash"), "row.delete")
-
-        # Open containing folder action
-        menu_model.append(_("Open Containing Folder"), "row.open_folder")
-
-        # More information action
-        menu_model.append(_("More Information..."), "row.info")
-
-        menu.set_menu_model(menu_model)
-
-        action_group = Gio.SimpleActionGroup()
-
-        # Delete action (with confirmation)
-        delete_action = Gio.SimpleAction.new("delete", None)
-        delete_action.connect(
-            "activate",
-            lambda a, p: owner.on_delete_callback(owner.index, owner.file_path),
-        )
-        action_group.add_action(delete_action)
-
-        # Open folder action
-        open_folder_action = Gio.SimpleAction.new("open_folder", None)
-        open_folder_action.connect(
-            "activate", lambda *_: open_containing_folder(owner, owner.source_path)
-        )
-        action_group.add_action(open_folder_action)
-
-        # Info action
-        info_action = Gio.SimpleAction.new("info", None)
-        info_action.connect(
-            "activate", lambda action, param: owner._on_show_info(action, param)
-        )
-        action_group.add_action(info_action)
-
-        self.insert_action_group("row", action_group)
-        button.set_popover(menu)
-
-    def _on_show_info(self, action, param):
+    def _on_show_info(self):
         if self.media_probe is None:
             return
         dialog = FileInfoWindow(
@@ -272,7 +248,7 @@ class FileQueueRow(Adw.ActionRow):
             self.result_box.remove(child)
         if item is None:
             return
-        if item.successful and not item.warnings:
+        if item.successful and not item.warnings and not item.original_kept:
             done = Gtk.Image(
                 icon_name="object-select-symbolic", css_classes=["success"]
             )
@@ -282,8 +258,9 @@ class FileQueueRow(Adw.ActionRow):
             self.result_box.append(_result_details(item))
         if item.outputs:
             owner = weakref.proxy(self)
+            # Not the source's folder icon, which the row shows on hover.
             reveal = Gtk.Button(
-                icon_name="folder-open-symbolic",
+                icon_name="folder-music-symbolic",
                 tooltip_text=_("Show output file"),
                 css_classes=["flat", "circular"],
             )
@@ -297,6 +274,11 @@ class FileQueueRow(Adw.ActionRow):
                 ),
             )
             self.result_box.append(reveal)
+
+    def show_delete_mode(self, permanent):
+        label = _("Delete Permanently") if permanent else _("Move to Trash")
+        self.delete_button.set_tooltip_text(label)
+        self.delete_button.update_property([Gtk.AccessibleProperty.LABEL], [label])
 
     def show_playing(self, playing):
         label = _("Stop") if playing else _("Play file")
@@ -332,11 +314,12 @@ class FileQueueRow(Adw.ActionRow):
 class FileQueue(Gtk.Box):
     """Widget for managing a queue of files to be converted."""
 
-    def __init__(self, converter, help_tooltips, file_markers):
+    def __init__(self, converter, file_markers):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
         self.converter = converter
-        self._help_tooltips = help_tooltips
+        # Set from the window's "Delete Without Using the Trash".
+        self.permanent_delete = False
         # The window's cuts by entry; a file expanded into tracks hands its cuts on.
         self._file_markers = file_markers
         self.files = []  # List of file paths
@@ -363,7 +346,6 @@ class FileQueue(Gtk.Box):
 
         self.file_list = Gtk.ListBox(
             selection_mode=Gtk.SelectionMode.NONE,
-            valign=Gtk.Align.START,
             css_classes=["boxed-list"],
             margin_start=12,
             margin_end=12,
@@ -399,10 +381,7 @@ class FileQueue(Gtk.Box):
                 button=_("Add Files")
             )
             + "\n"
-            + _(
-                "Each audio track of a video becomes its own entry. "
-                "The originals are never changed."
-            ),
+            + _("Each audio track of a video becomes its own entry."),
         )
         self.stack = Gtk.Stack(
             transition_type=Gtk.StackTransitionType.CROSSFADE, vexpand=True
@@ -418,7 +397,7 @@ class FileQueue(Gtk.Box):
 
         self.file_removed_signal = None  # Will be set by MainWindow
 
-    def _add_track_entry(self, video_file, track_info, track_display_index):
+    def _add_track_entry(self, video_file, track_info, track_display_index, count):
         """Expand an inspected source without additional blocking probes."""
         codec = track_info.get("codec_name", "unknown")
         # An audio-only container rather than a guessed AAC for unknown codecs.
@@ -442,6 +421,7 @@ class FileQueue(Gtk.Box):
             "bitrate": track_info.get("bit_rate", ""),
             "language": track_info.get("tags", {}).get("language", ""),
             "title": track_info.get("tags", {}).get("title", ""),
+            "track_count": count,
         }
         row = self._append_row(identifier)
         row.source_path = video_file
@@ -459,10 +439,11 @@ class FileQueue(Gtk.Box):
             self.on_activate_file,
         )
         row.media_probe = self._probes
+        row.show_delete_mode(self.permanent_delete)
+        row.remove_button.set_sensitive(not self.converter.busy)
         self.files.append(identifier)
         self.file_rows.append(row)
         self.file_list.append(row)
-        self._apply_row_tooltips(row)
         drag = Gtk.DragSource(actions=Gdk.DragAction.MOVE)
         drag.connect("prepare", weak_callback(self._on_row_drag_prepare))
         drag.connect("drag-begin", weak_callback(self._on_row_drag_begin))
@@ -518,7 +499,7 @@ class FileQueue(Gtk.Box):
                 cuts = self._file_markers.pop(path, None)
                 added = []
                 for number, track in enumerate(tracks, 1):
-                    if self._add_track_entry(path, track, number):
+                    if self._add_track_entry(path, track, number, len(tracks)):
                         added.append((self.files.pop(), self.file_rows.pop()))
                 for offset, (identifier, track_row) in enumerate(added):
                     self.file_list.remove(track_row)
@@ -644,23 +625,39 @@ class FileQueue(Gtk.Box):
     def total_duration(self):
         return sum(row.duration for row in self.file_rows if row.duration)
 
+    def set_permanent_delete(self, permanent):
+        self.permanent_delete = permanent
+        for row in self.file_rows:
+            row.show_delete_mode(permanent)
+
     def on_delete_file(self, index, file_path):
         if self.converter.busy:
             self._trash_failed(
                 _(
-                    "Cancel the conversion or wait for it to finish before moving its input to Trash."
+                    "Cancel the conversion or wait for it to finish before deleting its input."
                 )
             )
             return
         actual = self.track_metadata.get(file_path, {}).get("source_video", file_path)
-        dialog = Adw.AlertDialog(
-            heading=_("Move File to Trash?"),
-            body=_(
-                "Move '{name}' to Trash? All of its tracks will be removed from the queue."
-            ).format(name=os.path.basename(actual)),
-        )
-        dialog.add_response("cancel", _("Cancel"))
-        dialog.add_response("trash", _("Move to Trash"))
+        name = os.path.basename(actual)
+        if self.permanent_delete:
+            dialog = Adw.AlertDialog(
+                heading=_("Delete File Permanently?"),
+                body=_(
+                    "'{name}' will be deleted without going to the Trash and cannot be recovered. All of its tracks will be removed from the queue."
+                ).format(name=name),
+            )
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("trash", _("Delete Permanently"))
+        else:
+            dialog = Adw.AlertDialog(
+                heading=_("Move File to Trash?"),
+                body=_(
+                    "Move '{name}' to Trash? All of its tracks will be removed from the queue."
+                ).format(name=name),
+            )
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("trash", _("Move to Trash"))
         dialog.set_response_appearance("trash", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response("cancel")
         dialog.set_close_response("cancel")
@@ -673,18 +670,24 @@ class FileQueue(Gtk.Box):
         if self.converter.busy:
             self._trash_failed(
                 _(
-                    "The file is in use by a conversion. Cancel it before moving the input to Trash."
+                    "The file is in use by a conversion. Cancel it before deleting the input."
                 )
             )
             return
+        permanent = self.permanent_delete
 
         def trashed(file, result):
             try:
-                file.trash_finish(result)
+                if permanent:
+                    file.delete_finish(result)
+                else:
+                    file.trash_finish(result)
             except GLib.Error:
                 if not self._closed:
                     self._trash_failed(
-                        _(
+                        _("The file could not be deleted.")
+                        if permanent
+                        else _(
                             "The file could not be moved to Trash. It has not been deleted."
                         )
                     )
@@ -694,7 +697,11 @@ class FileQueue(Gtk.Box):
                     if self.file_rows[index].source_path == path:
                         self.remove_file(index)
 
-        Gio.File.new_for_path(path).trash_async(GLib.PRIORITY_DEFAULT, None, trashed)
+        file = Gio.File.new_for_path(path)
+        if permanent:
+            file.delete_async(GLib.PRIORITY_DEFAULT, None, trashed)
+        else:
+            file.trash_async(GLib.PRIORITY_DEFAULT, None, trashed)
 
     def set_locked(self, locked):
         """While converting, entries are neither removed nor reordered."""
@@ -942,8 +949,3 @@ class FileQueue(Gtk.Box):
     def connect_file_removed_signal(self, callback):
         """Connect a callback to be notified when a file is removed."""
         self.file_removed_signal = callback
-
-    def _apply_row_tooltips(self, row):
-        """Apply custom tooltips to a file queue row."""
-        # The buttons' own tooltips take precedence over the row's.
-        self._help_tooltips.add_tooltip(row, "right_click_options")

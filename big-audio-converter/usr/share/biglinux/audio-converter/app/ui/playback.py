@@ -1,9 +1,13 @@
 """The window's playback: the shown file, auto-advance and marked-part playback."""
 
+import gettext
 import logging
+
+from gi.repository import Gtk
 
 from app.audio.media import complement
 
+_ = gettext.gettext
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +17,7 @@ class PlaybackMixin:
     def on_playback_finished(self, player):
         """Play the next file when auto-advance is on."""
 
-        if not self.auto_advance_switch.get_active():
+        if not self.auto_advance_action.get_state().get_boolean():
             self._playback_sources.idle(self.file_queue.update_playing_state, False)
             return
 
@@ -49,7 +53,7 @@ class PlaybackMixin:
             self.file_queue.set_currently_playing(index)
             self.player.play()
             # Sync button state immediately to avoid race with stop() idle callbacks
-            self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
+            self._show_playing(True)
 
     def on_activate_file(self, file_path, index):
         """Show the row's waveform; keep playing if playback was running."""
@@ -123,7 +127,7 @@ class PlaybackMixin:
             self.file_queue.set_currently_playing(index)
             self.player.play()
             # Sync UI immediately; the player's state callback confirms later.
-            self.pause_play_btn.set_icon_name("media-playback-pause-symbolic")
+            self._show_playing(True)
             self.file_queue.update_playing_state(True)
 
     def on_player_position_updated(self, player, position, duration):
@@ -340,10 +344,16 @@ class PlaybackMixin:
         is_playing = actual_state
 
         self.file_queue.update_playing_state(is_playing)
+        self._show_playing(is_playing)
+
+    def _show_playing(self, playing):
         self.pause_play_btn.set_icon_name(
             "media-playback-pause-symbolic"
-            if is_playing
+            if playing
             else "media-playback-start-symbolic"
+        )
+        self.pause_play_btn.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Pause") if playing else _("Play")]
         )
 
     def _on_pause_play_clicked(self, button):
@@ -416,10 +426,6 @@ class PlaybackMixin:
         else:
             if self._playing_selection:
                 self._playing_selection = False
-
-    def _on_auto_advance_switch_toggled(self, button):
-        is_active = button.get_active()
-        self.app.config.set("auto_advance_enabled", is_active)
 
     def _load_selection_segments(self):
         """Load segments from markers, or what remains when they are removed."""

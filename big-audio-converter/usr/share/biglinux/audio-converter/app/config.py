@@ -29,15 +29,21 @@ class AppConfig:
         "cut_audio_mode": (0, 2),
         "cut_output_mode": (0, 1),
         "pause_length": (0.5, 2),
+        "voice_sensitivity": (1, 5),
+        "voice_only_sensitivity": (1, 5),
     }
     BOOLS: ClassVar = {
         "noise_reduction_enabled",
+        "voice_only_enabled",
         "auto_advance_enabled",
         "compressor_enabled",
         "normalize_enabled",
         "allow_precision_reduction",
+        "bitrate_per_channel",
         "show_mouseover_tips",
         "window_maximized",
+        "delete_originals",
+        "skip_trash",
     }
 
     def __init__(self, config_dir=None):

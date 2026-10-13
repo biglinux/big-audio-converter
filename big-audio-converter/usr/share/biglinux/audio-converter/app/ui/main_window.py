@@ -10,7 +10,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from big_gtk_kit.hover_cards import CardLayer, HoverCards
+from big_gtk_kit.hover_cards import CardLayer
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 
 from app.audio.waveform import WaveformGenerator
@@ -22,9 +22,10 @@ from app.ui.equalizer_panel import EqualizerPanel
 from app.ui.file_queue import FileQueue
 from app.ui.help_tooltips import HelpTooltips
 from app.ui.playback import PlaybackMixin
+from app.ui.playback_panel import PlaybackPanelMixin
 from app.ui.segment_editor import SegmentEditor
 from app.ui.time_formatter import format_time_display
-from app.ui.visualizer import AudioVisualizer, SeekBar
+from app.ui.visualizer import AudioVisualizer
 
 _ = gettext.gettext
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 class MainWindow(
     ConversionSettingsMixin,
     PlaybackMixin,
+    PlaybackPanelMixin,
     Adw.ApplicationWindow,
 ):
     """Main application window."""
@@ -235,9 +237,14 @@ class MainWindow(
         self.visualizer.player = self.player
         self.setup_conversion_options(left_content)
         self.options_scroll = left_scroll
-        # The window title already names the app, so the options start at the
-        # top; empty space still moves the window like a header bar would.
-        left_box = Gtk.WindowHandle(child=left_scroll)
+        # The window buttons stay on the queue's header.
+        left_header = Adw.HeaderBar(
+            css_classes=["sidebar"],
+            decoration_layout="",
+            title_widget=Adw.WindowTitle(title="Big Audio Converter"),
+        )
+        left_box = Adw.ToolbarView(content=left_scroll)
+        left_box.add_top_bar(left_header)
 
         # Right: the queue, with adding and converting in the header's middle.
         right_box = Adw.ToolbarView(css_classes=["queue-pane"])
@@ -289,7 +296,6 @@ class MainWindow(
         self.queue_info.append(self.queue_label)
         queue_header.pack_start(self.queue_info)
 
-        # Blue until the queue has files; then Convert is the next step.
         # In the narrowest window adding shows as a plus.
         self.add_files_face = Gtk.Stack(hhomogeneous=False, interpolate_size=True)
         self.add_files_face.add_named(Gtk.Label(label=_("Add Files")), "label")
@@ -311,7 +317,11 @@ class MainWindow(
         queue_header.set_title_widget(center)
 
         menu = Gio.Menu()
-        menu.append(_("Show help on hover"), "app.toggle-tips")
+        menu.append_section(_("Playback"), self.playback_menu_section())
+        options_section = Gio.Menu()
+        options_section.append(_("Show help on hover"), "app.toggle-tips")
+        options_section.append(_("Delete Without Using the Trash"), "app.skip-trash")
+        menu.append_section(None, options_section)
         queue_section = Gio.Menu()
         queue_section.append(_("Clear Queue"), "win.clear-queue")
         queue_section.append(_("Reset All Settings…"), "win.reset-settings")
@@ -323,6 +333,13 @@ class MainWindow(
             icon_name="open-menu-symbolic", menu_model=menu, primary=True
         )
         menu_button.update_property([Gtk.AccessibleProperty.LABEL], [_("Main menu")])
+        # Outputs are looked up again each time the menu opens.
+        menu_button.get_popover().connect(
+            "notify::visible",
+            lambda popover, _pspec: (
+                owner.player.refresh_audio_devices() if popover.get_visible() else None
+            ),
+        )
         queue_header.pack_end(menu_button)
         right_box.add_top_bar(queue_header)
         # A finished batch: what happened, and the next step.
@@ -332,9 +349,7 @@ class MainWindow(
         )
         right_box.add_top_bar(self.banner)
 
-        self.file_queue = FileQueue(
-            self.converter, self.help_tooltips, self.file_markers
-        )
+        self.file_queue = FileQueue(self.converter, self.file_markers)
 
         self.file_queue.on_queue_size_changed = self._show_queue_summary
 
@@ -361,305 +376,10 @@ class MainWindow(
         self.split_view.set_sidebar(left_box)
         self.split_view.set_content(right_box)
 
-        visualizer_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        visualizer_container.add_css_class("playback-panel")
-
-        # As in the BigLinux players: volume, speed and voice on the left, the
-        # transport in the middle, the preview and waveform tools on the right.
-        # Their sliders open as the pointer reaches them.
-        self.bar_cards = HoverCards(self.card_layer, Gtk.PositionType.TOP)
-        adjust = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
-        self.volume_button, self.volume_value, _scale = self._bar_control(
-            adjust,
-            "volume",
-            "audio-volume-medium-symbolic",
-            _("Volume"),
-            self.volume_adjustment,
-            (self.volume_spin,),
-        )
-        self.speed_button, self.speed_value, _scale = self._bar_control(
-            adjust,
-            "speed",
-            "power-profile-performance-symbolic",
-            _("Speed"),
-            self.speed_adjustment,
-            (self.speed_spin,),
-        )
-        quality = Gtk.Label(
-            label=_("Cleaning quality"), css_classes=["caption", "dim-label"]
-        )
-        self.voice_button, self.voice_value, self.voice_scale = self._bar_control(
-            adjust,
-            "voice",
-            "audio-input-microphone-symbolic",
-            _("Clean voice"),
-            self.noise_adjustment,
-            (quality, self.noise_model, self.noise_status),
-        )
-        self.voice_value.set_label("0")
-        self._update_noise_availability()
-        end_box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
-
-        # Hear the same moment with and without the sidebar's adjustments.
-        self.original_preview = Adw.ToggleGroup(
-            valign=Gtk.Align.CENTER, visible=False, css_classes=["round"]
-        )
-        self.original_preview.add(Adw.Toggle(name="adjusted", label=_("Adjusted")))
-        self.original_preview.add(Adw.Toggle(name="original", label=_("Original")))
-        self.original_preview.set_active_name("adjusted")
-        self.original_preview.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Listen with or without adjustments")]
-        )
-        self.original_preview.connect(
-            "notify::active-name", lambda *_: owner._apply_effects_bypass()
-        )
-        end_box.append(self.original_preview)
-        self.effect_cards.on_changed = weak_callback(self._update_preview_toggle)
-
-        # Plays only the marked parts.
-        self.selection_content = Adw.ButtonContent(
-            icon_name="selection-mode-symbolic", label=_("Selection only")
-        )
-        self.play_selection_switch = Gtk.ToggleButton(child=self.selection_content)
-        self.play_selection_switch.add_css_class("flat")
-        self.play_selection_switch.set_active(False)
-        self.play_selection_switch.connect(
-            "toggled", weak_callback(self._on_play_selection_switch_toggled)
-        )
-        self.play_selection_switch.set_valign(Gtk.Align.CENTER)
-        self.play_selection_switch.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_("Play only selected area")],
-        )
-        end_box.append(self.play_selection_switch)
-
-        # The keyboard's way to the first mark, so it shows with any file.
-        self.segment_edit_button = Gtk.Button(label=_("Edit Segments…"))
-        self.segment_edit_button.add_css_class("flat")
-        self.segment_edit_button.set_valign(Gtk.Align.CENTER)
-        self.segment_edit_button.connect(
-            "clicked", weak_callback(self.on_edit_segments)
-        )
-        end_box.append(self.segment_edit_button)
-
-        # The readout between the zoom buttons resets the zoom.
-        self.zoom_box = Gtk.Box(valign=Gtk.Align.CENTER)
-        zoom_buttons = []
-        for icon, label, action in (
-            ("zoom-out-symbolic", _("Zoom out"), "zoom_out"),
-            (None, _("Reset zoom"), "reset_zoom"),
-            ("zoom-in-symbolic", _("Zoom in"), "zoom_in"),
-        ):
-            button = Gtk.Button(css_classes=["flat"], tooltip_text=label)
-            if icon:
-                button.set_icon_name(icon)
-            button.update_property([Gtk.AccessibleProperty.LABEL], [label])
-            button.connect(
-                "clicked", lambda _b, name=action: getattr(owner.visualizer, name)()
-            )
-            self.zoom_box.append(button)
-            zoom_buttons.append(button)
-        self.zoom_out_button, self.zoom_reset_button, _zoom_in = zoom_buttons
-        self.zoom_reset_button.add_css_class("numeric")
-        self.zoom_reset_button.set_label("1×")
-        self.zoom_out_button.set_sensitive(False)
-        self.zoom_reset_button.set_sensitive(False)
-        end_box.append(self.zoom_box)
-
-        # Bottom right, as in the players: it opens the equalizer above the
-        # queue's foot and lights while the curve is not flat.
-        self.equalizer_button = Gtk.ToggleButton(
-            child=Gtk.Image(icon_name="big-audio-converter-equalizer-symbolic"),
-            tooltip_text=_("Equalizer"),
-            valign=Gtk.Align.CENTER,
-            css_classes=["flat"],
-        )
-        self.equalizer_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Equalizer")]
-        )
-        self.eq_revealer.bind_property(
-            "reveal-child",
-            self.equalizer_button,
-            "active",
-            GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
-        )
-        end_box.append(self.equalizer_button)
-
-        # Rarely changed; it lives in the playback options menu below.
-        self.auto_advance_switch = Adw.SwitchRow(
-            title=_("Play the next file automatically"),
-            active=self.app.config.get("auto_advance_enabled", True) is True,
-        )
-        self.auto_advance_switch.connect(
-            "notify::active",
-            lambda row, _pspec: owner._on_auto_advance_switch_toggled(row),
-        )
-        self.audio_output_button = Gtk.MenuButton(
-            icon_name="view-more-symbolic", css_classes=["flat"]
-        )
-        self.audio_output_button.set_tooltip_text(_("More playback options"))
-        self.audio_output_button.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("More playback options")]
-        )
-        output_popover = Gtk.Popover()
-        output_group = Adw.PreferencesGroup(
-            title=_("Playback"),
-            description=_("Only affects listening. Converted files stay unchanged."),
-            width_request=320,
-            margin_top=12,
-            margin_bottom=12,
-            margin_start=12,
-            margin_end=12,
-        )
-        self.audio_output_row = Adw.ComboRow(
-            title=_("Audio output"), model=Gtk.StringList.new([_("System default")])
-        )
-        self._audio_device_names = ["auto"]
-        self._audio_output_row_handler = self.audio_output_row.connect(
-            "notify::selected", weak_callback(self._on_audio_output_changed)
-        )
-        output_group.add(self.auto_advance_switch)
-        output_group.add(self.audio_output_row)
-        output_popover.set_child(output_group)
-        # Outputs are looked up again each time the menu opens.
-        output_popover.connect(
-            "notify::visible",
-            lambda popover, *_: (
-                owner.player.refresh_audio_devices() if popover.get_visible() else None
-            ),
-        )
-        self.audio_output_button.set_popover(output_popover)
-        self.player.devices_callback = weak_callback(self._refresh_audio_outputs)
-
-        playback_controls_box = Gtk.Box(spacing=8, valign=Gtk.Align.CENTER)
-        self.prev_audio_btn = Gtk.Button(
-            icon_name="media-skip-backward-symbolic",
-            css_classes=["flat", "circular"],
-            visible=False,
-        )
-        self.prev_audio_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Previous track")]
-        )
-        self.prev_audio_btn.connect(
-            "clicked", lambda btn: owner._on_previous_audio_clicked()
-        )
-        playback_controls_box.append(self.prev_audio_btn)
-
-        self.pause_play_btn = Gtk.Button(
-            icon_name="media-playback-start-symbolic",
-            css_classes=["circular", "suggested-action", "play-button"],
-        )
-        self.pause_play_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Play or pause")]
-        )
-        self.pause_play_btn.connect(
-            "clicked", weak_callback(self._on_pause_play_clicked)
-        )
-        playback_controls_box.append(self.pause_play_btn)
-
-        self.next_audio_btn = Gtk.Button(
-            icon_name="media-skip-forward-symbolic",
-            css_classes=["flat", "circular"],
-            visible=False,
-        )
-        self.next_audio_btn.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Next track")]
-        )
-        self.next_audio_btn.connect(
-            "clicked", lambda btn: owner._on_next_audio_clicked()
-        )
-        playback_controls_box.append(self.next_audio_btn)
-
-        # One set of controls, laid out on one line or, when narrow, on two.
-        self.controls_layout = Adw.MultiLayoutView()
-        for name, widget in (
-            ("adjust", adjust),
-            ("transport", playback_controls_box),
-            ("tools", end_box),
-            ("menu", self.audio_output_button),
-        ):
-            self.controls_layout.set_child(name, widget)
-        tools_and_menu = Gtk.Box(spacing=6)
-        tools_and_menu.append(Adw.LayoutSlot(id="tools"))
-        tools_and_menu.append(Adw.LayoutSlot(id="menu"))
-        wide = Gtk.CenterBox(
-            css_classes=["playback-controls"],
-            start_widget=Adw.LayoutSlot(id="adjust"),
-            center_widget=Adw.LayoutSlot(id="transport"),
-            end_widget=tools_and_menu,
-        )
-        narrow = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=6,
-            css_classes=["playback-controls"],
-        )
-        narrow.append(
-            Gtk.CenterBox(
-                start_widget=Adw.LayoutSlot(id="adjust"),
-                center_widget=Adw.LayoutSlot(id="transport"),
-                end_widget=Adw.LayoutSlot(id="menu"),
-            )
-        )
-        narrow.append(Adw.LayoutSlot(id="tools", halign=Gtk.Align.CENTER))
-        self.controls_layout.add_layout(Adw.Layout(name="wide", content=wide))
-        self.controls_layout.add_layout(Adw.Layout(name="narrow", content=narrow))
-
-        self.visualizer_container = visualizer_container
-
-        self.visualizer_frame = Gtk.Frame()
-        self.visualizer_frame.set_margin_start(10)
-        self.visualizer_frame.set_margin_end(10)
-        self.visualizer_frame.set_margin_top(4)
-        self.visualizer_frame.set_margin_bottom(0)
-
-        self.visualizer_frame.set_size_request(-1, 100)
-
-        # Connect seek handler before adding the visualizer to the frame
-        self.visualizer.connect_seek_handler(self.on_visualizer_seek)
-
-        self.visualizer.connect_marker_drag_handler(self._on_marker_drag_state_changed)
-
-        self.visualizer.zoom_changed_callback = weak_callback(
-            self._on_visualizer_zoom_changed
-        )
-        # Panning while paused moves the window too; the seek bar follows it.
-        self.visualizer.viewport_changed_callback = self._sync_seekbar_viewport
-
-        self.visualizer.marker_updated_callback = self._on_markers_updated
-
-        self.visualizer.set_content_height(100)
-
-        self.visualizer.set_vexpand(True)  # Allow expansion
-        self.visualizer.set_focusable(True)
-
-        self.visualizer_frame.set_child(self.visualizer)
-
-        # Layout order: waveform (top) → seekbar (middle) → button bar (bottom)
-        visualizer_container.append(self.visualizer_frame)
-
-        # The time read at both ends of the seek bar.
-        self.elapsed_label = Gtk.Label(label="0:00", css_classes=["numeric", "caption"])
-        self.total_label = Gtk.Label(label="0:00", css_classes=["numeric", "caption"])
-        self.seekbar = SeekBar(self.elapsed_label, self.total_label)
-        self.seekbar.set_hexpand(True)
-        self.visualizer.duration_changed_callback = self.seekbar.set_duration
-        self.seekbar.connect_seek_handler(self.on_visualizer_seek)
-        self.visualizer.hover_time_callback = self.seekbar.set_waveform_hover_time
-        seek_row = Gtk.Box(spacing=10, margin_start=12, margin_end=12)
-        for widget in (self.elapsed_label, self.seekbar, self.total_label):
-            seek_row.append(widget)
-        visualizer_container.append(seek_row)
-
-        visualizer_container.append(self.controls_layout)
-
-        self.vertical_paned.set_end_child(visualizer_container)
-        self._fit_pending = False
-        self.vertical_paned.connect(
-            "notify::max-position", weak_callback(self._on_paned_allocated)
-        )
+        self.setup_playback_panel()
 
         # The player arrives with the first file; cut rows with a segment.
-        visualizer_container.set_visible(False)
+        self.visualizer_container.set_visible(False)
         self._update_cut_rows()
 
         # Narrow windows fold the sidebar over the queue; narrower ones also
@@ -668,7 +388,7 @@ class MainWindow(
         # Secondary controls leave first; their actions stay reachable (the
         # wheel zooms, the menu clears, the Convert label counts).
         compact = [
-            (self.zoom_box, "visible", False),
+            (self.zoom_anchor, "visible", False),
             (self.selection_content, "label", ""),
             (self.queue_info, "visible", False),
         ]
@@ -698,62 +418,8 @@ class MainWindow(
         # Apply tooltips to all UI elements (must be after all widgets are created)
         self._apply_tooltips()
         self._restore_conversion_settings()
+        self.show_delete_mode()
         self._on_format_changed(self.format_row, None)
-
-    def _bar_control(self, parent, name, icon, title, adjustment, extras):
-        """A button and readout whose slider opens on hover, as in the players.
-
-        The card's heading names what the slider changes. A click opens it
-        for the keyboard; the wheel over the control moves the slider.
-        """
-        owner = weakref.proxy(self)
-        button = Gtk.Button(
-            icon_name=icon, valign=Gtk.Align.CENTER, css_classes=["flat", "circular"]
-        )
-        button.update_property([Gtk.AccessibleProperty.LABEL], [title])
-        value = Gtk.Label(css_classes=["numeric"])
-        box = Gtk.Box(spacing=2, css_classes=["bar-anchor"])
-        box.append(button)
-        box.append(value)
-        scale = Gtk.Scale(
-            orientation=Gtk.Orientation.VERTICAL,
-            adjustment=adjustment,
-            inverted=True,
-            draw_value=False,
-            height_request=180,
-            halign=Gtk.Align.CENTER,
-        )
-        scale.update_property([Gtk.AccessibleProperty.LABEL], [title])
-        content = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            spacing=8,
-            margin_top=10,
-            margin_bottom=10,
-            margin_start=10,
-            margin_end=10,
-        )
-        content.append(Gtk.Label(label=title, css_classes=["heading"]))
-        content.append(scale)
-        for widget in extras:
-            widget.set_halign(Gtk.Align.CENTER)
-            content.append(widget)
-        self.bar_cards.attach(name, box, content, title, ["bar-slider"], focus=scale)
-        button.connect("clicked", lambda _b: owner.bar_cards.open_for_keyboard(name))
-        wheel = Gtk.EventControllerScroll(
-            flags=Gtk.EventControllerScrollFlags.VERTICAL
-            | Gtk.EventControllerScrollFlags.DISCRETE
-        )
-
-        def scrolled(_controller, _dx, dy):
-            if not dy or not scale.get_sensitive():
-                return False
-            adjustment.set_value(adjustment.get_value() - 2 * dy)
-            return True
-
-        wheel.connect("scroll", scrolled)
-        box.add_controller(wheel)
-        parent.append(box)
-        return button, value, scale
 
     def _show_queue_summary(self, count):
         """The queue's size and length, and the controls that need files."""
@@ -770,26 +436,12 @@ class MainWindow(
         self.banner.set_revealed(False)
         self.lookup_action("clear-queue").set_enabled(count > 0)
         self._sync_convert_action()
-        add = self.add_files_button
-        (add.remove_css_class if count else add.add_css_class)("suggested-action")
         self.prev_audio_btn.set_visible(count > 1)
         self.next_audio_btn.set_visible(count > 1)
         self.convert_button.set_visible(count > 0)
         self._sync_join()
         self._update_convert_label()
         self._set_player_visible(count > 0)
-
-    def _on_visualizer_zoom_changed(self, zoom_level):
-        self.zoom_reset_button.set_label(f"{zoom_level:.3g}×")
-        self.zoom_out_button.set_sensitive(zoom_level > 1.0)
-        self.zoom_reset_button.set_sensitive(zoom_level > 1.0)
-        self._sync_seekbar_viewport()
-
-    def _sync_seekbar_viewport(self):
-        """Show the waveform's visible window on the seek bar."""
-        self.seekbar.set_zoom_viewport(
-            self.visualizer.zoom_level, self.visualizer.viewport_offset
-        )
 
     def _sync_convert_action(self):
         queue = self.file_queue
@@ -805,85 +457,6 @@ class MainWindow(
             label = gettext.ngettext("Convert %d file", "Convert %d files", count)
         self.convert_button.set_label(label % count)
 
-    def _set_player_visible(self, visible):
-        """Without files the queue has the whole window."""
-        if visible == self.visualizer_container.get_visible():
-            return
-        self._remember_waveform_height()
-        self.visualizer_container.set_visible(visible)
-        if visible:
-            self._fit_bottom_panel()
-
-    def _on_paned_allocated(self, *_args):
-        if self._fit_pending:
-            self._fit_pending = False
-            self._sources.idle(self._fit_bottom_panel)
-
-    def _remember_waveform_height(self):
-        """Keep the height the person dragged the waveform to."""
-        height = self.visualizer_frame.get_height()
-        if self.visualizer_container.get_visible() and height >= 100:
-            self.visualizer_height = height
-            self.app.config.set("visualizer_height", str(height))
-
-    def _fit_bottom_panel(self):
-        """Give the bottom panel its controls, plus the waveform while cutting."""
-        paned = self.vertical_paned
-        if not self.visualizer_container.get_visible():
-            return
-        if paned.get_height() <= 0:
-            # Not allocated yet: the paned's first allocation retries.
-            self._fit_pending = True
-            return
-        # The measured minimum holds the waveform at its 100 px floor.
-        panel = self.visualizer_container.measure(
-            Gtk.Orientation.VERTICAL, paned.get_width()
-        )[0]
-        extra = self.visualizer_height - 100
-        handle = (
-            paned.get_height()
-            - self.split_view.get_height()
-            - self.visualizer_container.get_height()
-        )
-        paned.set_position(max(200, paned.get_height() - handle - panel - extra))
-
-    def _refresh_audio_outputs(self):
-        devices = [
-            device for device in self.player.audio_devices if device["name"] != "auto"
-        ]
-        # Desktop audio servers expose the useful outputs without duplicate ALSA routes.
-        for backend in ("pipewire/", "pulse/"):
-            managed = [
-                device for device in devices if device["name"].startswith(backend)
-            ]
-            if managed:
-                devices = [
-                    device
-                    for device in devices
-                    if device in managed or device["name"] == self.player.audio_device
-                ]
-                break
-        self._audio_device_names = ["auto"] + [device["name"] for device in devices]
-        self.audio_output_row.handler_block(self._audio_output_row_handler)
-        self.audio_output_row.set_model(
-            Gtk.StringList.new(
-                [_("System default")] + [device["description"] for device in devices]
-            )
-        )
-        self.audio_output_row.set_selected(
-            self._audio_device_names.index(self.player.audio_device)
-            if self.player.audio_device in self._audio_device_names
-            else 0
-        )
-        self.audio_output_row.handler_unblock(self._audio_output_row_handler)
-
-    def _on_audio_output_changed(self, row, *_args):
-        index = row.get_selected()
-        if index < len(self._audio_device_names) and not self.player.set_audio_device(
-            self._audio_device_names[index]
-        ):
-            self._refresh_audio_outputs()
-
     def _apply_tooltips(self):
         """Register every help tooltip; the helper shows them only when enabled."""
         for widget, key in (
@@ -891,9 +464,16 @@ class MainWindow(
             (self.pause_play_btn, "pause_play_btn"),
             (self.next_audio_btn, "next_audio_btn"),
             (self.play_selection_switch, "play_selection_switch"),
+            (self.segment_edit_button, "segment_edit_button"),
             (self.visualizer, "waveform_visualizer"),
         ):
             self.help_tooltips.add_tooltip(widget, key)
+        self.show_help()
+
+    def show_help(self):
+        """Tooltips and the waveform's first hint follow the menu's choice."""
+        self.visualizer.show_hint = self.help_tooltips.refresh()
+        self.visualizer.queue_draw()
 
     def on_convert(self, button):
         """Delegate job presentation to the conversion controller."""
@@ -911,10 +491,15 @@ class MainWindow(
             "channels": (None, 1, 2)[self.channels_row.get_selected()],
             "sample_rate": self._sample_rate_list[self.sample_rate_row.get_selected()],
             "allow_precision_reduction": self.precision_row.get_active(),
+            "bitrate_per_channel": self.bitrate_channels_row.get_active(),
             "output_directory": self.output_directory,
+            "delete_originals": self.delete_originals_switch.get_active(),
+            "skip_trash": self._config_bool("skip_trash", False),
             "noise_reduction": self._noise_active(),
             "noise_engine": self._noise_engine(),
             "noise_strength": self.noise_adjustment.get_value(),
+            "voice_only": self.voice_only_switch.get_active(),
+            "voice_only_sensitivity": round(self.voice_only_scale.get_value()),
             # Each correction is off at its first step.
             "compressor_enabled": self.compressor_row.steps.get_selected() > 0,
             "compressor_intensity": COMPRESSOR_STEPS[
@@ -1115,8 +700,9 @@ class MainWindow(
         dialog = Adw.AlertDialog(
             heading=_("Reset all settings?"),
             body=_(
-                "Format, quality, output folder, cutting, effects and equalizer "
-                "return to their defaults. The queue and your source files are kept."
+                "Format, quality, output folder, deleting originals, cutting, "
+                "effects and equalizer return to their defaults. The queue and "
+                "your source files are kept."
             ),
         )
         dialog.add_response("cancel", _("Cancel"))

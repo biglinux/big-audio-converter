@@ -18,6 +18,9 @@ from .profiles import (
 
 logger = logging.getLogger(__name__)
 
+# Values the preview retunes through af-command; they never rebuild the chain.
+LIVE_NEUTRAL = {"volume": 1.0, "noise_strength": 100.0}
+
 
 class AudioPlayer:
     """All public methods and application state belong to the GTK thread.
@@ -51,6 +54,8 @@ class AudioPlayer:
         self.noise_reduction = False
         self.noise_engine = "dfn3"
         self.noise_strength = 100.0
+        self.voice_only = False
+        self.voice_only_sensitivity = 3
         self.compressor_enabled = False
         self.compressor_intensity = 1.0
         self.normalize = False
@@ -66,7 +71,10 @@ class AudioPlayer:
         self.mpv_instance = None
         self._mpv_options = dict(mpv_options or {})
         self._sources = MainLoopSources()
+        # The graph in effect, live values included; mpv holds _graph_shape's
+        # chain and only a change of shape rebuilds it.
         self._last_filter_graph = None
+        self._graph_shape = None
         self.pending_seek_position = None
 
     def _create_player(self):
@@ -93,12 +101,16 @@ class AudioPlayer:
                 "cache": "no",
                 "replaygain": "no",
                 "volume": 100,
+                # The system's volume mixer lists the stream under these.
+                "audio_client_name": "Big Audio Converter",
+                "title": "${media-title}",
                 "loglevel": "warn",
                 "log_handler": self._log_handler,
             }
             options.update(self._mpv_options)
             self.mpv_instance = mpv.MPV(**options)
             self._last_filter_graph = None
+            self._graph_shape = None
             self.mpv_instance.speed = 1.0 if self.effects_bypassed else self.speed
             self.mpv_instance.audio_pitch_correction = self.pitch_correction
 
@@ -112,7 +124,7 @@ class AudioPlayer:
 
             @self.mpv_instance.event_callback("playback-restart")
             def restarted(_event):
-                self._sources.idle(self._restore_live_strength, key="strength")
+                self._sources.idle(self._restore_live_values, key="live")
 
             @self.mpv_instance.event_callback("end-file")
             def ended(event):
@@ -419,6 +431,8 @@ class AudioPlayer:
             "noise_reduction",
             "noise_engine",
             "noise_strength",
+            "voice_only",
+            "voice_only_sensitivity",
             "compressor_enabled",
             "compressor_intensity",
             "volume",
@@ -438,14 +452,12 @@ class AudioPlayer:
         if self._closed or self.mpv_instance is None:
             return
         try:
-            graph = (
-                ""
-                if self.effects_bypassed
-                else ",".join(
-                    build_audio_filters(self._effect_settings(), self.noise_plugins)
-                )
-            )
-            if graph != self._last_filter_graph:
+            settings = self._effect_settings()
+            graph = shape = ""
+            if not self.effects_bypassed:
+                graph = self._graph(settings)
+                shape = self._graph(settings | LIVE_NEUTRAL)
+            if shape != self._graph_shape:
                 # Quoted by byte length: [] quoting ends at the first pad label.
                 # The label names the chain for live commands.
                 self.mpv_instance.af = (
@@ -453,7 +465,8 @@ class AudioPlayer:
                     if graph
                     else ""
                 )
-                self._last_filter_graph = graph
+                self._graph_shape = shape
+            self._last_filter_graph = graph
         except (MediaError, RuntimeError, ValueError) as exc:
             logger.debug("Preview filter failure: %s", exc)
             self._error(
@@ -461,6 +474,11 @@ class AudioPlayer:
                     "A preview effect could not be applied. Check the selected effects and installed plugins."
                 )
             )
+
+    def _graph(self, settings):
+        return ",".join(
+            build_audio_filters(settings, self.noise_plugins, live_volume=True)
+        )
 
     def _rebuild_audio_filters(self):
         if self.mpv_instance and not self._closed:
@@ -483,6 +501,7 @@ class AudioPlayer:
         # mpv's volume percentage is perceptual, not a linear amplitude factor.
         # Use the same lavfi volume stage as export, with native volume at 100.
         self._set_effect("volume", float(volume))
+        self._send_live("volume", str(self.volume), "volume")
 
     def set_playback_speed(self, speed):
         speed = validate_settings({"speed": speed})["speed"]
@@ -522,37 +541,36 @@ class AudioPlayer:
 
     def set_noise_strength(self, percent):
         """Retune the running denoiser; rebuilding the chain would cut the sound."""
-        percent = float(percent)
-        validate_settings(self._effect_settings() | {"noise_strength": percent})
-        if self._send_noise_strength(percent):
-            self.noise_strength = percent
-        else:
-            self._set_effect("noise_strength", percent)
+        self._set_effect("noise_strength", float(percent))
+        self._send_live(
+            "c0", noise_attenuation(self.noise_engine, self.noise_strength), "ladspa"
+        )
 
-    def _send_noise_strength(self, percent):
+    def _send_live(self, command, value, target):
         if (
             self._closed
             or self.mpv_instance is None
-            or "ladspa=" not in (self._last_filter_graph or "")
+            or f"{target}=" not in (self._graph_shape or "")
         ):
-            return False
+            return
         try:
-            self.mpv_instance.command(
-                "af-command",
-                "bigfx",
-                "c0",
-                noise_attenuation(self.noise_engine, percent),
-                "ladspa",
-            )
+            self.mpv_instance.command("af-command", "bigfx", command, value, target)
         except (RuntimeError, SystemError, ValueError) as exc:
-            logger.debug("Live denoiser strength failed: %s", exc)
-            return False
-        return True
+            logger.debug("Live %s change failed: %s", target, exc)
 
-    def _restore_live_strength(self):
+    def _restore_live_values(self):
         # mpv rebuilds the chain from its text after a seek or a new file,
-        # and that text may still hold an older strength.
-        self._send_noise_strength(self.noise_strength)
+        # and that text may hold older values.
+        self._send_live("volume", str(self.volume), "volume")
+        self._send_live(
+            "c0", noise_attenuation(self.noise_engine, self.noise_strength), "ladspa"
+        )
+
+    def set_voice_only(self, enabled, sensitivity):
+        """Keep only speech; switching it rebuilds the chain, as the plugin reads
+        it when it starts."""
+        self._set_effect("voice_only", bool(enabled))
+        self._set_effect("voice_only_sensitivity", int(sensitivity))
 
     def set_compressor_enabled(self, enabled):
         self._set_effect("compressor_enabled", bool(enabled))

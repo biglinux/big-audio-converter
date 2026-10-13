@@ -153,6 +153,18 @@ class Application(Adw.Application):
         tips.connect("change-state", self._on_tips_changed)
         self.add_action(tips)
 
+        # Deleting is a preference of the person: the row's delete action and
+        # deleting originals after a conversion both follow it.
+        skip_trash = Gio.SimpleAction.new_stateful(
+            "skip-trash",
+            None,
+            GLib.Variant.new_boolean(
+                str(self.config.get("skip_trash", False)).lower() == "true"
+            ),
+        )
+        skip_trash.connect("change-state", self._on_skip_trash_changed)
+        self.add_action(skip_trash)
+
         self.set_accels_for_action("app.quit", ["<Control>q"])
 
     def _on_tips_changed(self, action, value):
@@ -161,7 +173,13 @@ class Application(Adw.Application):
             "show_mouseover_tips", "true" if value.get_boolean() else "false"
         )
         if self._main_window is not None:
-            self._main_window.help_tooltips.refresh()
+            self._main_window.show_help()
+
+    def _on_skip_trash_changed(self, action, value):
+        action.set_state(value)
+        self.config.set("skip_trash", value.get_boolean())
+        if self._main_window is not None:
+            self._main_window.show_delete_mode()
 
     def do_startup(self):
         Adw.Application.do_startup(self)
@@ -220,6 +238,11 @@ def main():
 
     GLib.set_prgname("big-audio-converter")
     GLib.set_application_name(APP_NAME)
+    # libmpv names its PipeWire stream's icon after the client name; set before
+    # any thread starts, since setenv races getenv.
+    os.environ.setdefault(
+        "PIPEWIRE_PROPS", "{ application.icon-name = big-audio-converter }"
+    )
     app = Application()
     return app.run(sys.argv)
 

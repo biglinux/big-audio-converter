@@ -16,7 +16,8 @@ CUTS_PER_RUN = 256
 # Decode | denoise | wrap the result for the following passes. Paths and
 # numbers arrive as environment variables, never as shell text.
 DENOISE_PIPELINE = (
-    '"$@" | "$DENOISER" --channels "$CHANNELS" --attenuation "$ATTENUATION" | '
+    '"$@" | "$DENOISER" --channels "$CHANNELS" --attenuation "$ATTENUATION" '
+    '${SPEECH_ONLY:+--speech-only --voice-sensitivity "$SPEECH_ONLY"} | '
     '"$FFMPEG" -hide_banner -nostdin -n -v error -f f32le -ar 48000 '
     '-ac "$CHANNELS" -i pipe:0 -c:a pcm_f32le -f nut -nostats -progress pipe:1 '
     '"$OUTPUT"'
@@ -263,6 +264,7 @@ class SegmentRenderer:
                     "DENOISER": denoise.tool,
                     "CHANNELS": channels,
                     "ATTENUATION": denoise.attenuation,
+                    "SPEECH_ONLY": str(denoise.speech_only or ""),
                     "FFMPEG": self.ffmpeg_path,
                     "OUTPUT": denoised,
                 },
@@ -288,6 +290,8 @@ class SegmentRenderer:
                     speed,
                 ),
             )
+            if measurement.returncode:
+                raise command_error(measurement.stderr)
             # loudnorm runs at 192 kHz; later filters work at the output rate.
             rate = params[params.index("-ar") + 1] if "-ar" in params else None
             filters[at : at + 1] = [linear_loudnorm(measurement.stderr)]

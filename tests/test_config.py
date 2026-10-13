@@ -71,7 +71,7 @@ class TestAppConfigDebounce:
             assert json.load(f)["conversion_format"] == "flac"
 
 
-def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):
+def test_legacy_noise_settings_stay_disabled(tmp_path):
     path = tmp_path / "config.json"
     legacy = {
         "conversion_noise_reduction": "true",
@@ -98,7 +98,7 @@ def test_legacy_noise_settings_do_not_enable_a_different_model(tmp_path):
         config.close()
 
 
-def test_remembered_preferences_do_not_force_storage(tmp_path, monkeypatch):
+def test_saving_preferences_skips_fsync(tmp_path, monkeypatch):
     calls = []
     monkeypatch.setattr(os, "fsync", lambda fd: calls.append(fd))
     for index in range(3):

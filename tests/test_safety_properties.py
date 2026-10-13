@@ -28,7 +28,7 @@ from app.main_loop import MainLoopSources
         b"",
     ],
 )
-def test_invalid_pcm_does_not_publish_a_waveform(raw):
+def test_invalid_pcm_is_rejected(raw):
     collector = PeakCollector(64, 48000)
     with pytest.raises(MediaError):
         collector.consume(raw)
@@ -49,7 +49,7 @@ def test_stdout_and_stderr_are_drained_independently():
     assert runner.process is None
 
 
-def test_excessive_probe_output_fails_without_retaining_a_process():
+def test_oversized_output_fails_and_clears_process():
     runner = ProcessRunner()
     with pytest.raises(MediaError):
         runner.run(
@@ -60,7 +60,7 @@ def test_excessive_probe_output_fails_without_retaining_a_process():
     assert runner.process is None
 
 
-def test_cancel_reaps_a_process_ignoring_term_and_closing_its_pipes():
+def test_cancel_reaps_a_term_ignoring_process():
     runner = ProcessRunner()
     failures = []
 
@@ -101,7 +101,7 @@ def test_timeout_reaps_process():
     assert runner.process is None
 
 
-def test_publication_is_safe_during_real_concurrent_collisions(tmp_path):
+def test_concurrent_publications_get_distinct_files(tmp_path):
     requested = tmp_path / "same.wav"
     requested.write_bytes(b"existing")
     files = []
@@ -122,7 +122,7 @@ def test_publication_is_safe_during_real_concurrent_collisions(tmp_path):
     assert requested.read_bytes() == b"existing"
 
 
-def test_publication_rolls_back_only_its_own_files_on_failure(tmp_path):
+def test_failed_publication_rolls_back_its_files(tmp_path):
     source = tmp_path / "staged.wav"
     source.write_bytes(b"new")
     target = tmp_path / "published.wav"
@@ -134,7 +134,7 @@ def test_publication_rolls_back_only_its_own_files_on_failure(tmp_path):
     assert not target.exists()
 
 
-def test_publication_without_hard_links_never_replaces_a_file(tmp_path, monkeypatch):
+def test_linkless_publication_keeps_existing_file(tmp_path, monkeypatch):
     from app.audio import output as module
 
     def no_links(*_args, **_kwargs):
@@ -152,7 +152,7 @@ def test_publication_without_hard_links_never_replaces_a_file(tmp_path, monkeypa
     assert not staged.exists()
 
 
-def test_dangling_symlink_is_not_overwritten(tmp_path):
+def test_dangling_symlink_stays_untouched(tmp_path):
     missing = tmp_path / "missing"
     target = tmp_path / "file.wav"
     target.symlink_to(missing)
@@ -164,7 +164,7 @@ def test_dangling_symlink_is_not_overwritten(tmp_path):
 
 
 @pytest.mark.parametrize("text", ["[]", "{broken", '{"conversion_volume":NaN}', "null"])
-def test_corrupt_config_survives_until_an_atomic_replacement(tmp_path, text):
+def test_corrupt_config_is_kept_until_replaced(tmp_path, text):
     file = tmp_path / "config.json"
     file.write_text(text)
     config = AppConfig(tmp_path)
@@ -187,7 +187,7 @@ def test_two_config_instances_preserve_independent_updates(tmp_path):
     assert result["conversion_volume"] == 85 and result["conversion_speed"] == 1.25
 
 
-def test_one_shot_callbacks_do_not_repeat_even_when_returning_truthy():
+def test_one_shot_callbacks_run_once():
     from gi.repository import GLib
 
     owner, calls = MainLoopSources(), []
@@ -205,7 +205,7 @@ def test_one_shot_callbacks_do_not_repeat_even_when_returning_truthy():
     assert calls == [1]
 
 
-def test_real_filename_in_track_namespace_is_still_a_file(tmp_path, monkeypatch):
+def test_track_prefixed_filename_resolves_as_file(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     Path("bac-track:legitimate.wav").write_bytes(b"file")
     assert MediaSource.resolve("bac-track:legitimate.wav").path == str(

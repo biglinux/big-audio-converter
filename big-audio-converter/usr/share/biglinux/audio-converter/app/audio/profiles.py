@@ -14,6 +14,10 @@ NOISE_PLUGINS = {
     "dfn3": ("libdfn3_ladspa.so", "deep_filter_net3_rs_mono", 1919, 24),
     "dpdfnet": ("libdpdfnet_native.so", "dpdfnet_native_48hr", 2880, 48),
 }
+# The plugins' voice gate: its depth, detector and sensitivity controls, and the
+# output delay of either engine while it runs.
+VOICE_GATE_CONTROLS = {"dfn3": (17, 18, 19), "dpdfnet": (1, 2, 3)}
+VOICE_GATE_DELAY = 3168
 
 # Export measures the timeline first and replaces this with a linear pass.
 LOUDNORM = "loudnorm=I=-16:LRA=11:TP=-1.5"
@@ -30,6 +34,8 @@ class OfflineDenoise:
 
     tool: str
     attenuation: str
+    # The voice sensitivity, 1 to 5, when only speech is kept.
+    speech_only: int | None = None
 
 
 def noise_attenuation(engine, percent):
@@ -98,16 +104,21 @@ COPY_CONTAINERS = {
 }
 NUMERIC_LIMITS = {
     "noise_strength": (0, 100),
+    "voice_only_sensitivity": (1, 5),
     "volume": (0, 10),
     "speed": (0.1, 5),
     "compressor_intensity": (0, 1),
 }
 BOOLEAN_KEYS = (
     "noise_reduction",
+    "voice_only",
     "compressor_enabled",
     "eq_enabled",
     "normalize",
     "allow_precision_reduction",
+    "bitrate_per_channel",
+    "delete_originals",
+    "skip_trash",
 )
 
 
@@ -206,6 +217,12 @@ def codec_args(settings, channels=None, stream=None):
                     "The selected bitrate is not supported by this output profile."
                 )
             )
+        if settings.get("bitrate_per_channel"):
+            # The chosen bitrate is for stereo: mono takes half of it, 5.1
+            # three times as much. Every encoder takes the results of the
+            # listed rates (MP3 raises 16k to its own floor).
+            count = channels or int((stream or {}).get("channels") or 2)
+            bitrate = f"{int(bitrate.rstrip('k')) * count // 2}k"
         args += ["-b:a", bitrate]
     if channels is not None:
         if channels not in (1, 2) or isinstance(channels, bool):
@@ -288,8 +305,13 @@ def metadata_args(info, stream, format_name, input_index=0):
     return args
 
 
-def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
+def build_audio_filters(
+    settings, noise_plugins=None, offline_denoiser=None, live_volume=False
+):
     """Use the same effects and denoiser timing for preview and export.
+
+    ``live_volume`` keeps a volume stage at unity gain, so the preview can
+    retune it without rebuilding the chain.
 
     With ``offline_denoiser`` (the ``dpdfnet-enhance`` path), DPDFNet becomes
     an ``OfflineDenoise`` step in the list instead of a filter.
@@ -324,10 +346,16 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
             f"acompressor=threshold={threshold_lin:.6f}:ratio={ratio:.1f}:attack=150:release=800:makeup={makeup_lin:.4f}:knee={knee_lin:.4f}:detection=rms"
         )
 
+    # Only speech is heard: the denoiser mutes what its voice detector does not
+    # take for a voice.
+    level = round(settings.get("voice_only_sensitivity", 3))
+    voice_only = settings.get("voice_only", False)
     if settings.get("noise_reduction") and offline:
         filters.append(
             OfflineDenoise(
-                offline, noise_attenuation(engine, settings.get("noise_strength", 100))
+                offline,
+                noise_attenuation(engine, settings.get("noise_strength", 100)),
+                level if voice_only else None,
             )
         )
     elif settings.get("noise_reduction"):
@@ -338,9 +366,16 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
             raise MediaError(gettext.gettext("The audio plugin path is unsupported."))
         controls = f"c0={attenuation}"
         if engine == "dfn3":
-            # Microphone defaults: the startup mute discards the first second, and
-            # the voice gate mutes everything but speech behind extra delay.
-            controls += "|c6=0|c17=0"
+            # A microphone default: the startup mute discards the first second.
+            controls += "|c6=0"
+        depth, detector, sensitivity = VOICE_GATE_CONTROLS[engine]
+        if voice_only:
+            # Muted outright, heard by FireRedVAD as dpdfnet-enhance does.
+            controls += f"|c{depth}=60|c{detector}=1|c{sensitivity}={level}"
+            delay = VOICE_GATE_DELAY
+        elif engine == "dfn3":
+            # DFN3's gate is on by default.
+            controls += f"|c{depth}=0"
         # The plugin starts from an empty model state and under-restores the
         # first ~150 ms, so it first runs over the opening half second played
         # backwards, which is cut away again. That lead-in ends at timestamp 0,
@@ -367,8 +402,8 @@ def build_audio_filters(settings, noise_plugins=None, offline_denoiser=None):
                 filters.append(f"equalizer=f={freq}:width_type=o:w=1.5:g={gain}")
 
     # Volume
-    if settings.get("volume", 1.0) != 1.0:
-        filters.append(f"volume={settings['volume']}")
+    if live_volume or settings.get("volume", 1.0) != 1.0:
+        filters.append(f"volume={settings.get('volume', 1.0)}")
 
     # Keep every atempo stage at or below 2 to avoid sample skipping.
     speed = settings.get("speed", 1.0)

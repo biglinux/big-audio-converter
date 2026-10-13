@@ -294,7 +294,7 @@ class WaveformSegmentsMixin:
         if not self.duration > 0:
             return
 
-        # A part reads as a lighter block: red to cut out, blue to keep, with
+        # A part reads as a lighter block: red to cut out, green to keep, with
         # a red start and a green end.
         start_color = (0.8, 0.2, 0.2, 0.8)
         stop_color = (0.2, 0.7, 0.3, 0.8)
@@ -308,6 +308,9 @@ class WaveformSegmentsMixin:
 
         # Collect all marker labels for collision-aware placement
         label_items = []  # (x_center, text)
+        # Every part keeps its edges, however narrow; each color is one stroke,
+        # so hundreds of found pauses still draw fast.
+        starts, stops = [], []
 
         for i, pair in enumerate(self.marker_pairs):
             if (pair["start"] is not None and pair["stop"] is not None) and (
@@ -316,47 +319,17 @@ class WaveformSegmentsMixin:
                 continue  # Skip this pair, it's not visible
 
             is_highlighted = i == self.highlighted_pair
-            # Hundreds of found pauses would bury the waveform under edge
-            # lines, times and numbers (112 ms a frame for 600): those show
-            # once zoom makes the part wide enough to read them.
+            # Hundreds of found pauses would bury the waveform under times and
+            # numbers (112 ms a frame for 600): those show once zoom makes the
+            # part wide enough to read them.
             detailed = (pair["stop"] - pair["start"]) / visible_duration * width >= 24
-            if (
-                detailed
-                and pair["start"] is not None
-                and start_time <= pair["start"] <= end_time
-            ):
-                x_start = ((pair["start"] - start_time) / visible_duration) * width
-                x_start = max(0, min(width, x_start))
-
-                # Marker line
-                cr.set_source_rgba(*start_color)
-                cr.set_line_width(2)
-                cr.move_to(x_start, 0)
-                cr.line_to(x_start, height)
-                cr.stroke()
-
-                # Collect label for deferred drawing (condensed format)
-                time_str = format_time_short(pair["start"])
-                label_items.append((x_start, time_str))
-
-            if (
-                detailed
-                and pair["stop"] is not None
-                and start_time <= pair["stop"] <= end_time
-            ):
-                x_stop = ((pair["stop"] - start_time) / visible_duration) * width
-                x_stop = max(0, min(width, x_stop))
-
-                # Marker line
-                cr.set_source_rgba(*stop_color)
-                cr.set_line_width(2)
-                cr.move_to(x_stop, 0)
-                cr.line_to(x_stop, height)
-                cr.stroke()
-
-                # Collect label for deferred drawing (condensed format)
-                time_str = format_time_short(pair["stop"])
-                label_items.append((x_stop, time_str))
+            for edge, lines in (("start", starts), ("stop", stops)):
+                if pair[edge] is not None and start_time <= pair[edge] <= end_time:
+                    x = ((pair[edge] - start_time) / visible_duration) * width
+                    x = max(0, min(width, x))
+                    lines.append(x)
+                    if detailed:
+                        label_items.append((x, format_time_short(pair[edge])))
 
             if pair["start"] is not None and pair["stop"] is not None:
                 if pair["start"] <= end_time and pair["stop"] >= start_time:
@@ -379,6 +352,19 @@ class WaveformSegmentsMixin:
                     cr.set_source_rgba(*region_color)
                 cr.rectangle(x_start, 0, max(1.5, x_stop - x_start), height)
                 cr.fill()
+                # A tint alone leaves the bright waveform blue: a kept part's
+                # waveform itself turns green.
+                if (
+                    not self.remove_marked
+                    and not is_highlighted
+                    and self.cached_waveform_surface is not None
+                ):
+                    cr.save()
+                    cr.rectangle(x_start, 0, max(1.5, x_stop - x_start), height)
+                    cr.clip()
+                    cr.set_source_rgb(*KEEP)
+                    cr.mask_surface(self.cached_waveform_surface, 0, 0)
+                    cr.restore()
 
                 # Subtle top and bottom borders on segment region
                 seg_w = x_stop - x_start
@@ -417,6 +403,13 @@ class WaveformSegmentsMixin:
                 if i == self.hovered_segment_index and self._marker_dialog is None:
                     self._draw_segment_delete_button(cr, x_start, x_stop, height, i)
 
+        cr.set_line_width(2)
+        for lines, color in ((starts, start_color), (stops, stop_color)):
+            for x in lines:
+                cr.move_to(x, 0)
+                cr.line_to(x, height)
+            cr.set_source_rgba(*color)
+            cr.stroke()
         if label_items:
             self._draw_marker_labels(cr, width, label_items)
 

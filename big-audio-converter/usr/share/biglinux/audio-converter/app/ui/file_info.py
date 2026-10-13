@@ -235,6 +235,14 @@ class FileInfoWindow(Gtk.Window):
             self._token = None
             self._show_error(str(exc))
         self.connect("close-request", FileInfoWindow._closed)
+        escape = Gtk.ShortcutController()
+        escape.add_shortcut(
+            Gtk.Shortcut(
+                trigger=Gtk.ShortcutTrigger.parse_string("Escape"),
+                action=Gtk.NamedAction.new("window.close"),
+            )
+        )
+        self.add_controller(escape)
 
     def _closed(self):
         if self._token is not None:

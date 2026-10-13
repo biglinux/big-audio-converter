@@ -1,6 +1,7 @@
 """Hover cards decide by geometry and a clock, so these run without a display."""
 
 import pytest
+from big_gtk_kit import card_geometry, hover_intent
 from big_gtk_kit import hover_cards as hc
 
 ROW = 48
@@ -16,9 +17,6 @@ class Clock:
         self.t = 0.0
         self.timers = {}
         self._next = 0
-
-    def now(self):
-        return self.t
 
     def later(self, milliseconds, callback):
         self._next += 1
@@ -50,14 +48,13 @@ class List:
         self.clock = Clock()
         self.open = set()
         self.held = held
-        self.intent = hc.HoverIntent(
+        self.intent = hover_intent.HoverIntent(
             "right",
             self.boxes,
             self.open.add,
             self.open.discard,
             self.clock.later,
             self.clock.cancel,
-            self.clock.now,
             is_held=lambda _name: self.held,
         )
         self.rows = rows
@@ -87,7 +84,7 @@ class List:
         self.clock.advance(milliseconds)
 
     def open_row(self, row):
-        self.rest((150, row * ROW + ROW / 2), hc.FIRST_OPEN_MS + 10)
+        self.move((150, row * ROW + ROW / 2))
         assert self.open == {row}
 
 
@@ -99,50 +96,27 @@ def path(start, end, steps):
     ]
 
 
-def test_a_card_opens_only_once_the_pointer_rests():
+def test_reaching_a_row_opens_its_card():
     cards = List()
-    cards.move((150, 24))
-    cards.clock.advance(hc.FIRST_OPEN_MS - 30)
-    cards.move((150, 400))  # off the list before the wait ends
-    cards.clock.advance(500)
-    assert cards.open == set()
-    cards.rest((150, 24), hc.FIRST_OPEN_MS + 10)
+    cards.intent.pointer(0, (150, 24))
     assert cards.open == {0}
 
 
-def test_tremor_still_counts_as_resting():
-    cards = List()
-    # +-3 px of tremor, one event per frame for 16 frames, past 225 ms.
-    for offset in (0, 3, -3, 2, -2, 3, 0, -3, 3, 0, 2, -2, 3, -3, 0, 1):
-        cards.move((150 + offset, 24 + (offset > 0) - (offset < 0)))
-    assert cards.open == {0}
-    other = List()
-    other.move((150, 24))
-    for _ in range(30):
-        other.move((150, 24), step_ms=0)
-        other.clock.advance(100)
-        other.move((156, 24), step_ms=0)  # a real move restarts the wait
-        other.clock.advance(100)
-        other.move((150, 24), step_ms=0)
-    assert other.open == set()
-
-
-def test_straight_down_to_the_next_row_switches_fast():
+def test_moving_straight_down_switches_at_once():
     cards = List()
     cards.open_row(0)
     cards.move(*path((150, 24), (150, 72), 4))
-    cards.clock.advance(hc.SWITCH_MS + 10)
     assert cards.open == {1}
 
 
-def test_the_diagonal_into_a_card_keeps_it_across_the_next_row():
+def test_diagonal_toward_card_keeps_it_open():
     cards = List()
     cards.open_row(0)
     # 45 degrees down and right, over row 1, then a pause short of the card,
     # as a hand undershoots before correcting.
     cards.move(*path((150, 24), (290, 70), 8))
     assert cards.row_at((290, 70)) == 1
-    cards.clock.advance(hc.TRIANGLE_REST_MS - 50)
+    cards.clock.advance(hover_intent.TRIANGLE_REST_MS - 50)
     assert cards.open == {0}
     cards.move(*path((290, 70), (330, 90), 3))
     cards.intent.entered_card(0)
@@ -150,50 +124,60 @@ def test_the_diagonal_into_a_card_keeps_it_across_the_next_row():
     assert cards.open == {0}
 
 
-def test_resting_on_a_row_along_the_way_hands_it_the_card():
+def test_resting_midway_hands_over_the_card():
     cards = List()
     cards.open_row(0)
     cards.move(*path((150, 24), (290, 70), 8))
-    cards.clock.advance(hc.TRIANGLE_REST_MS + 10)
+    cards.clock.advance(hover_intent.TRIANGLE_REST_MS + 10)
     assert cards.open == {1}
 
 
-def test_leaving_the_triangle_over_a_row_switches_at_once():
+def test_tremor_still_counts_as_resting():
+    cards = List()
+    cards.open_row(0)
+    cards.move(*path((150, 24), (290, 70), 8))
+    # +-3 px of tremor, one event per frame, past the rest's wait.
+    for offset in (0, 3, -3, 2, -2, 3, 0, -3, 3, 0, 2, -2, 3, -3, 0, 1) * 2:
+        cards.move((290 + offset, 70))
+    assert cards.open == {1}
+    other = List()
+    other.open_row(0)
+    other.move(*path((150, 24), (290, 70), 8))
+    for _ in range(10):
+        other.clock.advance(hover_intent.TRIANGLE_REST_MS - 100)
+        other.move((284, 70), step_ms=0)  # a real move restarts the wait
+        other.clock.advance(hover_intent.TRIANGLE_REST_MS - 100)
+        other.move((290, 70), step_ms=0)
+    assert other.open == {0}
+
+
+def test_leaving_the_triangle_switches_at_once():
     cards = List()
     cards.open_row(0)
     cards.move(*path((150, 24), (290, 70), 8))
     cards.move(*path((290, 70), (100, 80), 4))  # back left, out of the triangle
-    cards.clock.advance(hc.SWITCH_MS + 10)
     assert cards.open == {1}
 
 
-def test_a_fast_flick_across_the_list_opens_nothing():
+def test_fast_flick_leaves_nothing_open():
     cards = List()
     cards.move(*path((150, 5), (150, 280), 6), step_ms=8)
-    cards.move((600, 280))
-    cards.clock.advance(1000)
+    cards.move((900, 500))
+    cards.clock.advance(hover_intent.CLOSE_MS + 10)
     assert cards.open == set()
 
 
-def test_leaving_closes_after_a_while_and_the_next_row_opens_warm():
+def test_leaving_closes_after_a_while():
     cards = List()
     cards.open_row(0)
     cards.move((900, 500))  # far from the row, its card and the way between
-    cards.clock.advance(hc.CLOSE_MS - 50)
+    cards.clock.advance(hover_intent.CLOSE_MS - 50)
     assert cards.open == {0}
     cards.clock.advance(60)
     assert cards.open == set()
-    cards.rest((150, 3 * ROW + 24), hc.SWITCH_MS + 10)
-    assert cards.open == {3}
-    cards.move((900, 500))
-    cards.clock.advance(hc.CLOSE_MS + 10 + hc.WARM_S * 1000 + 10)
-    cards.rest((150, 2 * ROW + 24), hc.SWITCH_MS + 10)
-    assert cards.open == set()  # cold again: the first-open wait applies
-    cards.clock.advance(hc.FIRST_OPEN_MS)
-    assert cards.open == {2}
 
 
-def test_the_pointer_leaving_the_window_closes_unless_it_enters_the_card():
+def test_leaving_window_closes_unless_card_entered():
     cards = List()
     cards.open_row(0)
     cards.intent.left_window()
@@ -201,11 +185,11 @@ def test_the_pointer_leaving_the_window_closes_unless_it_enters_the_card():
     cards.clock.advance(1000)
     assert cards.open == {0}
     cards.intent.left_card(0)
-    cards.clock.advance(hc.CLOSE_MS + 10)
+    cards.clock.advance(hover_intent.CLOSE_MS + 10)
     assert cards.open == set()
 
 
-def test_the_pointer_never_replaces_a_pinned_card():
+def test_pointer_never_replaces_a_pinned_card():
     cards = List()
     cards.open_row(0)
     cards.intent.pin(2)
@@ -215,11 +199,11 @@ def test_the_pointer_never_replaces_a_pinned_card():
     assert cards.open == {2}
     cards.open.discard(2)
     cards.intent.closed(2)
-    cards.rest((150, 4 * ROW + 24), hc.FIRST_OPEN_MS + 10)
+    cards.move((150, 4 * ROW + 24))
     assert cards.open == {4}
 
 
-def test_escape_closes_the_pointers_card_until_the_pointer_leaves_its_row():
+def test_escape_closes_card_until_pointer_leaves():
     cards = List()
     cards.open_row(1)
     assert cards.intent.escape()
@@ -227,12 +211,12 @@ def test_escape_closes_the_pointers_card_until_the_pointer_leaves_its_row():
     cards.rest((160, 72), 2000)
     assert cards.open == set()
     cards.move((150, 4 * ROW + 24))  # another row
-    cards.rest((150, 72), hc.SWITCH_MS + hc.FIRST_OPEN_MS)
+    cards.move((150, 72))
     assert cards.open == {1}
     assert not List().intent.escape()  # nothing to close: Escape is not taken
 
 
-def test_a_card_in_use_stays_open_when_its_close_comes():
+def test_card_in_use_stays_open():
     cards = List(held=True)
     cards.open_row(0)
     cards.move((900, 500))
@@ -240,11 +224,11 @@ def test_a_card_in_use_stays_open_when_its_close_comes():
     assert cards.open == {0}
     cards.held = False
     cards.move((901, 500))
-    cards.clock.advance(hc.CLOSE_MS + 10)
+    cards.clock.advance(hover_intent.CLOSE_MS + 10)
     assert cards.open == set()
 
 
-def test_scrolling_closes_the_pointers_card_at_once():
+def test_scrolling_closes_card_at_once():
     cards = List()
     cards.open_row(0)
     cards.intent.close_now()
@@ -256,29 +240,33 @@ def test_scrolling_closes_the_pointers_card_at_once():
     [((5, 5), True), ((0, 0), True), ((10, 0), True), ((6, 6), False)],
 )
 def test_triangle_contains_its_edges(point, inside):
-    assert hc.in_triangle(point, (0, 0), (10, 0), (0, 10)) is inside
+    assert card_geometry.in_triangle(point, (0, 0), (10, 0), (0, 10)) is inside
 
 
 def test_a_degenerate_triangle_holds_nothing():
-    assert not hc.in_triangle((1, 1), (0, 0), (2, 2), (4, 4))
-    assert not hc.in_triangle((0, 0), (0, 0), (0, 0), (0, 0))
+    assert not card_geometry.in_triangle((1, 1), (0, 0), (2, 2), (4, 4))
+    assert not card_geometry.in_triangle((0, 0), (0, 0), (0, 0), (0, 0))
 
 
-def test_the_region_joins_anchor_card_and_the_way_between():
+def test_region_joins_anchor_card_and_path():
     anchor, card = (0, 0, 300, 48), (308, 0, 608, 450)
-    apex = (150, 24)
-    assert hc.in_region((150, 24), anchor, card, apex, "right")
-    assert hc.in_region((400, 300), anchor, card, apex, "right")
-    assert hc.in_region((290, 70), anchor, card, apex, "right")
-    assert not hc.in_region((150, 72), anchor, card, apex, "right")
-    assert not hc.in_region((150, 72), anchor, None, apex, "right")
-    assert not hc.in_region((290, 70), anchor, card, None, "right")
+    way = card_geometry.safe_triangle((150, 24), card, "right")
+    assert card_geometry.contains(anchor, (150, 24))
+    assert card_geometry.contains(card, (400, 300))
+    assert card_geometry.in_triangle((290, 70), *way)
+    point = (150, 72)
+    assert not card_geometry.contains(anchor, point) and not card_geometry.contains(
+        card, point
+    )
+    assert not card_geometry.in_triangle(point, *way)
 
 
-def test_a_card_beside_the_list_lines_up_with_its_row_inside_the_window():
+def test_side_card_stays_level_inside_window():
     window = (1280, 800)
     # At the edge it is given, level with its row.
-    assert hc.card_box("right", (0, 100, 300, 148), 312, (300, 200), window) == (
+    assert card_geometry.card_box(
+        "right", (0, 100, 300, 148), 312, (300, 200), window
+    ) == (
         312,
         100,
         612,
@@ -286,50 +274,62 @@ def test_a_card_beside_the_list_lines_up_with_its_row_inside_the_window():
     )
     # Too tall for the room below, but the room holds three rows: it stays
     # level and is cut to the room, which then scrolls.
-    assert hc.card_box("right", (0, 500, 300, 548), 312, (300, 400), window) == (
+    assert card_geometry.card_box(
+        "right", (0, 500, 300, 548), 312, (300, 400), window
+    ) == (
         312,
         500,
         612,
         792,
     )
     # Less room than that: it rises to stay 8 px inside.
-    _x0, top, _x1, bottom = hc.card_box(
+    _x0, top, _x1, bottom = card_geometry.card_box(
         "right", (0, 700, 300, 748), 312, (300, 300), window
     )
     assert (top, bottom) == (492, 792)
     # Taller than the window: cut to the window less the margins.
-    _x0, top, _x1, bottom = hc.card_box(
+    _x0, top, _x1, bottom = card_geometry.card_box(
         "right", (0, 0, 300, 48), 312, (300, 2000), window
     )
     assert (top, bottom) == (8, 792)
+    # Wider than the room beside the row: narrowed to end 8 px inside.
+    x0, _y0, x1, _y1 = card_geometry.card_box(
+        "right", (0, 100, 300, 148), 312, (360, 200), (640, 800)
+    )
+    assert (x0, x1) == (312, 632)
 
 
-def test_a_card_above_a_bar_is_centered_and_meets_a_close_edge_flush():
+def test_card_above_bar_is_centered():
     window = (1280, 800)
-    assert hc.card_box("top", (600, 740, 640, 780), 728, (120, 220), window) == (
+    assert card_geometry.card_box(
+        "top", (600, 740, 640, 780), 728, (120, 220), window
+    ) == (
         560,
         508,
         680,
         728,
     )
-    # Pushed inside the window, it would stop 4 px short of the control's
-    # edge: it lines up with it instead.
-    x0, _y0, _x1, _y1 = hc.card_box("top", (12, 740, 52, 780), 728, (120, 220), window)
-    assert x0 == 12
+    # Pushed inside the window by the margin.
+    x0, _y0, _x1, _y1 = card_geometry.card_box(
+        "top", (12, 740, 52, 780), 728, (120, 220), window
+    )
+    assert x0 == 8
     # Room above is the edge less the margin.
-    _x0, y0, _x1, y1 = hc.card_box("top", (600, 740, 640, 780), 100, (120, 220), window)
+    _x0, y0, _x1, y1 = card_geometry.card_box(
+        "top", (600, 740, 640, 780), 100, (120, 220), window
+    )
     assert (y0, y1) == (8, 100)
 
 
 def _filled(polygons):
-    """Points on a 1 px grid inside the tab, as GSK would fill it."""
+    """Points on a 1 px grid inside the shape, as GSK would fill it."""
     gi = pytest.importorskip("gi")
     gi.require_version("Gsk", "4.0")
     gi.require_version("Graphene", "1.0")
     from gi.repository import Graphene, Gsk
 
     path = hc._path(polygons)
-    x0, y0, x1, y1 = hc.shape_bounds(polygons)
+    x0, y0, x1, y1 = card_geometry.shape_bounds(polygons)
     return {
         (x, y)
         for x in range(int(x0), int(x1) + 1)
@@ -338,57 +338,37 @@ def _filled(polygons):
     }
 
 
-def test_the_tab_spans_the_row_from_the_list_into_the_card():
-    row, card = (12, 100, 300, 160), (316, 100, 640, 400)
-    polygons, joined_start, joined_end = hc.tab_shape("right", row, card, (True, True))
+def test_bar_card_arrow_points_at_control():
+    control, card = (600, 740, 640, 780), (560, 508, 680, 728)
+    x0, y0, x1, y1 = card_geometry.shape_bounds(
+        [card_geometry.arrow_shape("top", control, card)]
+    )
+    # Centered on the control, from inside the card toward it.
+    assert (x0, x1) == (608, 632)
+    assert (y0, y1) == (727, 728 + card_geometry.ARROW_HEIGHT)
+    # A control near the card's corner: the arrow stays on its straight edge.
+    x0, _y0, _x1, _y1 = card_geometry.shape_bounds(
+        [card_geometry.arrow_shape("top", (540, 740, 560, 780), card)]
+    )
+    assert x0 == 560 + card_geometry.TAB_RADIUS
+
+
+def test_bridge_carries_row_ring_into_card():
+    ring, card = (12, 103, 300, 157), (318, 103, 640, 400)
+    polygons, (top, bottom), joined_start, joined_end, shade = (
+        card_geometry.bridge_shape("right", ring, card)
+    )
     assert joined_start and not joined_end
     filled = _filled(polygons)
-    # Every pixel row of the band, from inside the list into the card.
-    assert all((x, y) in filled for x in range(297, 317) for y in range(100, 160))
-    # The top runs straight into the card's square corner; the list side
-    # leaves through a concave 12 px corner.
-    assert (300, 95) in filled and (300, 92) in filled
-    assert (300, 87) not in filled and (310, 99) not in filled
-    # Below, list and card share the 16 px gap: two 8 px corners, the gap
-    # between them ending in an arch.
-    assert (300, 163) in filled and (300, 169) not in filled
-    assert (315, 163) in filled and (315, 169) not in filled
-    assert (308, 163) not in filled
-    # Inside the list it stays within the row: the next rows are their own.
-    assert (297, 98) not in filled and (297, 162) not in filled
-
-
-def test_a_first_row_fills_the_lists_corner_and_a_cut_list_ends_plain():
-    row, card = (12, 0, 300, 60), (316, 0, 640, 300)
-    polygons, *_ = hc.tab_shape("right", row, card, (False, True))
-    filled = _filled(polygons)
-    # The list's rounded corner is filled square; nothing rises above it.
-    assert (299, 0) in filled and (290, 1) in filled
-    assert all((x, -1) not in filled for x in range(280, 320))
-    polygons, *_ = hc.tab_shape("right", row, card, (True, None))
-    filled = _filled(polygons)
-    # A scrolled view cuts the list below: no corner reaches past it.
-    assert all((x, 61) not in filled for x in range(296, 304))
-
-
-def test_a_risen_card_meets_the_tab_through_a_corner_and_stays_rounded():
-    row, card = (12, 500, 300, 560), (316, 300, 640, 592)
-    polygons, joined_start, joined_end = hc.tab_shape("right", row, card, (True, True))
-    assert not joined_start and not joined_end
-    filled = _filled(polygons)
-    # Both ends of the gap meet curves: 8 px each above.
-    assert (315, 496) in filled and (315, 491) not in filled
-    assert (300, 496) in filled and (300, 491) not in filled
-
-
-def test_a_bar_cards_corner_curve_never_outgrows_the_card():
-    control, card = (300, 700, 340, 740), (297, 400, 520, 688)
-    polygons, joined_start, _joined_end = hc.tab_shape("top", control, card, None)
-    assert not joined_start
-    filled = _filled(polygons)
-    # The card goes on 3 px past the control's left edge: a 3 px corner, not
-    # one that reaches beyond the card.
-    assert (296, 688) not in filled and (299, 688) in filled
-    # On the right the card goes on far: a 12 px corner.
-    assert (341, 689) in filled and (345, 688) in filled
-    assert (351, 688) not in filled and (351, 699) not in filled
+    # As tall as the ring, from inside it (its band and 4 px more) over the
+    # card's own ring.
+    assert all((x, y) in filled for x in range(293, 320) for y in range(103, 157))
+    assert (300, 102) not in filled and (300, 157) not in filled
+    # Below, the card goes on: the bridge meets it through a 12 px corner.
+    assert (317, 165) in filled and (310, 165) not in filled
+    w = card_geometry.RING / 2
+    assert top == [("M", 293, 103 + w), ("L", 318 + card_geometry.RING, 103 + w)]
+    assert bottom[0] == ("M", 293, 157 - w) and bottom[-1][-2:] == (318 + w, 169)
+    # Its shadow grows from where it leaves the list to where it meets the
+    # card.
+    assert shade == ((300, 130), (318, 130))

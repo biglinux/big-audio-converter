@@ -458,18 +458,10 @@ msgstr "{quality}, каля {size} MB за хвіліну"
 msgid "Allow conversion to 24-bit PCM"
 msgstr "Дазволіць пераўтварэнне ў 24-бітны PCM"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:94
-msgid "For floating-point audio exported to FLAC. Reduces precision; WAV preserves the original representation."
-msgstr "Для гуку з рухомай коскай, які экспартуецца ў FLAC. Зніжае дакладнасць; WAV захоўвае зыходнае прадстаўленне."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:116
 #: usr/share/biglinux/audio-converter/app/ui/file_info.py:119
 msgid "Format"
 msgstr "Фармат"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:117
-msgid "The type of file to save. Keeping the original applies no effects."
-msgstr "Тып файла для захавання. Са зыходным фарматам эфекты не ўжываюцца."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:119
 msgid "MP3 — plays everywhere"
@@ -512,10 +504,6 @@ msgstr "Зыходныя"
 msgid "Quality"
 msgstr "Якасць"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:140
-msgid "Higher quality sounds better and makes larger files."
-msgstr "Вышэйшая якасць гучыць лепш, але файлы большыя."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:195
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:386
 msgid "Cleaning quality"
@@ -533,10 +521,6 @@ msgstr "Хутчэй"
 msgid "Segments"
 msgstr "Фрагменты"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:209
-msgid "Save only the marked segments, or everything except them."
-msgstr "Захавайце толькі пазначаныя фрагменты або ўсё, акрамя іх."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:210
 msgid "Keep them"
 msgstr "Пакінуць іх"
@@ -548,10 +532,6 @@ msgstr "Выдаліць іх"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:217
 msgid "Order"
 msgstr "Парадак"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:218
-msgid "The order in which the segments are saved."
-msgstr "Парадак, у якім захоўваюцца фрагменты."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:219
 msgid "In the order marked"
@@ -565,10 +545,6 @@ msgstr "Па часе ў запісе"
 msgid "Save segments"
 msgstr "Захаваць фрагменты"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:227
-msgid "One file per segment, or this file's segments joined."
-msgstr "Кожны фрагмент асобным файлам або ўсе фрагменты гэтага файла ў адным."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:228
 msgid "Join this file's segments"
 msgstr "Аб’яднаць фрагменты гэтага файла"
@@ -580,10 +556,6 @@ msgstr "Асобныя файлы"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:236
 msgid "Join into one file"
 msgstr "Аб’яднаць у адзін файл"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:237
-msgid "Saves the queue as one file, in order, named after the first."
-msgstr "Захоўвае чаргу ў адзін файл па парадку, з назвай першага."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:247
 msgid "Folder to save"
@@ -608,10 +580,6 @@ msgstr "Выбраць выхадную папку"
 msgid "Channels"
 msgstr "Каналы"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:284
-msgid "Keep the original channels, or mix down to mono or stereo."
-msgstr "Пакіньце зыходныя каналы або звядзіце гук у мона ці стэрэа."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:285
 msgid "Mono"
 msgstr "Мона"
@@ -625,25 +593,13 @@ msgstr "Стэрэа"
 msgid "Sample rate"
 msgstr "Частата дыскрэтызацыі"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:296
-msgid "Keep the original unless a device needs a specific rate."
-msgstr "Пакіньце зыходную, калі прыладзе не патрэбна пэўная частата."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:304
 msgid "Standard volume"
 msgstr "Стандартная гучнасць"
 
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:305
-msgid "Brings every file to the same standard loudness."
-msgstr "Прыводзіць усе файлы да аднолькавай стандартнай гучнасці."
-
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:312
 msgid "Lift quiet parts"
 msgstr "Падняць ціхае"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:313
-msgid "Makes quiet passages louder and loud ones softer."
-msgstr "Робіць ціхія ўчасткі гучнейшымі, а гучныя — цішэйшымі."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:314
 msgid "Light"
@@ -666,10 +622,6 @@ msgstr "Моцная"
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:334
 msgid "Remove pauses"
 msgstr "Прыбраць паўзы"
-
-#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:335
-msgid "Marks the speech, so the export leaves the pauses out."
-msgstr "Пазначае маўленне, каб экспарт не ўключаў паўзы."
 
 #: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:339
 msgid "Cuts"
@@ -906,11 +858,6 @@ msgstr "Тэхнічныя падрабязнасці"
 msgid "Remove from queue"
 msgstr "Прыбраць з чаргі"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:185
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:187
-msgid "File actions"
-msgstr "Дзеянні з файлам"
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:207
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:663
 msgid "Move to Trash"
@@ -965,10 +912,6 @@ msgstr "Перацягніце файлы сюды або скарыстайце
 msgid "Add Files"
 msgstr "Дадаць файлы"
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:403
-msgid "Each audio track of a video becomes its own entry. The originals are never changed."
-msgstr "Кожная гукавая дарожка відэа становіцца асобным запісам. Зыходныя файлы не змяняюцца."
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:429
 #, python-brace-format
 msgid "Track {number}"
@@ -998,10 +941,6 @@ msgstr "Аналіз гуку…"
 msgid "The queue limit is 10,000 files. Convert this batch before adding more."
 msgstr "У чарзе можа быць не больш за 10 000 файлаў. Пераўтварыце гэту групу, перш чым дадаваць новыя."
 
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:651
-msgid "Cancel the conversion or wait for it to finish before moving its input to Trash."
-msgstr "Скасуйце пераўтварэнне або дачакайцеся яго завяршэння, перш чым перамяшчаць уваходны файл у сметніцу."
-
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:657
 msgid "Move File to Trash?"
 msgstr "Перамясціць файл у сметніцу?"
@@ -1010,10 +949,6 @@ msgstr "Перамясціць файл у сметніцу?"
 #, python-brace-format
 msgid "Move '{name}' to Trash? All of its tracks will be removed from the queue."
 msgstr "Перамясціць «{name}» у сметніцу? Усе яго дарожкі будуць прыбраныя з чаргі."
-
-#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:676
-msgid "The file is in use by a conversion. Cancel it before moving the input to Trash."
-msgstr "Файл выкарыстоўваецца пры пераўтварэнні. Скасуйце яго, перш чым перамяшчаць уваходны файл у сметніцу."
 
 #: usr/share/biglinux/audio-converter/app/ui/file_queue.py:688
 msgid "The file could not be moved to Trash. It has not been deleted."
@@ -1043,10 +978,6 @@ msgstr "Праслухаць наступны файл."
 #: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:15
 msgid "Preview only the marked segments."
 msgstr "Праслухаць толькі пазначаныя фрагменты."
-
-#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:17
-msgid "More actions are available from the adjacent menu button."
-msgstr "Дадатковыя дзеянні даступныя ў меню суседняй кнопкі."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:123
 msgid "Settings could not be read and were reset"
@@ -1116,38 +1047,17 @@ msgstr "Толькі вылучанае"
 msgid "Play only selected area"
 msgstr "Прайграваць толькі вылучаную вобласць"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:434
-msgid "Edit Segments…"
-msgstr "Рэдагаваць фрагменты…"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:446
-msgid "Zoom out"
-msgstr "Паменшыць"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:447
 msgid "Reset zoom"
 msgstr "Скінуць маштаб"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:448
-msgid "Zoom in"
-msgstr "Павялічыць"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:487
 msgid "Play the next file automatically"
 msgstr "Аўтаматычна прайграваць наступны файл"
 
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:497
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:499
-msgid "More playback options"
-msgstr "Дадатковыя параметры прайгравання"
-
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:503
 msgid "Playback"
 msgstr "Прайграванне"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:504
-msgid "Only affects listening. Converted files stay unchanged."
-msgstr "Уплывае толькі на праслухоўванне. Пераўтвораныя файлы не змяняюцца."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:512
 msgid "Audio output"
@@ -1161,10 +1071,6 @@ msgstr "Прадвызначаны выхад сістэмы"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:538
 msgid "Previous track"
 msgstr "Папярэдняя дарожка"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:550
-msgid "Play or pause"
-msgstr "Прайграць або прыпыніць"
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:563
 msgid "Next track"
@@ -1246,10 +1152,6 @@ msgstr "Папярэдняе праслухоўванне"
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:1123
 msgid "Reset all settings?"
 msgstr "Скінуць усе налады?"
-
-#: usr/share/biglinux/audio-converter/app/ui/main_window.py:1125
-msgid "Format, quality, output folder, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
-msgstr "Фармат, якасць, выхадная папка, абразанне, эфекты і эквалайзер вернуцца да прадвызначаных значэнняў. Чарга і зыходныя файлы захаваюцца."
 
 #: usr/share/biglinux/audio-converter/app/ui/main_window.py:1150
 msgid "Remove the queue entries and their edits? Source files will not be deleted."
@@ -1527,3 +1429,204 @@ msgstr "Памылка запуску праграмы"
 #: usr/share/nautilus-python/extensions/big_audio_converter_extension.py:70
 msgid "Big Audio Converter could not be started. Check that it is installed."
 msgstr "Не ўдалося запусціць Big Audio Converter. Праверце, ці ўсталявана праграма."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:384
+msgid "Each audio track of a video becomes its own entry."
+msgstr "Кожная гукавая дарожка відэа становіцца асобным запісам."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:101
+msgid "Only for floating-point audio saved as FLAC. It lowers the precision. WAV keeps the original as it is."
+msgstr "Толькі для гуку з рухомай коскай, які захоўваецца ў FLAC. Дакладнасць зніжаецца. WAV пакідае арыгінал як ёсць."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:124
+msgid "If you are not sure, pick MP3. It plays on any device."
+msgstr "Калі сумняваецеся, выберыце MP3. Ён прайграецца на любой прыладзе."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:168
+msgid "The higher the bitrate, the better the sound and the bigger the file."
+msgstr "Чым вышэйшы бітрэйт, тым лепшы гук і тым большы файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:283
+msgid "Keep saves only the segments you marked. Remove takes them out and saves the rest."
+msgstr "«Пакінуць іх» захоўвае толькі пазначаныя фрагменты. «Выдаліць іх» выразае гэтыя фрагменты і захоўвае астатняе."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:294
+msgid "The segments can follow the audio from start to end, or the order in which you marked them."
+msgstr "Фрагменты могуць ісці па ходзе запісу ад пачатку да канца або ў тым парадку, як вы іх пазначылі."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:304
+msgid "Each segment can become its own file, or they can all go into one."
+msgstr "Кожны фрагмент можа стаць асобным файлам, або ўсе яны могуць трапіць у адзін."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:315
+msgid "Puts all the files in the queue into one, in the order they appear. It is named after the first file."
+msgstr "Аб’ядноўвае ўсе файлы ў чарзе ў адзін, у тым парадку, у якім яны ідуць. Ён атрымлівае назву першага файла."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:379
+msgid "Keep it on Original. Mono makes the file about half the size."
+msgstr "Пакіньце «Зыходныя». Мона памяншае файл прыкладна ўдвая."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:393
+msgid "Leave it on Original unless a device or website asks for a specific rate."
+msgstr "Пакіньце «Зыходныя», калі прылада або сайт не патрабуе пэўнай частаты."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:406
+msgid "Evens out the volume between files, so when you play several in a row none sounds louder or quieter than the others."
+msgstr "Выраўноўвае гучнасць паміж файламі, каб пры прайграванні некалькіх запар ніводзін не гучаў гучней ці цішэй за іншыя."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:416
+msgid "Works inside each file, making its quiet parts louder and its loud parts softer. Standard volume evens out whole files instead."
+msgstr "Працуе ўнутры кожнага файла, робячы ціхія месцы гучнейшымі, а гучныя цішэйшымі. А «Стандартная гучнасць» выраўноўвае цэлыя файлы."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:440
+msgid "Finds the silences between sentences and leaves them out of the saved file."
+msgstr "Знаходзіць цішыню паміж сказамі і не ўключае яе ў захаваны файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/help_tooltips.py:19
+msgid "Set the exact times of each segment. Keyboard shortcut: Ctrl+E."
+msgstr "Задаць дакладны час кожнага фрагмента. Спалучэнне клавіш: Ctrl+E."
+
+#: usr/share/biglinux/audio-converter/app/ui/playback_panel.py:134
+msgid "Zoom"
+msgstr "Маштаб"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:147
+msgid "Adjust to the number of channels"
+msgstr "Падладжваць пад колькасць каналаў"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:149
+msgid "The quality above is for stereo. Mono uses half of it, and 5.1 three times as much."
+msgstr "Якасць вышэй разлічана на стэрэа. Мона выкарыстоўвае палову, а 5.1 выкарыстоўвае ўтрая больш."
+
+#: usr/share/biglinux/audio-converter/app/audio/pauses.py:117
+msgid "Update dpdfnet-native to find pauses."
+msgstr "Абнавіце dpdfnet-native, каб шукаць паўзы."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:79
+msgid "Not every audio track of this video was converted in this run, so the original was kept."
+msgstr "Не ўсе гукавыя дарожкі гэтага відэа былі пераўтвораны ў гэтым запуску, таму арыгінал захаваны."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:84
+msgid "The converted file holds only part of the original, so the original was kept."
+msgstr "Пераўтвораны файл утрымлівае толькі частку арыгінала, таму арыгінал захаваны."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:104
+msgid "The original was moved to the Trash."
+msgstr "Арыгінал перамешчаны ў сметніцу."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:128
+msgid "The original is a link and was kept; its target is not moved."
+msgstr "Арыгінал з’яўляецца спасылкай і захаваны; файл, на які яна ўказвае, не перамяшчаецца."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:132
+msgid "The original changed after it was converted and was kept."
+msgstr "Арыгінал змяніўся пасля пераўтварэння і захаваны."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:139
+msgid "The converted file could not be verified, so the original was kept."
+msgstr "Не ўдалося праверыць пераўтвораны файл, таму арыгінал захаваны."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:150
+msgid "The original could not be moved to the Trash and was kept."
+msgstr "Не ўдалося перамясціць арыгінал у сметніцу, таму ён захаваны."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:351
+msgid "Delete original files"
+msgstr "Выдаляць зыходныя файлы"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:946
+msgid "Originals go to the Trash only after every file converted from them is checked"
+msgstr "Арыгіналы трапляюць у сметніцу толькі пасля праверкі кожнага файла, пераўтворанага з іх"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:57
+msgid "Converted, original kept"
+msgstr "Пераўтворана, арыгінал захаваны"
+
+#: usr/share/biglinux/audio-converter/app/ui/playback_panel.py:178 usr/share/biglinux/audio-converter/app/ui/playback.py:356
+msgid "Play"
+msgstr "Прайграць"
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:703
+msgid "Format, quality, output folder, deleting originals, cutting, effects and equalizer return to their defaults. The queue and your source files are kept."
+msgstr "Фармат, якасць, выхадная папка, выдаленне зыходных файлаў, абразанне, эфекты і эквалайзер вернуцца да прадвызначаных значэнняў. Чарга і зыходныя файлы захаваюцца."
+
+#: usr/share/biglinux/audio-converter/app/ui/playback.py:356
+msgid "Pause"
+msgstr "Прыпыніць"
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:74
+msgid "Another entry made from this original was not converted, so the original was kept."
+msgstr "Іншы запіс, створаны з гэтага арыгінала, не быў пераўтвораны, таму арыгінал захаваны."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:102
+msgid "The original was deleted."
+msgstr "Арыгінал выдалены."
+
+#: usr/share/biglinux/audio-converter/app/audio/converter.py:148
+msgid "The original could not be deleted and was kept."
+msgstr "Не ўдалося выдаліць арыгінал, таму ён захаваны."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:941
+msgid "Originals are deleted permanently, without the Trash, only after every file converted from them is checked"
+msgstr "Арыгіналы выдаляюцца назаўсёды, абмінаючы сметніцу, толькі пасля праверкі кожнага файла, пераўтворанага з іх"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:279 usr/share/biglinux/audio-converter/app/ui/file_queue.py:651
+msgid "Delete Permanently"
+msgstr "Выдаліць назаўсёды"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:637
+msgid "Cancel the conversion or wait for it to finish before deleting its input."
+msgstr "Скасуйце пераўтварэнне або дачакайцеся яго завяршэння, перш чым выдаляць уваходны файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:645
+msgid "Delete File Permanently?"
+msgstr "Выдаліць файл назаўсёды?"
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:647
+#, python-brace-format
+msgid "'{name}' will be deleted without going to the Trash and cannot be recovered. All of its tracks will be removed from the queue."
+msgstr "Файл «{name}» будзе выдалены, абмінаючы сметніцу, і яго нельга будзе аднавіць. Усе яго дарожкі будуць прыбраныя з чаргі."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:673
+msgid "The file is in use by a conversion. Cancel it before deleting the input."
+msgstr "Файл выкарыстоўваецца пры пераўтварэнні. Скасуйце яго, перш чым выдаляць уваходны файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/file_queue.py:688
+msgid "The file could not be deleted."
+msgstr "Не ўдалося выдаліць файл."
+
+#: usr/share/biglinux/audio-converter/app/ui/main_window.py:323
+msgid "Delete Without Using the Trash"
+msgstr "Выдаляць без выкарыстання сметніцы"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:247 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:87
+msgid "Very sensitive"
+msgstr "Вельмі адчувальнае"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:248 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:88
+msgid "Sensitive"
+msgstr "Адчувальнае"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:249 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:89
+msgid "Normal"
+msgstr "Звычайнае"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:250 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:90
+msgid "Strict"
+msgstr "Строгае"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:251 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:91
+msgid "Very strict"
+msgstr "Вельмі строгае"
+
+#: usr/share/biglinux/audio-converter/app/ui/pause_panel.py:103
+msgid "Sensitive keeps quiet or unusual voices and lets more noise and music through; strict removes more music and may cut faint words."
+msgstr "Адчувальнае выяўленне захоўвае ціхія ці незвычайныя галасы і прапускае больш шуму і музыкі; строгае прыбірае больш музыкі і можа абрэзаць ціхія словы."
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:263 usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:267 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:108 usr/share/biglinux/audio-converter/app/ui/pause_panel.py:112
+msgid "Voice detection"
+msgstr "Выяўленне голасу"
+
+#: usr/share/biglinux/audio-converter/app/ui/conversion_settings.py:232
+msgid "Audio only when a voice is detected"
+msgstr "Гук толькі пры выяўленні голасу"

@@ -120,7 +120,7 @@ def test_missing_input_reports_error(player, tmp_path):
     assert errors
 
 
-def test_device_removal_pauses_and_requires_explicit_resume(player):
+def test_device_removal_pauses_until_resumed(player):
     errors, notifications = [], []
     player.error_callback = errors.append
     player.devices_callback = lambda: notifications.append(threading.get_ident())
@@ -152,7 +152,7 @@ def test_idle_device_refresh_preserves_preview_effects(player):
     assert player.mpv_instance.af == original_filters
 
 
-def test_denoiser_strength_changes_without_rebuilding_the_chain(player, tracks):
+def test_live_values_keep_the_chain(player, tracks):
     from app.audio.profiles import discover_noise_plugins
 
     plugins = discover_noise_plugins()
@@ -170,6 +170,9 @@ def test_denoiser_strength_changes_without_rebuilding_the_chain(player, tracks):
     # Rebuilding the chain drops the audio its filters hold: an audible cut.
     for percent in (10, 60, 35):
         player.set_noise_strength(percent)
+    for volume in (1.0, 1.5, 0.8):
+        player.set_volume(volume)
+    pump(lambda: "volume=0.8" in (player._last_filter_graph or ""))
     assert player.noise_strength == 35
     player.seek(1)
     pump(lambda: abs((player.mpv_instance.time_pos or 0) - 1) < 0.1)

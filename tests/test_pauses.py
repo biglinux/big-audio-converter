@@ -15,7 +15,7 @@ def levels(*runs):
     return [level for level, seconds in runs for _ in range(round(seconds / STEP))]
 
 
-def test_pauses_keep_air_beside_speech_but_not_at_the_ends():
+def test_pauses_keep_air_only_beside_speech():
     envelope = levels((-80, 1), (-6, 2), (-70, 1.5), (-6, 2), (-80, 1))
     assert find_pauses(envelope, 0.5) == [
         {"start": 0.0, "stop": 1 - KEEP},
@@ -24,7 +24,7 @@ def test_pauses_keep_air_beside_speech_but_not_at_the_ends():
     ]
 
 
-def test_speech_is_what_lies_between_the_pauses():
+def test_speech_lies_between_the_pauses():
     envelope = levels((-80, 1), (-6, 2), (-70, 1.5), (-6, 2), (-80, 1))
     assert find_speech(envelope, 0.5) == [
         {"start": 1 - KEEP, "stop": 3 + KEEP},
@@ -35,13 +35,13 @@ def test_speech_is_what_lies_between_the_pauses():
     assert find_speech([], 0.5) == []
 
 
-def test_short_gaps_and_silence_free_audio_are_not_pauses():
+def test_only_long_silences_are_pauses():
     assert find_pauses(levels((-6, 1), (-70, 0.4), (-6, 1)), 0.5) == []
     assert find_pauses(levels((-6, 3)), 0.5) == []
     assert find_pauses([], 0.5) == []
 
 
-def test_the_threshold_follows_the_speech_level_within_bounds():
+def test_threshold_follows_speech_level_within_bounds():
     # Quiet speech at -40 dBFS keeps a -65 dBFS floor: DPDFNet's residue
     # (about -70) is a pause, a -60 dBFS murmur is not.
     quiet = levels((-40, 2), (-70, 1), (-40, 2))
@@ -63,12 +63,23 @@ def ffmpeg(*args):
     )
 
 
+def denoiser_with_voice_sensitivity():
+    denoiser = shutil.which("dpdfnet-enhance")
+    return (
+        denoiser
+        and "--voice-sensitivity"
+        in subprocess.run(
+            [denoiser, "--help"], capture_output=True, text=True, check=False
+        ).stdout
+    )
+
+
 @pytest.mark.skipif(
-    not (shutil.which("dpdfnet-enhance") and shutil.which("espeak-ng")),
-    reason="needs dpdfnet-enhance and espeak-ng",
+    not (denoiser_with_voice_sensitivity() and shutil.which("espeak-ng")),
+    reason="needs dpdfnet-enhance with --voice-sensitivity, and espeak-ng",
 )
 @pytest.mark.parametrize("peak", [-30, -20, -10])
-def test_a_pause_in_noisy_speech_is_found_at_its_edges(tmp_path, peak):
+def test_noisy_pause_is_found_at_edges(tmp_path, peak):
     for name, text in (
         ("one", "The quick brown fox jumps over the lazy dog."),
         ("two", "Then it runs back into the forest."),
@@ -113,15 +124,11 @@ def test_a_pause_in_noisy_speech_is_found_at_its_edges(tmp_path, peak):
         str(noisy),
     )
 
-    found = find_pauses(
-        measure_levels(
-            MediaSource(str(noisy)),
-            "ffmpeg",
-            shutil.which("dpdfnet-enhance"),
-            ProcessRunner(),
-        ),
-        0.5,
+    denoiser = shutil.which("dpdfnet-enhance")
+    levels = measure_levels(
+        MediaSource(str(noisy)), "ffmpeg", denoiser, 3, ProcessRunner()
     )
+    found = find_pauses(levels, 0.5)
 
     # Never into the speech; at speech as quiet as the noise, DPDFNet takes
     # part of a word's fading tail, leaving less air than KEEP.
@@ -140,7 +147,44 @@ def test_an_unexpected_failure_ends_the_analysis(monkeypatch, tmp_path):
     monkeypatch.setattr(pauses, "measure_levels", broken)
     finder, failures = pauses.PauseFinder(), []
     source = MediaSource(str(tmp_path / "missing.wav"))
-    finder.start(None, source, "ffmpeg", "dpdfnet-enhance", None, None, failures.append)
+    finder.start(
+        None, source, "ffmpeg", "dpdfnet-enhance", 3, None, None, failures.append
+    )
     pump(lambda: failures)
     assert not finder.busy
     assert failures == ["The pauses could not be measured."]
+
+
+def fake_denoiser(tmp_path, script):
+    denoiser = tmp_path / "dpdfnet-enhance"
+    denoiser.write_text("#!/bin/sh\n" + script)
+    denoiser.chmod(0o755)
+    audio = tmp_path / "speech.wav"
+    ffmpeg("-v", "error", "-f", "lavfi", "-i", "sine=d=1", str(audio))
+    return MediaSource(str(audio)), str(denoiser)
+
+
+@pytest.mark.parametrize(
+    "refusal",
+    [
+        # Before --speech-only: its usage.
+        "dpdfnet-enhance: usage: dpdfnet-enhance [--channels N]",
+        # Before --voice-sensitivity: the option by name.
+        'dpdfnet-enhance: unknown argument "--voice-sensitivity"',
+    ],
+)
+def test_old_denoiser_asks_for_update(tmp_path, refusal):
+    from app.audio.process import MediaError
+
+    source, old = fake_denoiser(tmp_path, f"echo '{refusal}' >&2\nexit 2\n")
+    with pytest.raises(MediaError, match="Update dpdfnet-native"):
+        measure_levels(source, "ffmpeg", old, 3, ProcessRunner())
+
+
+def test_voice_sensitivity_reaches_denoiser(tmp_path):
+    args = tmp_path / "args"
+    # Records its options and lets the audio through.
+    source, denoiser = fake_denoiser(tmp_path, f'echo "$@" > "{args}"\nexec cat\n')
+    levels = measure_levels(source, "ffmpeg", denoiser, 5, ProcessRunner())
+    assert len(levels) == round(1 / STEP)
+    assert "--speech-only --voice-sensitivity 5" in args.read_text()

@@ -1,7 +1,9 @@
-"""Help tooltips by key, shown as the shared BigLinux card while enabled."""
+"""Help tooltips by key, and the choice to show tooltips at all."""
 
 import gettext
 import weakref
+
+from big_gtk_kit import tooltip
 
 _ = gettext.gettext
 
@@ -13,8 +15,8 @@ TOOLTIPS = {
     "pause_play_btn": _("Play or pause. Keyboard shortcut: Ctrl+Space."),
     "next_audio_btn": _("Preview the next file."),
     "play_selection_switch": _("Preview only the marked segments."),
-    "right_click_options": _(
-        "More actions are available from the adjacent menu button."
+    "segment_edit_button": _(
+        "Set the exact times of each segment. Keyboard shortcut: Ctrl+E."
     ),
 }
 
@@ -32,20 +34,19 @@ class HelpTooltips:
         )
 
     def add_tooltip(self, widget, tooltip_key):
-        """big_gtk_kit.tooltip draws the card; GTK keeps the accessible text."""
+        """big_gtk_kit.tooltip draws the card; the text stays while tooltips
+        are off, as the widget's accessible description."""
         if not self.closed:
             self.widgets[widget] = TOOLTIPS[tooltip_key]
-            widget.set_tooltip_text(
-                TOOLTIPS[tooltip_key] if self.is_enabled() else None
-            )
+            widget.set_tooltip_text(TOOLTIPS[tooltip_key])
 
     def refresh(self):
+        """Show every tooltip of the program, or none; returns which."""
         enabled = self.is_enabled()
-        for widget, text in list(self.widgets.items()):
-            widget.set_tooltip_text(text if enabled else None)
+        tooltip.set_enabled(enabled)
+        return enabled
 
     def cleanup(self):
         self.closed = True
-        self.refresh()
         self.widgets.clear()
         self.config = None

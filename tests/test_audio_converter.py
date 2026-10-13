@@ -4,7 +4,7 @@ import pytest
 from app.audio.converter import AudioConverter
 from app.audio.media import Segment, track_identifier
 from app.audio.process import MediaError
-from app.audio.profiles import build_audio_filters
+from app.audio.profiles import NOISE_PLUGINS, build_audio_filters
 
 
 def test_noise_discovery_excludes_ort_and_ll(monkeypatch):
@@ -56,7 +56,7 @@ def converter(tmp_path):
     return conv
 
 
-def test_noise_reduction_without_its_plugin_is_an_error(converter):
+def test_missing_noise_plugin_raises(converter):
     with pytest.raises(MediaError, match="unavailable"):
         build_audio_filters({"noise_reduction": True}, {})
 
@@ -78,6 +78,36 @@ def test_selected_noise_model(converter, engine, label, attenuation):
     assert f"plugin={label}" in nr
     assert attenuation in nr
     assert ("c6=0" in nr) == (engine == "dfn3")
+
+
+@pytest.mark.parametrize(
+    "engine,gate",
+    [("dfn3", "c17=60|c18=1|c19=4"), ("dpdfnet", "c1=60|c2=1|c3=4")],
+)
+def test_voice_only_gates_the_plugin(converter, engine, gate):
+    settings = {"noise_reduction": True, "noise_engine": engine}
+    plain = build_audio_filters(settings, converter.noise_plugins)
+    voice_only = build_audio_filters(
+        settings | {"voice_only": True, "voice_only_sensitivity": 4},
+        converter.noise_plugins,
+    )
+    assert gate in next(f for f in voice_only if "ladspa=" in f)
+    assert gate not in next(f for f in plain if "ladspa=" in f)
+    # The gate holds either engine to the same delay, which is cut away again.
+    assert "apad=pad_len=3168" in voice_only
+    assert f"apad=pad_len={NOISE_PLUGINS[engine][2]}" in plain
+
+
+def test_voice_only_reaches_offline_denoiser(converter):
+    settings = {"noise_reduction": True, "noise_engine": "dpdfnet"}
+    plain = build_audio_filters(settings, converter.noise_plugins, "dpdfnet-enhance")
+    voice_only = build_audio_filters(
+        settings | {"voice_only": True, "voice_only_sensitivity": 2},
+        converter.noise_plugins,
+        "dpdfnet-enhance",
+    )
+    assert plain[0].speech_only is None
+    assert voice_only[0].speech_only == 2
 
 
 class TestGetOutputPath:
@@ -126,13 +156,22 @@ class TestGetOutputPath:
         result = converter._get_output_path(input_path, "mp3")
         assert result != input_path
 
+    def test_free_name_is_found_in_destination(self, converter, tmp_path):
+        source = tmp_path / "song.wav"
+        source.touch()
+        (tmp_path / "song.mp3").touch()
+        folder = tmp_path / "out"
+        folder.mkdir()
+        result = converter._get_output_path(str(source), "mp3", folder=str(folder))
+        assert result == str(folder / "song.mp3")
+
 
 class TestSegmentValidation:
     def test_valid_segment(self):
         segment = Segment.from_mapping({"start": 0.0, "stop": 5.0})
         assert (segment.start, segment.stop) == (0.0, 5.0)
 
-    def test_short_segment_is_not_silently_discarded(self):
+    def test_short_segment_is_kept(self):
         segment = Segment.from_mapping({"start": 1.0, "stop": 1.05}, 10, 48000)
         assert segment.stop - segment.start == pytest.approx(0.05)
 
@@ -144,7 +183,7 @@ class TestSegmentValidation:
         with pytest.raises(MediaError):
             Segment.from_mapping({"start": 10.0, "stop": 5.0})
 
-    def test_end_within_a_frame_of_the_end_means_the_end(self):
+    def test_end_within_a_frame_snaps(self):
         segment = Segment.from_mapping({"start": 10, "stop": 12.346}, 12.3456789, 48000)
         assert segment.stop == 12.3456789
 
@@ -164,8 +203,24 @@ class TestSegmentValidation:
         ),
     ],
 )
-def test_unusable_loudness_measurement_falls_back_to_one_pass(report):
+def test_unusable_loudness_uses_one_pass(report):
     from app.audio.profiles import LOUDNORM
     from app.audio.segment_renderer import linear_loudnorm
 
     assert linear_loudnorm(report) == LOUDNORM
+
+
+@pytest.mark.parametrize(
+    "channels,source,expected",
+    [(1, 2, "96k"), (2, 1, "192k"), (None, 6, "576k"), (None, 1, "96k")],
+)
+def test_stereo_bitrate_scales_with_channels(channels, source, expected):
+    from app.audio.profiles import codec_args
+
+    stream = {"channels": source, "sample_rate": "48000", "codec_name": "pcm_s16le"}
+    settings = {"format": "m4a", "bitrate": "192k", "bitrate_per_channel": True}
+    args = codec_args(settings, channels, stream)
+    assert args[args.index("-b:a") + 1] == expected
+    settings["bitrate_per_channel"] = False
+    args = codec_args(settings, channels, stream)
+    assert args[args.index("-b:a") + 1] == "192k"

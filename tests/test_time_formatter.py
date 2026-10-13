@@ -23,6 +23,6 @@ def test_times_read_as_minutes_and_hours(format_time, seconds, expected):
     assert format_time(seconds) == expected
 
 
-def test_ruler_shows_fractions_only_below_a_second():
+def test_ruler_shows_subsecond_fractions_only():
     assert "." in format_time_ruler(1.23, 0.5)
     assert format_time_ruler(60, 1) == "1:00"
