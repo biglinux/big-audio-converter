@@ -6,7 +6,13 @@ import logging
 import gi
 
 gi.require_version("Gdk", "4.0")
-gi.require_version("Nautilus", "4.0")
+# Nautilus 49 and later ship only the 4.1 typelib, and nautilus-python has
+# loaded it before this file runs: asking for 4.0 raises and the menu entry
+# never appears. Older releases ship 4.0 only.
+try:
+    gi.require_version("Nautilus", "4.1")
+except ValueError:
+    gi.require_version("Nautilus", "4.0")
 from gi.repository import Gdk, Gio, GLib, GObject, Nautilus
 
 _translation = gettext.translation(
